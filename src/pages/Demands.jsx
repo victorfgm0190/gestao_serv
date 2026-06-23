@@ -16,6 +16,7 @@ export default function Demands() {
   const { activeCompany } = useOutletContext()
   const [demands, setDemands] = useState([])
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
   const [form, setForm] = useState({
@@ -71,6 +72,28 @@ export default function Demands() {
     }
   }
 
+  async function syncEmails() {
+    setSyncing(true)
+    try {
+      const res = await fetch('/api/ingest-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_id: activeCompany.id }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        alert(`Sincronização concluída: ${data.imported} e-mail(s) importado(s).`)
+        fetchDemands()
+      } else {
+        alert('Erro: ' + (data.error || 'Falha na sincronização'))
+      }
+    } catch (e) {
+      alert('Erro de conexão com o servidor.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   const filtered = filterStatus ? demands.filter(d => d.status === filterStatus) : demands
 
   return (
@@ -81,12 +104,21 @@ export default function Demands() {
           <h2 className="text-2xl font-bold text-white">Demandas</h2>
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          + Nova demanda
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={syncEmails}
+            disabled={syncing}
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            {syncing ? 'Sincronizando...' : '📧 Sincronizar e-mails'}
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            + Nova demanda
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
