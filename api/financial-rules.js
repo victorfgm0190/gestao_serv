@@ -26,21 +26,34 @@ export default async function handler(req, res) {
       fuel_value,
       remainder_victor_pct,
       remainder_fabricio_pct,
-      billing_type
     } = req.body
 
-    const result = await sql`
-      INSERT INTO financial_rules (
-        project_id, hourly_rate, has_tax, tax_percentage,
-        victor_fixed_per_hour, has_fuel, fuel_value,
-        remainder_victor_pct, remainder_fabricio_pct
-      ) VALUES (
-        ${client_id}, ${hourly_rate}, ${has_tax}, ${tax_percentage},
-        ${victor_fixed_per_hour}, ${has_fuel}, ${fuel_value},
-        ${remainder_victor_pct}, ${remainder_fabricio_pct}
-      ) RETURNING *
-    `
-    return res.status(201).json({ rule: result[0] })
+    if (!client_id) {
+      return res.status(400).json({ error: 'client_id obrigatório' })
+    }
+
+    try {
+      const result = await sql`
+        INSERT INTO financial_rules (
+          project_id, hourly_rate, has_tax, tax_percentage,
+          victor_fixed_per_hour, has_fuel, fuel_value,
+          remainder_victor_pct, remainder_fabricio_pct
+        ) VALUES (
+          ${client_id},
+          ${hourly_rate || null},
+          ${has_tax || false},
+          ${tax_percentage || null},
+          ${victor_fixed_per_hour || null},
+          ${has_fuel || false},
+          ${fuel_value || null},
+          ${remainder_victor_pct || 50},
+          ${remainder_fabricio_pct || 50}
+        ) RETURNING *
+      `
+      return res.status(201).json({ rule: result[0] })
+    } catch (error) {
+      return res.status(500).json({ error: error.message })
+    }
   }
 
   if (req.method === 'DELETE') {
