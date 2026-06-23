@@ -15,10 +15,12 @@ const STATUS_COLORS = {
 export default function Demands() {
   const { activeCompany } = useOutletContext()
   const [demands, setDemands] = useState([])
+  const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [filterStatus, setFilterStatus] = useState('')
+  const [filterClient, setFilterClient] = useState('')
   const [form, setForm] = useState({
     sender_name: '',
     sender_email: '',
@@ -28,19 +30,34 @@ export default function Demands() {
   })
 
   useEffect(() => {
-    fetchDemands()
+    fetchAll()
   }, [activeCompany])
 
-  async function fetchDemands() {
+  async function fetchAll() {
     setLoading(true)
+    try {
+      const [demandsRes, clientsRes] = await Promise.all([
+        fetch(`/api/demands?company_id=${activeCompany.id}`),
+        fetch(`/api/clients?company_id=${activeCompany.id}`),
+      ])
+      const demandsData = await demandsRes.json()
+      const clientsData = await clientsRes.json()
+      setDemands(demandsData.demands || [])
+      setClients(clientsData.clients || [])
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function fetchDemands() {
     try {
       const res = await fetch(`/api/demands?company_id=${activeCompany.id}`)
       const data = await res.json()
       setDemands(data.demands || [])
     } catch (e) {
       console.error(e)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -94,7 +111,21 @@ export default function Demands() {
     }
   }
 
-  const filtered = filterStatus ? demands.filter(d => d.status === filterStatus) : demands
+  const getClientName = (client_id) => {
+    if (!client_id) return null
+    const client = clients.find(c => c.id === client_id)
+    return client ? client.name : null
+  }
+
+  const filtered = demands.filter(d => {
+    if (filterStatus && d.status !== filterStatus) return false
+    if (filterClient && String(d.client_id) !== String(filterClient)) return false
+    return true
+  })
+
+  const clientsWithDemands = clients.filter(c =>
+    demands.some(d => String(d.client_id) === String(c.id))
+  )
 
   return (
     <div className="p-8">
@@ -104,7 +135,7 @@ export default function Demands() {
           <h2 className="text-2xl font-bold text-white">Demandas</h2>
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex gap-2">
           <button
             onClick={syncEmails}
             disabled={syncing}
@@ -121,7 +152,32 @@ export default function Demands() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Filtro por cliente */}
+      {clientsWithDemands.length > 0 && (
+        <div className="flex gap-2 mb-3 flex-wrap">
+          <button
+            onClick={() => setFilterClient('')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filterClient === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            Todos os clientes
+          </button>
+          {clientsWithDemands.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setFilterClient(String(c.id))}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                filterClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Filtro por status */}
       <div className="flex gap-2 mb-6 flex-wrap">
         <button
           onClick={() => setFilterStatus('')}
@@ -144,6 +200,9 @@ export default function Demands() {
         ))}
       </div>
 
+      {/* Contador */}
+      <p className="text-gray-500 text-xs mb-4">{filtered.length} demanda(s)</p>
+
       {/* List */}
       {loading ? (
         <div className="text-gray-500 text-sm">Carregando...</div>
@@ -158,6 +217,13 @@ export default function Demands() {
             <div key={d.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    {getClientName(d.client_id) && (
+                      <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full font-medium">
+                        {getClientName(d.client_id)}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-white font-medium truncate">{d.subject || '(sem assunto)'}</p>
                   <p className="text-gray-400 text-sm mt-1">{d.sender_name} {d.sender_email ? `<${d.sender_email}>` : ''}</p>
                   {d.body && <p className="text-gray-500 text-sm mt-2 line-clamp-2">{d.body}</p>}
