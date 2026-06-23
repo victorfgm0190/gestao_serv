@@ -29,32 +29,30 @@ export default function Financial() {
     try {
       const [cl, rec, fab, vic] = await Promise.all([
         fetch(`/api/clients?company_id=${activeCompany.id}`),
-        fetch(`/api/receivables?company_id=${activeCompany.id}&year=${filterYear}`),
-        fetch(`/api/payables-fabricio?company_id=${activeCompany.id}&year=${filterYear}`),
-        fetch(`/api/payables-victor?company_id=${activeCompany.id}&year=${filterYear}`),
+        fetch(`/api/finance?type=receivables&company_id=${activeCompany.id}&year=${filterYear}`),
+        fetch(`/api/finance?type=fabricio&company_id=${activeCompany.id}&year=${filterYear}`),
+        fetch(`/api/finance?type=victor&company_id=${activeCompany.id}&year=${filterYear}`),
       ])
       setClients((await cl.json()).clients || [])
-      setReceivables((await rec.json()).receivables || [])
-      setPayablesFab((await fab.json()).payables || [])
-      setPayablesVictor((await vic.json()).payables || [])
+      setReceivables((await rec.json()).data || [])
+      setPayablesFab((await fab.json()).data || [])
+      setPayablesVictor((await vic.json()).data || [])
     } catch(e) { console.error(e) }
     finally { setLoading(false) }
   }
 
   async function save() {
-    const endpoints = { receivables: '/api/receivables', fabricio: '/api/payables-fabricio', victor: '/api/payables-victor' }
     const body = tab === 'victor'
       ? { ...form, company_id: activeCompany.id }
       : { ...form, company_id: activeCompany.id }
-    await fetch(endpoints[tab] || endpoints.receivables, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    await fetch(`/api/finance?type=${tab}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     setShowModal(false)
     setForm({ client_id: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), description: '', amount: '', service_amount: '', profit_amount: '', notes: '' })
     fetchAll()
   }
 
   async function pay(item) {
-    const endpoints = { receivables: '/api/receivables', fabricio: '/api/payables-fabricio', victor: '/api/payables-victor' }
-    await fetch(endpoints[tab] || endpoints.receivables, {
+    await fetch(`/api/finance?type=${tab}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: item.id, ...payForm }),
@@ -66,8 +64,7 @@ export default function Financial() {
 
   async function del(id) {
     if (!confirm('Excluir?')) return
-    const endpoints = { receivables: '/api/receivables', fabricio: '/api/payables-fabricio', victor: '/api/payables-victor' }
-    await fetch(endpoints[tab] || endpoints.receivables, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    await fetch(`/api/finance?type=${tab}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
     fetchAll()
   }
 
