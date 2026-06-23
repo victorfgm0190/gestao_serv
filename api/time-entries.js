@@ -98,16 +98,24 @@ export default async function handler(req, res) {
 
     const hourly_rate = regras[0]?.hourly_rate || null
 
+    const horas_desloc = parseFloat(hours_fuel) || 0
+    const valor_desloc = regras.length > 0 ? horas_desloc * (parseFloat(regras[0].hourly_rate) || 0) * (1 - (regras[0].has_tax ? (parseFloat(regras[0].tax_percentage) || 0) / 100 : 0)) : 0
+
     const result = await sql`
       INSERT INTO time_entries (
         company_id, client_id, entry_date, description,
         hours, hourly_rate, gross_value, tax_amount,
-        net_value, victor_share, fabricio_share, fuel_cost, notes
+        net_value, victor_share, fabricio_share, fuel_cost, notes,
+        hora_inicial, intervalo_inicio, intervalo_fim, hora_final,
+        horas_deslocamento, valor_deslocamento
       ) VALUES (
         ${company_id}, ${client_id}, ${entry_date}, ${description},
         ${hours}, ${hourly_rate}, ${calc.gross_value}, ${calc.tax_amount},
         ${calc.net_value}, ${calc.victor_share}, ${calc.fabricio_share},
-        ${calc.fuel_cost}, ${notes}
+        ${calc.fuel_cost}, ${notes},
+        ${hora_inicial || null}, ${intervalo_inicio || null},
+        ${intervalo_fim || null}, ${hora_final || null},
+        ${horas_desloc}, ${parseFloat(valor_desloc.toFixed(2))}
       ) RETURNING *
     `
     return res.status(201).json({ entry: result[0], hours_calculated: hours })

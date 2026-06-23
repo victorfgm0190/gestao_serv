@@ -170,6 +170,12 @@ export default function TimeEntries() {
                     <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{e.client_name || 'Sem cliente'}</span>
                     <span className="text-gray-500 text-xs">{new Date(e.entry_date).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span>
                     <span className="text-gray-500 text-xs font-mono">{parseFloat(e.hours).toFixed(2)}h</span>
+                    {e.hora_inicial && e.hora_final && (
+                      <span className="text-gray-600 text-xs font-mono">{e.hora_inicial}→{e.hora_final}{e.intervalo_inicio ? ` (int: ${e.intervalo_inicio}-${e.intervalo_fim})` : ''}</span>
+                    )}
+                    {parseFloat(e.horas_deslocamento) > 0 && (
+                      <span className="text-yellow-600 text-xs">🚗 {e.horas_deslocamento}h desloc.</span>
+                    )}
                   </div>
                   <p className="text-white text-sm">{e.description}</p>
                   <div className="flex gap-4 mt-2 text-xs">
