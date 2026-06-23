@@ -37,7 +37,7 @@ export default function TimeEntries() {
   }
 
   function calcPreview(f) {
-    const rule = rules.find(r => String(r.project_id) === String(f.client_id))
+    const rule = rules.find(r => String(r.client_id) === String(f.client_id))
     if (!rule || !f.hours) { setPreview(null); return }
     const h = parseFloat(f.hours) || 0
     const hd = parseFloat(f.hours_fuel) || 0
