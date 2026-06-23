@@ -5,6 +5,7 @@ import './index.css'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Demands from './pages/Demands'
+import EmailRules from './pages/EmailRules'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -13,6 +14,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="demands" element={<Demands />} />
+          <Route path="email-rules" element={<EmailRules />} />
         </Route>
       </Routes>
     </BrowserRouter>

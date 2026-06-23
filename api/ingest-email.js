@@ -2,7 +2,7 @@ import { neon } from '@neondatabase/serverless'
 import imapSimple from 'imap-simple'
 import { simpleParser } from 'mailparser'
 
-async function fetchEmailsFromAccount(imapConfig, company_id, sql) {
+async function fetchEmailsFromAccount(imapConfig, company_id, sql, rules) {
   const connection = await imapSimple.connect(imapConfig)
   await connection.openBox('INBOX')
 
@@ -29,6 +29,25 @@ async function fetchEmailsFromAccount(imapConfig, company_id, sql) {
     const body = parsed.text || parsed.html || ''
     const received_at = parsed.date || new Date()
 
+    // Aplicar regras de classificação
+    let client_id = null
+    const senderDomain = sender_email.split('@')[1] || ''
+
+    for (const rule of rules) {
+      if (rule.rule_type === 'domain' && senderDomain === rule.rule_value) {
+        client_id = rule.target_client_id
+        break
+      }
+      if (rule.rule_type === 'email' && sender_email === rule.rule_value) {
+        client_id = rule.target_client_id
+        break
+      }
+      if (rule.rule_type === 'keyword' && subject.toLowerCase().includes(rule.rule_value.toLowerCase())) {
+        client_id = rule.target_client_id
+        break
+      }
+    }
+
     const existing = await sql`
       SELECT id FROM demands
       WHERE company_id = ${company_id}
@@ -41,8 +60,8 @@ async function fetchEmailsFromAccount(imapConfig, company_id, sql) {
     if (existing.length > 0) continue
 
     const result = await sql`
-      INSERT INTO demands (company_id, sender_name, sender_email, subject, body, status, origin, received_at)
-      VALUES (${company_id}, ${sender_name}, ${sender_email}, ${subject}, ${body}, 'nova', 'email', ${received_at})
+      INSERT INTO demands (company_id, client_id, sender_name, sender_email, subject, body, status, origin, received_at)
+      VALUES (${company_id}, ${client_id}, ${sender_name}, ${sender_email}, ${subject}, ${body}, 'nova', 'email', ${received_at})
       RETURNING *
     `
     imported.push(result[0])
@@ -67,6 +86,11 @@ export default async function handler(req, res) {
   if (String(company_id) !== '2') {
     return res.status(400).json({ error: 'Configuração IMAP não disponível para esta empresa' })
   }
+
+  // Buscar regras de classificação
+  const rules = await sql`
+    SELECT * FROM email_rules WHERE company_id = ${company_id}
+  `
 
   const makeConfig = (host, port, user, pass) => ({
     imap: {
@@ -100,7 +124,7 @@ export default async function handler(req, res) {
 
   for (const config of accounts) {
     try {
-      const imported = await fetchEmailsFromAccount(config, company_id, sql)
+      const imported = await fetchEmailsFromAccount(config, company_id, sql, rules)
       allImported.push(...imported)
     } catch (error) {
       errors.push({ account: config.imap.user, error: error.message })
