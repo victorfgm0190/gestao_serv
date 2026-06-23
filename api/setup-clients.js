@@ -6,33 +6,63 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
 
   try {
-    // Inserir clientes da Imperium (company_id = 2)
-    await sql`
-      INSERT INTO clients (company_id, name, email_domain) VALUES
-        (2, 'Braga', 'bragacont.com.br'),
-        (2, 'Dental', 'higimaster.com.br'),
-        (2, 'Dental', 'dentalclean.com.br'),
-        (2, 'The Best Açaí', 'ogrupothebest.com'),
-        (2, 'Ucelo', 'ucelo.com.br'),
-        (2, 'Bokada', 'bokada.com.br'),
-        (2, 'Sunstar', 'sunstar.com')
-      ON CONFLICT DO NOTHING
-    `
+    // Inserir clientes únicos da Imperium (company_id = 2)
+    const clientsData = [
+      { name: 'Braga', domains: ['bragacont.com.br'] },
+      { name: 'Dental', domains: ['higimaster.com.br', 'dentalclean.com.br'] },
+      { name: 'The Best Açaí', domains: ['ogrupothebest.com'] },
+      { name: 'Ucelo', domains: ['ucelo.com.br'] },
+      { name: 'Bokada', domains: ['bokada.com.br'] },
+      { name: 'Sunstar', domains: ['sunstar.com'] },
+    ]
 
-    // Buscar os clientes recém criados
-    const clients = await sql`SELECT * FROM clients WHERE company_id = 2`
+    const insertedClients = []
 
-    // Criar regras de domínio para cada cliente
-    for (const client of clients) {
-      if (!client.email_domain) continue
-      await sql`
-        INSERT INTO email_rules (company_id, rule_type, rule_value, target_client_id)
-        VALUES (2, 'domain', ${client.email_domain}, ${client.id})
-        ON CONFLICT DO NOTHING
+    for (const client of clientsData) {
+      // Verifica se já existe
+      const existing = await sql`
+        SELECT id FROM clients
+        WHERE company_id = 2 AND name = ${client.name}
+        LIMIT 1
       `
+
+      let clientId
+      if (existing.length > 0) {
+        clientId = existing[0].id
+      } else {
+        const result = await sql`
+          INSERT INTO clients (company_id, name, email_domain)
+          VALUES (2, ${client.name}, ${client.domains[0]})
+          RETURNING *
+        `
+        clientId = result[0].id
+        insertedClients.push(result[0])
+      }
+
+      // Criar regras de domínio para cada domínio do cliente
+      for (const domain of client.domains) {
+        const existingRule = await sql`
+          SELECT id FROM email_rules
+          WHERE company_id = 2 AND rule_type = 'domain' AND rule_value = ${domain}
+          LIMIT 1
+        `
+        if (existingRule.length === 0) {
+          await sql`
+            INSERT INTO email_rules (company_id, rule_type, rule_value, target_client_id)
+            VALUES (2, 'domain', ${domain}, ${clientId})
+          `
+        }
+      }
     }
 
-    res.status(200).json({ success: true, clients })
+    const allClients = await sql`SELECT * FROM clients WHERE company_id = 2`
+    const allRules = await sql`SELECT * FROM email_rules WHERE company_id = 2`
+
+    res.status(200).json({
+      success: true,
+      clients: allClients,
+      rules: allRules,
+    })
   } catch (error) {
     res.status(500).json({ error: error.message })
   }
