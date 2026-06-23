@@ -92,6 +92,26 @@ export default function Layout() {
           >
             <span>💰</span> Regras Financeiras
           </NavLink>
+          <NavLink
+            to="/contracts"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              }`
+            }
+          >
+            <span>📄</span> Contratos
+          </NavLink>
+          <NavLink
+            to="/financial"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              }`
+            }
+          >
+            <span>💳</span> Financeiro
+          </NavLink>
         </nav>
 
         {/* Active company indicator */}
