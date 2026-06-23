@@ -11,8 +11,15 @@ export default function TimeEntries() {
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1)
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [form, setForm] = useState({
-    client_id: '', entry_date: new Date().toISOString().split('T')[0],
-    description: '', hours: '', hours_fuel: '0', notes: '',
+    client_id: '',
+    entry_date: new Date().toISOString().split('T')[0],
+    hora_inicial: '',
+    intervalo_inicio: '',
+    intervalo_fim: '',
+    hora_final: '',
+    description: '',
+    hours_fuel: '0',
+    notes: '',
   })
   const [preview, setPreview] = useState(null)
 
@@ -26,37 +33,52 @@ export default function TimeEntries() {
         fetch(`/api/clients?company_id=${activeCompany.id}`),
         fetch(`/api/financial-rules?company_id=${activeCompany.id}`),
       ])
-      const ed = await entriesRes.json()
-      const cd = await clientsRes.json()
-      const rd = await rulesRes.json()
-      setEntries(ed.entries || [])
-      setClients(cd.clients || [])
-      setRules(rd.rules || [])
+      setEntries((await entriesRes.json()).entries || [])
+      setClients((await clientsRes.json()).clients || [])
+      setRules((await rulesRes.json()).rules || [])
     } catch(e) { console.error(e) }
     finally { setLoading(false) }
   }
 
+  function timeToDecimal(time) {
+    if (!time) return 0
+    const [h, m] = time.split(':').map(Number)
+    return h + m / 60
+  }
+
+  function calcHoras(f) {
+    if (!f.hora_inicial || !f.hora_final) return 0
+    const inicio = timeToDecimal(f.hora_inicial)
+    const fim = timeToDecimal(f.hora_final)
+    let intervalo = 0
+    if (f.intervalo_inicio && f.intervalo_fim) {
+      intervalo = timeToDecimal(f.intervalo_fim) - timeToDecimal(f.intervalo_inicio)
+    }
+    return Math.max(fim - inicio - intervalo, 0)
+  }
+
   function calcPreview(f) {
     const rule = rules.find(r => String(r.client_id) === String(f.client_id))
-    if (!rule || !f.hours) { setPreview(null); return }
-    const h = parseFloat(f.hours) || 0
+    const hours = calcHoras(f)
+    if (!rule || !hours) { setPreview(null); return }
+    const h = hours
     const hd = parseFloat(f.hours_fuel) || 0
     const valor_hora = parseFloat(rule.hourly_rate) || 0
     const imposto_pct = rule.has_tax ? (parseFloat(rule.tax_percentage) || 0) / 100 : 0
     const victor_fixo = parseFloat(rule.victor_fixed_per_hour) || 0
     const victor_pct = parseFloat(rule.remainder_victor_pct) || 0
     const fabricio_pct = parseFloat(rule.remainder_fabricio_pct) || 0
-    const combustivel = rule.has_fuel ? (parseFloat(rule.fuel_value) || 0) : 0
     const horas_servico = h - hd
     const gross = h * valor_hora
     const tax = gross * imposto_pct
     const net = gross - tax
     const v_desloc = hd * valor_hora * (1 - imposto_pct)
     const v_serv = horas_servico * victor_fixo
-    const restante = Math.max(net - v_desloc - v_serv - combustivel, 0)
+    const restante = Math.max(net - v_desloc - v_serv, 0)
     const v_lucro = restante * (victor_pct / 100)
     const fab = restante * (fabricio_pct / 100)
     setPreview({
+      hours: h.toFixed(2),
       gross: gross.toFixed(2),
       tax: tax.toFixed(2),
       net: net.toFixed(2),
@@ -72,7 +94,7 @@ export default function TimeEntries() {
   }
 
   async function save() {
-    if (!form.client_id || !form.hours || !form.entry_date) return
+    if (!form.client_id || !form.hora_inicial || !form.hora_final || !form.entry_date) return
     try {
       await fetch('/api/time-entries', {
         method: 'POST',
@@ -80,7 +102,7 @@ export default function TimeEntries() {
         body: JSON.stringify({ ...form, company_id: activeCompany.id }),
       })
       setShowModal(false)
-      setForm({ client_id: '', entry_date: new Date().toISOString().split('T')[0], description: '', hours: '', hours_fuel: '0', notes: '' })
+      setForm({ client_id: '', entry_date: new Date().toISOString().split('T')[0], hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', notes: '' })
       setPreview(null)
       fetchAll()
     } catch(e) { console.error(e) }
@@ -100,7 +122,6 @@ export default function TimeEntries() {
   const totalVictor = entries.reduce((s, e) => s + (parseFloat(e.victor_share) || 0), 0)
   const totalFab = entries.reduce((s, e) => s + (parseFloat(e.fabricio_share) || 0), 0)
   const totalHoras = entries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
-
   const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
   return (
@@ -115,7 +136,6 @@ export default function TimeEntries() {
         </button>
       </div>
 
-      {/* Filtro mês/ano */}
       <div className="flex gap-2 mb-6 flex-wrap items-center">
         {months.map((m, i) => (
           <button key={i} onClick={() => setFilterMonth(i+1)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === i+1 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{m}</button>
@@ -123,7 +143,6 @@ export default function TimeEntries() {
         <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none"/>
       </div>
 
-      {/* Totalizadores */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-1">Total horas</p>
@@ -150,12 +169,12 @@ export default function TimeEntries() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{e.client_name || 'Sem cliente'}</span>
                     <span className="text-gray-500 text-xs">{new Date(e.entry_date).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span>
-                    <span className="text-gray-500 text-xs">{e.hours}h</span>
+                    <span className="text-gray-500 text-xs font-mono">{parseFloat(e.hours).toFixed(2)}h</span>
                   </div>
                   <p className="text-white text-sm">{e.description}</p>
                   <div className="flex gap-4 mt-2 text-xs">
                     <span className="text-gray-500">Bruto: <span className="text-gray-300">{fmt(e.gross_value)}</span></span>
-                    {e.tax_amount > 0 && <span className="text-gray-500">Imposto: <span className="text-red-400">-{fmt(e.tax_amount)}</span></span>}
+                    {parseFloat(e.tax_amount) > 0 && <span className="text-gray-500">Imposto: <span className="text-red-400">-{fmt(e.tax_amount)}</span></span>}
                     <span className="text-gray-500">Victor: <span className="text-blue-400">{fmt(e.victor_share)}</span></span>
                     <span className="text-gray-500">Fab: <span className="text-purple-400">{fmt(e.fabricio_share)}</span></span>
                   </div>
@@ -177,11 +196,40 @@ export default function TimeEntries() {
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <input type="date" value={form.entry_date} onChange={e=>updateForm('entry_date',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
-              <textarea placeholder="Descrição da atividade" value={form.description} onChange={e=>updateForm('description',e.target.value)} rows={3} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Total de horas" type="number" step="0.5" value={form.hours} onChange={e=>updateForm('hours',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                <input placeholder="Horas deslocamento" type="number" step="0.5" value={form.hours_fuel} onChange={e=>updateForm('hours_fuel',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+
+              {/* Horários */}
+              <div className="bg-gray-800 rounded-xl p-4 space-y-3">
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Horários</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-gray-500 text-xs mb-1 block">Hora inicial</label>
+                    <input type="time" value={form.hora_inicial} onChange={e=>updateForm('hora_inicial',e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                  </div>
+                  <div>
+                    <label className="text-gray-500 text-xs mb-1 block">Hora final</label>
+                    <input type="time" value={form.hora_final} onChange={e=>updateForm('hora_final',e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-gray-500 text-xs mb-1 block">Intervalo início</label>
+                    <input type="time" value={form.intervalo_inicio} onChange={e=>updateForm('intervalo_inicio',e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                  </div>
+                  <div>
+                    <label className="text-gray-500 text-xs mb-1 block">Intervalo fim</label>
+                    <input type="time" value={form.intervalo_fim} onChange={e=>updateForm('intervalo_fim',e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                  </div>
+                </div>
+                {preview && (
+                  <div className="text-center pt-1">
+                    <span className="text-white font-bold text-lg">{preview.hours}h</span>
+                    <span className="text-gray-500 text-xs ml-2">total calculado</span>
+                  </div>
+                )}
               </div>
+
+              <textarea placeholder="Descrição da atividade" value={form.description} onChange={e=>updateForm('description',e.target.value)} rows={3} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+              <input placeholder="Horas de deslocamento (opcional)" type="number" step="0.5" value={form.hours_fuel} onChange={e=>updateForm('hours_fuel',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
               <input placeholder="Observações" value={form.notes} onChange={e=>updateForm('notes',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
 
               {preview && (
