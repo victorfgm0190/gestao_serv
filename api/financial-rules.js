@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     const rules = await sql`
       SELECT fr.*, c.name as client_name
       FROM financial_rules fr
-      JOIN clients c ON c.id = fr.project_id
+      JOIN clients c ON c.id = fr.client_id
       WHERE c.company_id = ${company_id}
       ORDER BY c.name ASC
     `
@@ -17,25 +17,17 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const {
-      client_id,
-      hourly_rate,
-      has_tax,
-      tax_percentage,
-      victor_fixed_per_hour,
-      has_fuel,
-      fuel_value,
-      remainder_victor_pct,
-      remainder_fabricio_pct,
+      client_id, hourly_rate, has_tax, tax_percentage,
+      victor_fixed_per_hour, has_fuel, fuel_value,
+      remainder_victor_pct, remainder_fabricio_pct,
     } = req.body
 
-    if (!client_id) {
-      return res.status(400).json({ error: 'client_id obrigatório' })
-    }
+    if (!client_id) return res.status(400).json({ error: 'client_id obrigatório' })
 
     try {
       const result = await sql`
         INSERT INTO financial_rules (
-          project_id, hourly_rate, has_tax, tax_percentage,
+          client_id, hourly_rate, has_tax, tax_percentage,
           victor_fixed_per_hour, has_fuel, fuel_value,
           remainder_victor_pct, remainder_fabricio_pct
         ) VALUES (

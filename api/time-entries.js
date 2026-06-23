@@ -68,7 +68,7 @@ export default async function handler(req, res) {
     } = req.body
 
     const regras = await sql`
-      SELECT * FROM financial_rules WHERE project_id = ${client_id} LIMIT 1
+      SELECT * FROM financial_rules WHERE client_id = ${client_id} LIMIT 1
     `
 
     let calc = {
