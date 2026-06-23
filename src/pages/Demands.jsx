@@ -60,10 +60,10 @@ export default function Demands() {
 
   async function updateStatus(id, status) {
     try {
-      await fetch(`/api/demands/${id}`, {
+      await fetch('/api/demands', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ id, status }),
       })
       fetchDemands()
     } catch (e) {

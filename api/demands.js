@@ -23,5 +23,15 @@ export default async function handler(req, res) {
     return res.status(201).json({ demand: result[0] })
   }
 
+  if (req.method === 'PATCH') {
+    const { id, status } = req.body
+    const result = await sql`
+      UPDATE demands SET status = ${status}
+      WHERE id = ${id}
+      RETURNING *
+    `
+    return res.status(200).json({ demand: result[0] })
+  }
+
   res.status(405).json({ error: 'Method not allowed' })
 }
