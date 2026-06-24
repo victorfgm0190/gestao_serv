@@ -67,6 +67,19 @@ export default function Financial() {
     fetchAll()
   }
 
+  async function estornar(item) {
+    if (!confirm('Estornar este recebimento? Os lançamentos de Pagar Victor e Pagar Fabrício gerados por esta fatura serão removidos.')) return
+    const res = await fetch('/api/receivables', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id, status: 'estorno' })
+    })
+    const data = await res.json()
+    if (res.status === 400) { alert('⚠️ ' + data.error); return }
+    if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao estornar')); return }
+    fetchAll()
+  }
+
   async function del(id) {
     if (!confirm('Excluir?')) return
     const endpoints = { receivables: '/api/receivables', fabricio: '/api/payables-fabricio', victor: '/api/payables-victor' }
@@ -157,6 +170,9 @@ export default function Financial() {
                 <div className="flex gap-2 shrink-0">
                   {item.status !== 'pago' && (
                     <button onClick={() => { setShowPayModal(item); setPayForm(f => ({...f, paid_amount: item.amount || item.total_amount})) }} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
+                  )}
+                  {tab === 'receivables' && item.status === 'pago' && (
+                    <button onClick={() => estornar(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
                   )}
                   {(!item.origin || item.origin !== 'faturamento') && (
                     <button onClick={() => del(item.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
