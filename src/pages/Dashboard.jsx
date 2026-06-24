@@ -72,6 +72,10 @@ export default function Dashboard() {
     const fabPrev = sum(fab, 'amount'); const fabPago = sum(fab, 'paid_amount')
     const vicPrev = sum(vic, 'total_amount'); const vicPago = sum(vic, 'paid_amount')
 
+    // Anual (sem filtro de mês — registros já vêm do ano atual)
+    const fabAnoPrev = sum(d.fabricio, 'amount'); const fabAnoPago = sum(d.fabricio, 'paid_amount')
+    const vicAnoPrev = sum(d.victor, 'total_amount'); const vicAnoPago = sum(d.victor, 'paid_amount')
+
     const totalHoras = sum(d.entries, 'hours')
     const totalBruto = sum(d.entries, 'gross_value')
 
@@ -79,7 +83,9 @@ export default function Dashboard() {
       abertas, resolvidasMes,
       rec: { prev: recPrev, pago: recPago, aberto: recPrev - recPago },
       fab: { prev: fabPrev, pago: fabPago, aberto: fabPrev - fabPago },
+      fabAno: { prev: fabAnoPrev, pago: fabAnoPago, aberto: fabAnoPrev - fabAnoPago },
       vic: { prev: vicPrev, pago: vicPago, aberto: vicPrev - vicPago },
+      vicAno: { prev: vicAnoPrev, pago: vicAnoPago, aberto: vicAnoPrev - vicAnoPago },
       totalHoras, totalBruto,
     }
   }
@@ -128,8 +134,8 @@ export default function Dashboard() {
                       <p className="text-gray-400 text-xs uppercase tracking-wider mb-3">Financeiro do mês</p>
                       <div className="space-y-3">
                         <FinanceBlock label="A Receber" color="text-green-400" prevLabel="Previsto" paidLabel="Recebido" v={m.rec} />
-                        <FinanceBlock label="Pagar Fabrício" color="text-purple-400" prevLabel="Previsto" paidLabel="Pago" v={m.fab} />
-                        <FinanceBlock label="Pagar Victor" color="text-blue-400" prevLabel="Previsto" paidLabel="Pago" v={m.vic} />
+                        <FinanceBlock label="Pagar Fabrício" color="text-purple-400" prevLabel="Previsto" paidLabel="Pago" v={m.fab} vAno={m.fabAno} />
+                        <FinanceBlock label="Pagar Victor" color="text-blue-400" prevLabel="Previsto" paidLabel="Pago" v={m.vic} vAno={m.vicAno} />
                       </div>
                     </div>
 
@@ -158,24 +164,35 @@ export default function Dashboard() {
   )
 }
 
-function FinanceBlock({ label, color, prevLabel, paidLabel, v }) {
+function FinanceBlock({ label, color, prevLabel, paidLabel, v, vAno }) {
+  const cols = (val) => (
+    <div className="grid grid-cols-3 gap-2 text-xs">
+      <div>
+        <p className="text-gray-500">{prevLabel}</p>
+        <p className="text-white font-medium">{fmt(val.prev)}</p>
+      </div>
+      <div>
+        <p className="text-gray-500">{paidLabel}</p>
+        <p className="text-green-400 font-medium">{fmt(val.pago)}</p>
+      </div>
+      <div>
+        <p className="text-gray-500">Em aberto</p>
+        <p className="text-yellow-400 font-medium">{fmt(val.aberto)}</p>
+      </div>
+    </div>
+  )
   return (
     <div className="bg-gray-800/50 rounded-lg p-3">
       <p className={`text-sm font-medium mb-2 ${color}`}>{label}</p>
-      <div className="grid grid-cols-3 gap-2 text-xs">
-        <div>
-          <p className="text-gray-500">{prevLabel}</p>
-          <p className="text-white font-medium">{fmt(v.prev)}</p>
-        </div>
-        <div>
-          <p className="text-gray-500">{paidLabel}</p>
-          <p className="text-green-400 font-medium">{fmt(v.pago)}</p>
-        </div>
-        <div>
-          <p className="text-gray-500">Em aberto</p>
-          <p className="text-yellow-400 font-medium">{fmt(v.aberto)}</p>
-        </div>
-      </div>
+      {vAno && <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-1">Mês</p>}
+      {cols(v)}
+      {vAno && (
+        <>
+          <div className="border-t border-gray-700 my-2"></div>
+          <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-1">Ano</p>
+          {cols(vAno)}
+        </>
+      )}
     </div>
   )
 }
