@@ -86,41 +86,56 @@ export default function TimeEntries() {
     const h = hours
     const hd = parseFloat(f.hours_fuel) || 0
     const despesas = parseFloat(f.despesas_deslocamento) || 0
-    const horas_trabalho = Math.max(h - hd, 0)
     const valor_hora = parseFloat(rule.hourly_rate) || 0
     const imposto_pct = rule.has_tax ? (parseFloat(rule.tax_percentage) || 0) / 100 : 0
     const victor_fixo = parseFloat(rule.victor_fixed_per_hour) || 0
     const victor_pct = parseFloat(rule.remainder_victor_pct) || 50
     const fabricio_pct = parseFloat(rule.remainder_fabricio_pct) || 50
-    const gross = h * valor_hora
-    const tax = gross * imposto_pct
-    const net = gross - tax
-    const valor_hora_liq = valor_hora * (1 - imposto_pct)
 
     const deslocamento_tipo = contrato?.deslocamento_tipo || 'nao_cobrado'
     const deslocamento_valor_hora = parseFloat(contrato?.deslocamento_valor_hora) || 0
+    const valor_hora_desloc = deslocamento_valor_hora || valor_hora
+
+    // Gross: deslocamento cobrado entra no gross quando o contrato cobra
+    let gross, gross_desloc
+    if (deslocamento_tipo === 'nao_cobrado') {
+      gross = h * valor_hora
+      gross_desloc = 0
+    } else {
+      gross = h * valor_hora
+      gross_desloc = hd * valor_hora_desloc
+    }
+    const gross_total = gross + gross_desloc
+    const tax = gross_total * imposto_pct
+    const net = gross_total - tax
+    const valor_hora_liq = valor_hora * (1 - imposto_pct)
+    const valor_hora_desloc_liq = valor_hora_desloc * (1 - imposto_pct)
+
     let v_desloc = 0
     let v_desloc_despesas = 0
     if (deslocamento_tipo === 'nao_cobrado') {
       v_desloc = hd * valor_hora_liq
     } else if (deslocamento_tipo === 'hora') {
-      v_desloc = hd * (deslocamento_valor_hora || valor_hora_liq)
+      v_desloc = hd * valor_hora_desloc_liq
     } else if (deslocamento_tipo === 'hora_despesas') {
-      v_desloc = hd * (deslocamento_valor_hora || valor_hora_liq)
+      v_desloc = hd * valor_hora_desloc_liq
       v_desloc_despesas = despesas
     }
 
-    const v_serv = horas_trabalho * victor_fixo
-    const restante = Math.max(net - v_desloc - v_serv, 0)
+    // Split só sobre o líquido das horas de trabalho
+    const net_trabalho = gross * (1 - imposto_pct)
+    const v_serv = h * victor_fixo
+    const restante = Math.max(net_trabalho - v_serv, 0)
     const v_lucro = restante * (victor_pct / 100)
     const fab = restante * (fabricio_pct / 100)
     setPreview({
       hours: h.toFixed(2),
-      gross: gross.toFixed(2),
+      gross: gross_total.toFixed(2),
       tax: tax.toFixed(2),
       net: net.toFixed(2),
       desloc: (v_desloc + v_desloc_despesas).toFixed(2),
       despesas: v_desloc_despesas.toFixed(2),
+      cobrado: deslocamento_tipo !== 'nao_cobrado',
       victor: (v_desloc + v_desloc_despesas + v_serv + v_lucro).toFixed(2),
       fabricio: fab.toFixed(2),
     })
@@ -416,7 +431,7 @@ export default function TimeEntries() {
                   <div className="flex justify-between"><span className="text-gray-400">Bruto</span><span className="text-white">R$ {preview.gross}</span></div>
                   <div className="flex justify-between"><span className="text-gray-400">Imposto</span><span className="text-red-400">-R$ {preview.tax}</span></div>
                   <div className="flex justify-between"><span className="text-gray-400">Líquido</span><span className="text-white">R$ {preview.net}</span></div>
-                  {parseFloat(preview.desloc) > 0 && <div className="flex justify-between"><span className="text-gray-400">Deslocamento{parseFloat(preview.despesas) > 0 ? ' (c/ despesas)' : ''}</span><span className="text-yellow-400">R$ {preview.desloc}</span></div>}
+                  {parseFloat(preview.desloc) > 0 && <div className="flex justify-between"><span className="text-gray-400">{preview.cobrado ? 'Deslocamento cobrado' : 'Deslocamento (Victor)'}{parseFloat(preview.despesas) > 0 ? ' + despesas' : ''}</span><span className="text-yellow-400">R$ {preview.desloc}</span></div>}
                   <div className="border-t border-gray-700 pt-2 mt-2">
                     <div className="flex justify-between"><span className="text-gray-400">Victor</span><span className="text-blue-400 font-medium">R$ {preview.victor}</span></div>
                     <div className="flex justify-between mt-1"><span className="text-gray-400">Fabrício</span><span className="text-purple-400 font-medium">R$ {preview.fabricio}</span></div>

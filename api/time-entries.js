@@ -19,40 +19,55 @@ function calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final
 }
 
 function calcular(horas, regra, horas_deslocamento = 0, contrato = null, despesas_deslocamento = 0) {
-  const hours = parseFloat(horas) || 0
+  const hours = parseFloat(horas) || 0  // horas de trabalho (sem deslocamento)
   const horas_desloc = parseFloat(horas_deslocamento) || 0
   const despesas_desloc = parseFloat(despesas_deslocamento) || 0
-  const horas_trabalho = Math.max(hours - horas_desloc, 0)
   const valor_hora = parseFloat(regra.hourly_rate) || 0
   const imposto_pct = regra.has_tax ? (parseFloat(regra.tax_percentage) || 0) / 100 : 0
-  const gross = hours * valor_hora
-  const tax = gross * imposto_pct
-  const net = gross - tax
-  const valor_hora_liq = valor_hora * (1 - imposto_pct)
 
-  // Deslocamento (configurado no contrato do cliente)
   const deslocamento_tipo = contrato?.deslocamento_tipo || 'nao_cobrado'
   const deslocamento_valor_hora = parseFloat(contrato?.deslocamento_valor_hora) || 0
+  const valor_hora_desloc = deslocamento_valor_hora || valor_hora
+
+  // Gross: se deslocamento é cobrado, cliente paga as horas de deslocamento também
+  let gross, gross_desloc
+  if (deslocamento_tipo === 'nao_cobrado') {
+    gross = hours * valor_hora  // cliente não paga deslocamento
+    gross_desloc = 0
+  } else {
+    gross = hours * valor_hora  // horas de trabalho
+    gross_desloc = horas_desloc * valor_hora_desloc  // horas de deslocamento cobradas
+  }
+  const gross_total = gross + gross_desloc
+
+  const tax = gross_total * imposto_pct
+  const net = gross_total - tax
+  const valor_hora_liq = valor_hora * (1 - imposto_pct)
+  const valor_hora_desloc_liq = valor_hora_desloc * (1 - imposto_pct)
+
+  // Deslocamento vai 100% pro Victor (fora do split)
   let victor_desloc = 0
   let victor_desloc_despesas = 0
   if (deslocamento_tipo === 'nao_cobrado') {
-    victor_desloc = horas_desloc * valor_hora_liq  // líquido, fora do split
+    victor_desloc = horas_desloc * valor_hora_liq
   } else if (deslocamento_tipo === 'hora') {
-    victor_desloc = horas_desloc * (deslocamento_valor_hora || valor_hora_liq)
+    victor_desloc = horas_desloc * valor_hora_desloc_liq
   } else if (deslocamento_tipo === 'hora_despesas') {
-    victor_desloc = horas_desloc * (deslocamento_valor_hora || valor_hora_liq)
+    victor_desloc = horas_desloc * valor_hora_desloc_liq
     victor_desloc_despesas = despesas_desloc
   }
 
-  // Split só sobre horas de trabalho
+  // Split só sobre horas de trabalho líquido
+  const net_trabalho = gross * (1 - imposto_pct)
   const victor_fixo = parseFloat(regra.victor_fixed_per_hour) || 0
-  const victor_servico = horas_trabalho * victor_fixo
-  const restante = Math.max(net - victor_desloc - victor_servico, 0)
+  const victor_servico = hours * victor_fixo
+  const restante = Math.max(net_trabalho - victor_servico, 0)
   const victor_lucro = restante * (parseFloat(regra.remainder_victor_pct) || 50) / 100
   const fabricio = restante * (parseFloat(regra.remainder_fabricio_pct) || 50) / 100
   const victor_total = victor_desloc + victor_desloc_despesas + victor_servico + victor_lucro
+
   return {
-    gross_value: parseFloat(gross.toFixed(2)),
+    gross_value: parseFloat(gross_total.toFixed(2)),
     tax_amount: parseFloat(tax.toFixed(2)),
     net_value: parseFloat(net.toFixed(2)),
     victor_share: parseFloat(victor_total.toFixed(2)),
