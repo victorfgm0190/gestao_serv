@@ -228,21 +228,20 @@ export default function TimeEntries() {
   const totalFab = filteredEntries.reduce((s, e) => s + (parseFloat(e.fabricio_share) || 0), 0)
   const totalHoras = filteredEntries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
   const totalBruto = filteredEntries.reduce((s, e) => s + (parseFloat(e.gross_value) || 0), 0)
-  // Demonstrativo: separa a parte de Victor em serviço (deslocamento + fixo/hora,
-  // recalculados a partir da regra financeira do cliente) e lucro (restante do victor_share).
+  // Demonstrativo: separa a parte de Victor em serviço (fixo/hora), deslocamento e
+  // lucro (restante do victor_share), recalculados a partir da regra financeira do cliente.
   const breakdown = filteredEntries.reduce((acc, e) => {
     const rule = rules.find(r => String(r.client_id) === String(e.client_id))
     const hours = parseFloat(e.hours) || 0
-    const horasDesloc = parseFloat(e.horas_deslocamento) || 0
     const victorTotal = parseFloat(e.victor_share) || 0
     const valorDesloc = parseFloat(e.valor_deslocamento) || 0
     const victorFixoHora = rule ? (parseFloat(rule.victor_fixed_per_hour) || 0) : 0
-    const victorServico = Math.max(hours - horasDesloc, 0) * victorFixoHora
-    const servico = valorDesloc + victorServico
-    acc.servico += servico
-    acc.lucro += victorTotal - servico
+    const victorServico = hours * victorFixoHora
+    acc.desloc += valorDesloc
+    acc.servico += victorServico
+    acc.lucro += victorTotal - valorDesloc - victorServico
     return acc
-  }, { servico: 0, lucro: 0 })
+  }, { servico: 0, desloc: 0, lucro: 0 })
   const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
   return (
@@ -310,6 +309,10 @@ export default function TimeEntries() {
             <div className="flex justify-between text-gray-500">
               <span>Serviço</span>
               <span className="text-blue-300">{fmt(breakdown.servico)}</span>
+            </div>
+            <div className="flex justify-between text-gray-500">
+              <span>Deslocamento</span>
+              <span className="text-blue-300">{fmt(breakdown.desloc)}</span>
             </div>
             <div className="flex justify-between text-gray-500">
               <span>Lucro</span>
