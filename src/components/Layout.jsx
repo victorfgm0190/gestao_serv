@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
+import useNotifications from '../hooks/useNotifications'
 
 const companies = [
   { id: 1, name: 'Lumen', color: '#3B82F6' },
@@ -8,6 +9,8 @@ const companies = [
 
 export default function Layout() {
   const [activeCompany, setActiveCompany] = useState(companies[0])
+
+  useNotifications(activeCompany)
 
   return (
     <div className="flex h-screen bg-gray-950 text-white">
