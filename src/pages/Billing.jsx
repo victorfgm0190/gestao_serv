@@ -116,6 +116,17 @@ export default function Billing() {
     if (data.success) { fetchAll(); alert('Recebido! Contas a pagar geradas para Victor e Fabrício.') }
   }
 
+  async function estornarFatura(invoice) {
+    if (!confirm('Tem certeza que deseja estornar esta fatura? Os lançamentos de Pagar Victor e Pagar Fabrício serão removidos.')) return
+    const res = await fetch('/api/invoices', {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ id: invoice.id, status:'estorno' })
+    })
+    const data = await res.json()
+    if (data.success) { fetchAll(); alert('Fatura estornada. Lançamentos de Pagar Victor e Fabrício removidos.') }
+    else { alert('Erro: ' + (data.error || 'Falha ao estornar')) }
+  }
+
   async function deleteInvoice(id) {
     if (!confirm('Excluir fatura?')) return
     await fetch('/api/invoices', { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id }) })
@@ -196,6 +207,9 @@ export default function Billing() {
                   {inv.status==='pendente' && <button onClick={()=>markReceived(inv)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">✓ Recebi</button>}
                   {inv.status==='pendente' && (
                     <button onClick={()=>openEditInvoice(inv)} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs">✏️ Editar</button>
+                  )}
+                  {inv.status==='recebido' && (
+                    <button onClick={()=>estornarFatura(inv)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
                   )}
                   <button onClick={()=>deleteInvoice(inv.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
                 </div>

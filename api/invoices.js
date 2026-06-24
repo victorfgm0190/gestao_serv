@@ -103,6 +103,22 @@ export default async function handler(req, res) {
       if (!invoices.length) return res.status(404).json({ error: 'Fatura não encontrada' })
       const inv = invoices[0]
 
+      if (status === 'estorno') {
+        if (inv.status !== 'recebido') {
+          return res.status(400).json({ error: 'Apenas faturas recebidas podem ser estornadas.' })
+        }
+        // Reverter receivable
+        if (inv.receivable_id) {
+          await sql`UPDATE receivables SET status='pendente', paid_at=NULL, paid_amount=NULL WHERE id=${inv.receivable_id}`
+        }
+        // Remover payables gerados por esta fatura
+        await sql`DELETE FROM payables_fabricio WHERE invoice_id = ${id}`
+        await sql`DELETE FROM payables_victor WHERE invoice_id = ${id}`
+        // Reverter status da fatura
+        await sql`UPDATE invoices SET status='pendente' WHERE id=${id}`
+        return res.status(200).json({ success: true, action: 'estorno' })
+      }
+
       await sql`UPDATE invoices SET status = ${status} WHERE id = ${id}`
 
       if (status === 'recebido' && inv.receivable_id) {
