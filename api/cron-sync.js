@@ -49,7 +49,12 @@ async function fetchEmailsFromAccount(imapConfig, company_id, sql, rules) {
 
 export default async function handler(req, res) {
   const authHeader = req.headers['authorization']
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const querySecret = req.query.secret
+  const validBearer = authHeader === `Bearer ${process.env.CRON_SECRET}`
+  const validQuery = querySecret === process.env.CRON_SECRET
+  const isVercelCron = req.headers['x-vercel-cron'] === '1'
+
+  if (!validBearer && !validQuery && !isVercelCron) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
