@@ -177,10 +177,21 @@ export default async function handler(req, res) {
     const { id } = req.body
     try {
       const invoices = await sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`
-      if (invoices.length && invoices[0].receivable_id) {
-        await sql`DELETE FROM receivables WHERE id = ${invoices[0].receivable_id}`
+      if (!invoices.length) return res.status(404).json({ error: 'Fatura não encontrada' })
+      const inv = invoices[0]
+
+      if (inv.status === 'recebido') {
+        return res.status(400).json({ error: 'Não é possível excluir uma fatura já recebida. Estorne primeiro.' })
       }
+
+      if (inv.receivable_id) {
+        await sql`DELETE FROM receivables WHERE id = ${inv.receivable_id}`
+      }
+
+      await sql`DELETE FROM payables_fabricio WHERE invoice_id = ${id}`
+      await sql`DELETE FROM payables_victor WHERE invoice_id = ${id}`
       await sql`DELETE FROM invoices WHERE id = ${id}`
+
       return res.status(200).json({ success: true })
     } catch (error) {
       return res.status(500).json({ error: error.message })
