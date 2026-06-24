@@ -123,6 +123,7 @@ export default function Billing() {
       body: JSON.stringify({ id: invoice.id, status:'estorno' })
     })
     const data = await res.json()
+    if (res.status === 400) { alert('⚠️ ' + data.error); return }
     if (data.success) { fetchAll(); alert('Fatura estornada. Lançamentos de Pagar Victor e Fabrício removidos.') }
     else { alert('Erro: ' + (data.error || 'Falha ao estornar')) }
   }

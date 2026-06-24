@@ -24,10 +24,13 @@ export default function Financial() {
   const [showModal, setShowModal] = useState(false)
   const [showPayModal, setShowPayModal] = useState(null)
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
+  const [histType, setHistType] = useState('receivables')
+  const [histClient, setHistClient] = useState('')
   const [form, setForm] = useState({ client_id: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), description: '', amount: '', service_amount: '', profit_amount: '', notes: '' })
   const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: new Date().toISOString().split('T')[0], payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
+  useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
 
   async function fetchAll() {
     setLoading(true)
@@ -102,6 +105,15 @@ export default function Financial() {
   const totalPaid = currentData.reduce((s, r) => s + (parseFloat(r.paid_amount) || 0), 0)
   const totalOpen = totalAmount - totalPaid
 
+  // Histórico: registros pagos do tipo selecionado
+  const histSource = histType === 'receivables' ? receivables : histType === 'fabricio' ? payablesFab : payablesVictor
+  const histPaidAll = histSource.filter(r => r.status === 'pago')
+  const histClients = Array.from(
+    histPaidAll.reduce((m, r) => { if (r.client_id != null && !m.has(r.client_id)) m.set(r.client_id, r.client_name || 'Sem cliente'); return m }, new Map())
+  ).map(([id, name]) => ({ id, name }))
+  const histData = histClient ? histPaidAll.filter(r => String(r.client_id) === String(histClient)) : histPaidAll
+  const histTotalPaid = histData.reduce((s, r) => s + (parseFloat(r.paid_amount) || 0), 0)
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -111,17 +123,20 @@ export default function Financial() {
         </div>
         <div className="flex gap-2">
           <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none"/>
-          <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">+ Novo</button>
+          {tab !== 'historico' && (
+            <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">+ Novo</button>
+          )}
         </div>
       </div>
 
       {/* Abas */}
       <div className="flex gap-1 mb-6 bg-gray-900 p-1 rounded-xl w-fit">
-        {[['receivables','💰 A Receber'],['fabricio','👷 Pagar Fab'],['victor','👤 Pagar Victor']].map(([key,label]) => (
+        {[['receivables','💰 A Receber'],['fabricio','👷 Pagar Fab'],['victor','👤 Pagar Victor'],['historico','📜 Histórico']].map(([key,label]) => (
           <button key={key} onClick={() => setTab(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}>{label}</button>
         ))}
       </div>
 
+      {tab !== 'historico' && (<>
       {/* Totalizadores */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
@@ -184,6 +199,56 @@ export default function Financial() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      </>)}
+
+      {tab === 'historico' && (
+        <div>
+          {/* Filtro de tipo */}
+          <div className="flex gap-2 mb-4 flex-wrap">
+            {[['receivables','A Receber'],['fabricio','Pagar Fabrício'],['victor','Pagar Victor']].map(([key,label]) => (
+              <button key={key} onClick={() => setHistType(key)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histType === key ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{label}</button>
+            ))}
+          </div>
+
+          {/* Filtro de cliente */}
+          {histClients.length > 0 && (
+            <div className="flex gap-2 mb-4 flex-wrap">
+              <button onClick={() => setHistClient('')} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histClient === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>Todos</button>
+              {histClients.map(c => (
+                <button key={c.id} onClick={() => setHistClient(String(c.id))} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{c.name}</button>
+              ))}
+            </div>
+          )}
+
+          {/* Totalizador */}
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-6 w-fit min-w-[220px]">
+            <p className="text-gray-400 text-xs mb-1">Total pago no período</p>
+            <p className="text-green-400 text-lg font-bold">{fmt(histTotalPaid)}</p>
+          </div>
+
+          {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : histData.length === 0 ? (
+            <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">📭</p><p>Nenhum pagamento registrado no período.</p></div>
+          ) : (
+            <div className="space-y-3">
+              {histData.map(item => (
+                <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
+                    <span className="text-gray-500 text-xs">{months[item.month-1]}/{item.year}</span>
+                    {item.origin === 'faturamento' && <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-full">via Faturamento</span>}
+                  </div>
+                  {item.description && <p className="text-white text-sm">{item.description}</p>}
+                  <div className="flex gap-4 mt-2 text-xs flex-wrap">
+                    <span className="text-gray-500">Pago: <span className="text-green-400 font-medium">{fmt(item.paid_amount)}</span></span>
+                    {item.paid_at && <span className="text-gray-500">Em: <span className="text-gray-300">{new Date(item.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></span>}
+                  </div>
+                  {item.notes && <p className="text-gray-500 text-xs mt-2 italic">{item.notes}</p>}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

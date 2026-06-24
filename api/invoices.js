@@ -107,6 +107,12 @@ export default async function handler(req, res) {
         if (inv.status !== 'recebido') {
           return res.status(400).json({ error: 'Apenas faturas recebidas podem ser estornadas.' })
         }
+        // Bloquear estorno se algum payable gerado já foi pago
+        const fabPago = await sql`SELECT id FROM payables_fabricio WHERE invoice_id = ${id} AND status = 'pago' LIMIT 1`
+        const vicPago = await sql`SELECT id FROM payables_victor WHERE invoice_id = ${id} AND status = 'pago' LIMIT 1`
+        if (fabPago.length || vicPago.length) {
+          return res.status(400).json({ error: 'Não é possível estornar. Os lançamentos de Pagar Fabrício e/ou Pagar Victor já foram pagos. Desfaça os pagamentos primeiro.' })
+        }
         // Reverter receivable
         if (inv.receivable_id) {
           await sql`UPDATE receivables SET status='pendente', paid_at=NULL, paid_amount=NULL WHERE id=${inv.receivable_id}`
