@@ -83,8 +83,8 @@ export default async function handler(req, res) {
       `
 
       const receivable = await sql`
-        INSERT INTO receivables (company_id, client_id, month, year, description, amount, notes)
-        VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${`Fatura ${invoice_number || '#'+invoice[0].id} - ${month}/${year}`}, ${calc.invoice_value}, ${notes||null})
+        INSERT INTO receivables (company_id, client_id, month, year, description, amount, notes, origin)
+        VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${`Fatura ${invoice_number || '#'+invoice[0].id} - ${month}/${year}`}, ${calc.invoice_value}, ${notes||null}, 'faturamento')
         RETURNING *
       `
 
@@ -112,12 +112,62 @@ export default async function handler(req, res) {
         const client_name = clients[0]?.name || 'Cliente'
         const desc = `${client_name} - ${inv.month}/${inv.year}`
 
-        await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.fabricio_total})`
+        await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, origin, invoice_id) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.fabricio_total}, 'faturamento', ${inv.id})`
 
-        await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.victor_service}, ${parseFloat(inv.victor_profit)+parseFloat(inv.victor_tax_diff)}, ${inv.victor_total})`
+        await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, origin, invoice_id) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.victor_service}, ${parseFloat(inv.victor_profit)+parseFloat(inv.victor_tax_diff)}, ${inv.victor_total}, 'faturamento', ${inv.id})`
       }
 
       return res.status(200).json({ success: true })
+    } catch (error) {
+      return res.status(500).json({ error: error.message })
+    }
+  }
+
+  if (req.method === 'PUT') {
+    const { id, invoice_value, invoice_number, notes, billing_type, time_entry_ids, contract_id, client_id } = req.body
+    try {
+      const invoices = await sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`
+      if (!invoices.length) return res.status(404).json({ error: 'Fatura não encontrada' })
+      const inv = invoices[0]
+
+      if (inv.status === 'recebido') {
+        return res.status(400).json({ error: 'Não é possível editar uma fatura já recebida. Estorne primeiro.' })
+      }
+
+      let calc
+      if (billing_type === 'contract') {
+        const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id || inv.contract_id} LIMIT 1`
+        if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
+        calc = calcContrato(invoice_value, contracts[0])
+      } else {
+        const ids = time_entry_ids || inv.time_entry_ids
+        const entries = await sql`SELECT * FROM time_entries WHERE id = ANY(${ids}::int[])`
+        const rules = await sql`SELECT * FROM financial_rules WHERE client_id = ${client_id || inv.client_id} LIMIT 1`
+        if (!rules.length) return res.status(400).json({ error: 'Regra financeira não encontrada' })
+        calc = calcAgenda(entries, rules[0])
+      }
+
+      const updated = await sql`
+        UPDATE invoices SET
+          invoice_number = ${invoice_number || null},
+          invoice_value = ${calc.invoice_value},
+          contract_value = ${calc.contract_value},
+          tax_amount = ${calc.tax_amount},
+          victor_service = ${calc.victor_service},
+          victor_profit = ${calc.victor_profit},
+          victor_tax_diff = ${calc.victor_tax_diff},
+          victor_total = ${calc.victor_total},
+          fabricio_total = ${calc.fabricio_total},
+          notes = ${notes || null}
+        WHERE id = ${id}
+        RETURNING *
+      `
+
+      if (inv.receivable_id) {
+        await sql`UPDATE receivables SET amount = ${calc.invoice_value}, description = ${`Fatura ${invoice_number || '#'+id} - ${inv.month}/${inv.year}`} WHERE id = ${inv.receivable_id}`
+      }
+
+      return res.status(200).json({ invoice: updated[0], breakdown: calc })
     } catch (error) {
       return res.status(500).json({ error: error.message })
     }

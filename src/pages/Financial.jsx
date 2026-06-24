@@ -69,7 +69,17 @@ export default function Financial() {
 
   async function del(id) {
     if (!confirm('Excluir?')) return
-    await fetch(FINANCE_ENDPOINTS[tab], { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    const endpoints = { receivables: '/api/receivables', fabricio: '/api/payables-fabricio', victor: '/api/payables-victor' }
+    const res = await fetch(endpoints[tab], {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    })
+    const data = await res.json()
+    if (res.status === 403) {
+      alert('⚠️ ' + data.error)
+      return
+    }
     fetchAll()
   }
 

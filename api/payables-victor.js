@@ -19,7 +19,11 @@ export default async function handler(req, res) {
   }
   if (req.method === 'DELETE') {
     const { id } = req.body
-    await sql`DELETE FROM payables_victor WHERE id=${id}`
+    const rows = await sql`SELECT origin FROM payables_victor WHERE id = ${id}`
+    if (rows.length && rows[0].origin === 'faturamento') {
+      return res.status(403).json({ error: 'Este registro foi gerado pelo Faturamento. Para removê-lo, estorne o recebimento da fatura correspondente.' })
+    }
+    await sql`DELETE FROM payables_victor WHERE id = ${id}`
     return res.status(200).json({ success: true })
   }
   res.status(405).json({ error: 'Method not allowed' })

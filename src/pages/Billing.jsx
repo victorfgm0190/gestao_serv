@@ -14,6 +14,7 @@ export default function Billing() {
   const [showAgendaModal, setShowAgendaModal] = useState(false)
   const [selectedEntries, setSelectedEntries] = useState([])
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
+  const [editInvoice, setEditInvoice] = useState(null)
   const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', notes:'' })
   const [agendaForm, setAgendaForm] = useState({ client_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'' })
 
@@ -49,17 +50,30 @@ export default function Billing() {
   async function saveContractInvoice() {
     const contract = contracts.find(c => String(c.id) === String(contractForm.contract_id))
     if (!contract || !contractForm.invoice_value) return
+
+    const isEdit = !!editInvoice
+    const method = isEdit ? 'PUT' : 'POST'
+    const body = isEdit
+      ? { id: editInvoice.id, ...contractForm, billing_type: 'contract', contract_id: contract.id, client_id: contract.client_id }
+      : { ...contractForm, company_id: activeCompany.id, client_id: contract.client_id, billing_type: 'contract' }
+
     const res = await fetch('/api/invoices', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ ...contractForm, company_id: activeCompany.id, client_id: contract.client_id, billing_type:'contract' })
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     })
     const data = await res.json()
-    if (data.invoice) {
+    if (data.invoice || data.success) {
       setShowContractModal(false)
+      setEditInvoice(null)
       fetchAll()
-      const b = data.breakdown
-      alert(`Fatura gerada!\n\nA Receber: R$ ${parseFloat(b.invoice_value).toFixed(2)}\n\nDemonstrativo:\nVictor serviço: R$ ${parseFloat(b.victor_service).toFixed(2)}\nVictor lucro: R$ ${parseFloat(b.victor_profit).toFixed(2)}\nVictor imposto NF: R$ ${parseFloat(b.victor_tax_diff).toFixed(2)}\nVictor TOTAL: R$ ${parseFloat(b.victor_total).toFixed(2)}\nFabrício TOTAL: R$ ${parseFloat(b.fabricio_total).toFixed(2)}`)
-    } else { alert('Erro: ' + (data.error||'Falha')) }
+      if (data.breakdown) {
+        const b = data.breakdown
+        alert(`Fatura ${isEdit ? 'atualizada' : 'gerada'}!\n\nA Receber: R$ ${parseFloat(b.invoice_value).toFixed(2)}\n\nVictor serviço: R$ ${parseFloat(b.victor_service).toFixed(2)}\nVictor lucro: R$ ${parseFloat(b.victor_profit).toFixed(2)}\nVictor imposto NF: R$ ${parseFloat(b.victor_tax_diff||0).toFixed(2)}\nVictor TOTAL: R$ ${parseFloat(b.victor_total).toFixed(2)}\nFabrício TOTAL: R$ ${parseFloat(b.fabricio_total).toFixed(2)}`)
+      }
+    } else {
+      alert('Erro: ' + (data.error || 'Falha'))
+    }
   }
 
   async function saveAgendaInvoice() {
@@ -94,6 +108,19 @@ export default function Billing() {
     if (!confirm('Excluir fatura?')) return
     await fetch('/api/invoices', { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id }) })
     fetchAll()
+  }
+
+  function openEditInvoice(inv) {
+    setEditInvoice(inv)
+    setContractForm({
+      contract_id: inv.contract_id || '',
+      month: inv.month,
+      year: inv.year,
+      invoice_value: inv.invoice_value,
+      invoice_number: inv.invoice_number || '',
+      notes: inv.notes || '',
+    })
+    setShowContractModal(true)
   }
 
   const fmt = v => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.',',')}` : '-'
@@ -143,6 +170,9 @@ export default function Billing() {
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">
                   {inv.status==='pendente' && <button onClick={()=>markReceived(inv)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">✓ Recebi</button>}
+                  {inv.status==='pendente' && inv.billing_type==='contract' && (
+                    <button onClick={()=>openEditInvoice(inv)} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs">✏️ Editar</button>
+                  )}
                   <button onClick={()=>deleteInvoice(inv.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
                 </div>
               </div>
@@ -154,7 +184,7 @@ export default function Billing() {
       {showContractModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-4">Gerar Fatura — Contrato</h3>
+            <h3 className="text-lg font-bold text-white mb-4">{editInvoice ? 'Editar Fatura' : 'Gerar Fatura — Contrato'}</h3>
             <div className="space-y-3">
               <select value={contractForm.contract_id} onChange={e=>setContractForm(f=>({...f,contract_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                 <option value="">Selecione o contrato</option>
@@ -171,7 +201,7 @@ export default function Billing() {
               <textarea placeholder="Observações" value={contractForm.notes} onChange={e=>setContractForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>setShowContractModal(false)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={()=>{setShowContractModal(false);setEditInvoice(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
               <button onClick={saveContractInvoice} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">Gerar Fatura</button>
             </div>
           </div>
