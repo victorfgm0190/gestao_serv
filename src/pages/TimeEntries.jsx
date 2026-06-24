@@ -130,6 +130,21 @@ export default function TimeEntries() {
   const totalVictor = entries.reduce((s, e) => s + (parseFloat(e.victor_share) || 0), 0)
   const totalFab = entries.reduce((s, e) => s + (parseFloat(e.fabricio_share) || 0), 0)
   const totalHoras = entries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
+  // Demonstrativo: separa a parte de Victor em serviço (deslocamento + fixo/hora,
+  // recalculados a partir da regra financeira do cliente) e lucro (restante do victor_share).
+  const breakdown = entries.reduce((acc, e) => {
+    const rule = rules.find(r => String(r.client_id) === String(e.client_id))
+    const hours = parseFloat(e.hours) || 0
+    const horasDesloc = parseFloat(e.horas_deslocamento) || 0
+    const victorTotal = parseFloat(e.victor_share) || 0
+    const valorDesloc = parseFloat(e.valor_deslocamento) || 0
+    const victorFixoHora = rule ? (parseFloat(rule.victor_fixed_per_hour) || 0) : 0
+    const victorServico = Math.max(hours - horasDesloc, 0) * victorFixoHora
+    const servico = valorDesloc + victorServico
+    acc.servico += servico
+    acc.lucro += victorTotal - servico
+    return acc
+  }, { servico: 0, lucro: 0 })
   const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
   return (
@@ -157,12 +172,34 @@ export default function TimeEntries() {
           <p className="text-white text-xl font-bold">{decimalToHHMM(totalHoras)}</p>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">Victor</p>
-          <p className="text-blue-400 text-xl font-bold">{fmt(totalVictor)}</p>
+          <p className="text-gray-400 text-xs mb-2">Victor</p>
+          <div className="space-y-1 text-xs">
+            <div className="flex justify-between text-gray-500">
+              <span>Serviço</span>
+              <span className="text-blue-300">{fmt(breakdown.servico)}</span>
+            </div>
+            <div className="flex justify-between text-gray-500">
+              <span>Lucro</span>
+              <span className="text-blue-300">{fmt(breakdown.lucro)}</span>
+            </div>
+          </div>
+          <div className="flex justify-between mt-2 pt-2 border-t border-gray-700">
+            <span className="text-gray-300 text-sm font-medium">TOTAL</span>
+            <span className="text-blue-400 text-lg font-bold">{fmt(totalVictor)}</span>
+          </div>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">Fabrício</p>
-          <p className="text-purple-400 text-xl font-bold">{fmt(totalFab)}</p>
+          <p className="text-gray-400 text-xs mb-2">Fabrício</p>
+          <div className="space-y-1 text-xs">
+            <div className="flex justify-between text-gray-500">
+              <span>Lucro</span>
+              <span className="text-purple-300">{fmt(totalFab)}</span>
+            </div>
+          </div>
+          <div className="flex justify-between mt-2 pt-2 border-t border-gray-700">
+            <span className="text-gray-300 text-sm font-medium">TOTAL</span>
+            <span className="text-purple-400 text-lg font-bold">{fmt(totalFab)}</span>
+          </div>
         </div>
       </div>
 
