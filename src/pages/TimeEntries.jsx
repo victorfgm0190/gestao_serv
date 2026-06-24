@@ -164,7 +164,7 @@ export default function TimeEntries() {
 
   function openEdit(entry) {
     setEditEntry(entry)
-    setForm({
+    const f = {
       client_id: String(entry.client_id || ''),
       entry_date: entry.entry_date ? entry.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
       hora_inicial: entry.hora_inicial || '',
@@ -175,8 +175,9 @@ export default function TimeEntries() {
       hours_fuel: entry.horas_deslocamento || '0',
       despesas_deslocamento: entry.despesas_deslocamento || '0',
       notes: entry.notes || '',
-    })
-    setPreview(null)
+    }
+    setForm(f)
+    calcPreview(f)
     setShowModal(true)
   }
 
