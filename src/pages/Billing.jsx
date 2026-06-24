@@ -212,9 +212,61 @@ export default function Billing() {
                       </label>
                     ))}
                   </div>
-                  {selectedEntries.length > 0 && (
-                    <p className="text-blue-400 text-xs mt-2 font-medium">{selectedEntries.length} agenda(s) — {timeEntries.filter(e=>selectedEntries.includes(e.id)).reduce((s,e)=>s+(parseFloat(e.hours)||0),0).toFixed(2)}h selecionadas</p>
-                  )}
+                  {selectedEntries.length > 0 && (() => {
+                    const selected = timeEntries.filter(e => selectedEntries.includes(e.id))
+                    const totalHours = selected.reduce((s,e) => s + (parseFloat(e.hours)||0), 0)
+                    const totalMins = Math.round(totalHours * 60)
+                    const hh = Math.floor(totalMins / 60)
+                    const mm = totalMins % 60
+                    const horasStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`
+                    const hourlyRate = parseFloat(selected.find(e=>e.hourly_rate)?.hourly_rate) || 0
+                    const grossTotal = selected.reduce((s,e) => s + (parseFloat(e.gross_value)||0), 0)
+                    const taxTotal = selected.reduce((s,e) => s + (parseFloat(e.tax_amount)||0), 0)
+                    const victorTotal = selected.reduce((s,e) => s + (parseFloat(e.victor_share)||0), 0)
+                    const fabricioTotal = selected.reduce((s,e) => s + (parseFloat(e.fabricio_share)||0), 0)
+                    const fmt = v => `R$ ${parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
+                    return (
+                      <div className="bg-gray-700/50 rounded-xl p-3 mt-2 space-y-2 text-xs">
+                        <p className="text-blue-400 font-medium">{selectedEntries.length} agenda(s) selecionada(s)</p>
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Total de horas</span>
+                            <span className="text-white font-bold">{horasStr}</span>
+                          </div>
+                          {hourlyRate > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Valor da hora</span>
+                              <span className="text-white">{fmt(hourlyRate)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Total bruto</span>
+                            <span className="text-white">{fmt(grossTotal)}</span>
+                          </div>
+                          {taxTotal > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Imposto ({((taxTotal/grossTotal)*100).toFixed(1)}%)</span>
+                              <span className="text-red-400">-{fmt(taxTotal)}</span>
+                            </div>
+                          )}
+                          <div className="border-t border-gray-600 pt-1.5 space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Victor</span>
+                              <span className="text-blue-400 font-medium">{fmt(victorTotal)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Fabrício</span>
+                              <span className="text-purple-400 font-medium">{fmt(fabricioTotal)}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between border-t border-gray-600 pt-1.5">
+                            <span className="text-white font-semibold">TOTAL A FATURAR</span>
+                            <span className="text-green-400 font-bold text-sm">{fmt(grossTotal)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
               {timeEntries.length===0 && agendaForm.client_id && <p className="text-gray-500 text-sm text-center py-4">Nenhuma agenda encontrada para este cliente/período.</p>}
