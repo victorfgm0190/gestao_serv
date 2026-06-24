@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import * as XLSX from 'xlsx'
 
 function decimalToHHMM(decimal) {
   if (!decimal && decimal !== 0) return '--:--'
@@ -150,96 +149,21 @@ export default function TimeEntries() {
     setShowModal(true)
   }
 
-  function exportToExcel() {
-    const monthNames = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO']
-    const monthName = monthNames[filterMonth - 1]
-
-    function decimalToTimeStr(decimal) {
-      if (!decimal) return ''
-      const totalMinutes = Math.round(parseFloat(decimal) * 60)
-      const hours = Math.floor(totalMinutes / 60)
-      const minutes = totalMinutes % 60
-      return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00`
+  async function exportToExcel() {
+    try {
+      const res = await fetch(`/api/export-os?company_id=${activeCompany.id}&month=${filterMonth}&year=${filterYear}`)
+      if (!res.ok) { alert('Erro ao gerar Excel'); return }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const monthNames = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO']
+      a.href = url
+      a.download = `OS_${monthNames[filterMonth-1]}_${filterYear}.xlsx`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch(e) {
+      alert('Erro ao exportar: ' + e.message)
     }
-
-    function timeStrToDecimal(timeStr) {
-      if (!timeStr) return null
-      const [h, m] = timeStr.split(':').map(Number)
-      return (h * 60 + m) / 1440
-    }
-
-    const wb = XLSX.utils.book_new()
-    const ws = XLSX.utils.aoa_to_sheet([])
-
-    // Título
-    XLSX.utils.sheet_add_aoa(ws, [[`Ordens de Serviço - ${monthName} ${filterYear}`]], { origin: 'A2' })
-
-    // Cabeçalho
-    XLSX.utils.sheet_add_aoa(ws, [['TECNICO', 'DATA', 'CLIENTE', 'ATIVIDADES', 'HORAINICIAL', 'INTERVALO', '', 'HORAFINAL', 'TOTAL']], { origin: 'A4' })
-
-    // Dados
-    const rows = entries.map(e => {
-      const dateVal = e.entry_date ? new Date(e.entry_date) : null
-      const dateSerial = dateVal ? (dateVal.getTime() / 86400000) + 25569 - (dateVal.getTimezoneOffset() / 1440) : ''
-      const horaInicial = timeStrToDecimal(e.hora_inicial)
-      const intervaloInicio = timeStrToDecimal(e.intervalo_inicio)
-      const intervaloFim = timeStrToDecimal(e.intervalo_fim)
-      const horaFinal = timeStrToDecimal(e.hora_final)
-      const totalDecimal = parseFloat(e.hours) / 24
-
-      return [
-        'VICTOR',
-        dateSerial,
-        e.client_name || '',
-        e.description || '',
-        horaInicial,
-        intervaloInicio,
-        intervaloFim,
-        horaFinal,
-        totalDecimal
-      ]
-    })
-
-    XLSX.utils.sheet_add_aoa(ws, rows, { origin: 'A5' })
-
-    // Formatos de data e hora
-    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
-    for (let r = 4; r < 4 + rows.length; r++) {
-      const dateCellRef = XLSX.utils.encode_cell({ r, c: 1 })
-      if (ws[dateCellRef]) ws[dateCellRef].z = 'dd/mm/yyyy'
-
-      const timeCols = [4, 5, 6, 7]
-      timeCols.forEach(c => {
-        const ref = XLSX.utils.encode_cell({ r, c })
-        if (ws[ref] && ws[ref].v != null) ws[ref].z = 'hh:mm:ss'
-      })
-
-      const totalRef = XLSX.utils.encode_cell({ r, c: 8 })
-      if (ws[totalRef]) ws[totalRef].z = '[h]:mm:ss'
-    }
-
-    // Total geral na linha após os dados
-    const totalRow = 4 + rows.length + 1
-    const totalDecimalAll = entries.reduce((s,e) => s + parseFloat(e.hours||0), 0) / 24
-    XLSX.utils.sheet_add_aoa(ws, [[totalDecimalAll]], { origin: { r: totalRow, c: 8 } })
-    const totalCellRef = XLSX.utils.encode_cell({ r: totalRow, c: 8 })
-    if (ws[totalCellRef]) ws[totalCellRef].z = '[h]:mm:ss'
-
-    // Larguras das colunas
-    ws['!cols'] = [
-      { wch: 8 },  // TECNICO
-      { wch: 12 }, // DATA
-      { wch: 15 }, // CLIENTE
-      { wch: 60 }, // ATIVIDADES
-      { wch: 10 }, // HORAINICIAL
-      { wch: 10 }, // INTERVALO inicio
-      { wch: 10 }, // INTERVALO fim
-      { wch: 10 }, // HORAFINAL
-      { wch: 10 }, // TOTAL
-    ]
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Planilha1')
-    XLSX.writeFile(wb, `OS_${monthName}_${filterYear}.xlsx`)
   }
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
