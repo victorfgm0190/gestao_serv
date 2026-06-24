@@ -10,6 +10,7 @@ import FinancialRules from './pages/FinancialRules'
 import TimeEntries from './pages/TimeEntries'
 import Contracts from './pages/Contracts'
 import Financial from './pages/Financial'
+import Billing from './pages/Billing'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -23,6 +24,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="time-entries" element={<TimeEntries />} />
           <Route path="contracts" element={<Contracts />} />
           <Route path="financial" element={<Financial />} />
+          <Route path="billing" element={<Billing />} />
         </Route>
       </Routes>
     </BrowserRouter>
