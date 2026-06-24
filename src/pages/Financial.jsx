@@ -158,7 +158,12 @@ export default function Financial() {
                   {item.status !== 'pago' && (
                     <button onClick={() => { setShowPayModal(item); setPayForm(f => ({...f, paid_amount: item.amount || item.total_amount})) }} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
                   )}
-                  <button onClick={() => del(item.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
+                  {(!item.origin || item.origin !== 'faturamento') && (
+                    <button onClick={() => del(item.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
+                  )}
+                  {item.origin === 'faturamento' && (
+                    <span className="text-gray-600 text-xs">via Faturamento</span>
+                  )}
                 </div>
               </div>
             </div>
