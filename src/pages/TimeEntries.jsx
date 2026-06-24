@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import * as XLSX from 'xlsx'
 
 function decimalToHHMM(decimal) {
   if (!decimal && decimal !== 0) return '--:--'
@@ -30,6 +31,7 @@ export default function TimeEntries() {
     notes: '',
   })
   const [preview, setPreview] = useState(null)
+  const [editEntry, setEditEntry] = useState(null)
 
   useEffect(() => { fetchAll() }, [activeCompany, filterMonth, filterYear])
 
@@ -104,12 +106,17 @@ export default function TimeEntries() {
   async function save() {
     if (!form.client_id || !form.hora_inicial || !form.hora_final || !form.entry_date) return
     try {
+      const method = editEntry ? 'PUT' : 'POST'
+      const body = editEntry
+        ? { ...form, company_id: activeCompany.id, id: editEntry.id }
+        : { ...form, company_id: activeCompany.id }
       await fetch('/api/time-entries', {
-        method: 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, company_id: activeCompany.id }),
+        body: JSON.stringify(body),
       })
       setShowModal(false)
+      setEditEntry(null)
       setForm({ client_id: '', entry_date: new Date().toISOString().split('T')[0], hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', notes: '' })
       setPreview(null)
       fetchAll()
@@ -124,6 +131,115 @@ export default function TimeEntries() {
       body: JSON.stringify({ id }),
     })
     fetchAll()
+  }
+
+  function openEdit(entry) {
+    setEditEntry(entry)
+    setForm({
+      client_id: String(entry.client_id || ''),
+      entry_date: entry.entry_date ? entry.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
+      hora_inicial: entry.hora_inicial || '',
+      intervalo_inicio: entry.intervalo_inicio || '',
+      intervalo_fim: entry.intervalo_fim || '',
+      hora_final: entry.hora_final || '',
+      description: entry.description || '',
+      hours_fuel: entry.horas_deslocamento || '0',
+      notes: entry.notes || '',
+    })
+    setPreview(null)
+    setShowModal(true)
+  }
+
+  function exportToExcel() {
+    const monthNames = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO']
+    const monthName = monthNames[filterMonth - 1]
+
+    function decimalToTimeStr(decimal) {
+      if (!decimal) return ''
+      const totalMinutes = Math.round(parseFloat(decimal) * 60)
+      const hours = Math.floor(totalMinutes / 60)
+      const minutes = totalMinutes % 60
+      return `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00`
+    }
+
+    function timeStrToDecimal(timeStr) {
+      if (!timeStr) return null
+      const [h, m] = timeStr.split(':').map(Number)
+      return (h * 60 + m) / 1440
+    }
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.aoa_to_sheet([])
+
+    // Título
+    XLSX.utils.sheet_add_aoa(ws, [[`Ordens de Serviço - ${monthName} ${filterYear}`]], { origin: 'A2' })
+
+    // Cabeçalho
+    XLSX.utils.sheet_add_aoa(ws, [['TECNICO', 'DATA', 'CLIENTE', 'ATIVIDADES', 'HORAINICIAL', 'INTERVALO', '', 'HORAFINAL', 'TOTAL']], { origin: 'A4' })
+
+    // Dados
+    const rows = entries.map(e => {
+      const dateVal = e.entry_date ? new Date(e.entry_date) : null
+      const dateSerial = dateVal ? (dateVal.getTime() / 86400000) + 25569 - (dateVal.getTimezoneOffset() / 1440) : ''
+      const horaInicial = timeStrToDecimal(e.hora_inicial)
+      const intervaloInicio = timeStrToDecimal(e.intervalo_inicio)
+      const intervaloFim = timeStrToDecimal(e.intervalo_fim)
+      const horaFinal = timeStrToDecimal(e.hora_final)
+      const totalDecimal = parseFloat(e.hours) / 24
+
+      return [
+        'VICTOR',
+        dateSerial,
+        e.client_name || '',
+        e.description || '',
+        horaInicial,
+        intervaloInicio,
+        intervaloFim,
+        horaFinal,
+        totalDecimal
+      ]
+    })
+
+    XLSX.utils.sheet_add_aoa(ws, rows, { origin: 'A5' })
+
+    // Formatos de data e hora
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1')
+    for (let r = 4; r < 4 + rows.length; r++) {
+      const dateCellRef = XLSX.utils.encode_cell({ r, c: 1 })
+      if (ws[dateCellRef]) ws[dateCellRef].z = 'dd/mm/yyyy'
+
+      const timeCols = [4, 5, 6, 7]
+      timeCols.forEach(c => {
+        const ref = XLSX.utils.encode_cell({ r, c })
+        if (ws[ref] && ws[ref].v != null) ws[ref].z = 'hh:mm:ss'
+      })
+
+      const totalRef = XLSX.utils.encode_cell({ r, c: 8 })
+      if (ws[totalRef]) ws[totalRef].z = '[h]:mm:ss'
+    }
+
+    // Total geral na linha após os dados
+    const totalRow = 4 + rows.length + 1
+    const totalDecimalAll = entries.reduce((s,e) => s + parseFloat(e.hours||0), 0) / 24
+    XLSX.utils.sheet_add_aoa(ws, [[totalDecimalAll]], { origin: { r: totalRow, c: 8 } })
+    const totalCellRef = XLSX.utils.encode_cell({ r: totalRow, c: 8 })
+    if (ws[totalCellRef]) ws[totalCellRef].z = '[h]:mm:ss'
+
+    // Larguras das colunas
+    ws['!cols'] = [
+      { wch: 8 },  // TECNICO
+      { wch: 12 }, // DATA
+      { wch: 15 }, // CLIENTE
+      { wch: 60 }, // ATIVIDADES
+      { wch: 10 }, // HORAINICIAL
+      { wch: 10 }, // INTERVALO inicio
+      { wch: 10 }, // INTERVALO fim
+      { wch: 10 }, // HORAFINAL
+      { wch: 10 }, // TOTAL
+    ]
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Planilha1')
+    XLSX.writeFile(wb, `OS_${monthName}_${filterYear}.xlsx`)
   }
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
@@ -154,9 +270,19 @@ export default function TimeEntries() {
           <h2 className="text-2xl font-bold text-white">Apontamento de Horas</h2>
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
-          + Lançar horas
-        </button>
+        <div className="flex gap-2">
+          {entries.length > 0 && (
+            <button
+              onClick={exportToExcel}
+              className="px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              📥 Exportar Excel
+            </button>
+          )}
+          <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
+            + Lançar horas
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-6 flex-wrap items-center">
@@ -230,7 +356,10 @@ export default function TimeEntries() {
                     <span className="text-gray-500">Fab: <span className="text-purple-400">{fmt(e.fabricio_share)}</span></span>
                   </div>
                 </div>
-                <button onClick={() => deleteEntry(e.id)} className="text-gray-600 hover:text-red-400 text-sm transition-colors shrink-0">Excluir</button>
+                <div className="flex gap-3 shrink-0">
+                  <button onClick={() => openEdit(e)} className="text-gray-600 hover:text-blue-400 text-sm transition-colors">Editar</button>
+                  <button onClick={() => deleteEntry(e.id)} className="text-gray-600 hover:text-red-400 text-sm transition-colors">Excluir</button>
+                </div>
               </div>
             </div>
           ))}
@@ -240,7 +369,7 @@ export default function TimeEntries() {
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">Lançar horas</h3>
+            <h3 className="text-lg font-bold text-white mb-4">{editEntry ? 'Editar lançamento' : 'Lançar horas'}</h3>
             <div className="space-y-3">
               <select value={form.client_id} onChange={e=>updateForm('client_id',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                 <option value="">Selecione o cliente</option>
@@ -297,7 +426,7 @@ export default function TimeEntries() {
               )}
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>{setShowModal(false);setPreview(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
+              <button onClick={()=>{setShowModal(false);setPreview(null);setEditEntry(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
               <button onClick={save} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">Salvar</button>
             </div>
           </div>

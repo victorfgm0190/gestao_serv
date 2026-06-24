@@ -121,6 +121,51 @@ export default async function handler(req, res) {
     return res.status(201).json({ entry: result[0], hours_calculated: hours })
   }
 
+  if (req.method === 'PUT') {
+    const {
+      id, client_id, entry_date, description,
+      hora_inicial, intervalo_inicio, intervalo_fim, hora_final,
+      hours_fuel, notes
+    } = req.body
+
+    const hours = calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final)
+    const regras = await sql`SELECT * FROM financial_rules WHERE client_id = ${client_id} LIMIT 1`
+
+    let calc = { gross_value: null, tax_amount: null, net_value: null, victor_share: null, fabricio_share: null, fuel_cost: null }
+    if (regras.length > 0 && hours > 0) {
+      calc = calcular(hours, regras[0], hours_fuel || 0)
+    }
+
+    const hourly_rate = regras[0]?.hourly_rate || null
+    const horas_desloc = parseFloat(hours_fuel) || 0
+    const valor_desloc = regras.length > 0 ? horas_desloc * (parseFloat(regras[0].hourly_rate) || 0) * (1 - (regras[0].has_tax ? (parseFloat(regras[0].tax_percentage) || 0) / 100 : 0)) : 0
+
+    const result = await sql`
+      UPDATE time_entries SET
+        client_id = ${client_id},
+        entry_date = ${entry_date},
+        description = ${description},
+        hours = ${hours},
+        hourly_rate = ${hourly_rate},
+        gross_value = ${calc.gross_value},
+        tax_amount = ${calc.tax_amount},
+        net_value = ${calc.net_value},
+        victor_share = ${calc.victor_share},
+        fabricio_share = ${calc.fabricio_share},
+        fuel_cost = ${calc.fuel_cost},
+        hora_inicial = ${hora_inicial || null},
+        intervalo_inicio = ${intervalo_inicio || null},
+        intervalo_fim = ${intervalo_fim || null},
+        hora_final = ${hora_final || null},
+        horas_deslocamento = ${horas_desloc},
+        valor_deslocamento = ${parseFloat(valor_desloc.toFixed(2))},
+        notes = ${notes || null}
+      WHERE id = ${id}
+      RETURNING *
+    `
+    return res.status(200).json({ entry: result[0] })
+  }
+
   if (req.method === 'DELETE') {
     const { id } = req.body
     await sql`DELETE FROM time_entries WHERE id = ${id}`
