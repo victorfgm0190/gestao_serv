@@ -31,8 +31,10 @@ export default function TimeEntries() {
   })
   const [preview, setPreview] = useState(null)
   const [editEntry, setEditEntry] = useState(null)
+  const [filterClient, setFilterClient] = useState('')
 
   useEffect(() => { fetchAll() }, [activeCompany, filterMonth, filterYear])
+  useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth])
 
   async function fetchAll() {
     setLoading(true)
@@ -167,12 +169,23 @@ export default function TimeEntries() {
   }
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
-  const totalVictor = entries.reduce((s, e) => s + (parseFloat(e.victor_share) || 0), 0)
-  const totalFab = entries.reduce((s, e) => s + (parseFloat(e.fabricio_share) || 0), 0)
-  const totalHoras = entries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
+  // Clientes com lançamentos no período (derivado de todos os entries, não dos filtrados)
+  const clientsWithEntries = Array.from(
+    entries.reduce((map, e) => {
+      if (e.client_id != null && !map.has(e.client_id)) map.set(e.client_id, e.client_name || 'Sem cliente')
+      return map
+    }, new Map())
+  ).map(([id, name]) => ({ id, name }))
+  const filteredEntries = filterClient
+    ? entries.filter(e => String(e.client_id) === String(filterClient))
+    : entries
+  const totalVictor = filteredEntries.reduce((s, e) => s + (parseFloat(e.victor_share) || 0), 0)
+  const totalFab = filteredEntries.reduce((s, e) => s + (parseFloat(e.fabricio_share) || 0), 0)
+  const totalHoras = filteredEntries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
+  const totalBruto = filteredEntries.reduce((s, e) => s + (parseFloat(e.gross_value) || 0), 0)
   // Demonstrativo: separa a parte de Victor em serviço (deslocamento + fixo/hora,
   // recalculados a partir da regra financeira do cliente) e lucro (restante do victor_share).
-  const breakdown = entries.reduce((acc, e) => {
+  const breakdown = filteredEntries.reduce((acc, e) => {
     const rule = rules.find(r => String(r.client_id) === String(e.client_id))
     const hours = parseFloat(e.hours) || 0
     const horasDesloc = parseFloat(e.horas_deslocamento) || 0
@@ -216,10 +229,35 @@ export default function TimeEntries() {
         <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none"/>
       </div>
 
+      {clientsWithEntries.length > 0 && (
+        <div className="flex gap-2 mb-6 flex-wrap">
+          <button
+            onClick={() => setFilterClient('')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filterClient === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            Todos os clientes
+          </button>
+          {clientsWithEntries.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setFilterClient(String(c.id))}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                filterClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-1">Total horas</p>
           <p className="text-white text-xl font-bold">{decimalToHHMM(totalHoras)}</p>
+          <p className="text-gray-500 text-xs mt-1">Bruto: <span className="text-gray-300">{fmt(totalBruto)}</span></p>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-2">Victor</p>
@@ -253,11 +291,11 @@ export default function TimeEntries() {
         </div>
       </div>
 
-      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : entries.length === 0 ? (
+      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : filteredEntries.length === 0 ? (
         <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">⏱️</p><p>Nenhum lançamento neste período.</p></div>
       ) : (
         <div className="space-y-3">
-          {entries.map(e => (
+          {filteredEntries.map(e => (
             <div key={e.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">

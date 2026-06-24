@@ -12,8 +12,8 @@ export default async function handler(req, res) {
     return res.status(201).json({ data: result[0] })
   }
   if (req.method === 'PATCH') {
-    const { id, paid_amount, paid_at, payment_method, is_compensation, compensation_notes, status } = req.body
-    const result = await sql`UPDATE payables_fabricio SET paid_amount=${paid_amount}, paid_at=${paid_at||null}, payment_method=${payment_method||null}, is_compensation=${is_compensation||false}, compensation_notes=${compensation_notes||null}, status=${status} WHERE id=${id} RETURNING *`
+    const { id, paid_amount, paid_at, payment_method, is_compensation, compensation_notes, status, notes } = req.body
+    const result = await sql`UPDATE payables_fabricio SET paid_amount=${paid_amount}, paid_at=${paid_at||null}, payment_method=${payment_method||null}, is_compensation=${is_compensation||false}, compensation_notes=${compensation_notes||null}, status=${status}, notes=${notes||null} WHERE id=${id} RETURNING *`
     return res.status(200).json({ data: result[0] })
   }
   if (req.method === 'DELETE') {

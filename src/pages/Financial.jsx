@@ -25,7 +25,7 @@ export default function Financial() {
   const [showPayModal, setShowPayModal] = useState(null)
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [form, setForm] = useState({ client_id: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), description: '', amount: '', service_amount: '', profit_amount: '', notes: '' })
-  const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: new Date().toISOString().split('T')[0], payment_method: '', is_compensation: false, compensation_notes: '', status: 'pago' })
+  const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: new Date().toISOString().split('T')[0], payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
 
@@ -63,7 +63,7 @@ export default function Financial() {
       body: JSON.stringify({ id: item.id, ...payForm }),
     })
     setShowPayModal(null)
-    setPayForm({ paid_amount: '', paid_at: new Date().toISOString().split('T')[0], payment_method: '', is_compensation: false, compensation_notes: '', status: 'pago' })
+    setPayForm({ paid_amount: '', paid_at: new Date().toISOString().split('T')[0], payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
     fetchAll()
   }
 
@@ -244,6 +244,7 @@ export default function Financial() {
                 <option value="pago">Pago integralmente</option>
                 <option value="parcial">Pago parcialmente</option>
               </select>
+              <textarea placeholder="Observações" value={payForm.notes} onChange={e=>setPayForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={()=>setShowPayModal(null)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>

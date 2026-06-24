@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
-const STATUS_OPTIONS = ['nova', 'em análise', 'pendente', 'em andamento', 'resolvida', 'cancelada']
+const STATUS_OPTIONS = ['nova', 'pendente', 'em análise', 'em andamento', 'resolvida', 'cancelada']
 
 const STATUS_COLORS = {
   'nova': 'bg-blue-500/20 text-blue-400',
@@ -179,14 +179,6 @@ export default function Demands() {
 
       {/* Filtro por status */}
       <div className="flex gap-2 mb-6 flex-wrap">
-        <button
-          onClick={() => setFilterStatus('')}
-          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-            filterStatus === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-          }`}
-        >
-          Todos
-        </button>
         {STATUS_OPTIONS.map(s => (
           <button
             key={s}
@@ -198,6 +190,14 @@ export default function Demands() {
             {s}
           </button>
         ))}
+        <button
+          onClick={() => setFilterStatus('')}
+          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+            filterStatus === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+          }`}
+        >
+          Todos
+        </button>
       </div>
 
       {/* Contador */}
