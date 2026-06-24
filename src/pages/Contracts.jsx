@@ -18,6 +18,7 @@ export default function Contracts() {
     client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '',
     remainder_victor_pct: '50', remainder_fabricio_pct: '50',
     has_tax: false, tax_percentage: '', notes: '',
+    deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '',
   })
   const [monthForm, setMonthForm] = useState({
     contract_id: '', client_id: '', month: new Date().getMonth() + 1,
@@ -48,7 +49,7 @@ export default function Contracts() {
     await fetch('/api/contracts', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     setShowModal(false)
     setEditContract(null)
-    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', notes: '' })
+    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '' })
     fetchAll()
   }
 
@@ -74,7 +75,7 @@ export default function Contracts() {
 
   function openEdit(c) {
     setEditContract(c)
-    setForm({ client_id: c.client_id, name: c.name, billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', notes: c.notes || '' })
+    setForm({ client_id: c.client_id, name: c.name, billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '' })
     setShowModal(true)
   }
 
@@ -91,6 +92,11 @@ export default function Contracts() {
     mensal: { label: 'Mensal', cls: 'bg-gray-700 text-gray-300' },
     hora: { label: 'Por hora', cls: 'bg-blue-500/20 text-blue-400' },
     dia: { label: 'Por dia', cls: 'bg-green-500/20 text-green-400' },
+  }
+  const DESLOC_LABEL = {
+    nao_cobrado: 'Não cobrado ao cliente',
+    hora: 'Cobrado por hora',
+    hora_despesas: 'Cobrado por hora + despesas',
   }
   const totalVictor = contractMonths.reduce((s, m) => s + (parseFloat(m.victor_share) || 0), 0)
   const totalFab = contractMonths.reduce((s, m) => s + (parseFloat(m.fabricio_share) || 0), 0)
@@ -122,6 +128,7 @@ export default function Contracts() {
                   <span>Victor fixo: <span className="text-blue-400">{fmt(c.victor_fixed)}</span></span>
                   <span>Restante: <span className="text-green-400">{c.remainder_victor_pct}% V / {c.remainder_fabricio_pct}% F</span></span>
                   {c.has_tax && <span>Imposto: <span className="text-red-400">{c.tax_percentage}%</span></span>}
+                  <span>Deslocamento: <span className="text-gray-300">{DESLOC_LABEL[c.deslocamento_tipo] || DESLOC_LABEL.nao_cobrado}{(c.deslocamento_tipo === 'hora' || c.deslocamento_tipo === 'hora_despesas') && parseFloat(c.deslocamento_valor_hora) > 0 ? ` (${fmt(c.deslocamento_valor_hora)}/h)` : ''}</span></span>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -193,6 +200,18 @@ export default function Contracts() {
                 <option value="hora">Por hora</option>
                 <option value="dia">Por dia</option>
               </select>
+
+              <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Deslocamento</p>
+                <select value={form.deslocamento_tipo} onChange={e=>setForm(f=>({...f,deslocamento_tipo:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                  <option value="nao_cobrado">Não cobrado ao cliente</option>
+                  <option value="hora">Cobrado por hora</option>
+                  <option value="hora_despesas">Cobrado por hora + despesas (pedágio/combustível/almoço)</option>
+                </select>
+                {form.deslocamento_tipo !== 'nao_cobrado' && (
+                  <input placeholder="Valor hora deslocamento (R$) — vazio usa o valor/hora do contrato" type="number" value={form.deslocamento_valor_hora} onChange={e=>setForm(f=>({...f,deslocamento_valor_hora:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                )}
+              </div>
               <input placeholder={valuePlaceholder} type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
               <input placeholder={victorPlaceholder} type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
               <div className="grid grid-cols-2 gap-3">

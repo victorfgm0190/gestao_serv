@@ -16,11 +16,11 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, notes } = req.body
+    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, notes, deslocamento_tipo, deslocamento_valor_hora } = req.body
     try {
       const result = await sql`
-        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, notes)
-        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value}, ${victor_fixed}, ${remainder_victor_pct || 50}, ${remainder_fabricio_pct || 50}, ${has_tax || false}, ${tax_percentage || null}, ${notes || null})
+        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, notes, deslocamento_tipo, deslocamento_valor_hora)
+        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value}, ${victor_fixed}, ${remainder_victor_pct || 50}, ${remainder_fabricio_pct || 50}, ${has_tax || false}, ${tax_percentage || null}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0})
         RETURNING *
       `
       return res.status(201).json({ contract: result[0] })
@@ -36,6 +36,8 @@ export default async function handler(req, res) {
         UPDATE contracts SET
           name = ${fields.name},
           billing_type = ${fields.billing_type || 'mensal'},
+          deslocamento_tipo = ${fields.deslocamento_tipo || 'nao_cobrado'},
+          deslocamento_valor_hora = ${fields.deslocamento_valor_hora || 0},
           contract_value = ${fields.contract_value},
           victor_fixed = ${fields.victor_fixed},
           remainder_victor_pct = ${fields.remainder_victor_pct},
