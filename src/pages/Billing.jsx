@@ -78,19 +78,31 @@ export default function Billing() {
 
   async function saveAgendaInvoice() {
     if (!agendaForm.client_id || selectedEntries.length === 0) return
+    const isEdit = !!editInvoice
+    const method = isEdit ? 'PUT' : 'POST'
+    const body = isEdit
+      ? { id: editInvoice.id, ...agendaForm, billing_type: 'agenda', time_entry_ids: selectedEntries, client_id: agendaForm.client_id }
+      : { ...agendaForm, company_id: activeCompany.id, billing_type: 'agenda', time_entry_ids: selectedEntries }
+
     const res = await fetch('/api/invoices', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ ...agendaForm, company_id: activeCompany.id, billing_type:'agenda', time_entry_ids: selectedEntries })
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     })
     const data = await res.json()
-    if (data.invoice) {
+    if (data.invoice || data.success) {
       setShowAgendaModal(false)
+      setEditInvoice(null)
       setTimeEntries([])
       setSelectedEntries([])
       fetchAll()
-      const b = data.breakdown
-      alert(`Fatura gerada!\n\nTotal horas: ${b.total_hours?.toFixed(2)}h\nBruto: R$ ${parseFloat(b.invoice_value).toFixed(2)}\nImposto: R$ ${parseFloat(b.tax_amount).toFixed(2)}\n\nVictor serviço: R$ ${parseFloat(b.victor_service).toFixed(2)}\nVictor lucro: R$ ${parseFloat(b.victor_profit).toFixed(2)}\nVictor TOTAL: R$ ${parseFloat(b.victor_total).toFixed(2)}\nFabrício TOTAL: R$ ${parseFloat(b.fabricio_total).toFixed(2)}`)
-    } else { alert('Erro: ' + (data.error||'Falha')) }
+      if (data.breakdown) {
+        const b = data.breakdown
+        alert(`Fatura ${isEdit ? 'atualizada' : 'gerada'}!\n\nTotal horas: ${b.total_hours?.toFixed(2)}h\nBruto: R$ ${parseFloat(b.invoice_value).toFixed(2)}\nImposto: R$ ${parseFloat(b.tax_amount).toFixed(2)}\n\nVictor serviço: R$ ${parseFloat(b.victor_service).toFixed(2)}\nVictor lucro: R$ ${parseFloat(b.victor_profit).toFixed(2)}\nVictor TOTAL: R$ ${parseFloat(b.victor_total).toFixed(2)}\nFabrício TOTAL: R$ ${parseFloat(b.fabricio_total).toFixed(2)}`)
+      }
+    } else {
+      alert('Erro: ' + (data.error || 'Falha'))
+    }
   }
 
   async function markReceived(invoice) {
@@ -112,15 +124,27 @@ export default function Billing() {
 
   function openEditInvoice(inv) {
     setEditInvoice(inv)
-    setContractForm({
-      contract_id: inv.contract_id || '',
-      month: inv.month,
-      year: inv.year,
-      invoice_value: inv.invoice_value,
-      invoice_number: inv.invoice_number || '',
-      notes: inv.notes || '',
-    })
-    setShowContractModal(true)
+    if (inv.billing_type === 'contract') {
+      setContractForm({
+        contract_id: inv.contract_id || '',
+        month: inv.month,
+        year: inv.year,
+        invoice_value: inv.invoice_value,
+        invoice_number: inv.invoice_number || '',
+        notes: inv.notes || '',
+      })
+      setShowContractModal(true)
+    } else {
+      setAgendaForm({
+        client_id: inv.client_id || '',
+        month: inv.month,
+        year: inv.year,
+        invoice_number: inv.invoice_number || '',
+        notes: inv.notes || '',
+      })
+      fetchEntries(inv.client_id, inv.month, inv.year)
+      setShowAgendaModal(true)
+    }
   }
 
   const fmt = v => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.',',')}` : '-'
@@ -170,7 +194,7 @@ export default function Billing() {
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">
                   {inv.status==='pendente' && <button onClick={()=>markReceived(inv)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">✓ Recebi</button>}
-                  {inv.status==='pendente' && inv.billing_type==='contract' && (
+                  {inv.status==='pendente' && (
                     <button onClick={()=>openEditInvoice(inv)} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs">✏️ Editar</button>
                   )}
                   <button onClick={()=>deleteInvoice(inv.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
@@ -211,7 +235,7 @@ export default function Billing() {
       {showAgendaModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">Gerar Fatura — Por Agenda</h3>
+            <h3 className="text-lg font-bold text-white mb-4">{editInvoice ? 'Editar Fatura — Agenda' : 'Gerar Fatura — Por Agenda'}</h3>
             <div className="space-y-3">
               <select value={agendaForm.client_id} onChange={e=>{const v=e.target.value;setAgendaForm(f=>({...f,client_id:v}));fetchEntries(v,agendaForm.month,agendaForm.year)}} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                 <option value="">Selecione o cliente</option>
@@ -303,7 +327,7 @@ export default function Billing() {
               <textarea placeholder="Observações" value={agendaForm.notes} onChange={e=>setAgendaForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>{setShowAgendaModal(false);setTimeEntries([]);setSelectedEntries([])}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={()=>{setShowAgendaModal(false);setTimeEntries([]);setSelectedEntries([]);setEditInvoice(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
               <button onClick={saveAgendaInvoice} disabled={selectedEntries.length===0} className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">Gerar Fatura</button>
             </div>
           </div>
