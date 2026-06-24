@@ -107,7 +107,7 @@ export default function Financial() {
 
   // Histórico: registros pagos do tipo selecionado
   const histSource = histType === 'receivables' ? receivables : histType === 'fabricio' ? payablesFab : payablesVictor
-  const histPaidAll = histSource.filter(r => r.status === 'pago')
+  const histPaidAll = histSource.filter(r => r.status === 'pago' || r.status === 'parcial')
   const histClients = Array.from(
     histPaidAll.reduce((m, r) => { if (r.client_id != null && !m.has(r.client_id)) m.set(r.client_id, r.client_name || 'Sem cliente'); return m }, new Map())
   ).map(([id, name]) => ({ id, name }))
@@ -206,7 +206,8 @@ export default function Financial() {
       {tab === 'historico' && (
         <div>
           {/* Filtro de tipo */}
-          <div className="flex gap-2 mb-4 flex-wrap">
+          <div className="flex gap-2 mb-4 flex-wrap items-center">
+            <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Tipo:</span>
             {[['receivables','A Receber'],['fabricio','Pagar Fabrício'],['victor','Pagar Victor']].map(([key,label]) => (
               <button key={key} onClick={() => setHistType(key)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histType === key ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{label}</button>
             ))}
@@ -214,7 +215,8 @@ export default function Financial() {
 
           {/* Filtro de cliente */}
           {histClients.length > 0 && (
-            <div className="flex gap-2 mb-4 flex-wrap">
+            <div className="flex gap-2 mb-4 flex-wrap items-center">
+              <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Cliente:</span>
               <button onClick={() => setHistClient('')} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histClient === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>Todos</button>
               {histClients.map(c => (
                 <button key={c.id} onClick={() => setHistClient(String(c.id))} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{c.name}</button>
