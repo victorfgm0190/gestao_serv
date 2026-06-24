@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
+function decimalToHHMM(decimal) {
+  if (!decimal && decimal !== 0) return '--:--'
+  const totalMinutes = Math.round(parseFloat(decimal) * 60)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
 export default function TimeEntries() {
   const { activeCompany } = useOutletContext()
   const [entries, setEntries] = useState([])
@@ -146,7 +154,7 @@ export default function TimeEntries() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-1">Total horas</p>
-          <p className="text-white text-xl font-bold">{totalHoras.toFixed(2)}h</p>
+          <p className="text-white text-xl font-bold">{decimalToHHMM(totalHoras)}</p>
         </div>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-1">Victor</p>
@@ -169,7 +177,7 @@ export default function TimeEntries() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{e.client_name || 'Sem cliente'}</span>
                     <span className="text-gray-500 text-xs">{new Date(e.entry_date).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span>
-                    <span className="text-gray-500 text-xs font-mono">{parseFloat(e.hours).toFixed(2)}h</span>
+                    <span className="text-gray-500 text-xs font-mono">{decimalToHHMM(e.hours)}</span>
                     {e.hora_inicial && e.hora_final && (
                       <span className="text-gray-600 text-xs font-mono">{e.hora_inicial}→{e.hora_final}{e.intervalo_inicio ? ` (int: ${e.intervalo_inicio}-${e.intervalo_fim})` : ''}</span>
                     )}
@@ -228,7 +236,7 @@ export default function TimeEntries() {
                 </div>
                 {preview && (
                   <div className="text-center pt-1">
-                    <span className="text-white font-bold text-lg">{preview.hours}h</span>
+                    <span className="text-white font-bold text-lg">{decimalToHHMM(preview.hours)}</span>
                     <span className="text-gray-500 text-xs ml-2">total calculado</span>
                   </div>
                 )}
