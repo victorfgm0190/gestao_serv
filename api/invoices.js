@@ -175,8 +175,16 @@ export default async function handler(req, res) {
 
   if (req.method === 'DELETE') {
     const { id } = req.body
-    await sql`DELETE FROM invoices WHERE id = ${id}`
-    return res.status(200).json({ success: true })
+    try {
+      const invoices = await sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`
+      if (invoices.length && invoices[0].receivable_id) {
+        await sql`DELETE FROM receivables WHERE id = ${invoices[0].receivable_id}`
+      }
+      await sql`DELETE FROM invoices WHERE id = ${id}`
+      return res.status(200).json({ success: true })
+    } catch (error) {
+      return res.status(500).json({ error: error.message })
+    }
   }
 
   res.status(405).json({ error: 'Method not allowed' })
