@@ -35,6 +35,7 @@ export default async function handler(req, res) {
       const result = await sql`
         UPDATE contracts SET
           name = ${fields.name},
+          billing_type = ${fields.billing_type || 'mensal'},
           contract_value = ${fields.contract_value},
           victor_fixed = ${fields.victor_fixed},
           remainder_victor_pct = ${fields.remainder_victor_pct},

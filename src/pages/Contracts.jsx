@@ -15,7 +15,7 @@ export default function Contracts() {
   const [selectedContract, setSelectedContract] = useState(null)
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [form, setForm] = useState({
-    client_id: '', name: '', contract_value: '', victor_fixed: '',
+    client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '',
     remainder_victor_pct: '50', remainder_fabricio_pct: '50',
     has_tax: false, tax_percentage: '', notes: '',
   })
@@ -48,7 +48,7 @@ export default function Contracts() {
     await fetch('/api/contracts', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     setShowModal(false)
     setEditContract(null)
-    setForm({ client_id: '', name: '', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', notes: '' })
+    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', notes: '' })
     fetchAll()
   }
 
@@ -74,7 +74,7 @@ export default function Contracts() {
 
   function openEdit(c) {
     setEditContract(c)
-    setForm({ client_id: c.client_id, name: c.name, contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', notes: c.notes || '' })
+    setForm({ client_id: c.client_id, name: c.name, billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', notes: c.notes || '' })
     setShowModal(true)
   }
 
@@ -85,6 +85,13 @@ export default function Contracts() {
   }
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
+  const valuePlaceholder = form.billing_type === 'hora' ? 'Valor por hora (R$)' : form.billing_type === 'dia' ? 'Valor por dia (R$)' : 'Valor do contrato líquido (R$)'
+  const victorPlaceholder = form.billing_type === 'hora' ? 'Valor fixo Victor por hora (R$)' : form.billing_type === 'dia' ? 'Valor fixo Victor por dia (R$)' : 'Valor fixo Victor (R$)'
+  const BILLING_BADGE = {
+    mensal: { label: 'Mensal', cls: 'bg-gray-700 text-gray-300' },
+    hora: { label: 'Por hora', cls: 'bg-blue-500/20 text-blue-400' },
+    dia: { label: 'Por dia', cls: 'bg-green-500/20 text-green-400' },
+  }
   const totalVictor = contractMonths.reduce((s, m) => s + (parseFloat(m.victor_share) || 0), 0)
   const totalFab = contractMonths.reduce((s, m) => s + (parseFloat(m.fabricio_share) || 0), 0)
 
@@ -105,7 +112,10 @@ export default function Contracts() {
           <div key={c.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-white font-semibold">{c.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-white font-semibold">{c.name}</p>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${(BILLING_BADGE[c.billing_type] || BILLING_BADGE.mensal).cls}`}>{(BILLING_BADGE[c.billing_type] || BILLING_BADGE.mensal).label}</span>
+                </div>
                 <p className="text-indigo-400 text-sm">{c.client_name}</p>
                 <div className="flex gap-4 mt-2 text-xs text-gray-400">
                   <span>Contrato: <span className="text-white">{fmt(c.contract_value)}</span></span>
@@ -178,8 +188,13 @@ export default function Contracts() {
                 </select>
               )}
               <input placeholder="Nome do contrato (ex: Stelldeck Renovação Mensal)" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <input placeholder="Valor do contrato líquido (R$)" type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <input placeholder="Valor fixo Victor (R$)" type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <select value={form.billing_type} onChange={e=>setForm(f=>({...f,billing_type:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <option value="mensal">Mensal (valor fixo por mês)</option>
+                <option value="hora">Por hora</option>
+                <option value="dia">Por dia</option>
+              </select>
+              <input placeholder={valuePlaceholder} type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <input placeholder={victorPlaceholder} type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
               <div className="grid grid-cols-2 gap-3">
                 <input placeholder="% Victor restante" type="number" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
                 <input placeholder="% Fabrício restante" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
