@@ -4,6 +4,14 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const { company_id, year } = req.query
     const rows = await sql`SELECT p.*, c.name as client_name FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+    const ids = rows.map(r => r.id)
+    let payments = []
+    if (ids.length) {
+      payments = await sql`SELECT * FROM payable_payments WHERE payable_type = 'victor' AND payable_id = ANY(${ids}) ORDER BY paid_at DESC, id DESC`
+    }
+    const byId = {}
+    for (const p of payments) { (byId[p.payable_id] ||= []).push(p) }
+    for (const r of rows) { r.payments = byId[r.id] || [] }
     return res.status(200).json({ data: rows })
   }
   if (req.method === 'POST') {

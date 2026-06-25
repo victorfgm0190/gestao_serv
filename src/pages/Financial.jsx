@@ -28,6 +28,9 @@ export default function Financial() {
   const [histClient, setHistClient] = useState('')
   const [form, setForm] = useState({ client_id: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), description: '', amount: '', service_amount: '', profit_amount: '', notes: '' })
   const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: new Date().toISOString().split('T')[0], payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
+  const [modalPayments, setModalPayments] = useState([])
+  const [newPay, setNewPay] = useState({ amount: '', paid_at: new Date().toISOString().split('T')[0], notes: '' })
+  const [estornoConfirm, setEstornoConfirm] = useState(null)
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
@@ -67,6 +70,41 @@ export default function Financial() {
     })
     setShowPayModal(null)
     setPayForm({ paid_amount: '', paid_at: new Date().toISOString().split('T')[0], payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
+    fetchAll()
+  }
+
+  async function openPayments(item) {
+    setShowPayModal(item)
+    setNewPay({ amount: '', paid_at: new Date().toISOString().split('T')[0], notes: '' })
+    setModalPayments(item.payments || [])
+    await loadPayments(item)
+  }
+
+  async function loadPayments(item) {
+    const res = await fetch(`/api/payable-payments?payable_type=${tab}&payable_id=${item.id}`)
+    setModalPayments((await res.json()).data || [])
+  }
+
+  async function addPayment() {
+    if (!newPay.amount || !newPay.paid_at) return
+    await fetch('/api/payable-payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payable_type: tab, payable_id: showPayModal.id, amount: newPay.amount, paid_at: newPay.paid_at, notes: newPay.notes }),
+    })
+    setNewPay({ amount: '', paid_at: new Date().toISOString().split('T')[0], notes: '' })
+    await loadPayments(showPayModal)
+    fetchAll()
+  }
+
+  async function deletePayment(p) {
+    await fetch('/api/payable-payments', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: p.id, payable_type: tab, payable_id: showPayModal.id }),
+    })
+    setEstornoConfirm(null)
+    await loadPayments(showPayModal)
     fetchAll()
   }
 
@@ -183,11 +221,21 @@ export default function Financial() {
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
-                  {item.status !== 'pago' && (
-                    <button onClick={() => { setShowPayModal(item); setPayForm(f => ({...f, paid_amount: item.amount || item.total_amount})) }} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
-                  )}
-                  {tab === 'receivables' && item.status === 'pago' && (
-                    <button onClick={() => estornar(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
+                  {tab === 'receivables' ? (
+                    <>
+                      {item.status !== 'pago' && (
+                        <button onClick={() => { setShowPayModal(item); setPayForm(f => ({...f, paid_amount: item.amount || item.total_amount})) }} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
+                      )}
+                      {item.status === 'pago' && (
+                        <button onClick={() => estornar(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
+                      )}
+                    </>
+                  ) : (
+                    item.status === 'pendente' ? (
+                      <button onClick={() => openPayments(item)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
+                    ) : (
+                      <button onClick={() => openPayments(item)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver Pagamentos</button>
+                    )
                   )}
                   {(!item.origin || item.origin !== 'faturamento') && (
                     <button onClick={() => del(item.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
@@ -289,8 +337,8 @@ export default function Financial() {
         </div>
       )}
 
-      {/* Modal pagamento */}
-      {showPayModal && (
+      {/* Modal pagamento — A Receber (pagamento único) */}
+      {showPayModal && tab === 'receivables' && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-lg font-bold text-white mb-4">Registrar pagamento</h3>
@@ -316,6 +364,63 @@ export default function Financial() {
             <div className="flex gap-3 mt-5">
               <button onClick={()=>setShowPayModal(null)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
               <button onClick={() => pay(showPayModal)} className="flex-1 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pagamentos — Pagar Victor/Fabrício (múltiplos pagamentos) */}
+      {showPayModal && tab !== 'receivables' && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between mb-1">
+              <h3 className="text-lg font-bold text-white">Pagamentos</h3>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[showPayModal.status] || 'bg-gray-700 text-gray-400'}`}>{showPayModal.status}</span>
+            </div>
+            <p className="text-gray-400 text-xs mb-4">
+              {showPayModal.client_name} — {months[showPayModal.month-1]}/{showPayModal.year}
+              <span className="text-gray-500"> · Total: </span>
+              <span className="text-white">{fmt(showPayModal.total_amount || showPayModal.amount)}</span>
+            </p>
+
+            {/* Lista de pagamentos */}
+            <div className="space-y-2 mb-5">
+              {modalPayments.length === 0 ? (
+                <p className="text-gray-500 text-sm text-center py-4">Nenhum pagamento registrado</p>
+              ) : modalPayments.map(p => (
+                <div key={p.id} className="flex items-center justify-between gap-3 bg-gray-800 rounded-lg px-3 py-2">
+                  <div className="min-w-0">
+                    <p className="text-white text-sm font-medium">{fmt(p.amount)} <span className="text-gray-500 font-normal">em {new Date(p.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></p>
+                    {p.notes && <p className="text-gray-500 text-xs italic truncate">{p.notes}</p>}
+                  </div>
+                  <button onClick={() => setEstornoConfirm(p)} title="Estornar" className="shrink-0 text-red-500 hover:text-red-400 text-base">🗑️</button>
+                </div>
+              ))}
+            </div>
+
+            {/* Formulário novo pagamento */}
+            <div className="border-t border-gray-800 pt-4 space-y-3">
+              <p className="text-gray-300 text-sm font-medium">Novo pagamento</p>
+              <input placeholder="Valor (R$)" type="number" value={newPay.amount} onChange={e=>setNewPay(f=>({...f,amount:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+              <textarea placeholder="Observação" value={newPay.notes} onChange={e=>setNewPay(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+              <button onClick={addPayment} disabled={!newPay.amount || !newPay.paid_at} className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">Registrar Pagamento</button>
+            </div>
+
+            <button onClick={()=>setShowPayModal(null)} className="w-full mt-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Fechar</button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmação de estorno */}
+      {estornoConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold text-white mb-2">Estornar pagamento</h3>
+            <p className="text-gray-400 text-sm mb-5">Deseja estornar o pagamento de {fmt(estornoConfirm.amount)} realizado em {new Date(estornoConfirm.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}?</p>
+            <div className="flex gap-3">
+              <button onClick={()=>setEstornoConfirm(null)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={()=>deletePayment(estornoConfirm)} className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium">Estornar</button>
             </div>
           </div>
         </div>
