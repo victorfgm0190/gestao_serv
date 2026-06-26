@@ -43,6 +43,7 @@ export default function Financial() {
   const [newPay, setNewPay] = useState({ amount: '', paid_at: new Date().toISOString().split('T')[0], notes: '' })
   const [estornoConfirm, setEstornoConfirm] = useState(null)
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1)
+  const [filterStatus, setFilterStatus] = useState('all')
   const [victorCats, setVictorCats] = useState(EMPTY_VICTOR_CATS)
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
@@ -163,10 +164,23 @@ export default function Financial() {
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
   const baseData = tab === 'receivables' ? receivables : tab === 'fabricio' ? payablesFab : payablesVictor
-  const currentData = (tab === 'victor' || tab === 'fabricio') && filterMonth !== ''
+  const monthFiltered = (tab === 'victor' || tab === 'fabricio') && filterMonth !== ''
     ? baseData.filter(r => Number(r.month) === Number(filterMonth))
     : baseData
+  const currentData = filterStatus === 'all'
+    ? monthFiltered
+    : monthFiltered.filter(r => filterStatus === 'pendente_parcial' ? (r.status === 'pendente' || r.status === 'parcial') : r.status === filterStatus)
   const victorCatTotal = victorCategoryTotal(victorCats)
+  const statusFilter = (
+    <div className="flex gap-2 items-center">
+      <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Status:</span>
+      <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500">
+        <option value="all">Todos</option>
+        <option value="pendente_parcial">Pendente / Parcial</option>
+        <option value="pago">Pago</option>
+      </select>
+    </div>
+  )
   const totalAmount = currentData.reduce((s, r) => s + (parseFloat(r.amount || r.total_amount) || 0), 0)
   const totalPaid = currentData.reduce((s, r) => s + (parseFloat(r.paid_amount) || 0), 0)
   const totalOpen = totalAmount - totalPaid
@@ -220,7 +234,7 @@ export default function Financial() {
       </div>
 
       {(tab === 'victor' || tab === 'fabricio') && (
-        <div className="flex gap-2 items-center mb-4">
+        <div className="flex gap-2 items-center mb-4 flex-wrap">
           <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Mês:</span>
           <select value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500">
             <option value="">Todos</option>
@@ -228,7 +242,12 @@ export default function Financial() {
           </select>
           <span className="text-gray-500 text-xs uppercase tracking-wider ml-2 mr-1">Ano:</span>
           <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500"/>
+          <div className="ml-2">{statusFilter}</div>
         </div>
+      )}
+
+      {tab === 'receivables' && (
+        <div className="mb-4">{statusFilter}</div>
       )}
 
       {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : currentData.length === 0 ? (
