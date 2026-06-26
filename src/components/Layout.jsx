@@ -83,7 +83,7 @@ export default function Layout() {
               }`
             }
           >
-            <span>⏱️</span> Horas
+            <span>⏱️</span> Apont. de Horas
           </NavLink>
           <NavLink
             to="/financial-rules"
