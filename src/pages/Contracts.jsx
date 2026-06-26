@@ -194,7 +194,10 @@ export default function Contracts() {
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               )}
-              <input placeholder="Nome do contrato (ex: Stelldeck Renovação Mensal)" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Nome do contrato</label>
+                <input placeholder="Nome do contrato (ex: Stelldeck Renovação Mensal)" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              </div>
               <select value={form.billing_type} onChange={e=>setForm(f=>({...f,billing_type:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                 <option value="mensal">Mensal (valor fixo por mês)</option>
                 <option value="hora">Por hora</option>
@@ -212,18 +215,33 @@ export default function Contracts() {
                   <input placeholder="Valor hora deslocamento (R$) — vazio usa o valor/hora do contrato" type="number" value={form.deslocamento_valor_hora} onChange={e=>setForm(f=>({...f,deslocamento_valor_hora:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
                 )}
               </div>
-              <input placeholder={valuePlaceholder} type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <input placeholder={victorPlaceholder} type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="% Victor restante" type="number" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                <input placeholder="% Fabrício restante" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Valor do contrato líquido</label>
+                <input placeholder={valuePlaceholder} type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Valor fixo Victor</label>
+                <input placeholder={victorPlaceholder} type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-xs text-gray-400 font-medium">% Victor</label>
+                  <input placeholder="% Victor restante" type="number" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                </div>
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-xs text-gray-400 font-medium">% Fabrício</label>
+                  <input placeholder="% Fabrício restante" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                </div>
               </div>
               <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.has_tax} onChange={e=>setForm(f=>({...f,has_tax:e.target.checked}))} className="rounded"/>
                 Tem imposto sobre a nota?
               </label>
               {form.has_tax && <input placeholder="% imposto" type="number" value={form.tax_percentage} onChange={e=>setForm(f=>({...f,tax_percentage:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>}
-              <textarea placeholder="Observações" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Observações</label>
+                <textarea placeholder="Observações" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+              </div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={()=>{setShowModal(false);setEditContract(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>

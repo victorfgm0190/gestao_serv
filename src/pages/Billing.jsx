@@ -262,7 +262,10 @@ export default function Billing() {
                 </select>
                 <input type="number" value={agendaForm.year} onChange={e=>{const v=parseInt(e.target.value);setAgendaForm(f=>({...f,year:v}));fetchEntries(agendaForm.client_id,agendaForm.month,v)}} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
               </div>
-              <input placeholder="Número da NF (opcional)" value={agendaForm.invoice_number} onChange={e=>setAgendaForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Número da NF</label>
+                <input placeholder="Número da NF (opcional)" value={agendaForm.invoice_number} onChange={e=>setAgendaForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              </div>
               {timeEntries.length > 0 && (
                 <div className="bg-gray-800 rounded-xl p-3">
                   <div className="flex items-center justify-between mb-2">
@@ -339,7 +342,10 @@ export default function Billing() {
                 </div>
               )}
               {timeEntries.length===0 && agendaForm.client_id && <p className="text-gray-500 text-sm text-center py-4">Nenhuma agenda encontrada para este cliente/período.</p>}
-              <textarea placeholder="Observações" value={agendaForm.notes} onChange={e=>setAgendaForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Observações</label>
+                <textarea placeholder="Observações" value={agendaForm.notes} onChange={e=>setAgendaForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+              </div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={()=>{setShowAgendaModal(false);setTimeEntries([]);setSelectedEntries([]);setEditInvoice(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
