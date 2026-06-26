@@ -146,17 +146,22 @@ export default function Financial() {
 
   async function confirmReceive() {
     let pool = Math.round(receiveCategoryTotal(receiveCats) * 100) / 100
-    console.log('Pool inicial:', pool)
     if (pool <= 0) return
     const notes = receiveCategorySummary(receiveCats)
     const paid_at = new Date().toISOString().split('T')[0]
-    // Registros pendentes/parciais, ordenados do menor saldo restante para o maior
+    // Registros pendentes/parciais, ordenados do mês mais antigo para o mais recente; no mesmo mês, menor saldo restante primeiro
     const targets = payablesVictor
       .filter(r => r.status === 'pendente' || r.status === 'parcial')
       .map(r => ({ id: r.id, remaining: Math.round(((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)) * 100) / 100 }))
       .filter(r => r.remaining > 0)
-      .sort((a, b) => a.remaining - b.remaining)
-    console.log('Registros ordenados:', targets.map(r => ({ id: r.id, desc: payablesVictor.find(p => p.id === r.id)?.description, remaining: r.remaining })))
+      .sort((a, b) => {
+        const pa = payablesVictor.find(p => p.id === a.id)
+        const pb = payablesVictor.find(p => p.id === b.id)
+        const dateA = pa.year * 100 + pa.month
+        const dateB = pb.year * 100 + pb.month
+        if (dateA !== dateB) return dateA - dateB
+        return a.remaining - b.remaining
+      })
 
     setReceiving(true)
     try {
