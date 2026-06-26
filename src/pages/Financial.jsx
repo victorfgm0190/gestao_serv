@@ -24,6 +24,20 @@ const EMPTY_VICTOR_CATS = { honorarios: '', das: '', inss: '', pro_labore: '', l
 const victorCategoryTotal = (cats) => VICTOR_CATEGORIES.reduce((s, [k]) => s + (parseFloat(cats[k]) || 0), 0)
 const victorCategorySummary = (cats) => VICTOR_CATEGORIES.filter(([k]) => parseFloat(cats[k]) > 0).map(([k, label]) => `${label}: R$${parseFloat(cats[k])}`).join(' | ')
 
+// Distribuição "Receber" — Pagar Victor (inclui Escritório)
+const RECEIVE_VICTOR_CATEGORIES = [
+  ['honorarios', 'Honorários'],
+  ['das', 'DAS'],
+  ['inss', 'INSS'],
+  ['pro_labore', 'Pro Labore'],
+  ['lucros', 'Lucros'],
+  ['escritorio', 'Escritório'],
+  ['demais', 'Demais despesas'],
+]
+const EMPTY_RECEIVE_CATS = { honorarios: '', das: '', inss: '', pro_labore: '', lucros: '', escritorio: '', demais: '' }
+const receiveCategoryTotal = (cats) => RECEIVE_VICTOR_CATEGORIES.reduce((s, [k]) => s + (parseFloat(cats[k]) || 0), 0)
+const receiveCategorySummary = (cats) => RECEIVE_VICTOR_CATEGORIES.filter(([k]) => parseFloat(cats[k]) > 0).map(([k, label]) => `${label}: R$${String(parseFloat(cats[k])).replace('.', ',')}`).join(' | ')
+
 export default function Financial() {
   const { activeCompany } = useOutletContext()
   const [tab, setTab] = useState('receivables')
@@ -45,6 +59,9 @@ export default function Financial() {
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1)
   const [filterStatus, setFilterStatus] = useState('all')
   const [victorCats, setVictorCats] = useState(EMPTY_VICTOR_CATS)
+  const [showReceiveModal, setShowReceiveModal] = useState(false)
+  const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
+  const [receiving, setReceiving] = useState(false)
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
@@ -122,6 +139,44 @@ export default function Financial() {
     fetchAll()
   }
 
+  function openReceive() {
+    setReceiveCats(EMPTY_RECEIVE_CATS)
+    setShowReceiveModal(true)
+  }
+
+  async function confirmReceive() {
+    let pool = Math.round(receiveCategoryTotal(receiveCats) * 100) / 100
+    if (pool <= 0) return
+    const notes = receiveCategorySummary(receiveCats)
+    const paid_at = new Date().toISOString().split('T')[0]
+    // Registros pendentes/parciais, ordenados do menor saldo restante para o maior
+    const targets = payablesVictor
+      .filter(r => r.status === 'pendente' || r.status === 'parcial')
+      .map(r => ({ id: r.id, remaining: Math.round(((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)) * 100) / 100 }))
+      .filter(r => r.remaining > 0)
+      .sort((a, b) => a.remaining - b.remaining)
+
+    setReceiving(true)
+    try {
+      for (const t of targets) {
+        if (pool <= 0) break
+        const pay = Math.round(Math.min(pool, t.remaining) * 100) / 100
+        if (pay <= 0) continue
+        await fetch('/api/payable-payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payable_type: 'victor', payable_id: t.id, amount: pay, paid_at, notes }),
+        })
+        pool = Math.round((pool - pay) * 100) / 100
+      }
+      setShowReceiveModal(false)
+      setReceiveCats(EMPTY_RECEIVE_CATS)
+      await fetchAll()
+    } finally {
+      setReceiving(false)
+    }
+  }
+
   async function deletePayment(p) {
     await fetch('/api/payable-payments', {
       method: 'DELETE',
@@ -171,6 +226,7 @@ export default function Financial() {
     ? monthFiltered
     : monthFiltered.filter(r => filterStatus === 'pendente_parcial' ? (r.status === 'pendente' || r.status === 'parcial') : r.status === filterStatus)
   const victorCatTotal = victorCategoryTotal(victorCats)
+  const receiveTotal = receiveCategoryTotal(receiveCats)
   const statusFilter = (
     <div className="flex gap-2 items-center">
       <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Status:</span>
@@ -243,6 +299,9 @@ export default function Financial() {
           <span className="text-gray-500 text-xs uppercase tracking-wider ml-2 mr-1">Ano:</span>
           <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500"/>
           <div className="ml-2">{statusFilter}</div>
+          {tab === 'victor' && (
+            <button onClick={openReceive} className="ml-auto px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">Receber</button>
+          )}
         </div>
       )}
 
@@ -510,6 +569,30 @@ export default function Financial() {
             <div className="flex gap-3">
               <button onClick={()=>setEstornoConfirm(null)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
               <button onClick={()=>deletePayment(estornoConfirm)} className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium">Estornar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Receber — distribui valor entre os registros pendentes/parciais do Victor */}
+      {showReceiveModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-white mb-4">Receber — Pagar Victor</h3>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                {RECEIVE_VICTOR_CATEGORIES.map(([key, label]) => (
+                  <div key={key} className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-medium">{label} (R$)</label>
+                    <input type="number" placeholder="0" value={receiveCats[key]} onChange={e=>setReceiveCats(c=>({...c,[key]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-gray-300 border-t border-gray-800 pt-3">Total a distribuir: <span className="text-green-400 font-bold">{fmt(receiveTotal)}</span></p>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button onClick={()=>setShowReceiveModal(false)} disabled={receiving} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50">Cancelar</button>
+              <button onClick={confirmReceive} disabled={receiving || receiveTotal <= 0} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{receiving ? 'Distribuindo...' : 'Confirmar'}</button>
             </div>
           </div>
         </div>
