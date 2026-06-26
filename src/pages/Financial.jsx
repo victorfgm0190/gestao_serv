@@ -146,6 +146,7 @@ export default function Financial() {
 
   async function confirmReceive() {
     let pool = Math.round(receiveCategoryTotal(receiveCats) * 100) / 100
+    console.log('Pool inicial:', pool)
     if (pool <= 0) return
     const notes = receiveCategorySummary(receiveCats)
     const paid_at = new Date().toISOString().split('T')[0]
@@ -155,6 +156,7 @@ export default function Financial() {
       .map(r => ({ id: r.id, remaining: Math.round(((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)) * 100) / 100 }))
       .filter(r => r.remaining > 0)
       .sort((a, b) => a.remaining - b.remaining)
+    console.log('Registros ordenados:', targets.map(r => ({ id: r.id, desc: payablesVictor.find(p => p.id === r.id)?.description, remaining: r.remaining })))
 
     setReceiving(true)
     try {
