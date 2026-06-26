@@ -3,7 +3,7 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
   if (req.method === 'GET') {
     const { company_id, year } = req.query
-    const rows = await sql`SELECT p.*, c.name as client_name, r.amount as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN receivables r ON r.invoice_id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+    const rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
     const ids = rows.map(r => r.id)
     let payments = []
     if (ids.length) {
