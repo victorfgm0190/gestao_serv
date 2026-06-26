@@ -119,9 +119,15 @@ export default function FinancialRules() {
                 Tem deslocamento/combustível?
               </label>
               {form.has_fuel && <input placeholder="Valor combustível (R$)" type="number" value={form.fuel_value} onChange={e=>setForm(f=>({...f,fuel_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>}
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="% restante Victor" type="number" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                <input placeholder="% restante Fabrício" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <div className="flex gap-3">
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-xs text-gray-400 font-medium">% Victor</label>
+                  <input placeholder="% restante Victor" type="number" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                </div>
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-xs text-gray-400 font-medium">% Fabrício</label>
+                  <input placeholder="% restante Fabrício" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                </div>
               </div>
             </div>
             <div className="flex gap-3 mt-5">
