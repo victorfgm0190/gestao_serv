@@ -265,6 +265,9 @@ export default function Financial() {
                   </div>
                   <p className="text-white text-sm">{item.description}</p>
                   <div className="flex gap-4 mt-2 text-xs">
+                    {item.invoice_amount != null && (
+                      <span className="text-gray-500">NF: <span className="text-gray-300">{fmt(item.invoice_amount)}</span></span>
+                    )}
                     {tab === 'victor' ? (
                       <>
                         <span className="text-gray-500">Serviço: <span className="text-gray-300">{fmt(item.service_amount)}</span></span>
