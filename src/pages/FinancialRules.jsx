@@ -7,6 +7,7 @@ export default function FinancialRules() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [editRule, setEditRule] = useState(null)
   const [form, setForm] = useState({
     client_id: '',
     hourly_rate: '',
@@ -36,16 +37,44 @@ export default function FinancialRules() {
     finally { setLoading(false) }
   }
 
+  function resetForm() {
+    setForm({ client_id: '', hourly_rate: '', has_tax: false, tax_percentage: '', victor_fixed_per_hour: '', has_fuel: false, fuel_value: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50' })
+  }
+
+  function openEdit(r) {
+    setEditRule(r)
+    setForm({
+      client_id: r.client_id ?? '',
+      hourly_rate: r.hourly_rate ?? '',
+      has_tax: r.has_tax ?? false,
+      tax_percentage: r.tax_percentage ?? '',
+      victor_fixed_per_hour: r.victor_fixed_per_hour ?? '',
+      has_fuel: r.has_fuel ?? false,
+      fuel_value: r.fuel_value ?? '',
+      remainder_victor_pct: r.remainder_victor_pct ?? '50',
+      remainder_fabricio_pct: r.remainder_fabricio_pct ?? '50',
+    })
+    setShowModal(true)
+  }
+
+  function closeModal() {
+    setShowModal(false)
+    setEditRule(null)
+    resetForm()
+  }
+
   async function save() {
     if (!form.client_id || !form.hourly_rate) return
     try {
-      await fetch('/api/financial-rules', {
-        method: 'POST',
+      const url = editRule ? `/api/financial-rules?id=${editRule.id}` : '/api/financial-rules'
+      await fetch(url, {
+        method: editRule ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
       setShowModal(false)
-      setForm({ client_id: '', hourly_rate: '', has_tax: false, tax_percentage: '', victor_fixed_per_hour: '', has_fuel: false, fuel_value: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50' })
+      setEditRule(null)
+      resetForm()
       fetchAll()
     } catch(e) { console.error(e) }
   }
@@ -69,7 +98,7 @@ export default function FinancialRules() {
           <h2 className="text-2xl font-bold text-white">Regras Financeiras</h2>
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
+        <button onClick={() => { setEditRule(null); resetForm(); setShowModal(true) }} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
           + Nova regra
         </button>
       </div>
@@ -91,7 +120,10 @@ export default function FinancialRules() {
                     <span className="text-gray-400">Restante: <span className="text-green-400">{r.remainder_victor_pct}% Victor / {r.remainder_fabricio_pct}% Fab</span></span>
                   </div>
                 </div>
-                <button onClick={() => deleteRule(r.id)} className="text-gray-600 hover:text-red-400 text-sm transition-colors">Excluir</button>
+                <div className="flex items-center gap-3 shrink-0">
+                  <button onClick={() => openEdit(r)} className="text-gray-400 hover:text-blue-400 text-sm transition-colors">Editar</button>
+                  <button onClick={() => deleteRule(r.id)} className="text-gray-600 hover:text-red-400 text-sm transition-colors">Excluir</button>
+                </div>
               </div>
             </div>
           ))}
@@ -101,7 +133,7 @@ export default function FinancialRules() {
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">Nova regra financeira</h3>
+            <h3 className="text-lg font-bold text-white mb-4">{editRule ? 'Editar regra financeira' : 'Nova regra financeira'}</h3>
             <div className="space-y-3">
               <select value={form.client_id} onChange={e => setForm(f=>({...f,client_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                 <option value="">Selecione o cliente</option>
@@ -131,7 +163,7 @@ export default function FinancialRules() {
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>setShowModal(false)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
+              <button onClick={closeModal} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
               <button onClick={save} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">Salvar</button>
             </div>
           </div>
