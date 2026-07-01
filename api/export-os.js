@@ -4,20 +4,31 @@ import ExcelJS from 'exceljs'
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { company_id, month, year } = req.query
+  const { company_id, month, year, client_id } = req.query
   if (!company_id || !month || !year) return res.status(400).json({ error: 'company_id, month e year são obrigatórios' })
 
   const sql = neon(process.env.DATABASE_URL)
 
-  const entries = await sql`
-    SELECT te.*, c.name as client_name
-    FROM time_entries te
-    LEFT JOIN clients c ON c.id = te.client_id
-    WHERE te.company_id = ${company_id}
-      AND EXTRACT(MONTH FROM te.entry_date) = ${month}
-      AND EXTRACT(YEAR FROM te.entry_date) = ${year}
-    ORDER BY te.entry_date ASC
-  `
+  const entries = client_id
+    ? await sql`
+        SELECT te.*, c.name as client_name
+        FROM time_entries te
+        LEFT JOIN clients c ON c.id = te.client_id
+        WHERE te.company_id = ${company_id}
+          AND EXTRACT(MONTH FROM te.entry_date) = ${month}
+          AND EXTRACT(YEAR FROM te.entry_date) = ${year}
+          AND te.client_id = ${client_id}
+        ORDER BY te.entry_date ASC
+      `
+    : await sql`
+        SELECT te.*, c.name as client_name
+        FROM time_entries te
+        LEFT JOIN clients c ON c.id = te.client_id
+        WHERE te.company_id = ${company_id}
+          AND EXTRACT(MONTH FROM te.entry_date) = ${month}
+          AND EXTRACT(YEAR FROM te.entry_date) = ${year}
+        ORDER BY te.entry_date ASC
+      `
 
   const monthNames = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO']
   const monthName = monthNames[parseInt(month) - 1]
@@ -170,9 +181,19 @@ export default async function handler(req, res) {
     iCell.alignment = centerAlign
   })
 
+  // Nome do arquivo reflete o filtro de cliente
+  const slugify = (str) => String(str || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
+  const monthsShort = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
+  const clientSlug = client_id
+    ? slugify(entries[0]?.client_name || 'cliente')
+    : 'todos'
+  const fileName = `horas_${clientSlug}_${monthsShort[parseInt(month) - 1]}_${year}.xlsx`
+
   // Gerar buffer e enviar
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-  res.setHeader('Content-Disposition', `attachment; filename="OS_${monthName}_${year}.xlsx"`)
+  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`)
 
   const buffer = await wb.xlsx.writeBuffer()
   res.status(200).send(Buffer.from(buffer))

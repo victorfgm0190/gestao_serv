@@ -196,18 +196,31 @@ export default function TimeEntries() {
     setShowModal(true)
   }
 
+  function slugify(str) {
+    return String(str)
+      .normalize('NFD').replace(/[̀-ͯ]/g, '') // remove acentos
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+  }
+
   async function exportToExcel() {
     try {
-      const res = await fetch(`/api/export-os?company_id=${activeCompany.id}&month=${filterMonth}&year=${filterYear}`)
+      let url = `/api/export-os?company_id=${activeCompany.id}&month=${filterMonth}&year=${filterYear}`
+      if (filterClient) url += `&client_id=${filterClient}`
+      const res = await fetch(url)
       if (!res.ok) { alert('Erro ao gerar Excel'); return }
       const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
+      const objectUrl = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      const monthNames = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO']
-      a.href = url
-      a.download = `OS_${monthNames[filterMonth-1]}_${filterYear}.xlsx`
+      const monthsShort = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
+      const clientName = filterClient
+        ? (clientsWithEntries.find(c => String(c.id) === String(filterClient))?.name || 'cliente')
+        : 'todos'
+      a.href = objectUrl
+      a.download = `horas_${slugify(clientName)}_${monthsShort[filterMonth-1]}_${filterYear}.xlsx`
       a.click()
-      URL.revokeObjectURL(url)
+      URL.revokeObjectURL(objectUrl)
     } catch(e) {
       alert('Erro ao exportar: ' + e.message)
     }
