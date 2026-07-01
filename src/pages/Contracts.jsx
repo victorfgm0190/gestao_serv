@@ -17,7 +17,7 @@ export default function Contracts() {
   const [form, setForm] = useState({
     client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '',
     remainder_victor_pct: '50', remainder_fabricio_pct: '50',
-    has_tax: false, tax_percentage: '', notes: '',
+    has_tax: false, tax_percentage: '', tax_client_percent: '', notes: '',
     deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '',
   })
   const [clientRules, setClientRules] = useState([])
@@ -56,7 +56,7 @@ export default function Contracts() {
 
   function openNew() {
     setEditContract(null)
-    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '' })
+    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', tax_client_percent: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '' })
     setClientRules([])
     setShowModal(true)
   }
@@ -68,7 +68,7 @@ export default function Contracts() {
     await fetch('/api/contracts', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     setShowModal(false)
     setEditContract(null)
-    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '' })
+    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', tax_client_percent: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '' })
     setClientRules([])
     fetchAll()
   }
@@ -95,7 +95,7 @@ export default function Contracts() {
 
   function openEdit(c) {
     setEditContract(c)
-    setForm({ client_id: c.client_id, name: c.name, billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '' })
+    setForm({ client_id: c.client_id, name: c.name, billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', tax_client_percent: c.tax_client_percent || '', notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '' })
     loadRulesForClient(c.client_id)
     setShowModal(true)
   }
@@ -151,6 +151,28 @@ export default function Contracts() {
                   {c.has_tax && <span>Imposto: <span className="text-red-400">{c.tax_percentage}%</span></span>}
                   <span>Deslocamento: <span className="text-gray-300">{DESLOC_LABEL[c.deslocamento_tipo] || DESLOC_LABEL.nao_cobrado}{(c.deslocamento_tipo === 'hora' || c.deslocamento_tipo === 'hora_despesas') && parseFloat(c.deslocamento_valor_hora) > 0 ? ` (${fmt(c.deslocamento_valor_hora)}/h)` : ''}</span></span>
                 </div>
+                {parseFloat(c.tax_client_percent) > 0 && (() => {
+                  const base = parseFloat(c.contract_value) || 0
+                  const tax = parseFloat(c.tax_client_percent) || 0
+                  if (c.billing_type === 'hora') {
+                    const imposto = base * tax / 100
+                    return (
+                      <div className="flex gap-4 mt-1 text-xs text-gray-400">
+                        <span>Valor hora bruto: <span className="text-white">{fmt(base)}</span></span>
+                        <span>Imposto estimado/hora: <span className="text-red-400">{fmt(imposto)}</span></span>
+                        <span>Valor hora líquido: <span className="text-green-400">{fmt(base - imposto)}</span></span>
+                      </div>
+                    )
+                  }
+                  const nf = base / (1 - tax / 100)
+                  return (
+                    <div className="flex gap-4 mt-1 text-xs text-gray-400">
+                      <span>Base: <span className="text-white">{fmt(base)}</span></span>
+                      <span>NF estimada: <span className="text-white">{fmt(nf)}</span></span>
+                      <span>Imposto estimado: <span className="text-red-400">{fmt(nf - base)}</span></span>
+                    </div>
+                  )
+                })()}
               </div>
               <div className="flex gap-2">
                 <button onClick={() => openMonth(c)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">+ Mês</button>
@@ -273,6 +295,13 @@ export default function Contracts() {
                 Tem imposto sobre a nota?
               </label>
               {form.has_tax && <input placeholder="% imposto" type="number" value={form.tax_percentage} onChange={e=>setForm(f=>({...f,tax_percentage:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>}
+              {form.has_tax && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-400 font-medium">% Imposto cobrado do cliente</label>
+                  <input placeholder="Ex: 9.20" type="number" step="0.01" value={form.tax_client_percent} onChange={e=>setForm(f=>({...f,tax_client_percent:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <p className="text-gray-500 text-xs">Ex: 9,20% → NF = base / (1 − 0,092)</p>
+                </div>
+              )}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Observações</label>
                 <textarea placeholder="Observações" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
