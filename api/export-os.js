@@ -112,6 +112,13 @@ export default async function handler(req, res) {
     return (h * 3600 + m * 60) / 86400
   }
 
+  // Minutos desde 00:00 (aceita HH:MM ou HH:MM:SS)
+  function timeToMinutes(t) {
+    if (!t) return 0
+    const [h, m, s] = t.split(':').map(Number)
+    return h * 60 + m + (s || 0) / 60
+  }
+
   entries.forEach((entry, idx) => {
     const rowNum = 5 + idx
     const row = ws.getRow(rowNum)
@@ -173,9 +180,17 @@ export default async function handler(req, res) {
     hCell.font = dataFont
     hCell.alignment = centerAlign
 
-    // TOTAL (fórmula)
+    // TOTAL = HORAFINAL - HORAINICIAL - INTERVALO (fim - início)
+    // Calculado em JS (fórmula do Excel saía vazia sem resultado em cache).
+    // Guardado como valor de tempo numérico (fração do dia) para exibir via
+    // numFmt e continuar somando no SUBTOTAL do topo (I1).
+    const totalMin = Math.max(
+      timeToMinutes(entry.hora_final) - timeToMinutes(entry.hora_inicial)
+        - (timeToMinutes(entry.intervalo_fim) - timeToMinutes(entry.intervalo_inicio)),
+      0
+    )
     const iCell = ws.getCell(rowNum, 9)
-    iCell.value = { formula: `H${rowNum}-E${rowNum}-(G${rowNum}-F${rowNum})` }
+    iCell.value = totalMin / 1440
     iCell.numFmt = '[h]:mm:ss'
     iCell.font = dataFont
     iCell.alignment = centerAlign
