@@ -4,7 +4,17 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
 
   if (req.method === 'GET') {
-    const { company_id } = req.query
+    const { company_id, client_id } = req.query
+    if (client_id) {
+      const contracts = await sql`
+        SELECT c.*, cl.name as client_name
+        FROM contracts c
+        JOIN clients cl ON cl.id = c.client_id
+        WHERE c.client_id = ${client_id} AND c.is_active = true
+        ORDER BY c.id ASC
+      `
+      return res.status(200).json({ contracts })
+    }
     const contracts = await sql`
       SELECT c.*, cl.name as client_name
       FROM contracts c
@@ -16,11 +26,11 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, notes, deslocamento_tipo, deslocamento_valor_hora } = req.body
+    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, notes, deslocamento_tipo, deslocamento_valor_hora, financial_rule_id } = req.body
     try {
       const result = await sql`
-        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, notes, deslocamento_tipo, deslocamento_valor_hora)
-        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value}, ${victor_fixed}, ${remainder_victor_pct || 50}, ${remainder_fabricio_pct || 50}, ${has_tax || false}, ${tax_percentage || null}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0})
+        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, notes, deslocamento_tipo, deslocamento_valor_hora, financial_rule_id)
+        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value}, ${victor_fixed}, ${remainder_victor_pct || 50}, ${remainder_fabricio_pct || 50}, ${has_tax || false}, ${tax_percentage || null}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0}, ${financial_rule_id || null})
         RETURNING *
       `
       return res.status(201).json({ contract: result[0] })
@@ -45,6 +55,7 @@ export default async function handler(req, res) {
           has_tax = ${fields.has_tax},
           tax_percentage = ${fields.tax_percentage},
           is_active = ${fields.is_active},
+          financial_rule_id = ${fields.financial_rule_id || null},
           notes = ${fields.notes}
         WHERE id = ${id}
         RETURNING *

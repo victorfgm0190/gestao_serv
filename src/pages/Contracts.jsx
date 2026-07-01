@@ -18,8 +18,10 @@ export default function Contracts() {
     client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '',
     remainder_victor_pct: '50', remainder_fabricio_pct: '50',
     has_tax: false, tax_percentage: '', notes: '',
-    deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '',
+    deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '',
   })
+  const [clientRules, setClientRules] = useState([])
+  const [rulesLoading, setRulesLoading] = useState(false)
   const [monthForm, setMonthForm] = useState({
     contract_id: '', client_id: '', month: new Date().getMonth() + 1,
     year: new Date().getFullYear(), invoice_value: '', notes: '',
@@ -42,14 +44,32 @@ export default function Contracts() {
     finally { setLoading(false) }
   }
 
+  async function loadRulesForClient(clientId) {
+    if (!clientId) { setClientRules([]); return }
+    setRulesLoading(true)
+    try {
+      const r = await fetch(`/api/financial-rules?client_id=${clientId}`)
+      setClientRules((await r.json()).rules || [])
+    } catch(e) { console.error(e); setClientRules([]) }
+    finally { setRulesLoading(false) }
+  }
+
+  function openNew() {
+    setEditContract(null)
+    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '' })
+    setClientRules([])
+    setShowModal(true)
+  }
+
   async function saveContract() {
-    if (!form.client_id || !form.name || !form.contract_value) return
+    if (!form.client_id || !form.name || !form.contract_value || !form.financial_rule_id) return
     const method = editContract ? 'PATCH' : 'POST'
     const body = editContract ? { id: editContract.id, ...form, is_active: true } : { ...form, company_id: activeCompany.id }
     await fetch('/api/contracts', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     setShowModal(false)
     setEditContract(null)
-    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '' })
+    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '' })
+    setClientRules([])
     fetchAll()
   }
 
@@ -75,7 +95,8 @@ export default function Contracts() {
 
   function openEdit(c) {
     setEditContract(c)
-    setForm({ client_id: c.client_id, name: c.name, billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '' })
+    setForm({ client_id: c.client_id, name: c.name, billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '' })
+    loadRulesForClient(c.client_id)
     setShowModal(true)
   }
 
@@ -108,7 +129,7 @@ export default function Contracts() {
           <h2 className="text-2xl font-bold text-white">Contratos</h2>
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">+ Novo contrato</button>
+        <button onClick={openNew} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">+ Novo contrato</button>
       </div>
 
       {/* Contratos ativos */}
@@ -189,11 +210,25 @@ export default function Contracts() {
             <h3 className="text-lg font-bold text-white mb-4">{editContract ? 'Editar contrato' : 'Novo contrato'}</h3>
             <div className="space-y-3">
               {!editContract && (
-                <select value={form.client_id} onChange={e=>setForm(f=>({...f,client_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <select value={form.client_id} onChange={e=>{ const v = e.target.value; setForm(f=>({...f,client_id:v,financial_rule_id:''})); loadRulesForClient(v) }} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                   <option value="">Selecione o cliente</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               )}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Regra Financeira</label>
+                <select value={form.financial_rule_id} onChange={e=>setForm(f=>({...f,financial_rule_id:e.target.value}))} disabled={!form.client_id || rulesLoading || clientRules.length === 0} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
+                  <option value="">{rulesLoading ? 'Carregando regras...' : 'Selecione a regra financeira'}</option>
+                  {clientRules.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.client_name} — {r.hourly_rate ? `${fmt(r.hourly_rate)}/h` : `${fmt(r.victor_fixed_per_hour)} fixo`}
+                    </option>
+                  ))}
+                </select>
+                {form.client_id && !rulesLoading && clientRules.length === 0 && (
+                  <p className="text-amber-400 text-xs">Este cliente não possui regra financeira. Cadastre uma antes de criar o contrato.</p>
+                )}
+              </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Nome do contrato</label>
                 <input placeholder="Nome do contrato (ex: Stelldeck Renovação Mensal)" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
@@ -245,7 +280,7 @@ export default function Contracts() {
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={()=>{setShowModal(false);setEditContract(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
-              <button onClick={saveContract} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">Salvar</button>
+              <button onClick={saveContract} disabled={!form.financial_rule_id} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">Salvar</button>
             </div>
           </div>
         </div>

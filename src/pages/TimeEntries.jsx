@@ -21,6 +21,7 @@ export default function TimeEntries() {
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [form, setForm] = useState({
     client_id: '',
+    contract_id: '',
     entry_date: new Date().toISOString().split('T')[0],
     hora_inicial: '',
     intervalo_inicio: '',
@@ -34,6 +35,8 @@ export default function TimeEntries() {
   const [preview, setPreview] = useState(null)
   const [editEntry, setEditEntry] = useState(null)
   const [filterClient, setFilterClient] = useState('')
+  const [clientContracts, setClientContracts] = useState([])
+  const [contractsLoading, setContractsLoading] = useState(false)
 
   useEffect(() => { fetchAll() }, [activeCompany, filterMonth, filterYear])
   useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth])
@@ -147,8 +150,26 @@ export default function TimeEntries() {
     calcPreview(nf)
   }
 
+  async function loadContractsForClient(clientId) {
+    if (!clientId) { setClientContracts([]); return }
+    setContractsLoading(true)
+    try {
+      const r = await fetch(`/api/contracts?client_id=${clientId}`)
+      setClientContracts((await r.json()).contracts || [])
+    } catch(e) { console.error(e); setClientContracts([]) }
+    finally { setContractsLoading(false) }
+  }
+
+  function openNew() {
+    setEditEntry(null)
+    setForm({ client_id: '', contract_id: '', entry_date: new Date().toISOString().split('T')[0], hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', despesas_deslocamento: '0', notes: '' })
+    setClientContracts([])
+    setPreview(null)
+    setShowModal(true)
+  }
+
   async function save() {
-    if (!form.client_id || !form.hora_inicial || !form.hora_final || !form.entry_date) return
+    if (!form.client_id || !form.contract_id || !form.hora_inicial || !form.hora_final || !form.entry_date) return
     try {
       const method = editEntry ? 'PUT' : 'POST'
       const body = editEntry
@@ -161,7 +182,8 @@ export default function TimeEntries() {
       })
       setShowModal(false)
       setEditEntry(null)
-      setForm({ client_id: '', entry_date: new Date().toISOString().split('T')[0], hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', despesas_deslocamento: '0', notes: '' })
+      setForm({ client_id: '', contract_id: '', entry_date: new Date().toISOString().split('T')[0], hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', despesas_deslocamento: '0', notes: '' })
+      setClientContracts([])
       setPreview(null)
       fetchAll()
     } catch(e) { console.error(e) }
@@ -179,8 +201,10 @@ export default function TimeEntries() {
 
   function openEdit(entry) {
     setEditEntry(entry)
+    loadContractsForClient(entry.client_id)
     const f = {
       client_id: String(entry.client_id || ''),
+      contract_id: String(entry.contract_id || ''),
       entry_date: entry.entry_date ? entry.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
       hora_inicial: entry.hora_inicial || '',
       intervalo_inicio: entry.intervalo_inicio || '',
@@ -273,7 +297,7 @@ export default function TimeEntries() {
               📥 Exportar Excel
             </button>
           )}
-          <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
+          <button onClick={openNew} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
             + Lançar horas
           </button>
         </div>
@@ -374,6 +398,9 @@ export default function TimeEntries() {
                       <span className="text-yellow-600 text-xs">💸 {fmt(e.despesas_deslocamento)} despesas</span>
                     )}
                   </div>
+                  {e.contract_name && (
+                    <p className="text-gray-500 text-xs mb-1">📄 {e.contract_name}</p>
+                  )}
                   <p className="text-white text-sm">{e.description}</p>
                   <div className="flex gap-4 mt-2 text-xs">
                     <span className="text-gray-500">Bruto: <span className="text-gray-300">{fmt(e.gross_value)}</span></span>
@@ -397,10 +424,23 @@ export default function TimeEntries() {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-white mb-4">{editEntry ? 'Editar lançamento' : 'Lançar horas'}</h3>
             <div className="space-y-3">
-              <select value={form.client_id} onChange={e=>updateForm('client_id',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+              <select value={form.client_id} onChange={e=>{ const v = e.target.value; const nf = {...form, client_id: v, contract_id: ''}; setForm(nf); calcPreview(nf); loadContractsForClient(v) }} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                 <option value="">Selecione o cliente</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+              <div className="flex flex-col gap-1">
+                <select value={form.contract_id} onChange={e=>updateForm('contract_id',e.target.value)} disabled={!form.client_id || contractsLoading || clientContracts.length === 0} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
+                  <option value="">{contractsLoading ? 'Carregando contratos...' : 'Selecione o contrato'}</option>
+                  {clientContracts.map(ct => (
+                    <option key={ct.id} value={ct.id}>
+                      {ct.name} — {ct.billing_type === 'hora' ? 'Por hora' : ct.billing_type === 'dia' ? 'Por dia' : 'Fixo/Mensal'}
+                    </option>
+                  ))}
+                </select>
+                {form.client_id && !contractsLoading && clientContracts.length === 0 && (
+                  <p className="text-amber-400 text-xs">Este cliente não possui contrato ativo. Cadastre um contrato antes de lançar horas.</p>
+                )}
+              </div>
               <input type="date" value={form.entry_date} onChange={e=>updateForm('entry_date',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
 
               {/* Horários */}
@@ -457,7 +497,7 @@ export default function TimeEntries() {
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={()=>{setShowModal(false);setPreview(null);setEditEntry(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
-              <button onClick={save} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">Salvar</button>
+              <button onClick={save} disabled={!form.client_id || !form.contract_id} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors">Salvar</button>
             </div>
           </div>
         </div>

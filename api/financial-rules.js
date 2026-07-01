@@ -4,7 +4,17 @@ export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
 
   if (req.method === 'GET') {
-    const { company_id } = req.query
+    const { company_id, client_id } = req.query
+    if (client_id) {
+      const rules = await sql`
+        SELECT fr.*, c.name as client_name
+        FROM financial_rules fr
+        JOIN clients c ON c.id = fr.client_id
+        WHERE fr.client_id = ${client_id}
+        ORDER BY fr.id ASC
+      `
+      return res.status(200).json({ rules })
+    }
     const rules = await sql`
       SELECT fr.*, c.name as client_name
       FROM financial_rules fr

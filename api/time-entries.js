@@ -84,9 +84,10 @@ export default async function handler(req, res) {
     const { company_id, month, year } = req.query
     if (month && year) {
       const entries = await sql`
-        SELECT te.*, c.name as client_name
+        SELECT te.*, c.name as client_name, ct.name as contract_name
         FROM time_entries te
         LEFT JOIN clients c ON c.id = te.client_id
+        LEFT JOIN contracts ct ON ct.id = te.contract_id
         WHERE te.company_id = ${company_id}
           AND EXTRACT(MONTH FROM te.entry_date) = ${month}
           AND EXTRACT(YEAR FROM te.entry_date) = ${year}
@@ -95,9 +96,10 @@ export default async function handler(req, res) {
       return res.status(200).json({ entries })
     }
     const entries = await sql`
-      SELECT te.*, c.name as client_name
+      SELECT te.*, c.name as client_name, ct.name as contract_name
       FROM time_entries te
       LEFT JOIN clients c ON c.id = te.client_id
+      LEFT JOIN contracts ct ON ct.id = te.contract_id
       WHERE te.company_id = ${company_id}
       ORDER BY te.entry_date DESC
     `
@@ -106,7 +108,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const {
-      company_id, client_id, entry_date,
+      company_id, client_id, contract_id, entry_date,
       description, hours_fuel, despesas_deslocamento, notes,
       hora_inicial, intervalo_inicio, intervalo_fim, hora_final,
     } = req.body
@@ -116,9 +118,10 @@ export default async function handler(req, res) {
     const regras = await sql`
       SELECT * FROM financial_rules WHERE client_id = ${client_id} LIMIT 1
     `
-    const contratos = await sql`
-      SELECT * FROM contracts WHERE client_id = ${client_id} ORDER BY is_active DESC, created_at DESC LIMIT 1
-    `
+    // Contrato: usa o selecionado explicitamente; senão cai no ativo mais recente do cliente
+    const contratos = contract_id
+      ? await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
+      : await sql`SELECT * FROM contracts WHERE client_id = ${client_id} ORDER BY is_active DESC, created_at DESC LIMIT 1`
     const contrato = contratos[0] || null
 
     const horas_desloc = parseFloat(hours_fuel) || 0
@@ -137,13 +140,13 @@ export default async function handler(req, res) {
 
     const result = await sql`
       INSERT INTO time_entries (
-        company_id, client_id, entry_date, description,
+        company_id, client_id, contract_id, entry_date, description,
         hours, hourly_rate, gross_value, tax_amount,
         net_value, victor_share, fabricio_share, fuel_cost, notes,
         hora_inicial, intervalo_inicio, intervalo_fim, hora_final,
         horas_deslocamento, valor_deslocamento, despesas_deslocamento
       ) VALUES (
-        ${company_id}, ${client_id}, ${entry_date}, ${description},
+        ${company_id}, ${client_id}, ${contract_id || null}, ${entry_date}, ${description},
         ${hours}, ${hourly_rate}, ${calc.gross_value}, ${calc.tax_amount},
         ${calc.net_value}, ${calc.victor_share}, ${calc.fabricio_share},
         ${calc.fuel_cost}, ${notes},
@@ -157,14 +160,16 @@ export default async function handler(req, res) {
 
   if (req.method === 'PUT') {
     const {
-      id, client_id, entry_date, description,
+      id, client_id, contract_id, entry_date, description,
       hora_inicial, intervalo_inicio, intervalo_fim, hora_final,
       hours_fuel, despesas_deslocamento, notes
     } = req.body
 
     const hours = calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final)
     const regras = await sql`SELECT * FROM financial_rules WHERE client_id = ${client_id} LIMIT 1`
-    const contratos = await sql`SELECT * FROM contracts WHERE client_id = ${client_id} ORDER BY is_active DESC, created_at DESC LIMIT 1`
+    const contratos = contract_id
+      ? await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
+      : await sql`SELECT * FROM contracts WHERE client_id = ${client_id} ORDER BY is_active DESC, created_at DESC LIMIT 1`
     const contrato = contratos[0] || null
 
     const horas_desloc = parseFloat(hours_fuel) || 0
@@ -180,6 +185,7 @@ export default async function handler(req, res) {
     const result = await sql`
       UPDATE time_entries SET
         client_id = ${client_id},
+        contract_id = ${contract_id || null},
         entry_date = ${entry_date},
         description = ${description},
         hours = ${hours},
