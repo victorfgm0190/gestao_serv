@@ -8,6 +8,9 @@ export default function FinancialRules() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editRule, setEditRule] = useState(null)
+  const [showClientModal, setShowClientModal] = useState(false)
+  const [clientForm, setClientForm] = useState({ name: '', company_id: '1' })
+  const [savingClient, setSavingClient] = useState(false)
   const [form, setForm] = useState({
     client_id: '',
     hourly_rate: '',
@@ -79,6 +82,22 @@ export default function FinancialRules() {
     } catch(e) { console.error(e) }
   }
 
+  async function saveClient() {
+    if (!clientForm.name.trim() || savingClient) return
+    setSavingClient(true)
+    try {
+      await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: clientForm.name.trim(), company_id: Number(clientForm.company_id) }),
+      })
+      setShowClientModal(false)
+      setClientForm({ name: '', company_id: '1' })
+      fetchAll()
+    } catch(e) { console.error(e) }
+    finally { setSavingClient(false) }
+  }
+
   async function deleteRule(id) {
     if (!confirm('Excluir esta regra?')) return
     await fetch('/api/financial-rules', {
@@ -98,9 +117,14 @@ export default function FinancialRules() {
           <h2 className="text-2xl font-bold text-white">Regras Financeiras</h2>
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
-        <button onClick={() => { setEditRule(null); resetForm(); setShowModal(true) }} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
-          + Nova regra
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={() => { setClientForm({ name: '', company_id: String(activeCompany.id) }); setShowClientModal(true) }} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-sm font-medium transition-colors">
+            + Novo Cliente
+          </button>
+          <button onClick={() => { setEditRule(null); resetForm(); setShowModal(true) }} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
+            + Nova regra
+          </button>
+        </div>
       </div>
 
       {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : rules.length === 0 ? (
@@ -165,6 +189,31 @@ export default function FinancialRules() {
             <div className="flex gap-3 mt-5">
               <button onClick={closeModal} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
               <button onClick={save} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showClientModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-white mb-4">Novo Cliente</h3>
+            <div className="space-y-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Nome do cliente</label>
+                <input autoFocus placeholder="Nome do cliente" value={clientForm.name} onChange={e=>setClientForm(f=>({...f,name:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Empresa</label>
+                <select value={clientForm.company_id} onChange={e=>setClientForm(f=>({...f,company_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                  <option value="1">Lumen</option>
+                  <option value="2">Imperium</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => { setShowClientModal(false); setClientForm({ name: '', company_id: '1' }) }} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
+              <button onClick={saveClient} disabled={savingClient || !clientForm.name.trim()} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors">{savingClient ? 'Salvando...' : 'Salvar'}</button>
             </div>
           </div>
         </div>
