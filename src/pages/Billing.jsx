@@ -15,8 +15,9 @@ export default function Billing() {
   const [selectedEntries, setSelectedEntries] = useState([])
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [editInvoice, setEditInvoice] = useState(null)
-  const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', notes:'' })
-  const [agendaForm, setAgendaForm] = useState({ client_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'' })
+  const [agendaRule, setAgendaRule] = useState(null)
+  const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+  const [agendaForm, setAgendaForm] = useState({ client_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
 
@@ -37,9 +38,16 @@ export default function Billing() {
 
   async function fetchEntries(client_id, month, year) {
     if (!client_id) return
-    const res = await fetch(`/api/time-entries?company_id=${activeCompany.id}&month=${month}&year=${year}`)
-    const data = await res.json()
-    setTimeEntries((data.entries||[]).filter(e => String(e.client_id) === String(client_id)))
+    const [teRes, frRes] = await Promise.all([
+      fetch(`/api/time-entries?company_id=${activeCompany.id}&month=${month}&year=${year}`),
+      fetch(`/api/financial-rules?client_id=${client_id}`),
+    ])
+    const teData = await teRes.json()
+    const frData = await frRes.json()
+    setTimeEntries((teData.entries||[]).filter(e => String(e.client_id) === String(client_id)))
+    const rule = (frData.rules||[])[0] || null
+    setAgendaRule(rule)
+    setAgendaForm(f => ({ ...f, tax_percentage_used: rule && rule.has_tax ? String(rule.tax_percentage ?? '') : '0', tax_client_percent_used: f.tax_client_percent_used || '0' }))
     setSelectedEntries([])
   }
 
@@ -47,9 +55,77 @@ export default function Billing() {
     setSelectedEntries(p => p.includes(id) ? p.filter(x=>x!==id) : [...p,id])
   }
 
+  function onSelectContract(contractId) {
+    const c = contracts.find(x => String(x.id) === String(contractId))
+    if (!c) { setContractForm(f => ({ ...f, contract_id: contractId })); return }
+    const base = parseFloat(c.contract_value) || 0
+    const tcp = c.has_tax ? (parseFloat(c.tax_client_percent) || 0) : 0
+    const nf = tcp > 0 && tcp < 100 ? base / (1 - tcp / 100) : base
+    setContractForm(f => ({
+      ...f,
+      contract_id: contractId,
+      invoice_value: nf ? nf.toFixed(2) : (base ? base.toFixed(2) : ''),
+      tax_percentage_used: c.has_tax ? String(c.tax_percentage ?? '') : '0',
+      tax_client_percent_used: tcp ? String(tcp) : '0',
+    }))
+  }
+
+  function onContractClientPctChange(v) {
+    const c = contracts.find(x => String(x.id) === String(contractForm.contract_id))
+    const base = parseFloat(c?.contract_value) || 0
+    const p = parseFloat(v)
+    let nf = ''
+    if (base > 0 && !isNaN(p) && p < 100) nf = (base / (1 - p / 100)).toFixed(2)
+    setContractForm(f => ({ ...f, tax_client_percent_used: v, invoice_value: nf }))
+  }
+
+  function onContractNfChange(v) {
+    const c = contracts.find(x => String(x.id) === String(contractForm.contract_id))
+    const base = parseFloat(c?.contract_value) || 0
+    const nf = parseFloat(v)
+    let p = ''
+    if (!isNaN(nf) && nf > 0) p = ((nf - base) / nf * 100).toFixed(2)
+    setContractForm(f => ({ ...f, invoice_value: v, tax_client_percent_used: p }))
+  }
+
+  async function updateContractTax(contract, overrides) {
+    const body = {
+      id: contract.id, name: contract.name, billing_type: contract.billing_type,
+      deslocamento_tipo: contract.deslocamento_tipo, deslocamento_valor_hora: contract.deslocamento_valor_hora,
+      contract_value: contract.contract_value, victor_fixed: contract.victor_fixed,
+      remainder_victor_pct: contract.remainder_victor_pct, remainder_fabricio_pct: contract.remainder_fabricio_pct,
+      has_tax: contract.has_tax, tax_percentage: contract.tax_percentage, tax_client_percent: contract.tax_client_percent,
+      is_active: contract.is_active, financial_rule_id: contract.financial_rule_id, notes: contract.notes,
+      ...overrides,
+    }
+    await fetch('/api/contracts', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  }
+
+  // Se o imposto usado na fatura for maior que o cadastrado, oferece atualizar o contrato
+  async function maybeUpdateContractTaxes(contract) {
+    const usedReal = parseFloat(contractForm.tax_percentage_used) || 0
+    const contractReal = parseFloat(contract.tax_percentage) || 0
+    const usedClient = parseFloat(contractForm.tax_client_percent_used) || 0
+    const contractClient = parseFloat(contract.tax_client_percent) || 0
+    let touched = false
+    if (usedReal > contractReal) {
+      if (confirm(`O imposto real aumentou de ${contractReal}% para ${usedReal}%. Deseja atualizar o contrato automaticamente?`)) {
+        await updateContractTax(contract, { tax_percentage: usedReal, has_tax: true }); touched = true
+      }
+    }
+    if (usedClient > contractClient) {
+      if (confirm(`O imposto cobrado do cliente aumentou de ${contractClient}% para ${usedClient}%. Deseja atualizar o contrato automaticamente?`)) {
+        await updateContractTax(contract, { tax_client_percent: usedClient, has_tax: true }); touched = true
+      }
+    }
+    return touched
+  }
+
   async function saveContractInvoice() {
     const contract = contracts.find(c => String(c.id) === String(contractForm.contract_id))
     if (!contract || !contractForm.invoice_value) return
+
+    await maybeUpdateContractTaxes(contract)
 
     const isEdit = !!editInvoice
     const method = isEdit ? 'PUT' : 'POST'
@@ -137,13 +213,19 @@ export default function Billing() {
   function openEditInvoice(inv) {
     setEditInvoice(inv)
     if (inv.billing_type === 'contract') {
+      const c = contracts.find(x => String(x.id) === String(inv.contract_id))
+      const base = parseFloat(c?.contract_value) || 0
+      const nf = parseFloat(inv.invoice_value) || base
+      const tcp = nf > 0 && nf > base ? ((nf - base) / nf * 100).toFixed(2) : (c?.has_tax ? String(c.tax_client_percent ?? '0') : '0')
       setContractForm({
         contract_id: inv.contract_id || '',
         month: inv.month,
         year: inv.year,
-        invoice_value: inv.invoice_value,
+        invoice_value: nf ? nf.toFixed(2) : '',
         invoice_number: inv.invoice_number || '',
         notes: inv.notes || '',
+        tax_percentage_used: c?.has_tax ? String(c.tax_percentage ?? '') : '0',
+        tax_client_percent_used: String(tcp),
       })
       setShowContractModal(true)
     } else {
@@ -153,10 +235,27 @@ export default function Billing() {
         year: inv.year,
         invoice_number: inv.invoice_number || '',
         notes: inv.notes || '',
+        tax_percentage_used: '',
+        tax_client_percent_used: '0',
       })
       fetchEntries(inv.client_id, inv.month, inv.year)
       setShowAgendaModal(true)
     }
+  }
+
+  function openContractModal() {
+    setEditInvoice(null)
+    setContractForm({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+    setShowContractModal(true)
+  }
+
+  function openAgendaModal() {
+    setEditInvoice(null)
+    setAgendaRule(null)
+    setTimeEntries([])
+    setSelectedEntries([])
+    setAgendaForm({ client_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'0' })
+    setShowAgendaModal(true)
   }
 
   const fmt = v => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.',',')}` : '-'
@@ -171,8 +270,8 @@ export default function Billing() {
         </div>
         <div className="flex gap-2 items-center">
           <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none"/>
-          <button onClick={()=>setShowContractModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">📄 Contrato</button>
-          <button onClick={()=>setShowAgendaModal(true)} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium">📅 Agenda</button>
+          <button onClick={openContractModal} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">📄 Contrato</button>
+          <button onClick={openAgendaModal} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium">📅 Agenda</button>
         </div>
       </div>
 
@@ -225,7 +324,7 @@ export default function Billing() {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-lg font-bold text-white mb-4">{editInvoice ? 'Editar Fatura' : 'Gerar Fatura — Contrato'}</h3>
             <div className="space-y-3">
-              <select value={contractForm.contract_id} onChange={e=>setContractForm(f=>({...f,contract_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+              <select value={contractForm.contract_id} onChange={e=>onSelectContract(e.target.value)} disabled={!!editInvoice} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
                 <option value="">Selecione o contrato</option>
                 {contracts.filter(c=>c.is_active).map(c=><option key={c.id} value={c.id}>{c.name} — {c.client_name}</option>)}
               </select>
@@ -235,7 +334,67 @@ export default function Billing() {
                 </select>
                 <input type="number" value={contractForm.year} onChange={e=>setContractForm(f=>({...f,year:parseInt(e.target.value)}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
               </div>
-              <input placeholder="Valor da nota fiscal (R$)" type="number" value={contractForm.invoice_value} onChange={e=>setContractForm(f=>({...f,invoice_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+
+              {(() => {
+                const c = contracts.find(x => String(x.id) === String(contractForm.contract_id))
+                if (!c) return null
+                const base = parseFloat(c.contract_value) || 0
+                const victorFixo = parseFloat(c.victor_fixed) || 0
+                const victorPct = parseFloat(c.remainder_victor_pct) || 50
+                const fabPct = parseFloat(c.remainder_fabricio_pct) || 50
+                const taxReal = parseFloat(contractForm.tax_percentage_used) || 0
+                const nf = parseFloat(contractForm.invoice_value) || base
+                const impostoReal = nf * taxReal / 100
+                const diffNf = Math.max(nf - base, 0)
+                const restante = Math.max(base - victorFixo, 0)
+                const victorLucro = restante * victorPct / 100
+                const fabricio = restante * fabPct / 100
+                const victorTotal = victorFixo + victorLucro + diffNf
+                const taxClient = parseFloat(contractForm.tax_client_percent_used) || 0
+                return (
+                  <>
+                    <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Impostos</p>
+                      <div className="flex gap-3">
+                        <div className="flex flex-col gap-1 flex-1">
+                          <label className="text-xs text-gray-400 font-medium">% Imposto real (Victor)</label>
+                          <input type="number" step="0.01" value={contractForm.tax_percentage_used} onChange={e=>setContractForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                        </div>
+                        {c.has_tax && (
+                          <div className="flex flex-col gap-1 flex-1">
+                            <label className="text-xs text-gray-400 font-medium">% Imposto cliente</label>
+                            <input type="number" step="0.01" value={contractForm.tax_client_percent_used} onChange={e=>onContractClientPctChange(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-400 font-medium">Valor NF (bruto)</label>
+                        <input type="number" step="0.01" value={contractForm.invoice_value} onChange={e=>onContractNfChange(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-gray-400">Imposto estimado:</span>
+                        <span className="text-red-400 font-medium">{fmt(impostoReal)}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-800 rounded-xl p-3 space-y-1 text-xs">
+                      <p className="text-gray-400 font-medium uppercase tracking-wider mb-1">Demonstrativo</p>
+                      <div className="flex justify-between"><span className="text-gray-400">Valor base</span><span className="text-white">{fmt(base)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">% Imposto cobrado</span><span className="text-white">{taxClient.toFixed(2).replace('.',',')}%</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(nf)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(impostoReal)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(diffNf)}</span></div>
+                      <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
+                        <div className="flex justify-between"><span className="text-gray-400">Victor fixo</span><span className="text-blue-300">+{fmt(victorFixo)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-400">Victor lucro</span><span className="text-blue-300">+{fmt(victorLucro)}</span></div>
+                        <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor total</span><span className="text-blue-400">{fmt(victorTotal)}</span></div>
+                      </div>
+                      <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício total</span><span className="text-purple-400">{fmt(fabricio)}</span></div>
+                    </div>
+                  </>
+                )
+              })()}
+
               <input placeholder="Número da NF (opcional)" value={contractForm.invoice_number} onChange={e=>setContractForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
               <textarea placeholder="Observações" value={contractForm.notes} onChange={e=>setContractForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
@@ -341,6 +500,69 @@ export default function Billing() {
                   })()}
                 </div>
               )}
+              {selectedEntries.length > 0 && agendaRule && (() => {
+                const selected = timeEntries.filter(e => selectedEntries.includes(e.id))
+                const totalHours = selected.reduce((s,e)=>s+(parseFloat(e.hours)||0),0)
+                const hourlyRate = parseFloat(agendaRule.hourly_rate) || parseFloat(selected.find(e=>e.hourly_rate)?.hourly_rate) || 0
+                const victorFixoHora = parseFloat(agendaRule.victor_fixed_per_hour) || 0
+                const victorPct = parseFloat(agendaRule.remainder_victor_pct) || 50
+                const fabPct = parseFloat(agendaRule.remainder_fabricio_pct) || 50
+                const taxReal = parseFloat(agendaForm.tax_percentage_used) || 0
+                const taxClient = parseFloat(agendaForm.tax_client_percent_used) || 0
+                const bruto = totalHours * hourlyRate
+                const impostoReal = bruto * taxReal / 100
+                const net = bruto - impostoReal
+                const victorServico = totalHours * victorFixoHora
+                const restante = Math.max(net - victorServico, 0)
+                const victorLucro = restante * victorPct / 100
+                const fabricio = restante * fabPct / 100
+                const nf = taxClient > 0 && taxClient < 100 ? bruto / (1 - taxClient / 100) : bruto
+                const diffNf = Math.max(nf - bruto, 0)
+                const victorTotal = victorServico + victorLucro + diffNf
+                const onPct = (v) => { setAgendaForm(f=>({...f,tax_client_percent_used:v})) }
+                const onNf = (v) => { const nfv=parseFloat(v); let p=''; if(!isNaN(nfv)&&nfv>0&&bruto>0) p=((nfv-bruto)/nfv*100).toFixed(2); setAgendaForm(f=>({...f,tax_client_percent_used:p})) }
+                return (
+                  <>
+                    <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Impostos</p>
+                      <div className="flex gap-3">
+                        <div className="flex flex-col gap-1 flex-1">
+                          <label className="text-xs text-gray-400 font-medium">% Imposto real (Victor)</label>
+                          <input type="number" step="0.01" value={agendaForm.tax_percentage_used} onChange={e=>setAgendaForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                        </div>
+                        <div className="flex flex-col gap-1 flex-1">
+                          <label className="text-xs text-gray-400 font-medium">% Imposto cliente</label>
+                          <input type="number" step="0.01" value={agendaForm.tax_client_percent_used} onChange={e=>onPct(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-400 font-medium">Valor NF (bruto)</label>
+                        <input type="number" step="0.01" value={nf ? nf.toFixed(2) : ''} onChange={e=>onNf(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-gray-400">Imposto estimado:</span>
+                        <span className="text-red-400 font-medium">{fmt(impostoReal)}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-800 rounded-xl p-3 space-y-1 text-xs">
+                      <p className="text-gray-400 font-medium uppercase tracking-wider mb-1">Demonstrativo</p>
+                      <div className="flex justify-between"><span className="text-gray-400">Total de horas</span><span className="text-white">{totalHours.toFixed(2)}h</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Valor bruto</span><span className="text-white">{fmt(bruto)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">% Imposto cobrado</span><span className="text-white">{taxClient.toFixed(2).replace('.',',')}%</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(nf)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(impostoReal)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(diffNf)}</span></div>
+                      <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
+                        <div className="flex justify-between"><span className="text-gray-400">Victor fixo</span><span className="text-blue-300">+{fmt(victorServico)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-400">Victor lucro</span><span className="text-blue-300">+{fmt(victorLucro)}</span></div>
+                        <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor total</span><span className="text-blue-400">{fmt(victorTotal)}</span></div>
+                      </div>
+                      <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício total</span><span className="text-purple-400">{fmt(fabricio)}</span></div>
+                    </div>
+                  </>
+                )
+              })()}
               {timeEntries.length===0 && agendaForm.client_id && <p className="text-gray-500 text-sm text-center py-4">Nenhuma agenda encontrada para este cliente/período.</p>}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Observações</label>

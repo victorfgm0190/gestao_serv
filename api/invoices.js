@@ -1,51 +1,77 @@
 import { neon } from '@neondatabase/serverless'
 
-function calcContrato(invoice_value, contract) {
+const round = (n) => parseFloat((Number(n) || 0).toFixed(2))
+
+// Resolve o % usado na fatura: usa o valor enviado pelo frontend se presente,
+// senão cai no valor cadastrado (fallback)
+function resolvePct(used, fallback) {
+  if (used !== undefined && used !== null && used !== '') return parseFloat(used) || 0
+  return parseFloat(fallback) || 0
+}
+
+// CONTRATO FIXO (billing_type = 'contract' / 'mensal')
+function calcContrato(contract, opts = {}) {
   const base = parseFloat(contract.contract_value) || 0
   const victor_fixo = parseFloat(contract.victor_fixed) || 0
   const victor_pct = parseFloat(contract.remainder_victor_pct) || 50
   const fab_pct = parseFloat(contract.remainder_fabricio_pct) || 50
-  const inv = parseFloat(invoice_value) || base
-  const tax_diff = Math.max(inv - base, 0)
+  const taxClient = resolvePct(opts.tax_client_percent_used, contract.tax_client_percent)
+  const taxReal = resolvePct(opts.tax_percentage_used, contract.has_tax ? contract.tax_percentage : 0)
+
+  const nf = taxClient > 0 && taxClient < 100 ? base / (1 - taxClient / 100) : base
+  const diff_nf = Math.max(nf - base, 0)              // 100% Victor
   const restante = Math.max(base - victor_fixo, 0)
   const victor_lucro = restante * (victor_pct / 100)
   const fabricio = restante * (fab_pct / 100)
-  const victor_total = victor_fixo + victor_lucro + tax_diff
+  const victor_total = victor_fixo + victor_lucro + diff_nf
+  const tax_amount = nf * (taxReal / 100)             // imposto real pago por Victor (sobre a NF)
+
   return {
-    invoice_value: inv,
-    contract_value: base,
-    tax_amount: 0,
-    victor_service: parseFloat(victor_fixo.toFixed(2)),
-    victor_profit: parseFloat(victor_lucro.toFixed(2)),
-    victor_tax_diff: parseFloat(tax_diff.toFixed(2)),
-    victor_total: parseFloat(victor_total.toFixed(2)),
-    fabricio_total: parseFloat(fabricio.toFixed(2)),
+    invoice_value: round(nf),
+    contract_value: round(base),
+    tax_amount: round(tax_amount),
+    tax_percentage_used: taxReal,
+    tax_client_percent_used: taxClient,
+    victor_service: round(victor_fixo),
+    victor_profit: round(victor_lucro),
+    victor_tax_diff: round(diff_nf),
+    victor_total: round(victor_total),
+    fabricio_total: round(fabricio),
   }
 }
 
-function calcAgenda(entries, rule) {
+// CONTRATO POR HORA (billing_type = 'hora' / 'agenda')
+function calcAgenda(entries, rule, opts = {}) {
   const total_hours = entries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
   const valor_hora = parseFloat(rule.hourly_rate) || 0
-  const imposto_pct = rule.has_tax ? (parseFloat(rule.tax_percentage) || 0) / 100 : 0
   const victor_fixo_hora = parseFloat(rule.victor_fixed_per_hour) || 0
   const victor_pct = parseFloat(rule.remainder_victor_pct) || 50
   const fab_pct = parseFloat(rule.remainder_fabricio_pct) || 50
-  const gross = total_hours * valor_hora
-  const tax = gross * imposto_pct
-  const net = gross - tax
+  const taxReal = resolvePct(opts.tax_percentage_used, rule.has_tax ? rule.tax_percentage : 0)
+  const taxClient = resolvePct(opts.tax_client_percent_used, 0)
+
+  const bruto = total_hours * valor_hora
+  const tax = bruto * (taxReal / 100)                // imposto real
+  const net = bruto - tax                            // líquido
   const victor_servico = total_hours * victor_fixo_hora
   const restante = Math.max(net - victor_servico, 0)
   const victor_lucro = restante * (victor_pct / 100)
   const fabricio = restante * (fab_pct / 100)
+  const nf = taxClient > 0 && taxClient < 100 ? bruto / (1 - taxClient / 100) : bruto
+  const diff_nf = Math.max(nf - bruto, 0)            // 100% Victor (igual ao fixo)
+  const victor_total = victor_servico + victor_lucro + diff_nf
+
   return {
-    invoice_value: parseFloat(gross.toFixed(2)),
-    contract_value: parseFloat(gross.toFixed(2)),
-    tax_amount: parseFloat(tax.toFixed(2)),
-    victor_service: parseFloat(victor_servico.toFixed(2)),
-    victor_profit: parseFloat(victor_lucro.toFixed(2)),
-    victor_tax_diff: 0,
-    victor_total: parseFloat((victor_servico + victor_lucro).toFixed(2)),
-    fabricio_total: parseFloat(fabricio.toFixed(2)),
+    invoice_value: round(nf),
+    contract_value: round(bruto),
+    tax_amount: round(tax),
+    tax_percentage_used: taxReal,
+    tax_client_percent_used: taxClient,
+    victor_service: round(victor_servico),
+    victor_profit: round(victor_lucro),
+    victor_tax_diff: round(diff_nf),
+    victor_total: round(victor_total),
+    fabricio_total: round(fabricio),
     total_hours,
   }
 }
@@ -62,18 +88,18 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, client_id, contract_id, month, year, invoice_value, invoice_number, billing_type, time_entry_ids, notes } = req.body
+    const { company_id, client_id, contract_id, month, year, invoice_number, billing_type, time_entry_ids, notes, tax_percentage_used, tax_client_percent_used } = req.body
     try {
       let calc
       if (billing_type === 'contract') {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
-        calc = calcContrato(invoice_value, contracts[0])
+        calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
         const entries = await sql`SELECT * FROM time_entries WHERE id = ANY(${time_entry_ids}::int[])`
         const rules = await sql`SELECT * FROM financial_rules WHERE client_id = ${client_id} LIMIT 1`
         if (!rules.length) return res.status(400).json({ error: 'Regra financeira não encontrada' })
-        calc = calcAgenda(entries, rules[0])
+        calc = calcAgenda(entries, rules[0], { tax_percentage_used, tax_client_percent_used })
       }
 
       const invoice = await sql`
@@ -146,7 +172,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PUT') {
-    const { id, invoice_value, invoice_number, notes, billing_type, time_entry_ids, contract_id, client_id } = req.body
+    const { id, invoice_number, notes, billing_type, time_entry_ids, contract_id, client_id, tax_percentage_used, tax_client_percent_used } = req.body
     try {
       const invoices = await sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`
       if (!invoices.length) return res.status(404).json({ error: 'Fatura não encontrada' })
@@ -160,13 +186,13 @@ export default async function handler(req, res) {
       if (billing_type === 'contract') {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id || inv.contract_id} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
-        calc = calcContrato(invoice_value, contracts[0])
+        calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
         const ids = time_entry_ids || inv.time_entry_ids
         const entries = await sql`SELECT * FROM time_entries WHERE id = ANY(${ids}::int[])`
         const rules = await sql`SELECT * FROM financial_rules WHERE client_id = ${client_id || inv.client_id} LIMIT 1`
         if (!rules.length) return res.status(400).json({ error: 'Regra financeira não encontrada' })
-        calc = calcAgenda(entries, rules[0])
+        calc = calcAgenda(entries, rules[0], { tax_percentage_used, tax_client_percent_used })
       }
 
       const updated = await sql`
