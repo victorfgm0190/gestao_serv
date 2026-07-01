@@ -14,12 +14,15 @@ export default function Billing() {
   const [showAgendaModal, setShowAgendaModal] = useState(false)
   const [selectedEntries, setSelectedEntries] = useState([])
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1)
+  const [filterClient, setFilterClient] = useState('')
   const [editInvoice, setEditInvoice] = useState(null)
   const [agendaRule, setAgendaRule] = useState(null)
   const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
   const [agendaForm, setAgendaForm] = useState({ client_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
+  useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth, filterYear])
 
   async function fetchAll() {
     setLoading(true)
@@ -261,6 +264,20 @@ export default function Billing() {
   const fmt = v => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.',',')}` : '-'
   const STATUS_COLORS = { pendente:'bg-yellow-500/20 text-yellow-400', recebido:'bg-green-500/20 text-green-400' }
 
+  // Filtros de mês (0 = todos) e cliente aplicados no frontend
+  const invoicesByMonth = invoices.filter(inv => filterMonth === 0 || inv.month === filterMonth)
+  // Clientes com fatura no mês/ano selecionado (derivado antes do filtro de cliente)
+  const clientsWithInvoices = Array.from(
+    invoicesByMonth.reduce((map, inv) => {
+      if (inv.client_id != null && !map.has(inv.client_id)) map.set(inv.client_id, inv.client_name || 'Sem cliente')
+      return map
+    }, new Map()),
+    ([id, name]) => ({ id, name })
+  )
+  const filteredInvoices = filterClient
+    ? invoicesByMonth.filter(inv => String(inv.client_id) === String(filterClient))
+    : invoicesByMonth
+
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -269,17 +286,48 @@ export default function Billing() {
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
         <div className="flex gap-2 items-center">
-          <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none"/>
           <button onClick={openContractModal} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">📄 Contrato</button>
           <button onClick={openAgendaModal} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium">📅 Agenda</button>
         </div>
       </div>
 
-      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : invoices.length === 0 ? (
+      <div className="flex gap-2 mb-6 flex-wrap items-center">
+        <button onClick={() => setFilterMonth(0)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === 0 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>Todos</button>
+        {months.map((m, i) => (
+          <button key={i} onClick={() => setFilterMonth(i+1)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === i+1 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{m}</button>
+        ))}
+        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none"/>
+      </div>
+
+      {clientsWithInvoices.length > 0 && (
+        <div className="flex gap-2 mb-6 flex-wrap">
+          <button
+            onClick={() => setFilterClient('')}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filterClient === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            Todos os clientes
+          </button>
+          {clientsWithInvoices.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setFilterClient(String(c.id))}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                filterClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : filteredInvoices.length === 0 ? (
         <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">🧾</p><p>Nenhuma fatura gerada.</p></div>
       ) : (
         <div className="space-y-3">
-          {invoices.map(inv => (
+          {filteredInvoices.map(inv => (
             <div key={inv.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
