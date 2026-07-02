@@ -49,11 +49,13 @@ export default async function handler(req, res) {
     { key: 'H', width: 11 },
     { key: 'I', width: 14 },
     { key: 'J', width: 13 },
+    { key: 'K', width: 14 },
   ]
 
   // Merge título A1:H3
   ws.mergeCells('A1:H3')
   ws.mergeCells('I1:I3')
+  ws.mergeCells('K1:K3')
 
   // Título
   const titleCell = ws.getCell('A1')
@@ -67,6 +69,13 @@ export default async function handler(req, res) {
   totalCell.numFmt = '[h]:mm:ss'
   totalCell.font = { name: 'Aptos Narrow', bold: true, size: 11 }
   totalCell.alignment = { horizontal: 'center', vertical: 'middle' }
+
+  // Total geral acumulado no K1 (trabalho + deslocamento)
+  const totalGeralCell = ws.getCell('K1')
+  totalGeralCell.value = { formula: 'SUBTOTAL(9,K5:K1048576)' }
+  totalGeralCell.numFmt = '[h]:mm:ss'
+  totalGeralCell.font = { name: 'Aptos Narrow', bold: true, size: 11 }
+  totalGeralCell.alignment = { horizontal: 'center', vertical: 'middle' }
 
   // Altura das linhas 1-3
   ws.getRow(1).height = 28.8
@@ -90,9 +99,10 @@ export default async function handler(req, res) {
     { col: 'H', label: 'HORAFINAL' },
     { col: 'I', label: 'TOTAL' },
     { col: 'J', label: 'DESLOCAMENTO' },
+    { col: 'K', label: 'TOTAL GERAL' },
   ]
-  // Preenche fill em todas as células do cabeçalho (A-J)
-  for (let c = 1; c <= 10; c++) {
+  // Preenche fill em todas as células do cabeçalho (A-K)
+  for (let c = 1; c <= 11; c++) {
     const cell = ws.getCell(4, c)
     cell.fill = headerFill
     cell.font = headerFont
@@ -206,6 +216,13 @@ export default async function handler(req, res) {
     }
     jCell.font = dataFont
     jCell.alignment = centerAlign
+
+    // TOTAL GERAL = TOTAL (trabalho) + DESLOCAMENTO
+    const kCell = ws.getCell(rowNum, 11)
+    kCell.value = totalMin / 1440 + desloc / 24
+    kCell.numFmt = '[h]:mm:ss'
+    kCell.font = dataFont
+    kCell.alignment = centerAlign
   })
 
   // Nome do arquivo reflete o filtro de cliente
