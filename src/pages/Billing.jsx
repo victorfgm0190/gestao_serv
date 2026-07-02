@@ -476,6 +476,19 @@ export default function Billing() {
                 <option value="">Selecione o cliente</option>
                 {clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+              {(() => {
+                if (!agendaForm.client_id) return null
+                const doCliente = contracts.filter(c => String(c.client_id) === String(agendaForm.client_id))
+                const c = doCliente.find(x => x.is_active) || doCliente[0]
+                if (!c || !c.cnpj) return null
+                return (
+                  <div className="flex items-center gap-2 text-xs bg-gray-800/50 rounded-lg px-3 py-2">
+                    <span className="text-gray-400 font-medium">CNPJ:</span>
+                    <span className="text-white font-mono">{c.cnpj}</span>
+                    <CopyButton value={c.cnpj} className="ml-auto" />
+                  </div>
+                )
+              })()}
               <div className="grid grid-cols-2 gap-3">
                 <select value={agendaForm.month} onChange={e=>{const v=parseInt(e.target.value);setAgendaForm(f=>({...f,month:v}));fetchEntries(agendaForm.client_id,v,agendaForm.year)}} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                   {months.map((m,i)=><option key={i} value={i+1}>{m}</option>)}
