@@ -20,7 +20,7 @@ export default function Billing() {
   const [editInvoice, setEditInvoice] = useState(null)
   const [agendaRule, setAgendaRule] = useState(null)
   const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
-  const [agendaForm, setAgendaForm] = useState({ client_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+  const [agendaForm, setAgendaForm] = useState({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
   useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth, filterYear])
@@ -236,6 +236,7 @@ export default function Billing() {
     } else {
       setAgendaForm({
         client_id: inv.client_id || '',
+        contract_id: inv.contract_id || '',
         month: inv.month,
         year: inv.year,
         invoice_number: inv.invoice_number || '',
@@ -259,7 +260,7 @@ export default function Billing() {
     setAgendaRule(null)
     setTimeEntries([])
     setSelectedEntries([])
-    setAgendaForm({ client_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'0' })
+    setAgendaForm({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'0' })
     setShowAgendaModal(true)
   }
 
@@ -472,21 +473,27 @@ export default function Billing() {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-white mb-4">{editInvoice ? 'Editar Fatura — Agenda' : 'Gerar Fatura — Por Agenda'}</h3>
             <div className="space-y-3">
-              <select value={agendaForm.client_id} onChange={e=>{const v=e.target.value;setAgendaForm(f=>({...f,client_id:v}));fetchEntries(v,agendaForm.month,agendaForm.year)}} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+              <select value={agendaForm.client_id} onChange={e=>{const v=e.target.value;setAgendaForm(f=>({...f,client_id:v,contract_id:''}));fetchEntries(v,agendaForm.month,agendaForm.year)}} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                 <option value="">Selecione o cliente</option>
                 {clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-              {(() => {
-                if (!agendaForm.client_id) return null
+              {agendaForm.client_id && (() => {
                 const doCliente = contracts.filter(c => String(c.client_id) === String(agendaForm.client_id))
-                const c = doCliente.find(x => x.is_active) || doCliente[0]
-                if (!c || !c.cnpj) return null
+                const selected = doCliente.find(x => String(x.id) === String(agendaForm.contract_id))
                 return (
-                  <div className="flex items-center gap-2 text-xs bg-gray-800/50 rounded-lg px-3 py-2">
-                    <span className="text-gray-400 font-medium">CNPJ:</span>
-                    <span className="text-white font-mono">{c.cnpj}</span>
-                    <CopyButton value={c.cnpj} className="ml-auto" />
-                  </div>
+                  <>
+                    <select value={agendaForm.contract_id} onChange={e=>setAgendaForm(f=>({...f,contract_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                      <option value="">Selecione o contrato</option>
+                      {doCliente.map(c=><option key={c.id} value={c.id}>{c.name} — {c.billing_type === 'hora' ? 'Por hora' : c.billing_type === 'dia' ? 'Por dia' : 'Fixo/Mensal'}</option>)}
+                    </select>
+                    {selected && selected.cnpj && (
+                      <div className="flex items-center gap-2 text-xs bg-gray-800/50 rounded-lg px-3 py-2">
+                        <span className="text-gray-400 font-medium">CNPJ:</span>
+                        <span className="text-white font-mono">{selected.cnpj}</span>
+                        <CopyButton value={selected.cnpj} className="ml-auto" />
+                      </div>
+                    )}
+                  </>
                 )
               })()}
               <div className="grid grid-cols-2 gap-3">
