@@ -298,7 +298,10 @@ export default function Contracts() {
                   </div>
                 )}
                 {form.deslocamento_tipo !== 'nao_cobrado' && (
-                  <input placeholder="Valor hora deslocamento (R$) — vazio usa o valor/hora do contrato" type="number" value={form.deslocamento_valor_hora} onChange={e=>setForm(f=>({...f,deslocamento_valor_hora:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-medium">Valor hora deslocamento (R$)</label>
+                    <input placeholder="Vazio usa o valor/hora do contrato" type="number" value={form.deslocamento_valor_hora} onChange={e=>setForm(f=>({...f,deslocamento_valor_hora:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  </div>
                 )}
               </div>
               <div className="flex flex-col gap-1">
