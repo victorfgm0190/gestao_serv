@@ -229,9 +229,14 @@ export default function Financial() {
   const monthFiltered = filterMonth === ''
     ? baseData
     : baseData.filter(r => Number(r.month) === Number(filterMonth))
+  // Oculta registros zerados (R$ 0,00 / null) nas abas de Pagar — não devem contaminar os totais
+  const payValue = (r) => parseFloat(tab === 'victor' ? r.total_amount : r.amount) || 0
+  const nonZeroFiltered = (tab === 'victor' || tab === 'fabricio')
+    ? monthFiltered.filter(r => payValue(r) !== 0)
+    : monthFiltered
   const currentData = filterStatus === 'all'
-    ? monthFiltered
-    : monthFiltered.filter(r => filterStatus === 'pendente_parcial' ? (r.status === 'pendente' || r.status === 'parcial') : r.status === filterStatus)
+    ? nonZeroFiltered
+    : nonZeroFiltered.filter(r => filterStatus === 'pendente_parcial' ? (r.status === 'pendente' || r.status === 'parcial') : r.status === filterStatus)
   const victorCatTotal = victorCategoryTotal(victorCats)
   const receiveTotal = receiveCategoryTotal(receiveCats)
   const statusFilter = (
