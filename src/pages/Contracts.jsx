@@ -18,7 +18,7 @@ export default function Contracts() {
     client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '',
     remainder_victor_pct: '50', remainder_fabricio_pct: '50',
     has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '',
-    deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '',
+    deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', displacement_hours: '', financial_rule_id: '',
   })
   const [clientRules, setClientRules] = useState([])
   const [rulesLoading, setRulesLoading] = useState(false)
@@ -56,7 +56,7 @@ export default function Contracts() {
 
   function openNew() {
     setEditContract(null)
-    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '' })
+    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', displacement_hours: '', financial_rule_id: '' })
     setClientRules([])
     setShowModal(true)
   }
@@ -68,7 +68,7 @@ export default function Contracts() {
     await fetch('/api/contracts', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     setShowModal(false)
     setEditContract(null)
-    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', financial_rule_id: '' })
+    setForm({ client_id: '', name: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', displacement_hours: '', financial_rule_id: '' })
     setClientRules([])
     fetchAll()
   }
@@ -98,7 +98,7 @@ export default function Contracts() {
     const base = parseFloat(c.contract_value) || 0
     const pct = parseFloat(c.tax_client_percent) || 0
     const nf = base > 0 && pct > 0 && pct < 100 ? (base / (1 - pct / 100)).toFixed(2) : ''
-    setForm({ client_id: c.client_id, name: c.name, billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', tax_client_percent: c.tax_client_percent || '', tax_client_nf: nf, notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '' })
+    setForm({ client_id: c.client_id, name: c.name, billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', tax_client_percent: c.tax_client_percent || '', tax_client_nf: nf, notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', displacement_hours: c.displacement_hours || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '' })
     loadRulesForClient(c.client_id)
     setShowModal(true)
   }
@@ -291,6 +291,12 @@ export default function Contracts() {
                   <option value="hora">Cobrado por hora</option>
                   <option value="hora_despesas">Cobrado por hora + despesas (pedágio/combustível/almoço)</option>
                 </select>
+                {form.deslocamento_tipo !== 'nao_cobrado' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-medium">Horas de deslocamento</label>
+                    <input placeholder="0" type="number" step="0.5" value={form.displacement_hours} onChange={e=>setForm(f=>({...f,displacement_hours:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  </div>
+                )}
                 {form.deslocamento_tipo !== 'nao_cobrado' && (
                   <input placeholder="Valor hora deslocamento (R$) — vazio usa o valor/hora do contrato" type="number" value={form.deslocamento_valor_hora} onChange={e=>setForm(f=>({...f,deslocamento_valor_hora:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
                 )}

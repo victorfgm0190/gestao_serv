@@ -48,6 +48,7 @@ export default async function handler(req, res) {
     { key: 'G', width: 8 },
     { key: 'H', width: 11 },
     { key: 'I', width: 14 },
+    { key: 'J', width: 13 },
   ]
 
   // Merge título A1:H3
@@ -88,9 +89,10 @@ export default async function handler(req, res) {
     { col: 'F', label: 'INTERVALO' },
     { col: 'H', label: 'HORAFINAL' },
     { col: 'I', label: 'TOTAL' },
+    { col: 'J', label: 'DESLOCAMENTO' },
   ]
-  // Preenche fill em todas as células do cabeçalho (A-I)
-  for (let c = 1; c <= 9; c++) {
+  // Preenche fill em todas as células do cabeçalho (A-J)
+  for (let c = 1; c <= 10; c++) {
     const cell = ws.getCell(4, c)
     cell.fill = headerFill
     cell.font = headerFont
@@ -194,6 +196,16 @@ export default async function handler(req, res) {
     iCell.numFmt = '[h]:mm:ss'
     iCell.font = dataFont
     iCell.alignment = centerAlign
+
+    // DESLOCAMENTO (horas de deslocamento formatadas como h:mm; vazio se 0/null)
+    const jCell = ws.getCell(rowNum, 10)
+    const desloc = parseFloat(entry.horas_deslocamento) || 0
+    if (desloc > 0) {
+      jCell.value = desloc / 24
+      jCell.numFmt = '[h]:mm'
+    }
+    jCell.font = dataFont
+    jCell.alignment = centerAlign
   })
 
   // Nome do arquivo reflete o filtro de cliente

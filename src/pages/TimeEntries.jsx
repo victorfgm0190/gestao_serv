@@ -150,6 +150,14 @@ export default function TimeEntries() {
     calcPreview(nf)
   }
 
+  function onContractChange(contractId) {
+    const ct = clientContracts.find(c => String(c.id) === String(contractId))
+    const dh = ct && parseFloat(ct.displacement_hours) > 0 ? String(ct.displacement_hours) : '0'
+    const nf = { ...form, contract_id: contractId, hours_fuel: dh }
+    setForm(nf)
+    calcPreview(nf)
+  }
+
   async function loadContractsForClient(clientId) {
     if (!clientId) { setClientContracts([]); return }
     setContractsLoading(true)
@@ -429,7 +437,7 @@ export default function TimeEntries() {
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <div className="flex flex-col gap-1">
-                <select value={form.contract_id} onChange={e=>updateForm('contract_id',e.target.value)} disabled={!form.client_id || contractsLoading || clientContracts.length === 0} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
+                <select value={form.contract_id} onChange={e=>onContractChange(e.target.value)} disabled={!form.client_id || contractsLoading || clientContracts.length === 0} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
                   <option value="">{contractsLoading ? 'Carregando contratos...' : 'Selecione o contrato'}</option>
                   {clientContracts.map(ct => (
                     <option key={ct.id} value={ct.id}>
