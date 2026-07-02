@@ -26,11 +26,11 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, financial_rule_id } = req.body
+    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id } = req.body
     try {
       const result = await sql`
-        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, financial_rule_id)
-        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value}, ${victor_fixed}, ${remainder_victor_pct || 50}, ${remainder_fabricio_pct || 50}, ${has_tax || false}, ${tax_percentage || null}, ${tax_client_percent || 0}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0}, ${displacement_hours || 0}, ${financial_rule_id || null})
+        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id)
+        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value}, ${victor_fixed}, ${remainder_victor_pct || 50}, ${remainder_fabricio_pct || 50}, ${has_tax || false}, ${tax_percentage || null}, ${tax_client_percent || 0}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0}, ${displacement_hours || 0}, ${cnpj || null}, ${financial_rule_id || null})
         RETURNING *
       `
       return res.status(201).json({ contract: result[0] })
@@ -49,6 +49,7 @@ export default async function handler(req, res) {
           deslocamento_tipo = ${fields.deslocamento_tipo || 'nao_cobrado'},
           deslocamento_valor_hora = ${fields.deslocamento_valor_hora || 0},
           displacement_hours = ${fields.displacement_hours || 0},
+          cnpj = ${fields.cnpj || null},
           contract_value = ${fields.contract_value},
           victor_fixed = ${fields.victor_fixed},
           remainder_victor_pct = ${fields.remainder_victor_pct},

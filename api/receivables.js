@@ -4,8 +4,8 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const { company_id, year, month } = req.query
     const rows = month
-      ? await sql`SELECT r.*, c.name as client_name FROM receivables r LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.year = ${year} AND r.month = ${month} ORDER BY r.created_at DESC`
-      : await sql`SELECT r.*, c.name as client_name FROM receivables r LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.year = ${year} ORDER BY r.month DESC, r.created_at DESC`
+      ? await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ${year} AND r.month = ${month} ORDER BY r.created_at DESC`
+      : await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ${year} ORDER BY r.month DESC, r.created_at DESC`
     return res.status(200).json({ data: rows })
   }
   if (req.method === 'POST') {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import CopyButton from '../components/CopyButton'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -99,6 +100,7 @@ export default function Billing() {
       remainder_victor_pct: contract.remainder_victor_pct, remainder_fabricio_pct: contract.remainder_fabricio_pct,
       has_tax: contract.has_tax, tax_percentage: contract.tax_percentage, tax_client_percent: contract.tax_client_percent,
       is_active: contract.is_active, financial_rule_id: contract.financial_rule_id, notes: contract.notes,
+      displacement_hours: contract.displacement_hours, cnpj: contract.cnpj,
       ...overrides,
     }
     await fetch('/api/contracts', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -376,6 +378,17 @@ export default function Billing() {
                 <option value="">Selecione o contrato</option>
                 {contracts.filter(c=>c.is_active).map(c=><option key={c.id} value={c.id}>{c.name} — {c.client_name}</option>)}
               </select>
+              {(() => {
+                const c = contracts.find(x => String(x.id) === String(contractForm.contract_id))
+                if (!c || !c.cnpj) return null
+                return (
+                  <div className="flex items-center gap-2 text-xs bg-gray-800/50 rounded-lg px-3 py-2">
+                    <span className="text-gray-400 font-medium">CNPJ:</span>
+                    <span className="text-white font-mono">{c.cnpj}</span>
+                    <CopyButton value={c.cnpj} className="ml-auto" />
+                  </div>
+                )
+              })()}
               <div className="grid grid-cols-2 gap-3">
                 <select value={contractForm.month} onChange={e=>setContractForm(f=>({...f,month:parseInt(e.target.value)}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
                   {months.map((m,i)=><option key={i} value={i+1}>{m}</option>)}

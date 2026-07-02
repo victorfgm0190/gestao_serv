@@ -204,6 +204,11 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'migrate-displacement-hours OK' })
     }
 
+    if (action === 'migrate-contract-cnpj') {
+      await sql`ALTER TABLE contracts ADD COLUMN IF NOT EXISTS cnpj VARCHAR(30) DEFAULT NULL`
+      return res.status(200).json({ success: true, message: 'migrate-contract-cnpj OK' })
+    }
+
     if (action === 'migrate-etapa6') {
       await sql`
         CREATE TABLE IF NOT EXISTS contracts (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import CopyButton from '../components/CopyButton'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const STATUS_COLORS = {
@@ -332,10 +333,17 @@ export default function Financial() {
             <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
                     <span className="text-gray-500 text-xs">{months[item.month-1]}/{item.year}</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status] || 'bg-gray-700 text-gray-400'}`}>{item.status}</span>
+                    {tab === 'receivables' && item.contract_cnpj && (
+                      <span className="flex items-center gap-1.5 text-xs">
+                        <span className="text-gray-500">CNPJ:</span>
+                        <span className="text-gray-300 font-mono">{item.contract_cnpj}</span>
+                        <CopyButton value={item.contract_cnpj} />
+                      </span>
+                    )}
                   </div>
                   <p className="text-white text-sm">{item.description}</p>
                   <div className="flex gap-4 mt-2 text-xs">
