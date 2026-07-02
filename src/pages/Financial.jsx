@@ -226,9 +226,9 @@ export default function Financial() {
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
   const baseData = tab === 'receivables' ? receivables : tab === 'fabricio' ? payablesFab : payablesVictor
-  const monthFiltered = (tab === 'victor' || tab === 'fabricio') && filterMonth !== ''
-    ? baseData.filter(r => Number(r.month) === Number(filterMonth))
-    : baseData
+  const monthFiltered = filterMonth === ''
+    ? baseData
+    : baseData.filter(r => Number(r.month) === Number(filterMonth))
   const currentData = filterStatus === 'all'
     ? monthFiltered
     : monthFiltered.filter(r => filterStatus === 'pendente_parcial' ? (r.status === 'pendente' || r.status === 'parcial') : r.status === filterStatus)
@@ -250,7 +250,9 @@ export default function Financial() {
 
   // Histórico: registros pagos do tipo selecionado
   const histSource = histType === 'receivables' ? receivables : histType === 'fabricio' ? payablesFab : payablesVictor
-  const histPaidAll = histSource.filter(r => r.status === 'pago' || r.status === 'parcial')
+  const histPaidAll = histSource
+    .filter(r => r.status === 'pago' || r.status === 'parcial')
+    .filter(r => filterMonth === '' || Number(r.month) === Number(filterMonth))
   const histClients = Array.from(
     histPaidAll.reduce((m, r) => { if (r.client_id != null && !m.has(r.client_id)) m.set(r.client_id, r.client_name || 'Sem cliente'); return m }, new Map())
   ).map(([id, name]) => ({ id, name }))
@@ -265,11 +267,19 @@ export default function Financial() {
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
         <div className="flex gap-2">
-          <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-sm focus:outline-none"/>
           {tab !== 'historico' && (
             <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">+ Novo</button>
           )}
         </div>
+      </div>
+
+      {/* Filtro de mês (aplicado a todas as abas) */}
+      <div className="flex gap-2 mb-6 flex-wrap items-center">
+        <button onClick={() => setFilterMonth('')} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === '' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>Todos</button>
+        {months.map((m, i) => (
+          <button key={i} onClick={() => setFilterMonth(i+1)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === i+1 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{m}</button>
+        ))}
+        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none"/>
       </div>
 
       {/* Abas */}
@@ -298,14 +308,7 @@ export default function Financial() {
 
       {(tab === 'victor' || tab === 'fabricio') && (
         <div className="flex gap-2 items-center mb-4 flex-wrap">
-          <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Mês:</span>
-          <select value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500">
-            <option value="">Todos</option>
-            {months.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
-          </select>
-          <span className="text-gray-500 text-xs uppercase tracking-wider ml-2 mr-1">Ano:</span>
-          <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500"/>
-          <div className="ml-2">{statusFilter}</div>
+          {statusFilter}
           {tab === 'victor' && (
             <button onClick={openReceive} className="ml-auto px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">Receber</button>
           )}
