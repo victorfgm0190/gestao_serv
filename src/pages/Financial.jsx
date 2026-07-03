@@ -146,7 +146,7 @@ export default function Financial() {
     setPendingVictor([])
     setShowReceiveModal(true)
     try {
-      const res = await fetch(`/api/payables-victor?status=pendente&company_id=${activeCompany.id}`)
+      const res = await fetch(`/api/payables-victor?status=pendente,parcial&company_id=${activeCompany.id}`)
       setPendingVictor((await res.json()).data || [])
     } catch (e) { console.error(e); setPendingVictor([]) }
   }
