@@ -530,9 +530,10 @@ export default function Billing() {
                     const hourlyRate = parseFloat(selected.find(e=>e.hourly_rate)?.hourly_rate) || 0
                     const deslocHours = selected.reduce((s,e) => s + (parseFloat(e.horas_deslocamento)||0), 0)
                     const serviceGross = totalHours * hourlyRate
-                    const deslocGross = deslocHours * hourlyRate
                     const fmtH = h => (h % 1 === 0 ? String(h) : h.toFixed(1)) + 'h'
                     const grossTotal = selected.reduce((s,e) => s + (parseFloat(e.gross_value)||0), 0)
+                    // Deslocamento faturado = o que o backend incluiu no bruto (0 quando "nao_cobrado")
+                    const deslocGross = Math.max(grossTotal - serviceGross, 0)
                     const taxTotal = selected.reduce((s,e) => s + (parseFloat(e.tax_amount)||0), 0)
                     const victorTotal = selected.reduce((s,e) => s + (parseFloat(e.victor_share)||0), 0)
                     const fabricioTotal = selected.reduce((s,e) => s + (parseFloat(e.fabricio_share)||0), 0)
@@ -545,7 +546,7 @@ export default function Billing() {
                             <span className="text-gray-400">Horas de serviço</span>
                             <span className="text-white">{fmtH(totalHours)}{hourlyRate > 0 ? ` × ${fmt(hourlyRate)} = ${fmt(serviceGross)}` : ''}</span>
                           </div>
-                          {deslocHours > 0 && (
+                          {deslocGross > 0.005 && (
                             <div className="flex justify-between">
                               <span className="text-gray-400">Horas deslocamento</span>
                               <span className="text-white">{fmtH(deslocHours)}{hourlyRate > 0 ? ` × ${fmt(hourlyRate)} = ${fmt(deslocGross)}` : ''}</span>
