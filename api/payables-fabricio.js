@@ -20,6 +20,15 @@ export default async function handler(req, res) {
     return res.status(201).json({ data: result[0] })
   }
   if (req.method === 'PATCH') {
+    // Estorno: remove todos os pagamentos e volta o lançamento para pendente. Sempre permitido.
+    if (req.query.action === 'estornar') {
+      const id = req.query.id || req.body?.id
+      if (!id) return res.status(400).json({ error: 'id obrigatório' })
+      await sql`DELETE FROM payable_payments WHERE payable_type = 'fabricio' AND payable_id = ${id}`
+      const result = await sql`UPDATE payables_fabricio SET status='pendente', paid_amount=0, paid_at=NULL WHERE id=${id} RETURNING *`
+      if (!result.length) return res.status(404).json({ error: 'Registro não encontrado' })
+      return res.status(200).json({ data: result[0], action: 'estornar' })
+    }
     const { id, paid_amount, paid_at, payment_method, is_compensation, compensation_notes, status, notes } = req.body
     const result = await sql`UPDATE payables_fabricio SET paid_amount=${paid_amount}, paid_at=${paid_at||null}, payment_method=${payment_method||null}, is_compensation=${is_compensation||false}, compensation_notes=${compensation_notes||null}, status=${status}, notes=${notes||null} WHERE id=${id} RETURNING *`
     return res.status(200).json({ data: result[0] })

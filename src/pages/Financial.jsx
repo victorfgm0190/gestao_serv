@@ -197,14 +197,27 @@ export default function Financial() {
   }
 
   async function estornar(item) {
-    if (!confirm('Estornar este recebimento? Os lançamentos de Pagar Victor e Pagar Fabrício gerados por esta fatura serão removidos.')) return
-    const res = await fetch('/api/receivables', {
+    if (!confirm('Tem certeza que deseja estornar?')) return
+    const res = await fetch(`/api/receivables?action=estornar&id=${item.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: item.id, status: 'estorno' })
+      body: JSON.stringify({ id: item.id })
     })
     const data = await res.json()
     if (res.status === 400) { alert('⚠️ ' + data.error); return }
+    if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao estornar')); return }
+    fetchAll()
+  }
+
+  async function estornarPayable(item) {
+    if (!confirm('Tem certeza que deseja estornar?')) return
+    const endpoint = tab === 'victor' ? '/api/payables-victor' : '/api/payables-fabricio'
+    const res = await fetch(`${endpoint}?action=estornar&id=${item.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id })
+    })
+    const data = await res.json()
     if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao estornar')); return }
     fetchAll()
   }
@@ -370,16 +383,21 @@ export default function Financial() {
                       {item.status !== 'pago' && (
                         <button onClick={() => { setShowPayModal(item); setPayForm(f => ({...f, paid_amount: item.amount || item.total_amount})) }} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
                       )}
-                      {item.status === 'pago' && (
+                      {(item.status === 'pago' || item.status === 'recebido') && (
                         <button onClick={() => estornar(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
                       )}
                     </>
                   ) : (
-                    item.status === 'pendente' ? (
-                      <button onClick={() => openPayments(item)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
-                    ) : (
-                      <button onClick={() => openPayments(item)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver Pagamentos</button>
-                    )
+                    <>
+                      {item.status === 'pendente' ? (
+                        <button onClick={() => openPayments(item)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
+                      ) : (
+                        <button onClick={() => openPayments(item)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver Pagamentos</button>
+                      )}
+                      {item.status === 'pago' && (
+                        <button onClick={() => estornarPayable(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
+                      )}
+                    </>
                   )}
                   {(!item.origin || item.origin !== 'faturamento') && (
                     <button onClick={() => del(item.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>

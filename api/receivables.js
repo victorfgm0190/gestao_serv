@@ -14,10 +14,10 @@ export default async function handler(req, res) {
     return res.status(201).json({ data: result[0] })
   }
   if (req.method === 'PATCH') {
-    const { id, paid_amount, paid_at, status, notes } = req.body
-
-    // Estorno: reverte o recebimento e remove os payables gerados pela fatura vinculada
-    if (status === 'estorno') {
+    // Estorno: reverte o recebimento e remove os payables gerados pela fatura vinculada.
+    // Aceita tanto ?action=estornar&id=X (query) quanto { status: 'estorno' } (body legado).
+    if (req.query.action === 'estornar' || req.body?.status === 'estorno') {
+      const id = req.query.id || req.body?.id
       const recs = await sql`SELECT * FROM receivables WHERE id = ${id} LIMIT 1`
       if (!recs.length) return res.status(404).json({ error: 'Registro não encontrado' })
 
@@ -28,8 +28,13 @@ export default async function handler(req, res) {
         const fabPago = await sql`SELECT id FROM payables_fabricio WHERE invoice_id = ${inv.id} AND status = 'pago' LIMIT 1`
         const vicPago = await sql`SELECT id FROM payables_victor WHERE invoice_id = ${inv.id} AND status = 'pago' LIMIT 1`
         if (fabPago.length || vicPago.length) {
-          return res.status(400).json({ error: 'Não é possível estornar. Os lançamentos de Pagar Fabrício e/ou Pagar Victor já foram pagos. Desfaça os pagamentos primeiro.' })
+          return res.status(400).json({ error: 'Estorne primeiro os pagamentos de Victor e Fabrício antes de estornar este recebimento.' })
         }
+        // Remove pagamentos parciais órfãos antes de apagar os payables
+        const fabIds = await sql`SELECT id FROM payables_fabricio WHERE invoice_id = ${inv.id}`
+        const vicIds = await sql`SELECT id FROM payables_victor WHERE invoice_id = ${inv.id}`
+        if (fabIds.length) await sql`DELETE FROM payable_payments WHERE payable_type='fabricio' AND payable_id = ANY(${fabIds.map(r=>r.id)})`
+        if (vicIds.length) await sql`DELETE FROM payable_payments WHERE payable_type='victor' AND payable_id = ANY(${vicIds.map(r=>r.id)})`
         await sql`DELETE FROM payables_fabricio WHERE invoice_id = ${inv.id}`
         await sql`DELETE FROM payables_victor WHERE invoice_id = ${inv.id}`
         await sql`UPDATE invoices SET status = 'pendente' WHERE id = ${inv.id}`
@@ -39,6 +44,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ data: result[0], action: 'estorno' })
     }
 
+    const { id, paid_amount, paid_at, status, notes } = req.body
     const result = await sql`UPDATE receivables SET paid_amount=${paid_amount}, paid_at=${paid_at||null}, status=${status}, notes=${notes||null} WHERE id=${id} RETURNING *`
 
     // Ao marcar como pago, propaga para a fatura vinculada gerando Pagar Fabrício/Victor (sem duplicar)
