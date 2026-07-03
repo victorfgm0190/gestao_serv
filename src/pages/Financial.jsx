@@ -63,6 +63,7 @@ export default function Financial() {
   const [showReceiveModal, setShowReceiveModal] = useState(false)
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
   const [receiving, setReceiving] = useState(false)
+  const [pendingVictor, setPendingVictor] = useState([])
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
@@ -140,9 +141,14 @@ export default function Financial() {
     fetchAll()
   }
 
-  function openReceive() {
+  async function openReceive() {
     setReceiveCats(EMPTY_RECEIVE_CATS)
+    setPendingVictor([])
     setShowReceiveModal(true)
+    try {
+      const res = await fetch(`/api/payables-victor?status=pendente&company_id=${activeCompany.id}`)
+      setPendingVictor((await res.json()).data || [])
+    } catch (e) { console.error(e); setPendingVictor([]) }
   }
 
   async function confirmReceive() {
@@ -253,6 +259,31 @@ export default function Financial() {
     : nonZeroFiltered.filter(r => filterStatus === 'pendente_parcial' ? (r.status === 'pendente' || r.status === 'parcial') : r.status === filterStatus)
   const victorCatTotal = victorCategoryTotal(victorCats)
   const receiveTotal = receiveCategoryTotal(receiveCats)
+
+  // Painel "Distribuição do saldo" (somente visual) — consome receiveTotal em tempo real
+  const CUR_KEY = new Date().getFullYear() * 100 + (new Date().getMonth() + 1)
+  const saldoOf = (r) => Math.round(((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)) * 100) / 100
+  const sortedPending = [...pendingVictor]
+    .filter(r => saldoOf(r) > 0)
+    .sort((a, b) => {
+      const ka = a.year * 100 + a.month, kb = b.year * 100 + b.month
+      const ca = ka === CUR_KEY ? 0 : 1, cb = kb === CUR_KEY ? 0 : 1
+      if (ca !== cb) return ca - cb          // mês atual primeiro
+      if (ka !== kb) return kb - ka          // demais: mais novo → mais antigo
+      if (a.client_id === 7 && b.client_id !== 7) return -1  // Pharmalog/ANB primeiro
+      if (b.client_id === 7 && a.client_id !== 7) return 1
+      return saldoOf(b) - saldoOf(a)         // restante por saldo desc
+    })
+  let distPool = Math.round(receiveTotal * 100) / 100
+  const distRows = sortedPending.map(r => {
+    const saldo = saldoOf(r)
+    const consumed = Math.min(distPool, saldo)
+    const liquido = Math.round((saldo - consumed) * 100) / 100
+    distPool = Math.round((distPool - consumed) * 100) / 100
+    const state = consumed <= 0 ? 'full' : liquido <= 0 ? 'zero' : 'partial'
+    return { id: r.id, month: r.month, year: r.year, client_name: r.client_name, saldo, liquido, state }
+  })
+  const distOverflow = distPool > 0.005 ? distPool : 0
   const statusFilter = (
     <div className="flex gap-2 items-center">
       <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Status:</span>
@@ -629,6 +660,37 @@ export default function Financial() {
                   </div>
                 ))}
               </div>
+
+              {/* Distribuição do saldo — painel visual em tempo real */}
+              <div className="bg-gray-950/60 border border-gray-800 rounded-xl p-3">
+                <p className="text-gray-300 text-xs font-medium uppercase tracking-wider mb-2">Distribuição do saldo</p>
+                {distRows.length === 0 ? (
+                  <p className="text-gray-600 text-xs text-center py-2">Nenhum saldo pendente</p>
+                ) : (
+                  <div className="space-y-1">
+                    {distRows.map(d => (
+                      <div key={d.id} className="flex items-center justify-between gap-2 text-xs">
+                        <span className={`truncate ${d.state === 'zero' ? 'text-gray-600' : 'text-gray-300'}`}>
+                          <span className="text-gray-500">{months[d.month-1]}/{d.year}</span> {d.client_name}
+                        </span>
+                        <span className="shrink-0 font-mono text-right whitespace-nowrap">
+                          <span className="text-gray-500">Saldo: {fmt(d.saldo)}</span>
+                          <span className="text-gray-600"> → </span>
+                          <span className={
+                            d.state === 'zero' ? 'text-gray-600 line-through'
+                            : d.state === 'partial' ? 'text-yellow-400'
+                            : 'text-green-400'
+                          }>Líquido: {fmt(d.liquido)}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {distOverflow > 0 && (
+                  <p className="text-red-400 text-xs mt-2">⚠️ Valor excede o saldo disponível em {fmt(distOverflow)}</p>
+                )}
+              </div>
+
               <p className="text-sm text-gray-300 border-t border-gray-800 pt-3">Total a distribuir: <span className="text-green-400 font-bold">{fmt(receiveTotal)}</span></p>
             </div>
             <div className="flex gap-3 mt-5">

@@ -2,8 +2,10 @@ import { neon } from '@neondatabase/serverless'
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
   if (req.method === 'GET') {
-    const { company_id, year } = req.query
-    const rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+    const { company_id, year, status } = req.query
+    const rows = status
+      ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ${status} ORDER BY p.year DESC, p.month DESC, p.created_at DESC`
+      : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
     const ids = rows.map(r => r.id)
     let payments = []
     if (ids.length) {
