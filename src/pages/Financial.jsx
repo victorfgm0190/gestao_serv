@@ -468,7 +468,7 @@ export default function Financial() {
                       ) : (
                         <button onClick={() => openPayments(item)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver Pagamentos</button>
                       )}
-                      {item.status === 'pago' && (
+                      {(item.status === 'pago' || item.status === 'parcial') && (
                         <button onClick={() => estornarPayable(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
                       )}
                     </>
