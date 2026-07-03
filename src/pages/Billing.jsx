@@ -527,11 +527,11 @@ export default function Billing() {
                   {selectedEntries.length > 0 && (() => {
                     const selected = timeEntries.filter(e => selectedEntries.includes(e.id))
                     const totalHours = selected.reduce((s,e) => s + (parseFloat(e.hours)||0), 0)
-                    const totalMins = Math.round(totalHours * 60)
-                    const hh = Math.floor(totalMins / 60)
-                    const mm = totalMins % 60
-                    const horasStr = `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`
                     const hourlyRate = parseFloat(selected.find(e=>e.hourly_rate)?.hourly_rate) || 0
+                    const deslocHours = selected.reduce((s,e) => s + (parseFloat(e.horas_deslocamento)||0), 0)
+                    const serviceGross = totalHours * hourlyRate
+                    const deslocGross = deslocHours * hourlyRate
+                    const fmtH = h => (h % 1 === 0 ? String(h) : h.toFixed(1)) + 'h'
                     const grossTotal = selected.reduce((s,e) => s + (parseFloat(e.gross_value)||0), 0)
                     const taxTotal = selected.reduce((s,e) => s + (parseFloat(e.tax_amount)||0), 0)
                     const victorTotal = selected.reduce((s,e) => s + (parseFloat(e.victor_share)||0), 0)
@@ -542,18 +542,18 @@ export default function Billing() {
                         <p className="text-blue-400 font-medium">{selectedEntries.length} agenda(s) selecionada(s)</p>
                         <div className="space-y-1.5">
                           <div className="flex justify-between">
-                            <span className="text-gray-400">Total de horas</span>
-                            <span className="text-white font-bold">{horasStr}</span>
+                            <span className="text-gray-400">Horas de serviço</span>
+                            <span className="text-white">{fmtH(totalHours)}{hourlyRate > 0 ? ` × ${fmt(hourlyRate)} = ${fmt(serviceGross)}` : ''}</span>
                           </div>
-                          {hourlyRate > 0 && (
+                          {deslocHours > 0 && (
                             <div className="flex justify-between">
-                              <span className="text-gray-400">Valor da hora</span>
-                              <span className="text-white">{fmt(hourlyRate)}</span>
+                              <span className="text-gray-400">Horas deslocamento</span>
+                              <span className="text-white">{fmtH(deslocHours)}{hourlyRate > 0 ? ` × ${fmt(hourlyRate)} = ${fmt(deslocGross)}` : ''}</span>
                             </div>
                           )}
                           <div className="flex justify-between">
                             <span className="text-gray-400">Total bruto</span>
-                            <span className="text-white">{fmt(grossTotal)}</span>
+                            <span className="text-white font-bold">{fmt(grossTotal)}</span>
                           </div>
                           {taxTotal > 0 && (
                             <div className="flex justify-between">
