@@ -37,7 +37,6 @@ const RECEIVE_VICTOR_CATEGORIES = [
 ]
 const EMPTY_RECEIVE_CATS = { honorarios: '', das: '', inss: '', pro_labore: '', lucros: '', escritorio: '', demais: '' }
 const receiveCategoryTotal = (cats) => RECEIVE_VICTOR_CATEGORIES.reduce((s, [k]) => s + (parseFloat(cats[k]) || 0), 0)
-const receiveCategorySummary = (cats) => RECEIVE_VICTOR_CATEGORIES.filter(([k]) => parseFloat(cats[k]) > 0).map(([k, label]) => `${label}: R$${String(parseFloat(cats[k])).replace('.', ',')}`).join(' | ')
 
 export default function Financial() {
   const { activeCompany } = useOutletContext()
@@ -64,6 +63,9 @@ export default function Financial() {
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
   const [receiving, setReceiving] = useState(false)
   const [pendingVictor, setPendingVictor] = useState([])
+  const [receiveTarget, setReceiveTarget] = useState(null) // item quando Flow B (específico), null = Flow A (geral)
+  const [overflowInfo, setOverflowInfo] = useState(null)   // { overflow, targetSaldo, target_id } quando há sobra
+  const [showMesAnterior, setShowMesAnterior] = useState(false)
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
@@ -141,50 +143,80 @@ export default function Financial() {
     fetchAll()
   }
 
-  async function openReceive() {
-    setReceiveCats(EMPTY_RECEIVE_CATS)
-    setPendingVictor([])
-    setShowReceiveModal(true)
+  async function fetchPendingVictor() {
     try {
       const res = await fetch(`/api/payables-victor?status=pendente,parcial&company_id=${activeCompany.id}`)
       setPendingVictor((await res.json()).data || [])
     } catch (e) { console.error(e); setPendingVictor([]) }
   }
 
-  async function confirmReceive() {
-    let pool = Math.round(receiveCategoryTotal(receiveCats) * 100) / 100
-    if (pool <= 0) return
-    const notes = receiveCategorySummary(receiveCats)
-    const paid_at = new Date().toISOString().split('T')[0]
-    // Registros pendentes/parciais, ordenados do mês mais antigo para o mais recente; no mesmo mês, menor saldo restante primeiro
-    const targets = payablesVictor
-      .filter(r => r.status === 'pendente' || r.status === 'parcial')
-      .map(r => ({ id: r.id, remaining: Math.round(((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)) * 100) / 100 }))
-      .filter(r => r.remaining > 0)
-      .sort((a, b) => {
-        const pa = payablesVictor.find(p => p.id === a.id)
-        const pb = payablesVictor.find(p => p.id === b.id)
-        const dateA = pa.year * 100 + pa.month
-        const dateB = pb.year * 100 + pb.month
-        if (dateA !== dateB) return dateA - dateB
-        return a.remaining - b.remaining
-      })
+  // Flow A — Pagar Geral (não vinculado a um registro específico)
+  async function openReceive() {
+    setReceiveCats(EMPTY_RECEIVE_CATS)
+    setPendingVictor([])
+    setReceiveTarget(null)
+    setOverflowInfo(null)
+    setShowMesAnterior(false)
+    setShowReceiveModal(true)
+    fetchPendingVictor()
+  }
 
+  // Flow B — Pagar em um registro específico (consome o alvo primeiro)
+  async function openDistribuir(item) {
+    setReceiveCats(EMPTY_RECEIVE_CATS)
+    setPendingVictor([])
+    setReceiveTarget(item)
+    setOverflowInfo(null)
+    setShowMesAnterior(false)
+    setShowReceiveModal(true)
+    fetchPendingVictor()
+  }
+
+  function closeReceive() {
+    setShowReceiveModal(false)
+    setReceiveCats(EMPTY_RECEIVE_CATS)
+    setReceiveTarget(null)
+    setOverflowInfo(null)
+    setShowMesAnterior(false)
+  }
+
+  async function confirmReceive() {
+    const total = Math.round(receiveCategoryTotal(receiveCats) * 100) / 100
+    if (total <= 0) return
+    const paid_at = new Date().toISOString().split('T')[0]
+    const body = receiveTarget
+      ? { company_id: activeCompany.id, despesas: receiveCats, mode: 'especifico', payable_id: receiveTarget.id, overflow_action: null, paid_at }
+      : { company_id: activeCompany.id, despesas: receiveCats, mode: 'geral', paid_at }
     setReceiving(true)
     try {
-      for (const t of targets) {
-        if (pool <= 0) break
-        const pay = Math.round(Math.min(pool, t.remaining) * 100) / 100
-        if (pay <= 0) continue
-        await fetch('/api/payable-payments', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ payable_type: 'victor', payable_id: t.id, amount: pay, paid_at, notes }),
-        })
-        pool = Math.round((pool - pay) * 100) / 100
+      const res = await fetch('/api/payables-victor?action=pagar-distribuido', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao distribuir')); return }
+      if (data.needsDecision) {
+        setOverflowInfo({ overflow: data.overflow, targetSaldo: data.targetSaldo, target_id: data.target_id })
+        return // mantém o modal aberto para o painel de decisão
       }
-      setShowReceiveModal(false)
-      setReceiveCats(EMPTY_RECEIVE_CATS)
+      closeReceive()
+      await fetchAll()
+    } finally {
+      setReceiving(false)
+    }
+  }
+
+  // Flow B — resolve a sobra (overflow) conforme a opção escolhida pelo usuário
+  async function resolveOverflow(action, overflow_target_id = null) {
+    const paid_at = new Date().toISOString().split('T')[0]
+    setReceiving(true)
+    try {
+      const res = await fetch('/api/payables-victor?action=pagar-distribuido', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_id: activeCompany.id, despesas: receiveCats, mode: 'especifico', payable_id: receiveTarget.id, overflow_action: action, overflow_target_id, paid_at }),
+      })
+      const data = await res.json()
+      if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao distribuir')); return }
+      closeReceive()
       await fetchAll()
     } finally {
       setReceiving(false)
@@ -274,8 +306,16 @@ export default function Financial() {
       if (b.client_id === 7 && a.client_id !== 7) return 1
       return saldoOf(b) - saldoOf(a)         // restante por saldo desc
     })
+  // Flow B: no específico o alvo é consumido primeiro
+  const orderedPending = receiveTarget
+    ? [...sortedPending.filter(r => r.id === receiveTarget.id), ...sortedPending.filter(r => r.id !== receiveTarget.id)]
+    : sortedPending
+  // Meses anteriores com saldo (para o sub-painel "Ir para mês anterior")
+  const prevMonthsWithBalance = sortedPending
+    .filter(r => (r.year * 100 + r.month) < CUR_KEY && (!receiveTarget || r.id !== receiveTarget.id))
+    .map(r => ({ id: r.id, client_name: r.client_name, month: r.month, year: r.year, saldo: saldoOf(r) }))
   let distPool = Math.round(receiveTotal * 100) / 100
-  const distRows = sortedPending.map(r => {
+  const distRows = orderedPending.map(r => {
     const saldo = saldoOf(r)
     const consumed = Math.min(distPool, saldo)
     const liquido = Math.round((saldo - consumed) * 100) / 100
@@ -421,7 +461,7 @@ export default function Financial() {
                   ) : (
                     <>
                       {item.status === 'pendente' ? (
-                        <button onClick={() => openPayments(item)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
+                        <button onClick={() => tab === 'victor' ? openDistribuir(item) : openPayments(item)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
                       ) : (
                         <button onClick={() => openPayments(item)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver Pagamentos</button>
                       )}
@@ -650,7 +690,11 @@ export default function Financial() {
       {showReceiveModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">Receber — Pagar Victor</h3>
+            <h3 className="text-lg font-bold text-white mb-1">{receiveTarget ? 'Pagar — Pagar Victor' : 'Receber — Pagar Victor'}</h3>
+            {receiveTarget && (
+              <p className="text-gray-400 text-xs mb-4">Alvo: {receiveTarget.client_name} — {months[receiveTarget.month-1]}/{receiveTarget.year} · Saldo: {fmt((parseFloat(receiveTarget.total_amount)||0) - (parseFloat(receiveTarget.paid_amount)||0))}</p>
+            )}
+            {!receiveTarget && <div className="mb-4" />}
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 {RECEIVE_VICTOR_CATEGORIES.map(([key, label]) => (
@@ -693,10 +737,40 @@ export default function Financial() {
 
               <p className="text-sm text-gray-300 border-t border-gray-800 pt-3">Total a distribuir: <span className="text-green-400 font-bold">{fmt(receiveTotal)}</span></p>
             </div>
-            <div className="flex gap-3 mt-5">
-              <button onClick={()=>setShowReceiveModal(false)} disabled={receiving} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50">Cancelar</button>
-              <button onClick={confirmReceive} disabled={receiving || receiveTotal <= 0} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{receiving ? 'Distribuindo...' : 'Confirmar'}</button>
-            </div>
+
+            {/* Flow B — painel de decisão da sobra (overflow) */}
+            {overflowInfo ? (
+              <div className="mt-5 bg-amber-500/10 border border-amber-500/40 rounded-xl p-4">
+                <p className="text-amber-300 text-sm font-medium mb-1">Sobra após preencher o registro</p>
+                <p className="text-gray-300 text-xs mb-4">O registro alvo recebeu {fmt(overflowInfo.targetSaldo)}. Ainda restam <span className="text-amber-300 font-bold">{fmt(overflowInfo.overflow)}</span> a distribuir. O que deseja fazer?</p>
+                {!showMesAnterior ? (
+                  <div className="space-y-2">
+                    <button onClick={() => resolveOverflow('pharma')} disabled={receiving} className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">Completar com Pharmalog</button>
+                    <button onClick={() => resolveOverflow('demais')} disabled={receiving} className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">Completar com demais clientes</button>
+                    <button onClick={() => setShowMesAnterior(true)} disabled={receiving} className="w-full py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-200 rounded-lg text-sm font-medium">Ir para mês anterior</button>
+                    <button onClick={() => resolveOverflow('nada')} disabled={receiving} className="w-full py-2 border border-gray-700 text-gray-400 hover:bg-gray-800 disabled:opacity-50 rounded-lg text-sm">Não fazer nada</button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-gray-400 text-xs">Escolha o registro de mês anterior para continuar:</p>
+                    {prevMonthsWithBalance.length === 0 ? (
+                      <p className="text-gray-600 text-xs text-center py-2">Nenhum saldo em meses anteriores</p>
+                    ) : prevMonthsWithBalance.map(r => (
+                      <button key={r.id} onClick={() => resolveOverflow('mes', r.id)} disabled={receiving} className="w-full flex items-center justify-between gap-2 py-2 px-3 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 rounded-lg text-xs">
+                        <span className="text-gray-200 truncate"><span className="text-gray-500">{months[r.month-1]}/{r.year}</span> {r.client_name}</span>
+                        <span className="text-green-400 font-mono shrink-0">{fmt(r.saldo)}</span>
+                      </button>
+                    ))}
+                    <button onClick={() => setShowMesAnterior(false)} disabled={receiving} className="w-full py-2 border border-gray-700 text-gray-400 hover:bg-gray-800 disabled:opacity-50 rounded-lg text-xs">Voltar</button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex gap-3 mt-5">
+                <button onClick={closeReceive} disabled={receiving} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50">Cancelar</button>
+                <button onClick={confirmReceive} disabled={receiving || receiveTotal <= 0} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{receiving ? 'Distribuindo...' : 'Confirmar'}</button>
+              </div>
+            )}
           </div>
         </div>
       )}
