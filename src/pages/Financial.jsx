@@ -184,9 +184,10 @@ export default function Financial() {
     const total = Math.round(receiveCategoryTotal(receiveCats) * 100) / 100
     if (total <= 0) return
     const paid_at = new Date().toISOString().split('T')[0]
+    const ref = { reference_month: refMonth, reference_year: refYear }
     const body = receiveTarget
-      ? { company_id: activeCompany.id, despesas: receiveCats, mode: 'especifico', payable_id: receiveTarget.id, overflow_action: null, paid_at }
-      : { company_id: activeCompany.id, despesas: receiveCats, mode: 'geral', paid_at }
+      ? { company_id: activeCompany.id, despesas: receiveCats, mode: 'especifico', payable_id: receiveTarget.id, overflow_action: null, paid_at, ...ref }
+      : { company_id: activeCompany.id, despesas: receiveCats, mode: 'geral', paid_at, ...ref }
     setReceiving(true)
     try {
       const res = await fetch('/api/payables-victor?action=pagar-distribuido', {
@@ -212,7 +213,7 @@ export default function Financial() {
     try {
       const res = await fetch('/api/payables-victor?action=pagar-distribuido', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company_id: activeCompany.id, despesas: receiveCats, mode: 'especifico', payable_id: receiveTarget.id, overflow_action: action, overflow_target_id, paid_at }),
+        body: JSON.stringify({ company_id: activeCompany.id, despesas: receiveCats, mode: 'especifico', payable_id: receiveTarget.id, overflow_action: action, overflow_target_id, paid_at, reference_month: refMonth, reference_year: refYear }),
       })
       const data = await res.json()
       if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao distribuir')); return }
@@ -292,16 +293,18 @@ export default function Financial() {
   const victorCatTotal = victorCategoryTotal(victorCats)
   const receiveTotal = receiveCategoryTotal(receiveCats)
 
-  // Painel "Distribuição do saldo" (somente visual) — consome receiveTotal em tempo real
-  const CUR_KEY = new Date().getFullYear() * 100 + (new Date().getMonth() + 1)
+  // Painel "Distribuição do saldo" (somente visual) — consome receiveTotal em tempo real.
+  // Mês de referência = filtro ativo da tela (não o mês do calendário). "Todos" cai no mês atual.
+  const refMonth = filterMonth === '' ? (new Date().getMonth() + 1) : Number(filterMonth)
+  const refYear = Number(filterYear) || new Date().getFullYear()
+  const REF_KEY = refYear * 100 + refMonth
   const saldoOf = (r) => Math.round(((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)) * 100) / 100
   const sortedPending = [...pendingVictor]
     .filter(r => saldoOf(r) > 0)
+    .filter(r => (r.year * 100 + r.month) <= REF_KEY)  // ignora meses futuros ao de referência
     .sort((a, b) => {
       const ka = a.year * 100 + a.month, kb = b.year * 100 + b.month
-      const ca = ka === CUR_KEY ? 0 : 1, cb = kb === CUR_KEY ? 0 : 1
-      if (ca !== cb) return ca - cb          // mês atual primeiro
-      if (ka !== kb) return kb - ka          // demais: mais novo → mais antigo
+      if (ka !== kb) return kb - ka          // referência (maior chave) → mais antigo
       if (a.client_id === 7 && b.client_id !== 7) return -1  // Pharmalog/ANB primeiro
       if (b.client_id === 7 && a.client_id !== 7) return 1
       return saldoOf(b) - saldoOf(a)         // restante por saldo desc
@@ -312,7 +315,7 @@ export default function Financial() {
     : sortedPending
   // Meses anteriores com saldo (para o sub-painel "Ir para mês anterior")
   const prevMonthsWithBalance = sortedPending
-    .filter(r => (r.year * 100 + r.month) < CUR_KEY && (!receiveTarget || r.id !== receiveTarget.id))
+    .filter(r => (r.year * 100 + r.month) < REF_KEY && (!receiveTarget || r.id !== receiveTarget.id))
     .map(r => ({ id: r.id, client_name: r.client_name, month: r.month, year: r.year, saldo: saldoOf(r) }))
   let distPool = Math.round(receiveTotal * 100) / 100
   const distRows = orderedPending.map(r => {

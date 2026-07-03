@@ -41,7 +41,7 @@ function consumir(sql, pool, lista, when, notes) {
 
 // POST ?action=pagar-distribuido — Etapa 2: consumo de saldos entre múltiplos payables_victor.
 async function pagarDistribuido(sql, req, res) {
-  const { company_id, despesas = {}, mode, payable_id, overflow_action = null, overflow_target_id = null, paid_at } = req.body
+  const { company_id, despesas = {}, mode, payable_id, overflow_action = null, overflow_target_id = null, paid_at, reference_month, reference_year } = req.body
 
   let total = 0
   const partes = []
@@ -53,12 +53,16 @@ async function pagarDistribuido(sql, req, res) {
   const notes = partes.length ? partes.join(' | ') : 'distribuição geral'
   const when = paid_at || new Date().toISOString().split('T')[0]
 
+  // Mês de referência = filtro ativo da tela (fallback: mês do calendário).
   const now = new Date()
-  const curKey = now.getFullYear() * 100 + (now.getMonth() + 1)
+  const refMonth = reference_month ? Number(reference_month) : (now.getMonth() + 1)
+  const refYear = reference_year ? Number(reference_year) : now.getFullYear()
+  const curKey = refYear * 100 + refMonth
 
   const all = await sql`SELECT * FROM payables_victor WHERE company_id = ${company_id} AND status IN ('pendente','parcial')`
   for (const rec of all) rec._saldo = r2((parseFloat(rec.total_amount) || 0) - (parseFloat(rec.paid_amount) || 0))
-  const candidatos = all.filter(rec => rec._saldo > 0)
+  // Ignora meses futuros ao de referência: nunca consome deles
+  const candidatos = all.filter(rec => rec._saldo > 0 && (rec.year * 100 + rec.month) <= curKey)
 
   // FLOW A — geral
   if (mode === 'geral') {
