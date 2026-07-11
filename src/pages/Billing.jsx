@@ -601,17 +601,22 @@ export default function Billing() {
                 const fabPct = parseFloat(agendaRule.remainder_fabricio_pct) || 50
                 const taxReal = parseFloat(agendaForm.tax_percentage_used) || 0
                 const taxClient = parseFloat(agendaForm.tax_client_percent_used) || 0
-                // Bruto = serviço + deslocamento faturado (gross_value já inclui o deslocamento).
+                // Serviço × deslocamento (gross_value já inclui o deslocamento faturado).
+                const serviceValue = selected.reduce((s,e) => s + (parseFloat(e.hours)||0)*hourlyRate, 0)
                 const bruto = selected.reduce((s,e) => { const g = parseFloat(e.gross_value); return s + (isNaN(g) ? (parseFloat(e.hours)||0)*hourlyRate : g) }, 0)
+                const deslocValue = Math.max(bruto - serviceValue, 0)
                 const impostoReal = bruto * taxReal / 100
                 const net = bruto - impostoReal
+                // Deslocamento: 100% Victor, fora do split. Só o serviço líquido é dividido.
+                const netForSplit = net - deslocValue
                 const victorServico = totalHours * victorFixoHora
-                const restante = Math.max(net - victorServico, 0)
+                const restante = Math.max(netForSplit - victorServico, 0)
                 const victorLucro = restante * victorPct / 100
                 const fabricio = restante * fabPct / 100
                 const nf = taxClient > 0 && taxClient < 100 ? bruto / (1 - taxClient / 100) : bruto
                 const diffNf = Math.max(nf - bruto, 0)
-                const victorTotal = victorServico + victorLucro + diffNf
+                const victorDesloc = deslocValue
+                const victorTotal = victorServico + victorLucro + victorDesloc + diffNf
                 const onPct = (v) => { setAgendaForm(f=>({...f,tax_client_percent_used:v})) }
                 const onNf = (v) => { const nfv=parseFloat(v); let p=''; if(!isNaN(nfv)&&nfv>0&&bruto>0) p=((nfv-bruto)/nfv*100).toFixed(2); setAgendaForm(f=>({...f,tax_client_percent_used:p})) }
                 return (
@@ -641,14 +646,28 @@ export default function Billing() {
                     <div className="bg-gray-800 rounded-xl p-3 space-y-1 text-xs">
                       <p className="text-gray-400 font-medium uppercase tracking-wider mb-1">Demonstrativo</p>
                       <div className="flex justify-between"><span className="text-gray-400">Total de horas</span><span className="text-white">{totalHours.toFixed(2)}h</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">Valor bruto</span><span className="text-white">{fmt(bruto)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Horas de serviço</span><span className="text-white">{fmt(serviceValue)}</span></div>
+                      {deslocValue > 0.005 && (
+                        <div className="flex justify-between"><span className="text-gray-400">Horas de deslocamento <span className="text-blue-300">(100% Victor)</span></span><span className="text-white">{fmt(deslocValue)}</span></div>
+                      )}
+                      <div className="flex justify-between"><span className="text-gray-400">Total bruto</span><span className="text-white font-medium">{fmt(bruto)}</span></div>
                       <div className="flex justify-between"><span className="text-gray-400">% Imposto cobrado</span><span className="text-white">{taxClient.toFixed(2).replace('.',',')}%</span></div>
                       <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(nf)}</span></div>
                       <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(impostoReal)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(diffNf)}</span></div>
+                      {deslocValue > 0.005 && (
+                        <div className="flex justify-between"><span className="text-gray-400">Líquido serviço (p/ split)</span><span className="text-white">{fmt(netForSplit)}</span></div>
+                      )}
+                      {diffNf > 0.005 && (
+                        <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(diffNf)}</span></div>
+                      )}
                       <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
-                        <div className="flex justify-between"><span className="text-gray-400">Victor fixo</span><span className="text-blue-300">+{fmt(victorServico)}</span></div>
+                        {victorServico > 0.005 && (
+                          <div className="flex justify-between"><span className="text-gray-400">Victor fixo</span><span className="text-blue-300">+{fmt(victorServico)}</span></div>
+                        )}
                         <div className="flex justify-between"><span className="text-gray-400">Victor lucro</span><span className="text-blue-300">+{fmt(victorLucro)}</span></div>
+                        {deslocValue > 0.005 && (
+                          <div className="flex justify-between"><span className="text-gray-400">Victor deslocamento</span><span className="text-blue-300">+{fmt(victorDesloc)}</span></div>
+                        )}
                         <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor total</span><span className="text-blue-400">{fmt(victorTotal)}</span></div>
                       </div>
                       <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício total</span><span className="text-purple-400">{fmt(fabricio)}</span></div>

@@ -60,21 +60,26 @@ function calcAgenda(entries, rule, opts = {}) {
   const taxReal = resolvePct(opts.tax_percentage_used, rule.has_tax ? rule.tax_percentage : 0)
   const taxClient = resolvePct(opts.tax_client_percent_used, 0)
 
-  // Bruto = serviço + deslocamento faturado. gross_value já soma os dois (0 de deslocamento
-  // quando 'nao_cobrado'); usa a taxa de deslocamento correta. Fallback: horas × valor_hora.
+  // Serviço × deslocamento. gross_value já soma serviço + deslocamento faturado (0 quando
+  // 'nao_cobrado', com a taxa de deslocamento correta). Deslocamento = gross - serviço.
+  const service_value = entries.reduce((s, e) => s + (parseFloat(e.hours) || 0) * valor_hora, 0)
   const bruto = entries.reduce((s, e) => {
     const g = parseFloat(e.gross_value)
     return s + (isNaN(g) ? (parseFloat(e.hours) || 0) * valor_hora : g)
   }, 0)
-  const tax = bruto * (taxReal / 100)                // imposto real
-  const net = bruto - tax                            // líquido
+  const displacement_value = Math.max(bruto - service_value, 0)
+
+  const tax = bruto * (taxReal / 100)                // imposto real sobre a NF cheia
+  const net = bruto - tax                            // líquido total
+  // Deslocamento: 100% Victor, FORA do split. Só o serviço (líquido) é dividido.
+  const net_for_split = net - displacement_value     // = serviço - imposto
   const victor_servico = total_hours * victor_fixo_hora
-  const restante = Math.max(net - victor_servico, 0)
+  const restante = Math.max(net_for_split - victor_servico, 0)
   const victor_lucro = restante * (victor_pct / 100)
   const fabricio = restante * (fab_pct / 100)
   const nf = taxClient > 0 && taxClient < 100 ? bruto / (1 - taxClient / 100) : bruto
-  const diff_nf = Math.max(nf - bruto, 0)            // 100% Victor (igual ao fixo)
-  const victor_total = victor_servico + victor_lucro + diff_nf
+  const diff_nf = Math.max(nf - bruto, 0)            // 100% Victor (gross-up do imposto do cliente)
+  const victor_total = victor_servico + victor_lucro + displacement_value + diff_nf
 
   return {
     invoice_value: round(nf),
@@ -83,10 +88,12 @@ function calcAgenda(entries, rule, opts = {}) {
     tax_percentage_used: taxReal,
     tax_client_percent_used: taxClient,
     victor_service: round(victor_servico),
-    victor_profit: round(victor_lucro),
+    // Deslocamento (100% Victor) somado ao lucro para os componentes fecharem no total.
+    victor_profit: round(victor_lucro + displacement_value),
     victor_tax_diff: round(diff_nf),
     victor_total: round(victor_total),
     fabricio_total: round(fabricio),
+    displacement_value: round(displacement_value),
     total_hours,
   }
 }
