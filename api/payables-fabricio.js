@@ -7,12 +7,12 @@ export default async function handler(req, res) {
     let rows
     if (caixa) {
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
     } else {
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ${year} AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
     }
     const ids = rows.map(r => r.id)
     let payments = []

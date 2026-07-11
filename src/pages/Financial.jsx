@@ -368,6 +368,11 @@ export default function Financial() {
   const currentData = filterStatus === 'all'
     ? nonZeroFiltered
     : nonZeroFiltered.filter(r => filterStatus === 'pendente_parcial' ? (r.status === 'pendente' || r.status === 'parcial') : r.status === filterStatus)
+  // Disponível = manual (sem recebível) ou recebível do cliente já pago/parcial. Pendente = aguardando.
+  const isAvailable = (r) => !r.receivable_status || r.receivable_status === 'pago' || r.receivable_status === 'parcial'
+  const isPayTab = tab === 'victor' || tab === 'fabricio'
+  const availableData = isPayTab ? currentData.filter(isAvailable) : currentData
+  const waitingData = isPayTab ? currentData.filter(r => !isAvailable(r)) : []
   const victorCatTotal = victorCategoryTotal(victorCats)
   const receiveTotal = receiveCategoryTotal(receiveCats)
 
@@ -386,11 +391,13 @@ export default function Financial() {
   const effRefMonth = effectiveRefKey % 100
   const effRefYear = Math.floor(effectiveRefKey / 100)
   const saldoOf = (r) => Math.round(((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)) * 100) / 100
-  // Fonte da distribuição: no modo edição, restaura os saldos consumidos pela sessão que será estornada.
+  // Fonte da distribuição: só payables disponíveis (recebível do cliente pago/parcial ou manual).
+  // No modo edição, restaura os saldos consumidos pela sessão que será estornada.
   const distSource = (() => {
-    if (!editSession || !editSession.affected.length) return pendingVictor
+    const availablePending = pendingVictor.filter(isAvailable)
+    if (!editSession || !editSession.affected.length) return availablePending
     const map = new Map()
-    for (const r of pendingVictor) map.set(r.id, { ...r })
+    for (const r of availablePending) map.set(r.id, { ...r })
     for (const a of editSession.affected) {
       const base = map.get(a.id) || { ...a }
       const restored = (parseFloat(base.paid_amount) || 0) - (parseFloat(a.session_amount) || 0)
@@ -485,6 +492,80 @@ export default function Financial() {
     )
   }
 
+  // Renderiza uma linha das abas de Pagar/Receber. waiting=true oculta o botão "Pagar".
+  function renderRow(item, waiting = false) {
+    return (
+      <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
+              <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status] || 'bg-gray-700 text-gray-400'}`}>{item.status}</span>
+              {tab === 'receivables' && item.contract_cnpj && (
+                <span className="flex items-center gap-1.5 text-xs">
+                  <span className="text-gray-500">CNPJ:</span>
+                  <span className="text-gray-300 font-mono">{item.contract_cnpj}</span>
+                  <CopyButton value={item.contract_cnpj} />
+                </span>
+              )}
+            </div>
+            <p className="text-white text-sm">{item.description}</p>
+            <div className="flex gap-4 mt-2 text-xs">
+              {item.invoice_amount != null && (
+                <span className="text-gray-500">NF: <span className="text-gray-300">{fmt(item.invoice_amount)}</span></span>
+              )}
+              {tab === 'victor' ? (
+                <>
+                  <span className="text-gray-500">Serviço: <span className="text-gray-300">{fmt(item.service_amount)}</span></span>
+                  <span className="text-gray-500">Lucro: <span className="text-gray-300">{fmt(item.profit_amount)}</span></span>
+                  <span className="text-gray-500">Total: <span className="text-white font-medium">{fmt(item.total_amount)}</span></span>
+                </>
+              ) : (
+                <span className="text-gray-500">Valor: <span className="text-white font-medium">{fmt(item.amount)}</span></span>
+              )}
+              {parseFloat(item.paid_amount) > 0 && <span className="text-gray-500">Pago: <span className="text-green-400">{fmt(item.paid_amount)}</span></span>}
+              {item.paid_at && <span className="text-gray-500">Em: <span className="text-gray-300">{new Date(item.paid_at).toLocaleDateString('pt-BR')}</span></span>}
+              {item.is_compensation && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">Compensação</span>}
+            </div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            {tab === 'receivables' ? (
+              <>
+                {item.status !== 'pago' && (
+                  <button onClick={() => { setShowPayModal(item); setPayForm(f => ({...f, paid_amount: item.amount || item.total_amount})) }} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
+                )}
+                {(item.status === 'pago' || item.status === 'recebido') && (
+                  <button onClick={() => estornar(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
+                )}
+              </>
+            ) : (
+              <>
+                {item.status === 'pendente' ? (
+                  !waiting && <button onClick={() => tab === 'victor' ? openDistribuir(item) : openPayments(item)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
+                ) : (
+                  <button onClick={() => openPayments(item)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver Pagamentos</button>
+                )}
+                {tab === 'victor' && item.origin === 'faturamento' && (item.status === 'pago' || item.status === 'parcial') && (item.payments?.length > 0) && (
+                  <button onClick={() => openEditReceive(item)} className="px-3 py-1 border border-blue-500/60 text-blue-400 hover:bg-blue-500/10 rounded-lg text-xs">✏️ Editar</button>
+                )}
+                {(item.status === 'pago' || item.status === 'parcial') && (
+                  <button onClick={() => estornarPayable(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
+                )}
+              </>
+            )}
+            {(!item.origin || item.origin !== 'faturamento') && (
+              <button onClick={() => del(item.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
+            )}
+            {item.origin === 'faturamento' && (
+              <span className="text-gray-600 text-xs">via Faturamento</span>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const statusFilter = (
     <div className="flex gap-2 items-center">
       <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Status:</span>
@@ -495,8 +576,10 @@ export default function Financial() {
       </select>
     </div>
   )
-  const totalAmount = currentData.reduce((s, r) => s + (parseFloat(r.amount || r.total_amount) || 0), 0)
-  const totalPaid = currentData.reduce((s, r) => s + (parseFloat(r.paid_amount) || 0), 0)
+  // Totais só contam registros disponíveis (não os que aguardam recebimento do cliente).
+  const totalsData = isPayTab ? availableData : currentData
+  const totalAmount = totalsData.reduce((s, r) => s + (parseFloat(r.amount || r.total_amount) || 0), 0)
+  const totalPaid = totalsData.reduce((s, r) => s + (parseFloat(r.paid_amount) || 0), 0)
   const totalOpen = totalAmount - totalPaid
 
   // Histórico: registros pagos do tipo selecionado
@@ -586,77 +669,23 @@ export default function Financial() {
       {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : currentData.length === 0 ? (
         <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">📂</p><p>Nenhum registro encontrado.</p></div>
       ) : (
-        <div className="space-y-3">
-          {currentData.map(item => (
-            <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
-                    <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status] || 'bg-gray-700 text-gray-400'}`}>{item.status}</span>
-                    {tab === 'receivables' && item.contract_cnpj && (
-                      <span className="flex items-center gap-1.5 text-xs">
-                        <span className="text-gray-500">CNPJ:</span>
-                        <span className="text-gray-300 font-mono">{item.contract_cnpj}</span>
-                        <CopyButton value={item.contract_cnpj} />
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-white text-sm">{item.description}</p>
-                  <div className="flex gap-4 mt-2 text-xs">
-                    {item.invoice_amount != null && (
-                      <span className="text-gray-500">NF: <span className="text-gray-300">{fmt(item.invoice_amount)}</span></span>
-                    )}
-                    {tab === 'victor' ? (
-                      <>
-                        <span className="text-gray-500">Serviço: <span className="text-gray-300">{fmt(item.service_amount)}</span></span>
-                        <span className="text-gray-500">Lucro: <span className="text-gray-300">{fmt(item.profit_amount)}</span></span>
-                        <span className="text-gray-500">Total: <span className="text-white font-medium">{fmt(item.total_amount)}</span></span>
-                      </>
-                    ) : (
-                      <span className="text-gray-500">Valor: <span className="text-white font-medium">{fmt(item.amount)}</span></span>
-                    )}
-                    {parseFloat(item.paid_amount) > 0 && <span className="text-gray-500">Pago: <span className="text-green-400">{fmt(item.paid_amount)}</span></span>}
-                    {item.paid_at && <span className="text-gray-500">Em: <span className="text-gray-300">{new Date(item.paid_at).toLocaleDateString('pt-BR')}</span></span>}
-                    {item.is_compensation && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">Compensação</span>}
-                  </div>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  {tab === 'receivables' ? (
-                    <>
-                      {item.status !== 'pago' && (
-                        <button onClick={() => { setShowPayModal(item); setPayForm(f => ({...f, paid_amount: item.amount || item.total_amount})) }} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
-                      )}
-                      {(item.status === 'pago' || item.status === 'recebido') && (
-                        <button onClick={() => estornar(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      {item.status === 'pendente' ? (
-                        <button onClick={() => tab === 'victor' ? openDistribuir(item) : openPayments(item)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
-                      ) : (
-                        <button onClick={() => openPayments(item)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver Pagamentos</button>
-                      )}
-                      {tab === 'victor' && item.origin === 'faturamento' && (item.status === 'pago' || item.status === 'parcial') && (item.payments?.length > 0) && (
-                        <button onClick={() => openEditReceive(item)} className="px-3 py-1 border border-blue-500/60 text-blue-400 hover:bg-blue-500/10 rounded-lg text-xs">✏️ Editar</button>
-                      )}
-                      {(item.status === 'pago' || item.status === 'parcial') && (
-                        <button onClick={() => estornarPayable(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
-                      )}
-                    </>
-                  )}
-                  {(!item.origin || item.origin !== 'faturamento') && (
-                    <button onClick={() => del(item.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
-                  )}
-                  {item.origin === 'faturamento' && (
-                    <span className="text-gray-600 text-xs">via Faturamento</span>
-                  )}
-                </div>
+        <div className="space-y-6">
+          {availableData.length > 0 && (
+            <div className="space-y-3">
+              {isPayTab && waitingData.length > 0 && (
+                <p className="text-xs font-medium uppercase tracking-wider text-green-400/80">✅ Disponível para pagar</p>
+              )}
+              {availableData.map(item => renderRow(item, false))}
+            </div>
+          )}
+          {isPayTab && waitingData.length > 0 && (
+            <div className="space-y-3 bg-gray-900/40 border border-gray-800/60 rounded-xl p-3">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">⏳ Aguardando recebimento do cliente</p>
+              <div className="space-y-3 opacity-70">
+                {waitingData.map(item => renderRow(item, true))}
               </div>
             </div>
-          ))}
+          )}
         </div>
       )}
       </>)}

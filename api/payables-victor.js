@@ -92,7 +92,14 @@ async function pagarDistribuido(sql, req, res) {
   const curKey = refYear * 100 + refMonth
 
   // Ordenação SEMPRE por competência (year/month); o limite superior é o MÊS DE CAIXA.
-  const all = await sql`SELECT * FROM payables_victor WHERE company_id = ${company_id} AND status IN ('pendente','parcial') ORDER BY year ASC, month ASC, created_at ASC`
+  // Só entram payables DISPONÍVEIS: manuais (sem invoice) ou cujo recebível do cliente já foi pago/parcial.
+  const all = await sql`
+    SELECT p.* FROM payables_victor p
+    LEFT JOIN invoices i ON i.id = p.invoice_id
+    LEFT JOIN receivables rcv ON rcv.id = i.receivable_id
+    WHERE p.company_id = ${company_id} AND p.status IN ('pendente','parcial')
+      AND (p.invoice_id IS NULL OR rcv.status IN ('pago','parcial'))
+    ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
   for (const rec of all) rec._saldo = r2((parseFloat(rec.total_amount) || 0) - (parseFloat(rec.paid_amount) || 0))
   // Limite superior = mês de CAIXA (payment_month/year) ≤ período ativo. Nunca consome caixa futuro;
   // a sobra (pool - consumido) simplesmente não é distribuída (capital próprio).
@@ -192,19 +199,19 @@ export default async function handler(req, res) {
       // Caixa: pendentes/parciais até o mês de caixa do filtro (inclusive), acumulando meses anteriores.
       // Ordem SEMPRE por competência (year/month asc) — distribuição segue mês mais antigo primeiro.
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND (p.payment_year < ${year} OR (p.payment_year = ${year} AND p.payment_month <= ${month})) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND p.payment_year = ${year} ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND (p.payment_year < ${year} OR (p.payment_year = ${year} AND p.payment_month <= ${month})) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND p.payment_year = ${year} ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
     } else if (statusList.length) {
       // Competência (padrão): todos os pendentes/parciais, mês mais antigo primeiro (year/month asc).
-      rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
+      rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
     } else if (caixa) {
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
     } else {
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ${year} AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
     }
     const ids = rows.map(r => r.id)
     let payments = []
