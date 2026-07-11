@@ -371,8 +371,8 @@ export default function Billing() {
       )}
 
       {showContractModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-white mb-4">{editInvoice ? 'Editar Fatura' : 'Gerar Fatura — Contrato'}</h3>
             <div className="space-y-3">
               <select value={contractForm.contract_id} onChange={e=>onSelectContract(e.target.value)} disabled={!!editInvoice} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
@@ -460,7 +460,7 @@ export default function Billing() {
               <input placeholder="Número da NF (opcional)" value={contractForm.invoice_number} onChange={e=>setContractForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
               <textarea placeholder="Observações" value={contractForm.notes} onChange={e=>setContractForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
-            <div className="flex gap-3 mt-5">
+            <div className="flex gap-3 mt-5 sticky bottom-0 -mx-6 -mb-6 px-6 pt-3 pb-6 bg-gray-900 border-t border-gray-800">
               <button onClick={()=>{setShowContractModal(false);setEditInvoice(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
               <button onClick={saveContractInvoice} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">Gerar Fatura</button>
             </div>
@@ -469,7 +469,7 @@ export default function Billing() {
       )}
 
       {showAgendaModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-white mb-4">{editInvoice ? 'Editar Fatura — Agenda' : 'Gerar Fatura — Por Agenda'}</h3>
             <div className="space-y-3">
@@ -651,7 +651,7 @@ export default function Billing() {
                 <textarea placeholder="Observações" value={agendaForm.notes} onChange={e=>setAgendaForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
               </div>
             </div>
-            <div className="flex gap-3 mt-5">
+            <div className="flex gap-3 mt-5 sticky bottom-0 -mx-6 -mb-6 px-6 pt-3 pb-6 bg-gray-900 border-t border-gray-800">
               <button onClick={()=>{setShowAgendaModal(false);setTimeEntries([]);setSelectedEntries([]);setEditInvoice(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
               <button onClick={saveAgendaInvoice} disabled={selectedEntries.length===0} className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">Gerar Fatura</button>
             </div>
