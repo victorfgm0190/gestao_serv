@@ -334,6 +334,21 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'migrate-payment-date OK' })
     }
 
+    if (action === 'migrate-payment-paid-at') {
+      // Mês de caixa por pagamento individual: data + mês/ano derivados em payable_payments.
+      await sql`ALTER TABLE payable_payments ADD COLUMN IF NOT EXISTS paid_at DATE`
+      await sql`ALTER TABLE payable_payments ADD COLUMN IF NOT EXISTS payment_month INTEGER`
+      await sql`ALTER TABLE payable_payments ADD COLUMN IF NOT EXISTS payment_year INTEGER`
+      await sql`
+        UPDATE payable_payments SET
+          paid_at = COALESCE(paid_at, created_at::date),
+          payment_month = EXTRACT(MONTH FROM COALESCE(paid_at, created_at))::int,
+          payment_year = EXTRACT(YEAR FROM COALESCE(paid_at, created_at))::int
+        WHERE payment_month IS NULL OR payment_year IS NULL
+      `
+      return res.status(200).json({ success: true, message: 'migrate-payment-paid-at OK' })
+    }
+
     if (action === 'fix-payables-payment-date') {
       // Corrige o mês de caixa dos payables de faturamento existentes:
       // usa a data real do recebimento (receivables.paid_at); senão a payment_date da fatura.

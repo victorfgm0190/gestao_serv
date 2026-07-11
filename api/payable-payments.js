@@ -6,6 +6,15 @@ const TABLES = {
   fabricio: { table: 'payables_fabricio', totalCol: 'amount' },
 }
 
+// Deriva mês/ano de caixa de uma data (YYYY-MM-DD). Sem data válida, retorna nulos.
+function periodFromDate(date) {
+  if (date) {
+    const [y, m] = String(date).slice(0, 10).split('-').map(Number)
+    if (y && m) return { pmonth: m, pyear: y }
+  }
+  return { pmonth: null, pyear: null }
+}
+
 async function recalcParent(sql, payable_type, payable_id) {
   const cfg = TABLES[payable_type]
   if (!cfg) throw new Error('payable_type inválido')
@@ -38,10 +47,16 @@ async function recalcParent(sql, payable_type, payable_id) {
   }
   const paidAmount = sum.toFixed(2)
 
+  // Mês de caixa do pai = data do último pagamento. Sem pagamentos (paidAt null),
+  // preserva o payment_month/year atual (competência/recebimento original).
+  const { pmonth, pyear } = periodFromDate(paidAt)
+
   if (payable_type === 'victor') {
-    await sql`UPDATE payables_victor SET paid_amount=${paidAmount}, paid_at=${paidAt}, status=${status} WHERE id=${payable_id}`
+    if (pmonth) await sql`UPDATE payables_victor SET paid_amount=${paidAmount}, paid_at=${paidAt}, status=${status}, payment_month=${pmonth}, payment_year=${pyear} WHERE id=${payable_id}`
+    else await sql`UPDATE payables_victor SET paid_amount=${paidAmount}, paid_at=${paidAt}, status=${status} WHERE id=${payable_id}`
   } else {
-    await sql`UPDATE payables_fabricio SET paid_amount=${paidAmount}, paid_at=${paidAt}, status=${status} WHERE id=${payable_id}`
+    if (pmonth) await sql`UPDATE payables_fabricio SET paid_amount=${paidAmount}, paid_at=${paidAt}, status=${status}, payment_month=${pmonth}, payment_year=${pyear} WHERE id=${payable_id}`
+    else await sql`UPDATE payables_fabricio SET paid_amount=${paidAmount}, paid_at=${paidAt}, status=${status} WHERE id=${payable_id}`
   }
   return { sum, status, paidAt }
 }
@@ -61,9 +76,10 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { payable_type, payable_id, amount, paid_at, notes } = req.body
     if (!TABLES[payable_type]) return res.status(400).json({ error: 'payable_type inválido' })
+    const { pmonth, pyear } = periodFromDate(paid_at)
     const result = await sql`
-      INSERT INTO payable_payments (payable_type, payable_id, amount, paid_at, notes)
-      VALUES (${payable_type}, ${payable_id}, ${amount}, ${paid_at}, ${notes || null})
+      INSERT INTO payable_payments (payable_type, payable_id, amount, paid_at, notes, payment_month, payment_year)
+      VALUES (${payable_type}, ${payable_id}, ${amount}, ${paid_at}, ${notes || null}, ${pmonth}, ${pyear})
       RETURNING *`
     await recalcParent(sql, payable_type, payable_id)
     return res.status(201).json({ data: result[0] })

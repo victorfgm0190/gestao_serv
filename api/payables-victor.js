@@ -24,6 +24,8 @@ function consumir(sql, pool, lista, when, notes) {
   const writes = []
   const applied = []
   let restante = r2(pool)
+  // Mês/ano de caixa derivados da data do pagamento (when).
+  const [wy, wm] = String(when).slice(0, 10).split('-').map(Number)
   for (const rec of lista) {
     if (restante <= 0.005) break
     const consumed = r2(Math.min(restante, rec._saldo))
@@ -31,8 +33,8 @@ function consumir(sql, pool, lista, when, notes) {
     const total = r2(parseFloat(rec.total_amount) || 0)
     const newPaid = r2((parseFloat(rec.paid_amount) || 0) + consumed)
     const status = newPaid >= total - 0.005 ? 'pago' : 'parcial'
-    writes.push(sql`INSERT INTO payable_payments (payable_type, payable_id, amount, paid_at, notes) VALUES ('victor', ${rec.id}, ${consumed}, ${when}, ${notes})`)
-    writes.push(sql`UPDATE payables_victor SET paid_amount=${newPaid}, status=${status}, paid_at=${when} WHERE id=${rec.id}`)
+    writes.push(sql`INSERT INTO payable_payments (payable_type, payable_id, amount, paid_at, notes, payment_month, payment_year) VALUES ('victor', ${rec.id}, ${consumed}, ${when}, ${notes}, ${wm || null}, ${wy || null})`)
+    writes.push(sql`UPDATE payables_victor SET paid_amount=${newPaid}, status=${status}, paid_at=${when}, payment_month=${wm || null}, payment_year=${wy || null} WHERE id=${rec.id}`)
     applied.push({ id: rec.id, consumed, status })
     restante = r2(restante - consumed)
   }

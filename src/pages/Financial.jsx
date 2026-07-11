@@ -62,6 +62,7 @@ export default function Financial() {
   const [victorCats, setVictorCats] = useState(EMPTY_VICTOR_CATS)
   const [showReceiveModal, setShowReceiveModal] = useState(false)
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
+  const [receivePaidAt, setReceivePaidAt] = useState(new Date().toISOString().split('T')[0])
   const [receiving, setReceiving] = useState(false)
   const [pendingVictor, setPendingVictor] = useState([])
   const [receiveTarget, setReceiveTarget] = useState(null) // item quando Flow B (específico), null = Flow A (geral)
@@ -157,6 +158,7 @@ export default function Financial() {
   // Flow A — Pagar Geral (não vinculado a um registro específico)
   async function openReceive() {
     setReceiveCats(EMPTY_RECEIVE_CATS)
+    setReceivePaidAt(new Date().toISOString().split('T')[0])
     setPendingVictor([])
     setReceiveTarget(null)
     setOverflowInfo(null)
@@ -168,6 +170,7 @@ export default function Financial() {
   // Flow B — Pagar em um registro específico (consome o alvo primeiro)
   async function openDistribuir(item) {
     setReceiveCats(EMPTY_RECEIVE_CATS)
+    setReceivePaidAt(new Date().toISOString().split('T')[0])
     setPendingVictor([])
     setReceiveTarget(item)
     setOverflowInfo(null)
@@ -187,7 +190,8 @@ export default function Financial() {
   async function confirmReceive() {
     const total = Math.round(receiveCategoryTotal(receiveCats) * 100) / 100
     if (total <= 0) return
-    const paid_at = new Date().toISOString().split('T')[0]
+    if (!receivePaidAt) return
+    const paid_at = receivePaidAt
     const ref = { reference_month: refMonth, reference_year: refYear }
     const body = receiveTarget
       ? { company_id: activeCompany.id, despesas: receiveCats, mode: 'especifico', payable_id: receiveTarget.id, overflow_action: null, paid_at, ...ref }
@@ -212,7 +216,7 @@ export default function Financial() {
 
   // Flow B — resolve a sobra (overflow) conforme a opção escolhida pelo usuário
   async function resolveOverflow(action, overflow_target_id = null) {
-    const paid_at = new Date().toISOString().split('T')[0]
+    const paid_at = receivePaidAt
     setReceiving(true)
     try {
       const res = await fetch('/api/payables-victor?action=pagar-distribuido', {
@@ -609,7 +613,10 @@ export default function Financial() {
             <h3 className="text-lg font-bold text-white mb-4">Registrar pagamento</h3>
             <div className="space-y-3">
               <input placeholder="Valor pago (R$)" type="number" value={payForm.paid_amount} onChange={e=>setPayForm(f=>({...f,paid_amount:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <input type="date" value={payForm.paid_at} onChange={e=>setPayForm(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
+                <input type="date" value={payForm.paid_at} onChange={e=>setPayForm(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+              </div>
               {tab === 'fabricio' && (
                 <>
                   <input placeholder="Forma de pagamento" value={payForm.payment_method} onChange={e=>setPayForm(f=>({...f,payment_method:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
@@ -676,14 +683,20 @@ export default function Financial() {
                       </div>
                     ))}
                   </div>
-                  <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
+                    <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                  </div>
                   <p className="text-sm text-gray-300">Total a pagar: <span className="text-green-400 font-bold">{fmt(victorCatTotal)}</span></p>
                   <button onClick={addPayment} disabled={victorCatTotal <= 0 || !newPay.paid_at} className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">Registrar Pagamento</button>
                 </>
               ) : (
                 <>
                   <input placeholder="Valor (R$)" type="number" value={newPay.amount} onChange={e=>setNewPay(f=>({...f,amount:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                  <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
+                    <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                  </div>
                   <textarea placeholder="Observação" value={newPay.notes} onChange={e=>setNewPay(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
                   <button onClick={addPayment} disabled={!newPay.amount || !newPay.paid_at} className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">Registrar Pagamento</button>
                 </>
@@ -726,6 +739,11 @@ export default function Financial() {
                     <input type="number" placeholder="0" value={receiveCats[key]} onChange={e=>setReceiveCats(c=>({...c,[key]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
                   </div>
                 ))}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
+                <input type="date" value={receivePaidAt} onChange={e=>setReceivePaidAt(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
               </div>
 
               {/* Distribuição do saldo — painel visual em tempo real */}
@@ -791,7 +809,7 @@ export default function Financial() {
             ) : (
               <div className="flex gap-3 mt-5">
                 <button onClick={closeReceive} disabled={receiving} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50">Cancelar</button>
-                <button onClick={confirmReceive} disabled={receiving || receiveTotal <= 0} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{receiving ? 'Distribuindo...' : 'Confirmar'}</button>
+                <button onClick={confirmReceive} disabled={receiving || receiveTotal <= 0 || !receivePaidAt} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{receiving ? 'Distribuindo...' : 'Confirmar'}</button>
               </div>
             )}
           </div>
