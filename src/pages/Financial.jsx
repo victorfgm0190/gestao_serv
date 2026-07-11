@@ -53,6 +53,27 @@ function parseNotesToReceiveCats(notes) {
   }
   return cats
 }
+// Igual ao anterior, mas retorna valores numéricos por categoria (para o detalhamento).
+function parseNotesToAmounts(notes) {
+  const out = {}
+  if (!notes) return out
+  for (const part of String(notes).split('|')) {
+    const [rawLabel, rawVal] = part.split('R$')
+    if (rawVal == null) continue
+    const key = RECEIVE_LABEL_TO_KEY[rawLabel.replace(':', '').trim()]
+    if (!key) continue
+    const v = parseFloat(rawVal.trim().replace(',', '.'))
+    if (!isNaN(v)) out[key] = (out[key] || 0) + v
+  }
+  return out
+}
+// Distribui um valor consumido proporcionalmente entre as categorias da sessão (notesCats/notesTotal).
+function proportionalCats(amount, notesCats, notesTotal) {
+  const prop = notesTotal > 0 ? amount / notesTotal : 0
+  const out = {}
+  for (const [k, v] of Object.entries(notesCats)) out[k] = v * prop
+  return out
+}
 
 export default function Financial() {
   const { activeCompany } = useOutletContext()
@@ -80,6 +101,7 @@ export default function Financial() {
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
   const [receivePaidAt, setReceivePaidAt] = useState(new Date().toISOString().split('T')[0])
   const [editSession, setEditSession] = useState(null) // { paid_at, notes, affected[] } quando editando uma sessão
+  const [breakdownView, setBreakdownView] = useState('geral') // 'geral' | 'cliente' — detalhamento de categorias
   const [receiving, setReceiving] = useState(false)
   const [pendingVictor, setPendingVictor] = useState([])
   const [receiveTarget, setReceiveTarget] = useState(null) // item quando Flow B (específico), null = Flow A (geral)
@@ -131,6 +153,7 @@ export default function Financial() {
     setShowPayModal(item)
     setNewPay({ amount: '', paid_at: new Date().toISOString().split('T')[0], notes: '' })
     setVictorCats(EMPTY_VICTOR_CATS)
+    setBreakdownView('geral')
     setModalPayments(item.payments || [])
     await loadPayments(item)
   }
@@ -209,6 +232,7 @@ export default function Financial() {
       affected = (await res.json()).affected || []
     } catch (e) { console.error(e) }
     setEditSession({ paid_at: paidAt, notes, affected })
+    setBreakdownView('geral')
     setReceiveCats(parseNotesToReceiveCats(notes))
     setReceivePaidAt(paidAt)
     setReceiveTarget(null)
@@ -402,6 +426,63 @@ export default function Financial() {
     return { id: r.id, month: r.month, year: r.year, client_name: r.client_name, saldo, liquido, state }
   })
   const distOverflow = distPool > 0.005 ? distPool : 0
+
+  // Detalhamento em dois níveis (Por cliente / Geral). Cada "entry" tem o valor consumido
+  // e as categorias proporcionais (fatia do cliente/pagamento × cada categoria da sessão).
+  const editEntries = editSession ? (() => {
+    const nc = parseNotesToAmounts(editSession.notes)
+    const nt = Object.values(nc).reduce((s, v) => s + v, 0)
+    return editSession.affected
+      .filter(a => (parseFloat(a.session_amount) || 0) > 0.005)
+      .map(a => {
+        const amt = parseFloat(a.session_amount) || 0
+        return { label: `${a.client_name} - ${months[a.month - 1]}/${a.year}`, amount: amt, cats: proportionalCats(amt, nc, nt) }
+      })
+  })() : []
+  const paymentEntries = (showPayModal && tab !== 'receivables') ? modalPayments.map(p => {
+    const nc = parseNotesToAmounts(p.notes)
+    const nt = Object.values(nc).reduce((s, v) => s + v, 0)
+    const amt = parseFloat(p.amount) || 0
+    const dateStr = p.paid_at ? new Date(p.paid_at).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : ''
+    return { label: `${showPayModal.client_name} - ${months[showPayModal.month - 1]}/${showPayModal.year}${dateStr ? ` · ${dateStr}` : ''}`, amount: amt, cats: nc && Object.keys(nc).length ? proportionalCats(amt, nc, nt) : {} }
+  }) : []
+
+  function breakdownPanel(entries) {
+    const geralCats = {}
+    let totalAmount = 0
+    for (const e of entries) { totalAmount += e.amount; for (const [k, v] of Object.entries(e.cats)) geralCats[k] = (geralCats[k] || 0) + v }
+    const cats = RECEIVE_VICTOR_CATEGORIES.filter(([k]) => (geralCats[k] || 0) > 0.005)
+    if (!entries.length || !cats.length) return null
+    return (
+      <div className="bg-gray-950/60 border border-gray-800 rounded-xl p-3 mt-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-gray-300 text-xs font-medium uppercase tracking-wider">Detalhamento por categoria</p>
+          <div className="flex gap-1 bg-gray-900 p-0.5 rounded-lg">
+            <button onClick={() => setBreakdownView('cliente')} className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${breakdownView === 'cliente' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Por cliente</button>
+            <button onClick={() => setBreakdownView('geral')} className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${breakdownView === 'geral' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Geral</button>
+          </div>
+        </div>
+        {breakdownView === 'geral' ? (
+          <div className="space-y-1">
+            {cats.map(([k, label]) => (
+              <div key={k} className="flex justify-between text-xs"><span className="text-gray-400">{label}</span><span className="text-gray-200 font-mono">{fmt(geralCats[k])}</span></div>
+            ))}
+            <div className="flex justify-between text-xs border-t border-gray-800 pt-1 mt-1 font-semibold"><span className="text-gray-300">Total</span><span className="text-green-400 font-mono">{fmt(totalAmount)}</span></div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {entries.map((e, i) => (
+              <div key={i} className="text-xs">
+                <div className="flex justify-between gap-2"><span className="text-gray-200 truncate">{e.label}</span><span className="text-white font-mono whitespace-nowrap">Total: {fmt(e.amount)}</span></div>
+                <div className="text-gray-500 mt-0.5">└ {RECEIVE_VICTOR_CATEGORIES.filter(([k]) => (e.cats[k] || 0) > 0.005).map(([k, label]) => `${label}: ${fmt(e.cats[k])}`).join(' | ') || '—'}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   const statusFilter = (
     <div className="flex gap-2 items-center">
       <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Status:</span>
@@ -737,6 +818,9 @@ export default function Financial() {
               ))}
             </div>
 
+            {/* Detalhamento por categoria (Por cliente / Geral) */}
+            {breakdownPanel(paymentEntries)}
+
             {/* Formulário novo pagamento */}
             <div className="border-t border-gray-800 pt-4 space-y-3">
               <p className="text-gray-300 text-sm font-medium">Novo pagamento</p>
@@ -845,6 +929,9 @@ export default function Financial() {
                   <p className="text-red-400 text-xs mt-2">⚠️ Valor excede o saldo disponível em {fmt(distOverflow)}</p>
                 )}
               </div>
+
+              {/* Detalhamento por categoria (Por cliente / Geral) — só na edição de sessão */}
+              {editSession && breakdownPanel(editEntries)}
 
               <p className="text-sm text-gray-300 border-t border-gray-800 pt-3">Total a distribuir: <span className="text-green-400 font-bold">{fmt(receiveTotal)}</span></p>
             </div>
