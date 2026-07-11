@@ -334,6 +334,41 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'migrate-payment-date OK' })
     }
 
+    if (action === 'fix-payables-payment-date') {
+      // Corrige o mês de caixa dos payables de faturamento existentes:
+      // usa a data real do recebimento (receivables.paid_at); senão a payment_date da fatura.
+      // Onde não houver nenhuma das duas, mantém a competência (fallback correto).
+      const fixVictor = await sql`
+        UPDATE payables_victor pv
+        SET payment_month = EXTRACT(MONTH FROM src.d)::int,
+            payment_year  = EXTRACT(YEAR FROM src.d)::int
+        FROM (
+          SELECT i.id AS invoice_id, COALESCE(r.paid_at, i.payment_date) AS d
+          FROM invoices i
+          LEFT JOIN receivables r ON r.id = i.receivable_id
+        ) src
+        WHERE pv.invoice_id = src.invoice_id
+          AND pv.origin = 'faturamento'
+          AND src.d IS NOT NULL
+        RETURNING pv.id
+      `
+      const fixFab = await sql`
+        UPDATE payables_fabricio pf
+        SET payment_month = EXTRACT(MONTH FROM src.d)::int,
+            payment_year  = EXTRACT(YEAR FROM src.d)::int
+        FROM (
+          SELECT i.id AS invoice_id, COALESCE(r.paid_at, i.payment_date) AS d
+          FROM invoices i
+          LEFT JOIN receivables r ON r.id = i.receivable_id
+        ) src
+        WHERE pf.invoice_id = src.invoice_id
+          AND pf.origin = 'faturamento'
+          AND src.d IS NOT NULL
+        RETURNING pf.id
+      `
+      return res.status(200).json({ success: true, message: 'fix-payables-payment-date OK', victor: fixVictor.length, fabricio: fixFab.length })
+    }
+
     if (action === 'migrate-client-companies') {
       // 1. Junction table (many-to-many clients <-> companies)
       await sql`

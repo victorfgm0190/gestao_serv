@@ -171,7 +171,8 @@ export default async function handler(req, res) {
         const clients = await sql`SELECT name FROM clients WHERE id = ${inv.client_id} LIMIT 1`
         const client_name = clients[0]?.name || 'Cliente'
         const desc = `${client_name} - ${inv.month}/${inv.year}`
-        const { pmonth, pyear } = paymentPeriod(inv.payment_date, inv.month, inv.year)
+        // Mês de caixa = data real do recebimento (paid_at); depois payment_date da fatura; por fim competência.
+        const { pmonth, pyear } = paymentPeriod(paid_at || inv.payment_date, inv.month, inv.year)
 
         await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, origin, invoice_id, payment_month, payment_year) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.fabricio_total}, 'faturamento', ${inv.id}, ${pmonth}, ${pyear})`
 
