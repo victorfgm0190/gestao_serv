@@ -61,7 +61,8 @@ async function pagarDistribuido(sql, req, res) {
   const refYear = reference_year ? Number(reference_year) : now.getFullYear()
   const curKey = refYear * 100 + refMonth
 
-  const all = await sql`SELECT * FROM payables_victor WHERE company_id = ${company_id} AND status IN ('pendente','parcial')`
+  // Distribuição SEMPRE por competência (year/month) — payment_month/year é só visão de caixa.
+  const all = await sql`SELECT * FROM payables_victor WHERE company_id = ${company_id} AND status IN ('pendente','parcial') ORDER BY year ASC, month ASC`
   for (const rec of all) rec._saldo = r2((parseFloat(rec.total_amount) || 0) - (parseFloat(rec.paid_amount) || 0))
   // Ignora meses futuros ao de referência: nunca consome deles
   const candidatos = all.filter(rec => rec._saldo > 0 && (rec.year * 100 + rec.month) <= curKey)
@@ -134,12 +135,13 @@ export default async function handler(req, res) {
     let rows
     if (statusList.length && caixa) {
       // Caixa: pendentes/parciais até o mês de caixa do filtro (inclusive), acumulando meses anteriores.
+      // Ordem SEMPRE por competência (year/month asc) — distribuição segue mês mais antigo primeiro.
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND (p.payment_year < ${year} OR (p.payment_year = ${year} AND p.payment_month <= ${month})) ORDER BY p.payment_year DESC, p.payment_month DESC, p.created_at DESC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND p.payment_year = ${year} ORDER BY p.payment_year DESC, p.payment_month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND (p.payment_year < ${year} OR (p.payment_year = ${year} AND p.payment_month <= ${month})) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND p.payment_year = ${year} ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
     } else if (statusList.length) {
-      // Competência (padrão): todos os pendentes/parciais — a tela filtra por competência.
-      rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) ORDER BY p.year DESC, p.month DESC, p.created_at DESC`
+      // Competência (padrão): todos os pendentes/parciais, mês mais antigo primeiro (year/month asc).
+      rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
     } else if (caixa) {
       rows = month
         ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
