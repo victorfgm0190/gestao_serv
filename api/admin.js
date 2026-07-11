@@ -1,6 +1,63 @@
 import { neon } from '@neondatabase/serverless'
 
 export default async function handler(req, res) {
+  // Diagnóstico read-only (temporário): confere o mês de caixa dos registros nas 3 tabelas.
+  if (req.method === 'GET' && req.query.action === 'check-cash-months') {
+    const sql = neon(process.env.DATABASE_URL)
+    // client | amount aproximado | competência (month/year). Tolerância ±1 no valor.
+    const criteria = [
+      { client: '%Bokada%',    amount: 765,      month: 1, year: 2026 },
+      { client: '%Pharmalog%', amount: 9775,     month: 1, year: 2026 },
+      { client: '%Bokada%',    amount: 722.5,    month: 2, year: 2026 },
+      { client: '%Pharmalog%', amount: 12477.5,  month: 2, year: 2026 },
+      { client: '%Atria%',     amount: 360,      month: 2, year: 2026 },
+      { client: '%Bokada%',    amount: 850,      month: 3, year: 2026 },
+      { client: '%Pharmalog%', amount: 5750,     month: 3, year: 2026 },
+      { client: '%Atria%',     amount: 540,      month: 3, year: 2026 },
+      { client: '%Bokada%',    amount: 680,      month: 4, year: 2026 },
+      { client: '%Pharmalog%', amount: 920,      month: 4, year: 2026 },
+      { client: '%Atria%',     amount: 540,      month: 4, year: 2026 },
+      { client: '%Leil%',      amount: 6000,     month: 4, year: 2026 },
+      { client: '%Bokada%',    amount: 1020,     month: 5, year: 2026 },
+      { client: '%Pharmalog%', amount: 2932.5,   month: 5, year: 2026 },
+      { client: '%Atria%',     amount: 855,      month: 5, year: 2026 },
+      { client: '%Stel%',      amount: 1762.12,  month: 6, year: 2026 },
+    ]
+    try {
+      const receivables = new Map()
+      const payables_victor = new Map()
+      const payables_fabricio = new Map()
+      for (const cr of criteria) {
+        const lo = cr.amount - 1, hi = cr.amount + 1
+        const rec = await sql`
+          SELECT r.id, c.name AS client_name, ROUND(r.amount::numeric, 2) AS amount, r.month, r.year, r.payment_month, r.payment_year
+          FROM receivables r JOIN clients c ON c.id = r.client_id
+          WHERE c.name ILIKE ${cr.client} AND r.month = ${cr.month} AND r.year = ${cr.year}
+            AND ROUND(r.amount::numeric, 2) BETWEEN ${lo} AND ${hi}`
+        for (const row of rec) receivables.set(row.id, row)
+        const vic = await sql`
+          SELECT p.id, c.name AS client_name, ROUND(p.total_amount::numeric, 2) AS total_amount, p.month, p.year, p.payment_month, p.payment_year
+          FROM payables_victor p JOIN clients c ON c.id = p.client_id
+          WHERE c.name ILIKE ${cr.client} AND p.month = ${cr.month} AND p.year = ${cr.year}
+            AND ROUND(p.total_amount::numeric, 2) BETWEEN ${lo} AND ${hi}`
+        for (const row of vic) payables_victor.set(row.id, row)
+        const fab = await sql`
+          SELECT p.id, c.name AS client_name, ROUND(p.amount::numeric, 2) AS amount, p.month, p.year, p.payment_month, p.payment_year
+          FROM payables_fabricio p JOIN clients c ON c.id = p.client_id
+          WHERE c.name ILIKE ${cr.client} AND p.month = ${cr.month} AND p.year = ${cr.year}
+            AND ROUND(p.amount::numeric, 2) BETWEEN ${lo} AND ${hi}`
+        for (const row of fab) payables_fabricio.set(row.id, row)
+      }
+      return res.status(200).json({
+        receivables: [...receivables.values()],
+        payables_victor: [...payables_victor.values()],
+        payables_fabricio: [...payables_fabricio.values()],
+      })
+    } catch (error) {
+      return res.status(500).json({ error: error.message })
+    }
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const { action } = req.query
