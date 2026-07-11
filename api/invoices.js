@@ -60,7 +60,12 @@ function calcAgenda(entries, rule, opts = {}) {
   const taxReal = resolvePct(opts.tax_percentage_used, rule.has_tax ? rule.tax_percentage : 0)
   const taxClient = resolvePct(opts.tax_client_percent_used, 0)
 
-  const bruto = total_hours * valor_hora
+  // Bruto = serviço + deslocamento faturado. gross_value já soma os dois (0 de deslocamento
+  // quando 'nao_cobrado'); usa a taxa de deslocamento correta. Fallback: horas × valor_hora.
+  const bruto = entries.reduce((s, e) => {
+    const g = parseFloat(e.gross_value)
+    return s + (isNaN(g) ? (parseFloat(e.hours) || 0) * valor_hora : g)
+  }, 0)
   const tax = bruto * (taxReal / 100)                // imposto real
   const net = bruto - tax                            // líquido
   const victor_servico = total_hours * victor_fixo_hora

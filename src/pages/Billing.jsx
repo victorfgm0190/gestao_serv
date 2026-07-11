@@ -601,7 +601,8 @@ export default function Billing() {
                 const fabPct = parseFloat(agendaRule.remainder_fabricio_pct) || 50
                 const taxReal = parseFloat(agendaForm.tax_percentage_used) || 0
                 const taxClient = parseFloat(agendaForm.tax_client_percent_used) || 0
-                const bruto = totalHours * hourlyRate
+                // Bruto = serviço + deslocamento faturado (gross_value já inclui o deslocamento).
+                const bruto = selected.reduce((s,e) => { const g = parseFloat(e.gross_value); return s + (isNaN(g) ? (parseFloat(e.hours)||0)*hourlyRate : g) }, 0)
                 const impostoReal = bruto * taxReal / 100
                 const net = bruto - impostoReal
                 const victorServico = totalHours * victorFixoHora
