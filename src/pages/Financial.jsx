@@ -58,6 +58,7 @@ export default function Financial() {
   const [estornoConfirm, setEstornoConfirm] = useState(null)
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1)
   const [filterStatus, setFilterStatus] = useState('all')
+  const [mode, setMode] = useState('competencia') // 'competencia' (mês do faturamento) | 'caixa' (mês do recebimento)
   const [victorCats, setVictorCats] = useState(EMPTY_VICTOR_CATS)
   const [showReceiveModal, setShowReceiveModal] = useState(false)
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
@@ -67,7 +68,7 @@ export default function Financial() {
   const [overflowInfo, setOverflowInfo] = useState(null)   // { overflow, targetSaldo, target_id } quando há sobra
   const [showMesAnterior, setShowMesAnterior] = useState(false)
 
-  useEffect(() => { fetchAll() }, [activeCompany, filterYear])
+  useEffect(() => { fetchAll() }, [activeCompany, filterYear, mode])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
 
   async function fetchAll() {
@@ -75,9 +76,9 @@ export default function Financial() {
     try {
       const [cl, rec, fab, vic] = await Promise.all([
         fetch(`/api/clients?company_id=${activeCompany.id}`),
-        fetch(`/api/receivables?company_id=${activeCompany.id}&year=${filterYear}`),
-        fetch(`/api/payables-fabricio?company_id=${activeCompany.id}&year=${filterYear}`),
-        fetch(`/api/payables-victor?company_id=${activeCompany.id}&year=${filterYear}`),
+        fetch(`/api/receivables?company_id=${activeCompany.id}&year=${filterYear}&mode=${mode}`),
+        fetch(`/api/payables-fabricio?company_id=${activeCompany.id}&year=${filterYear}&mode=${mode}`),
+        fetch(`/api/payables-victor?company_id=${activeCompany.id}&year=${filterYear}&mode=${mode}`),
       ])
       setClients((await cl.json()).clients || [])
       setReceivables((await rec.json()).data || [])
@@ -278,10 +279,13 @@ export default function Financial() {
   }
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
+  // Mês/ano efetivos conforme a visão: caixa usa payment_month/year; competência usa month/year.
+  const effMonth = (r) => mode === 'caixa' ? (r.payment_month ?? r.month) : r.month
+  const effYear = (r) => mode === 'caixa' ? (r.payment_year ?? r.year) : r.year
   const baseData = tab === 'receivables' ? receivables : tab === 'fabricio' ? payablesFab : payablesVictor
   const monthFiltered = filterMonth === ''
     ? baseData
-    : baseData.filter(r => Number(r.month) === Number(filterMonth))
+    : baseData.filter(r => Number(effMonth(r)) === Number(filterMonth))
   // Oculta registros zerados (R$ 0,00 / null) nas abas de Pagar — não devem contaminar os totais
   const payValue = (r) => parseFloat(tab === 'victor' ? r.total_amount : r.amount) || 0
   const nonZeroFiltered = (tab === 'victor' || tab === 'fabricio')
@@ -345,7 +349,7 @@ export default function Financial() {
   const histSource = histType === 'receivables' ? receivables : histType === 'fabricio' ? payablesFab : payablesVictor
   const histPaidAll = histSource
     .filter(r => r.status === 'pago' || r.status === 'parcial')
-    .filter(r => filterMonth === '' || Number(r.month) === Number(filterMonth))
+    .filter(r => filterMonth === '' || Number(effMonth(r)) === Number(filterMonth))
   const histClients = Array.from(
     histPaidAll.reduce((m, r) => { if (r.client_id != null && !m.has(r.client_id)) m.set(r.client_id, r.client_name || 'Sem cliente'); return m }, new Map())
   ).map(([id, name]) => ({ id, name }))
@@ -363,6 +367,15 @@ export default function Financial() {
           {tab !== 'historico' && (
             <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">+ Novo</button>
           )}
+        </div>
+      </div>
+
+      {/* Toggle Competência x Caixa */}
+      <div className="flex gap-2 mb-4 items-center">
+        <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Visão:</span>
+        <div className="flex gap-1 bg-gray-900 p-1 rounded-xl w-fit">
+          <button onClick={() => setMode('competencia')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === 'competencia' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Competência</button>
+          <button onClick={() => setMode('caixa')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === 'caixa' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Caixa</button>
         </div>
       </div>
 
@@ -399,6 +412,10 @@ export default function Financial() {
         </div>
       </div>
 
+      <p className="text-gray-500 text-xs mb-4 -mt-2">
+        {mode === 'caixa' ? 'Visualizando por caixa (mês do recebimento)' : 'Visualizando por competência (mês do faturamento)'}
+      </p>
+
       {(tab === 'victor' || tab === 'fabricio') && (
         <div className="flex gap-2 items-center mb-4 flex-wrap">
           {statusFilter}
@@ -422,7 +439,7 @@ export default function Financial() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
-                    <span className="text-gray-500 text-xs">{months[item.month-1]}/{item.year}</span>
+                    <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status] || 'bg-gray-700 text-gray-400'}`}>{item.status}</span>
                     {tab === 'receivables' && item.contract_cnpj && (
                       <span className="flex items-center gap-1.5 text-xs">
@@ -522,7 +539,7 @@ export default function Financial() {
                 <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
-                    <span className="text-gray-500 text-xs">{months[item.month-1]}/{item.year}</span>
+                    <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
                     {item.origin === 'faturamento' && <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-full">via Faturamento</span>}
                   </div>
                   {item.description && <p className="text-white text-sm">{item.description}</p>}

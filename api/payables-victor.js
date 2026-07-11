@@ -126,11 +126,22 @@ async function pagarDistribuido(sql, req, res) {
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
   if (req.method === 'GET') {
-    const { company_id, year, status } = req.query
+    const { company_id, year, month, status, mode } = req.query
+    const caixa = mode === 'caixa'  // caixa filtra por payment_month/payment_year
     const statusList = status ? status.split(',').map(s => s.trim()).filter(Boolean) : []
-    const rows = statusList.length
-      ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) ORDER BY p.year DESC, p.month DESC, p.created_at DESC`
-      : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+    let rows
+    if (statusList.length) {
+      // Distribuição de saldos (Receber) — sempre por competência, independe do modo.
+      rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) ORDER BY p.year DESC, p.month DESC, p.created_at DESC`
+    } else if (caixa) {
+      rows = month
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
+    } else {
+      rows = month
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+    }
     const ids = rows.map(r => r.id)
     let payments = []
     if (ids.length) {
@@ -145,7 +156,7 @@ export default async function handler(req, res) {
     if (req.query.action === 'pagar-distribuido') return pagarDistribuido(sql, req, res)
     const { company_id, client_id, month, year, description, service_amount, profit_amount, notes } = req.body
     const total = (parseFloat(service_amount)||0) + (parseFloat(profit_amount)||0)
-    const result = await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, notes) VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${description}, ${service_amount||0}, ${profit_amount||0}, ${total.toFixed(2)}, ${notes||null}) RETURNING *`
+    const result = await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, notes, payment_month, payment_year) VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${description}, ${service_amount||0}, ${profit_amount||0}, ${total.toFixed(2)}, ${notes||null}, ${month}, ${year}) RETURNING *`
     return res.status(201).json({ data: result[0] })
   }
   if (req.method === 'PATCH') {

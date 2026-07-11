@@ -2,6 +2,16 @@ import { neon } from '@neondatabase/serverless'
 
 const round = (n) => parseFloat((Number(n) || 0).toFixed(2))
 
+// Deriva mês/ano de caixa a partir da data prevista de recebimento (payment_date).
+// Sem data, cai na competência (mês/ano do faturamento).
+function paymentPeriod(payment_date, fbMonth, fbYear) {
+  if (payment_date) {
+    const [y, m] = String(payment_date).slice(0, 10).split('-').map(Number)
+    if (y && m) return { pmonth: m, pyear: y }
+  }
+  return { pmonth: fbMonth, pyear: fbYear }
+}
+
 // Resolve o % usado na fatura: usa o valor enviado pelo frontend se presente,
 // senão cai no valor cadastrado (fallback)
 function resolvePct(used, fallback) {
@@ -88,7 +98,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, client_id, contract_id, month, year, invoice_number, billing_type, time_entry_ids, notes, tax_percentage_used, tax_client_percent_used } = req.body
+    const { company_id, client_id, contract_id, month, year, invoice_number, billing_type, time_entry_ids, notes, tax_percentage_used, tax_client_percent_used, payment_date } = req.body
     try {
       let calc
       if (billing_type === 'contract') {
@@ -102,15 +112,17 @@ export default async function handler(req, res) {
         calc = calcAgenda(entries, rules[0], { tax_percentage_used, tax_client_percent_used })
       }
 
+      const { pmonth, pyear } = paymentPeriod(payment_date, month, year)
+
       const invoice = await sql`
-        INSERT INTO invoices (company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes)
-        VALUES (${company_id}, ${client_id}, ${contract_id||null}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null})
+        INSERT INTO invoices (company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date)
+        VALUES (${company_id}, ${client_id}, ${contract_id||null}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null})
         RETURNING *
       `
 
       const receivable = await sql`
-        INSERT INTO receivables (company_id, client_id, month, year, description, amount, notes, origin)
-        VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${`Fatura ${invoice_number || '#'+invoice[0].id} - ${month}/${year}`}, ${calc.invoice_value}, ${notes||null}, 'faturamento')
+        INSERT INTO receivables (company_id, client_id, month, year, description, amount, notes, origin, payment_month, payment_year)
+        VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${`Fatura ${invoice_number || '#'+invoice[0].id} - ${month}/${year}`}, ${calc.invoice_value}, ${notes||null}, 'faturamento', ${pmonth}, ${pyear})
         RETURNING *
       `
 
@@ -159,10 +171,11 @@ export default async function handler(req, res) {
         const clients = await sql`SELECT name FROM clients WHERE id = ${inv.client_id} LIMIT 1`
         const client_name = clients[0]?.name || 'Cliente'
         const desc = `${client_name} - ${inv.month}/${inv.year}`
+        const { pmonth, pyear } = paymentPeriod(inv.payment_date, inv.month, inv.year)
 
-        await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, origin, invoice_id) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.fabricio_total}, 'faturamento', ${inv.id})`
+        await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, origin, invoice_id, payment_month, payment_year) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.fabricio_total}, 'faturamento', ${inv.id}, ${pmonth}, ${pyear})`
 
-        await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, origin, invoice_id) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.victor_service}, ${parseFloat(inv.victor_profit)+parseFloat(inv.victor_tax_diff)}, ${inv.victor_total}, 'faturamento', ${inv.id})`
+        await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, origin, invoice_id, payment_month, payment_year) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.victor_service}, ${parseFloat(inv.victor_profit)+parseFloat(inv.victor_tax_diff)}, ${inv.victor_total}, 'faturamento', ${inv.id}, ${pmonth}, ${pyear})`
       }
 
       return res.status(200).json({ success: true })
@@ -172,7 +185,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PUT') {
-    const { id, invoice_number, notes, billing_type, time_entry_ids, contract_id, client_id, tax_percentage_used, tax_client_percent_used } = req.body
+    const { id, invoice_number, notes, billing_type, time_entry_ids, contract_id, client_id, tax_percentage_used, tax_client_percent_used, payment_date } = req.body
     try {
       const invoices = await sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`
       if (!invoices.length) return res.status(404).json({ error: 'Fatura não encontrada' })
@@ -195,6 +208,10 @@ export default async function handler(req, res) {
         calc = calcAgenda(entries, rules[0], { tax_percentage_used, tax_client_percent_used })
       }
 
+      // payment_date: usa o enviado; se a chave não veio no body, mantém o atual.
+      const newPaymentDate = payment_date !== undefined ? (payment_date || null) : inv.payment_date
+      const { pmonth, pyear } = paymentPeriod(newPaymentDate, inv.month, inv.year)
+
       const updated = await sql`
         UPDATE invoices SET
           invoice_number = ${invoice_number || null},
@@ -206,13 +223,14 @@ export default async function handler(req, res) {
           victor_tax_diff = ${calc.victor_tax_diff},
           victor_total = ${calc.victor_total},
           fabricio_total = ${calc.fabricio_total},
-          notes = ${notes || null}
+          notes = ${notes || null},
+          payment_date = ${newPaymentDate}
         WHERE id = ${id}
         RETURNING *
       `
 
       if (inv.receivable_id) {
-        await sql`UPDATE receivables SET amount = ${calc.invoice_value}, description = ${`Fatura ${invoice_number || '#'+id} - ${inv.month}/${inv.year}`} WHERE id = ${inv.receivable_id}`
+        await sql`UPDATE receivables SET amount = ${calc.invoice_value}, description = ${`Fatura ${invoice_number || '#'+id} - ${inv.month}/${inv.year}`}, payment_month = ${pmonth}, payment_year = ${pyear} WHERE id = ${inv.receivable_id}`
       }
 
       return res.status(200).json({ invoice: updated[0], breakdown: calc })

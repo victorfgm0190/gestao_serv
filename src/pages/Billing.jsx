@@ -19,8 +19,8 @@ export default function Billing() {
   const [filterClient, setFilterClient] = useState('')
   const [editInvoice, setEditInvoice] = useState(null)
   const [agendaRule, setAgendaRule] = useState(null)
-  const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
-  const [agendaForm, setAgendaForm] = useState({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+  const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+  const [agendaForm, setAgendaForm] = useState({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
   useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth, filterYear])
@@ -228,6 +228,7 @@ export default function Billing() {
         year: inv.year,
         invoice_value: nf ? nf.toFixed(2) : '',
         invoice_number: inv.invoice_number || '',
+        payment_date: inv.payment_date ? String(inv.payment_date).slice(0,10) : '',
         notes: inv.notes || '',
         tax_percentage_used: c?.has_tax ? String(c.tax_percentage ?? '') : '0',
         tax_client_percent_used: String(tcp),
@@ -240,6 +241,7 @@ export default function Billing() {
         month: inv.month,
         year: inv.year,
         invoice_number: inv.invoice_number || '',
+        payment_date: inv.payment_date ? String(inv.payment_date).slice(0,10) : '',
         notes: inv.notes || '',
         tax_percentage_used: '',
         tax_client_percent_used: '0',
@@ -251,7 +253,7 @@ export default function Billing() {
 
   function openContractModal() {
     setEditInvoice(null)
-    setContractForm({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+    setContractForm({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
     setShowContractModal(true)
   }
 
@@ -260,7 +262,7 @@ export default function Billing() {
     setAgendaRule(null)
     setTimeEntries([])
     setSelectedEntries([])
-    setAgendaForm({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'0' })
+    setAgendaForm({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'0' })
     setShowAgendaModal(true)
   }
 
@@ -458,6 +460,10 @@ export default function Billing() {
               })()}
 
               <input placeholder="Número da NF (opcional)" value={contractForm.invoice_number} onChange={e=>setContractForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Data prevista de recebimento (mês de caixa)</label>
+                <input type="date" value={contractForm.payment_date} onChange={e=>setContractForm(f=>({...f,payment_date:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+              </div>
               <textarea placeholder="Observações" value={contractForm.notes} onChange={e=>setContractForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
             <div className="flex gap-3 mt-5 sticky bottom-0 -mx-6 -mb-6 px-6 pt-3 pb-6 bg-gray-900 border-t border-gray-800">
@@ -505,6 +511,10 @@ export default function Billing() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Número da NF</label>
                 <input placeholder="Número da NF (opcional)" value={agendaForm.invoice_number} onChange={e=>setAgendaForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Data prevista de recebimento (mês de caixa)</label>
+                <input type="date" value={agendaForm.payment_date} onChange={e=>setAgendaForm(f=>({...f,payment_date:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
               </div>
               {timeEntries.length > 0 && (
                 <div className="bg-gray-800 rounded-xl p-3">

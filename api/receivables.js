@@ -1,16 +1,36 @@
 import { neon } from '@neondatabase/serverless'
+
+// Deriva mês/ano de caixa da data de recebimento; sem data, cai na competência.
+function paymentPeriod(payment_date, fbMonth, fbYear) {
+  if (payment_date) {
+    const [y, m] = String(payment_date).slice(0, 10).split('-').map(Number)
+    if (y && m) return { pmonth: m, pyear: y }
+  }
+  return { pmonth: fbMonth, pyear: fbYear }
+}
+
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
   if (req.method === 'GET') {
-    const { company_id, year, month } = req.query
-    const rows = month
-      ? await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ${year} AND r.month = ${month} ORDER BY r.created_at DESC`
-      : await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ${year} ORDER BY r.month DESC, r.created_at DESC`
+    const { company_id, year, month, mode } = req.query
+    // mode=caixa filtra por payment_month/payment_year (mês do recebimento);
+    // competência (padrão) filtra por month/year (mês do faturamento).
+    const caixa = mode === 'caixa'
+    let rows
+    if (caixa) {
+      rows = month
+        ? await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.payment_year = ${year} AND r.payment_month = ${month} ORDER BY r.created_at DESC`
+        : await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.payment_year = ${year} ORDER BY r.payment_month DESC, r.created_at DESC`
+    } else {
+      rows = month
+        ? await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ${year} AND r.month = ${month} ORDER BY r.created_at DESC`
+        : await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ${year} ORDER BY r.month DESC, r.created_at DESC`
+    }
     return res.status(200).json({ data: rows })
   }
   if (req.method === 'POST') {
     const { company_id, client_id, month, year, description, amount, notes } = req.body
-    const result = await sql`INSERT INTO receivables (company_id, client_id, month, year, description, amount, notes) VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${description}, ${amount}, ${notes||null}) RETURNING *`
+    const result = await sql`INSERT INTO receivables (company_id, client_id, month, year, description, amount, notes, payment_month, payment_year) VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${description}, ${amount}, ${notes||null}, ${month}, ${year}) RETURNING *`
     return res.status(201).json({ data: result[0] })
   }
   if (req.method === 'PATCH') {
@@ -59,8 +79,9 @@ export default async function handler(req, res) {
           const clients = await sql`SELECT name FROM clients WHERE id = ${inv.client_id} LIMIT 1`
           const client_name = clients[0]?.name || 'Cliente'
           const desc = `${client_name} - ${inv.month}/${inv.year}`
-          await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, origin, invoice_id) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.fabricio_total}, 'faturamento', ${inv.id})`
-          await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, origin, invoice_id) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.victor_service}, ${parseFloat(inv.victor_profit)+parseFloat(inv.victor_tax_diff)}, ${inv.victor_total}, 'faturamento', ${inv.id})`
+          const { pmonth, pyear } = paymentPeriod(inv.payment_date, inv.month, inv.year)
+          await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, origin, invoice_id, payment_month, payment_year) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.fabricio_total}, 'faturamento', ${inv.id}, ${pmonth}, ${pyear})`
+          await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, origin, invoice_id, payment_month, payment_year) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.victor_service}, ${parseFloat(inv.victor_profit)+parseFloat(inv.victor_tax_diff)}, ${inv.victor_total}, 'faturamento', ${inv.id}, ${pmonth}, ${pyear})`
         }
       }
     }

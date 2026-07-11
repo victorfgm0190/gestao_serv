@@ -2,8 +2,18 @@ import { neon } from '@neondatabase/serverless'
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
   if (req.method === 'GET') {
-    const { company_id, year } = req.query
-    const rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+    const { company_id, year, month, mode } = req.query
+    const caixa = mode === 'caixa'  // caixa filtra por payment_month/payment_year
+    let rows
+    if (caixa) {
+      rows = month
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
+    } else {
+      rows = month
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+    }
     const ids = rows.map(r => r.id)
     let payments = []
     if (ids.length) {
@@ -16,7 +26,7 @@ export default async function handler(req, res) {
   }
   if (req.method === 'POST') {
     const { company_id, client_id, month, year, description, amount, notes } = req.body
-    const result = await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, notes) VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${description}, ${amount}, ${notes||null}) RETURNING *`
+    const result = await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, notes, payment_month, payment_year) VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${description}, ${amount}, ${notes||null}, ${month}, ${year}) RETURNING *`
     return res.status(201).json({ data: result[0] })
   }
   if (req.method === 'PATCH') {

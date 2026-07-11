@@ -318,6 +318,22 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'migrate-etapa6 OK' })
     }
 
+    if (action === 'migrate-payment-date') {
+      // Competência vs Caixa — data prevista/real de recebimento e mês de caixa.
+      await sql`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_date DATE`
+      await sql`ALTER TABLE receivables ADD COLUMN IF NOT EXISTS payment_month INTEGER`
+      await sql`ALTER TABLE receivables ADD COLUMN IF NOT EXISTS payment_year INTEGER`
+      await sql`ALTER TABLE payables_victor ADD COLUMN IF NOT EXISTS payment_month INTEGER`
+      await sql`ALTER TABLE payables_victor ADD COLUMN IF NOT EXISTS payment_year INTEGER`
+      await sql`ALTER TABLE payables_fabricio ADD COLUMN IF NOT EXISTS payment_month INTEGER`
+      await sql`ALTER TABLE payables_fabricio ADD COLUMN IF NOT EXISTS payment_year INTEGER`
+      // Backfill: caixa = competência onde ainda não houver data específica.
+      await sql`UPDATE receivables SET payment_month = month, payment_year = year WHERE payment_month IS NULL OR payment_year IS NULL`
+      await sql`UPDATE payables_victor SET payment_month = month, payment_year = year WHERE payment_month IS NULL OR payment_year IS NULL`
+      await sql`UPDATE payables_fabricio SET payment_month = month, payment_year = year WHERE payment_month IS NULL OR payment_year IS NULL`
+      return res.status(200).json({ success: true, message: 'migrate-payment-date OK' })
+    }
+
     if (action === 'migrate-client-companies') {
       // 1. Junction table (many-to-many clients <-> companies)
       await sql`
