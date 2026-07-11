@@ -19,10 +19,17 @@ export default async function handler(req, res) {
       await sql`
         CREATE TABLE IF NOT EXISTS clients (
           id SERIAL PRIMARY KEY,
-          company_id INTEGER REFERENCES companies(id),
           name VARCHAR(150) NOT NULL,
           email_domain VARCHAR(100),
           created_at TIMESTAMP DEFAULT NOW()
+        )
+      `
+      await sql`
+        CREATE TABLE IF NOT EXISTS client_companies (
+          id SERIAL PRIMARY KEY,
+          client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+          company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+          UNIQUE(client_id, company_id)
         )
       `
       await sql`
@@ -148,8 +155,9 @@ export default async function handler(req, res) {
 
       for (const client of clientsData) {
         const existing = await sql`
-          SELECT id FROM clients
-          WHERE company_id = 2 AND name = ${client.name}
+          SELECT c.id FROM clients c
+          JOIN client_companies cc ON cc.client_id = c.id AND cc.company_id = 2
+          WHERE c.name = ${client.name}
           LIMIT 1
         `
         let clientId
@@ -157,11 +165,16 @@ export default async function handler(req, res) {
           clientId = existing[0].id
         } else {
           const result = await sql`
-            INSERT INTO clients (company_id, name, email_domain)
-            VALUES (2, ${client.name}, ${client.domains[0]})
+            INSERT INTO clients (name, email_domain)
+            VALUES (${client.name}, ${client.domains[0]})
             RETURNING *
           `
           clientId = result[0].id
+          await sql`
+            INSERT INTO client_companies (client_id, company_id)
+            VALUES (${clientId}, 2)
+            ON CONFLICT (client_id, company_id) DO NOTHING
+          `
         }
         for (const domain of client.domains) {
           const existingRule = await sql`
@@ -178,7 +191,10 @@ export default async function handler(req, res) {
         }
       }
 
-      const allClients = await sql`SELECT * FROM clients WHERE company_id = 2`
+      const allClients = await sql`
+        SELECT c.* FROM clients c
+        JOIN client_companies cc ON cc.client_id = c.id AND cc.company_id = 2
+      `
       const allRules = await sql`SELECT * FROM email_rules WHERE company_id = 2`
       return res.status(200).json({ success: true, clients: allClients, rules: allRules })
     }
@@ -300,6 +316,33 @@ export default async function handler(req, res) {
         )
       `
       return res.status(200).json({ success: true, message: 'migrate-etapa6 OK' })
+    }
+
+    if (action === 'migrate-client-companies') {
+      // 1. Junction table (many-to-many clients <-> companies)
+      await sql`
+        CREATE TABLE IF NOT EXISTS client_companies (
+          id SERIAL PRIMARY KEY,
+          client_id INTEGER REFERENCES clients(id) ON DELETE CASCADE,
+          company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+          UNIQUE(client_id, company_id)
+        )
+      `
+      // 2 + 3. Backfill from clients.company_id and drop the column — only if
+      // it still exists (idempotent: safe to re-run after the column is gone).
+      const hasCol = await sql`
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'clients' AND column_name = 'company_id'
+      `
+      if (hasCol.length > 0) {
+        await sql`
+          INSERT INTO client_companies (client_id, company_id)
+          SELECT id, company_id FROM clients WHERE company_id IS NOT NULL
+          ON CONFLICT (client_id, company_id) DO NOTHING
+        `
+        await sql`ALTER TABLE clients DROP COLUMN company_id`
+      }
+      return res.status(200).json({ success: true, message: 'migrate-client-companies OK', droppedColumn: hasCol.length > 0 })
     }
 
     return res.status(400).json({ error: 'action inválida' })

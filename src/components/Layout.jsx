@@ -76,6 +76,16 @@ export default function Layout() {
             <span>⚙️</span> Regras de E-mail
           </NavLink>
           <NavLink
+            to="/clientes"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              }`
+            }
+          >
+            <span>👥</span> Clientes
+          </NavLink>
+          <NavLink
             to="/time-entries"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${

@@ -19,7 +19,7 @@ export default async function handler(req, res) {
       SELECT fr.*, c.name as client_name
       FROM financial_rules fr
       JOIN clients c ON c.id = fr.client_id
-      WHERE c.company_id = ${company_id}
+      JOIN client_companies cc ON cc.client_id = c.id AND cc.company_id = ${company_id}
       ORDER BY c.name ASC
     `
     return res.status(200).json({ rules })
