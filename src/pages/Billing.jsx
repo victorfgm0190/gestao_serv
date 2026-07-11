@@ -607,16 +607,16 @@ export default function Billing() {
                 const deslocValue = Math.max(bruto - serviceValue, 0)
                 const impostoReal = bruto * taxReal / 100
                 const net = bruto - impostoReal
-                // Deslocamento: 100% Victor, fora do split. Só o serviço líquido é dividido.
-                const netForSplit = net - deslocValue
+                // Deslocamento: 100% Victor, fora do split, com imposto proporcional deduzido.
+                const deslocNet = deslocValue * (1 - taxReal / 100)
                 const victorServico = totalHours * victorFixoHora
-                const restante = Math.max(netForSplit - victorServico, 0)
+                const restante = Math.max(net - victorServico - deslocNet, 0)
                 const victorLucro = restante * victorPct / 100
                 const fabricio = restante * fabPct / 100
                 const nf = taxClient > 0 && taxClient < 100 ? bruto / (1 - taxClient / 100) : bruto
                 const diffNf = Math.max(nf - bruto, 0)
-                const victorDesloc = deslocValue
-                const victorTotal = victorServico + victorLucro + victorDesloc + diffNf
+                const victorDesloc = deslocNet
+                const victorTotal = victorServico + victorDesloc + victorLucro + diffNf
                 const onPct = (v) => { setAgendaForm(f=>({...f,tax_client_percent_used:v})) }
                 const onNf = (v) => { const nfv=parseFloat(v); let p=''; if(!isNaN(nfv)&&nfv>0&&bruto>0) p=((nfv-bruto)/nfv*100).toFixed(2); setAgendaForm(f=>({...f,tax_client_percent_used:p})) }
                 return (
@@ -655,8 +655,9 @@ export default function Billing() {
                       <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(nf)}</span></div>
                       <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(impostoReal)}</span></div>
                       {deslocValue > 0.005 && (
-                        <div className="flex justify-between"><span className="text-gray-400">Líquido serviço (p/ split)</span><span className="text-white">{fmt(netForSplit)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-400">Horas de deslocamento <span className="text-blue-300">(100% Victor, líq.)</span></span><span className="text-white">{fmt(deslocNet)}</span></div>
                       )}
+                      <div className="flex justify-between"><span className="text-gray-400">Líquido p/ split</span><span className="text-white">{fmt(restante)}</span></div>
                       {diffNf > 0.005 && (
                         <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(diffNf)}</span></div>
                       )}

@@ -71,15 +71,16 @@ function calcAgenda(entries, rule, opts = {}) {
 
   const tax = bruto * (taxReal / 100)                // imposto real sobre a NF cheia
   const net = bruto - tax                            // líquido total
-  // Deslocamento: 100% Victor, FORA do split. Só o serviço (líquido) é dividido.
-  const net_for_split = net - displacement_value     // = serviço - imposto
+  // Deslocamento: 100% Victor, FORA do split — mas com imposto proporcional deduzido.
+  const displacement_net = displacement_value * (1 - taxReal / 100)
   const victor_servico = total_hours * victor_fixo_hora
-  const restante = Math.max(net_for_split - victor_servico, 0)
+  // Só o serviço líquido (net - fixo - deslocamento líquido) é dividido Victor/Fabrício.
+  const restante = Math.max(net - victor_servico - displacement_net, 0)
   const victor_lucro = restante * (victor_pct / 100)
   const fabricio = restante * (fab_pct / 100)
   const nf = taxClient > 0 && taxClient < 100 ? bruto / (1 - taxClient / 100) : bruto
   const diff_nf = Math.max(nf - bruto, 0)            // 100% Victor (gross-up do imposto do cliente)
-  const victor_total = victor_servico + victor_lucro + displacement_value + diff_nf
+  const victor_total = victor_servico + displacement_net + victor_lucro + diff_nf
 
   return {
     invoice_value: round(nf),
@@ -88,12 +89,13 @@ function calcAgenda(entries, rule, opts = {}) {
     tax_percentage_used: taxReal,
     tax_client_percent_used: taxClient,
     victor_service: round(victor_servico),
-    // Deslocamento (100% Victor) somado ao lucro para os componentes fecharem no total.
-    victor_profit: round(victor_lucro + displacement_value),
+    // Deslocamento líquido (100% Victor) somado ao lucro para os componentes fecharem no total.
+    victor_profit: round(victor_lucro + displacement_net),
     victor_tax_diff: round(diff_nf),
     victor_total: round(victor_total),
     fabricio_total: round(fabricio),
     displacement_value: round(displacement_value),
+    displacement_net: round(displacement_net),
     total_hours,
   }
 }
