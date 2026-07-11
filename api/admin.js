@@ -406,6 +406,80 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'migrate-payment-paid-at OK' })
     }
 
+    if (action === 'fix-cash-months') {
+      // Correção pontual do mês de caixa (payment_month/year). Competência (month/year) intacta.
+      // Idempotente: define valores absolutos, seguro re-executar.
+      const correctedRecIds = []
+      let receivables_updated = 0
+      let victor_updated = 0
+      let fabricio_updated = 0
+
+      // RECEIVABLES por id conhecido (do diagnóstico)
+      const recFixes = [
+        { id: 13, pm: 2 }, { id: 8, pm: 2 },                       // Jan → 2
+        { id: 14, pm: 3 }, { id: 9, pm: 3 }, { id: 23, pm: 3 },    // Fev → 3
+        { id: 15, pm: 4 }, { id: 10, pm: 4 }, { id: 24, pm: 4 },   // Mar → 4
+        { id: 16, pm: 5 }, { id: 11, pm: 5 }, { id: 25, pm: 5 }, { id: 29, pm: 5 }, // Abr → 5
+        { id: 17, pm: 6 }, { id: 22, pm: 6 }, { id: 26, pm: 6 },   // Mai → 6
+      ]
+      for (const f of recFixes) {
+        const r = await sql`UPDATE receivables SET payment_month = ${f.pm}, payment_year = 2026 WHERE id = ${f.id} RETURNING id`
+        if (r.length) { receivables_updated += r.length; correctedRecIds.push(f.id) }
+      }
+      // SteelDek Jun/2026 → 6/2026 (id incerto: busca por nome + competência)
+      const steelRec = await sql`
+        UPDATE receivables r SET payment_month = 6, payment_year = 2026
+        FROM clients c
+        WHERE c.id = r.client_id AND c.name ILIKE '%Stel%' AND r.month = 6 AND r.year = 2026
+        RETURNING r.id`
+      receivables_updated += steelRec.length
+      for (const row of steelRec) correctedRecIds.push(row.id)
+
+      // PAYABLES_VICTOR por id conhecido (apenas os que precisam correção; os corretos são pulados)
+      const vicFixes = [
+        { id: 14, pm: 3 },  // Enpla Fev → 3 (confirma)
+        { id: 10, pm: 4 },  // Bokada Mar → 4 (corrige de 3)
+        { id: 15, pm: 4 },  // Enpla Mar → 4 (corrige de 3)
+        { id: 11, pm: 5 },  // Bokada Abr → 5 (confirma)
+      ]
+      for (const f of vicFixes) {
+        const r = await sql`UPDATE payables_victor SET payment_month = ${f.pm}, payment_year = 2026 WHERE id = ${f.id} RETURNING id`
+        victor_updated += r.length
+      }
+      // Pharmalog em payables_victor (ids desconhecidos): comp month → month+1
+      const pharmaMap = { 1: 2, 2: 3, 3: 4, 4: 5, 5: 6 }
+      for (const m of Object.keys(pharmaMap)) {
+        const pm = pharmaMap[m]
+        const r = await sql`
+          UPDATE payables_victor p SET payment_month = ${pm}, payment_year = 2026
+          FROM clients c
+          WHERE c.id = p.client_id AND c.name ILIKE '%Pharmalog%' AND p.month = ${Number(m)} AND p.year = 2026
+          RETURNING p.id`
+        victor_updated += r.length
+      }
+      // SteelDek em payables_victor Jun → 6
+      const steelVic = await sql`
+        UPDATE payables_victor p SET payment_month = 6, payment_year = 2026
+        FROM clients c
+        WHERE c.id = p.client_id AND c.name ILIKE '%Stel%' AND p.month = 6 AND p.year = 2026
+        RETURNING p.id`
+      victor_updated += steelVic.length
+
+      // PAYABLES_FABRICIO: espelha o mês de caixa do receivable corrigido (via invoice_id)
+      if (correctedRecIds.length) {
+        const r = await sql`
+          UPDATE payables_fabricio pf
+          SET payment_month = rr.payment_month, payment_year = rr.payment_year
+          FROM invoices i
+          JOIN receivables rr ON rr.id = i.receivable_id
+          WHERE pf.invoice_id = i.id AND rr.id = ANY(${correctedRecIds})
+          RETURNING pf.id`
+        fabricio_updated = r.length
+      }
+
+      return res.status(200).json({ success: true, message: 'fix-cash-months OK', receivables_updated, victor_updated, fabricio_updated })
+    }
+
     if (action === 'fix-payables-payment-date') {
       // Corrige o mês de caixa dos payables de faturamento existentes:
       // usa a data real do recebimento (receivables.paid_at); senão a payment_date da fatura.
