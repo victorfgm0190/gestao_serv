@@ -146,7 +146,10 @@ export default function Financial() {
 
   async function fetchPendingVictor() {
     try {
-      const res = await fetch(`/api/payables-victor?status=pendente,parcial&company_id=${activeCompany.id}`)
+      // No modo caixa, restringe a lista de distribuição ao mês/ano de caixa do filtro ativo.
+      const params = new URLSearchParams({ status: 'pendente,parcial', company_id: activeCompany.id, year: filterYear, mode })
+      if (filterMonth !== '') params.set('month', filterMonth)
+      const res = await fetch(`/api/payables-victor?${params.toString()}`)
       setPendingVictor((await res.json()).data || [])
     } catch (e) { console.error(e); setPendingVictor([]) }
   }
