@@ -376,10 +376,12 @@ export default function Financial() {
   const refMonth = filterMonth === '' ? (new Date().getMonth() + 1) : Number(filterMonth)
   const refYear = Number(filterYear) || new Date().getFullYear()
   const REF_KEY = refYear * 100 + refMonth
-  // Na edição, a referência precisa cobrir a competência mais recente entre os payables da sessão
+  // Chave de CAIXA do registro (payment_month/year, com fallback na competência).
+  const payKey = (r) => (Number(r.payment_year) || r.year) * 100 + (Number(r.payment_month) || r.month)
+  // Na edição, a referência precisa cobrir o mês de CAIXA mais recente entre os payables da sessão
   // (senão algum registro restaurado ficaria fora da redistribuição).
   const effectiveRefKey = editSession && editSession.affected.length
-    ? Math.max(REF_KEY, ...editSession.affected.map(a => a.year * 100 + a.month))
+    ? Math.max(REF_KEY, ...editSession.affected.map(a => payKey(a)))
     : REF_KEY
   const effRefMonth = effectiveRefKey % 100
   const effRefYear = Math.floor(effectiveRefKey / 100)
@@ -399,7 +401,7 @@ export default function Financial() {
   })()
   const sortedPending = [...distSource]
     .filter(r => saldoOf(r) > 0)
-    .filter(r => (r.year * 100 + r.month) <= effectiveRefKey)  // ignora meses futuros ao de referência
+    .filter(r => payKey(r) <= effectiveRefKey)  // nunca consome mês de CAIXA futuro ao período ativo
     .sort((a, b) => {
       // Idêntico ao backend (ordenar): competência ASC — mês mais antigo primeiro.
       const ka = a.year * 100 + a.month, kb = b.year * 100 + b.month
@@ -414,7 +416,7 @@ export default function Financial() {
     : sortedPending
   // Meses anteriores com saldo (para o sub-painel "Ir para mês anterior")
   const prevMonthsWithBalance = sortedPending
-    .filter(r => (r.year * 100 + r.month) < effectiveRefKey && (!receiveTarget || r.id !== receiveTarget.id))
+    .filter(r => payKey(r) < effectiveRefKey && (!receiveTarget || r.id !== receiveTarget.id))
     .map(r => ({ id: r.id, client_name: r.client_name, month: r.month, year: r.year, saldo: saldoOf(r) }))
   let distPool = Math.round(receiveTotal * 100) / 100
   const distRows = orderedPending.map(r => {

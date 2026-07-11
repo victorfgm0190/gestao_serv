@@ -91,11 +91,17 @@ async function pagarDistribuido(sql, req, res) {
   const refYear = reference_year ? Number(reference_year) : now.getFullYear()
   const curKey = refYear * 100 + refMonth
 
-  // Distribuição SEMPRE por competência (year/month) — payment_month/year é só visão de caixa.
+  // Ordenação SEMPRE por competência (year/month); o limite superior é o MÊS DE CAIXA.
   const all = await sql`SELECT * FROM payables_victor WHERE company_id = ${company_id} AND status IN ('pendente','parcial') ORDER BY year ASC, month ASC, created_at ASC`
   for (const rec of all) rec._saldo = r2((parseFloat(rec.total_amount) || 0) - (parseFloat(rec.paid_amount) || 0))
-  // Ignora meses futuros ao de referência: nunca consome deles
-  const candidatos = all.filter(rec => rec._saldo > 0 && (rec.year * 100 + rec.month) <= curKey)
+  // Limite superior = mês de CAIXA (payment_month/year) ≤ período ativo. Nunca consome caixa futuro;
+  // a sobra (pool - consumido) simplesmente não é distribuída (capital próprio).
+  const candidatos = all.filter(rec => {
+    if (rec._saldo <= 0) return false
+    const py = Number(rec.payment_year) || rec.year
+    const pm = Number(rec.payment_month) || rec.month
+    return (py * 100 + pm) <= curKey
+  })
 
   // FLOW A — geral
   if (mode === 'geral') {
