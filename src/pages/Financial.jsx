@@ -37,6 +37,22 @@ const RECEIVE_VICTOR_CATEGORIES = [
 ]
 const EMPTY_RECEIVE_CATS = { honorarios: '', das: '', inss: '', pro_labore: '', lucros: '', escritorio: '', demais: '' }
 const receiveCategoryTotal = (cats) => RECEIVE_VICTOR_CATEGORIES.reduce((s, [k]) => s + (parseFloat(cats[k]) || 0), 0)
+const RECEIVE_LABEL_TO_KEY = Object.fromEntries(RECEIVE_VICTOR_CATEGORIES.map(([k, label]) => [label, k]))
+// Reconstrói as categorias a partir da string de notes gravada pelo pagarDistribuido
+// (ex.: "Honorários: R$100 | DAS: R$50,5").
+function parseNotesToReceiveCats(notes) {
+  const cats = { ...EMPTY_RECEIVE_CATS }
+  if (!notes) return cats
+  for (const part of String(notes).split('|')) {
+    const [rawLabel, rawVal] = part.split('R$')
+    if (rawVal == null) continue
+    const key = RECEIVE_LABEL_TO_KEY[rawLabel.replace(':', '').trim()]
+    if (!key) continue
+    const v = parseFloat(rawVal.trim().replace(',', '.'))
+    if (!isNaN(v) && v > 0) cats[key] = String(v)
+  }
+  return cats
+}
 
 export default function Financial() {
   const { activeCompany } = useOutletContext()
@@ -63,6 +79,7 @@ export default function Financial() {
   const [showReceiveModal, setShowReceiveModal] = useState(false)
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
   const [receivePaidAt, setReceivePaidAt] = useState(new Date().toISOString().split('T')[0])
+  const [editSession, setEditSession] = useState(null) // { paid_at, notes, affected[] } quando editando uma sessão
   const [receiving, setReceiving] = useState(false)
   const [pendingVictor, setPendingVictor] = useState([])
   const [receiveTarget, setReceiveTarget] = useState(null) // item quando Flow B (específico), null = Flow A (geral)
@@ -179,12 +196,36 @@ export default function Financial() {
     fetchPendingVictor()
   }
 
+  // Editar uma sessão de recebimento em massa: reabre o modal Receber pré-preenchido.
+  // O estorno da sessão original só acontece no Confirmar (backend, atômico) — cancelar não altera nada.
+  async function openEditReceive(item) {
+    const p = (item.payments || [])[0]
+    if (!p) { alert('Este registro não possui pagamentos de uma sessão para editar.'); return }
+    const paidAt = String(p.paid_at).slice(0, 10)
+    const notes = p.notes || ''
+    let affected = []
+    try {
+      const res = await fetch(`/api/payables-victor?action=sessao&company_id=${activeCompany.id}&paid_at=${encodeURIComponent(paidAt)}&notes=${encodeURIComponent(notes)}`)
+      affected = (await res.json()).affected || []
+    } catch (e) { console.error(e) }
+    setEditSession({ paid_at: paidAt, notes, affected })
+    setReceiveCats(parseNotesToReceiveCats(notes))
+    setReceivePaidAt(paidAt)
+    setReceiveTarget(null)
+    setOverflowInfo(null)
+    setShowMesAnterior(false)
+    setPendingVictor([])
+    setShowReceiveModal(true)
+    fetchPendingVictor()
+  }
+
   function closeReceive() {
     setShowReceiveModal(false)
     setReceiveCats(EMPTY_RECEIVE_CATS)
     setReceiveTarget(null)
     setOverflowInfo(null)
     setShowMesAnterior(false)
+    setEditSession(null)
   }
 
   async function confirmReceive() {
@@ -192,10 +233,12 @@ export default function Financial() {
     if (total <= 0) return
     if (!receivePaidAt) return
     const paid_at = receivePaidAt
-    const ref = { reference_month: refMonth, reference_year: refYear }
+    // Na edição usa a referência efetiva (cobre a competência mais recente da sessão).
+    const ref = { reference_month: effRefMonth, reference_year: effRefYear }
+    const editBody = editSession ? { edit_session: { paid_at: editSession.paid_at, notes: editSession.notes } } : {}
     const body = receiveTarget
       ? { company_id: activeCompany.id, despesas: receiveCats, mode: 'especifico', payable_id: receiveTarget.id, overflow_action: null, paid_at, ...ref }
-      : { company_id: activeCompany.id, despesas: receiveCats, mode: 'geral', paid_at, ...ref }
+      : { company_id: activeCompany.id, despesas: receiveCats, mode: 'geral', paid_at, ...ref, ...editBody }
     setReceiving(true)
     try {
       const res = await fetch('/api/payables-victor?action=pagar-distribuido', {
@@ -309,10 +352,30 @@ export default function Financial() {
   const refMonth = filterMonth === '' ? (new Date().getMonth() + 1) : Number(filterMonth)
   const refYear = Number(filterYear) || new Date().getFullYear()
   const REF_KEY = refYear * 100 + refMonth
+  // Na edição, a referência precisa cobrir a competência mais recente entre os payables da sessão
+  // (senão algum registro restaurado ficaria fora da redistribuição).
+  const effectiveRefKey = editSession && editSession.affected.length
+    ? Math.max(REF_KEY, ...editSession.affected.map(a => a.year * 100 + a.month))
+    : REF_KEY
+  const effRefMonth = effectiveRefKey % 100
+  const effRefYear = Math.floor(effectiveRefKey / 100)
   const saldoOf = (r) => Math.round(((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)) * 100) / 100
-  const sortedPending = [...pendingVictor]
+  // Fonte da distribuição: no modo edição, restaura os saldos consumidos pela sessão que será estornada.
+  const distSource = (() => {
+    if (!editSession || !editSession.affected.length) return pendingVictor
+    const map = new Map()
+    for (const r of pendingVictor) map.set(r.id, { ...r })
+    for (const a of editSession.affected) {
+      const base = map.get(a.id) || { ...a }
+      const restored = (parseFloat(base.paid_amount) || 0) - (parseFloat(a.session_amount) || 0)
+      base.paid_amount = restored < 0 ? 0 : restored
+      map.set(a.id, base)
+    }
+    return [...map.values()]
+  })()
+  const sortedPending = [...distSource]
     .filter(r => saldoOf(r) > 0)
-    .filter(r => (r.year * 100 + r.month) <= REF_KEY)  // ignora meses futuros ao de referência
+    .filter(r => (r.year * 100 + r.month) <= effectiveRefKey)  // ignora meses futuros ao de referência
     .sort((a, b) => {
       // Idêntico ao backend (ordenar): competência ASC — mês mais antigo primeiro.
       const ka = a.year * 100 + a.month, kb = b.year * 100 + b.month
@@ -327,7 +390,7 @@ export default function Financial() {
     : sortedPending
   // Meses anteriores com saldo (para o sub-painel "Ir para mês anterior")
   const prevMonthsWithBalance = sortedPending
-    .filter(r => (r.year * 100 + r.month) < REF_KEY && (!receiveTarget || r.id !== receiveTarget.id))
+    .filter(r => (r.year * 100 + r.month) < effectiveRefKey && (!receiveTarget || r.id !== receiveTarget.id))
     .map(r => ({ id: r.id, client_name: r.client_name, month: r.month, year: r.year, saldo: saldoOf(r) }))
   let distPool = Math.round(receiveTotal * 100) / 100
   const distRows = orderedPending.map(r => {
@@ -492,6 +555,9 @@ export default function Financial() {
                         <button onClick={() => tab === 'victor' ? openDistribuir(item) : openPayments(item)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
                       ) : (
                         <button onClick={() => openPayments(item)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver Pagamentos</button>
+                      )}
+                      {tab === 'victor' && item.origin === 'faturamento' && (item.status === 'pago' || item.status === 'parcial') && (item.payments?.length > 0) && (
+                        <button onClick={() => openEditReceive(item)} className="px-3 py-1 border border-blue-500/60 text-blue-400 hover:bg-blue-500/10 rounded-lg text-xs">✏️ Editar</button>
                       )}
                       {(item.status === 'pago' || item.status === 'parcial') && (
                         <button onClick={() => estornarPayable(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
@@ -727,11 +793,14 @@ export default function Financial() {
       {showReceiveModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-1">{receiveTarget ? 'Pagar — Pagar Victor' : 'Receber — Pagar Victor'}</h3>
+            <h3 className="text-lg font-bold text-white mb-1">{editSession ? 'Editar recebimento — Pagar Victor' : receiveTarget ? 'Pagar — Pagar Victor' : 'Receber — Pagar Victor'}</h3>
             {receiveTarget && (
               <p className="text-gray-400 text-xs mb-4">Alvo: {receiveTarget.client_name} — {months[receiveTarget.month-1]}/{receiveTarget.year} · Saldo: {fmt((parseFloat(receiveTarget.total_amount)||0) - (parseFloat(receiveTarget.paid_amount)||0))}</p>
             )}
-            {!receiveTarget && <div className="mb-4" />}
+            {editSession && (
+              <p className="text-gray-400 text-xs mb-4">Editando a sessão de {new Date(editSession.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}. Ao confirmar, a distribuição anterior é substituída.</p>
+            )}
+            {!receiveTarget && !editSession && <div className="mb-4" />}
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 {RECEIVE_VICTOR_CATEGORIES.map(([key, label]) => (
@@ -810,7 +879,7 @@ export default function Financial() {
             ) : (
               <div className="flex gap-3 mt-5">
                 <button onClick={closeReceive} disabled={receiving} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50">Cancelar</button>
-                <button onClick={confirmReceive} disabled={receiving || receiveTotal <= 0 || !receivePaidAt} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{receiving ? 'Distribuindo...' : 'Confirmar'}</button>
+                <button onClick={confirmReceive} disabled={receiving || receiveTotal <= 0 || !receivePaidAt} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{receiving ? (editSession ? 'Salvando...' : 'Distribuindo...') : (editSession ? 'Salvar edição' : 'Confirmar')}</button>
               </div>
             )}
           </div>

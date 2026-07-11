@@ -40,9 +40,35 @@ function consumir(sql, pool, lista, when, notes) {
   return { writes, applied, restante }
 }
 
+// Recalcula o pai de um payable_victor após alterar seus pagamentos.
+async function recalcVictorParent(sql, payable_id) {
+  const agg = await sql`SELECT COALESCE(SUM(amount),0) AS s, MAX(paid_at) AS last FROM payable_payments WHERE payable_type='victor' AND payable_id=${payable_id}`
+  const s = parseFloat(agg[0].s) || 0
+  const last = agg[0].last || null
+  const pr = await sql`SELECT total_amount FROM payables_victor WHERE id=${payable_id}`
+  const tot = parseFloat(pr[0]?.total_amount) || 0
+  const st = s <= 0.005 ? 'pendente' : (s >= tot - 0.005 ? 'pago' : 'parcial')
+  await sql`UPDATE payables_victor SET paid_amount=${s.toFixed(2)}, status=${st}, paid_at=${last} WHERE id=${payable_id}`
+}
+
+// Estorna uma sessão de recebimento (todos os payable_payments com mesmo paid_at + notes)
+// da empresa e recalcula os pais afetados. Usado no fluxo de edição.
+async function estornarSessao(sql, company_id, sess_paid_at, sess_notes) {
+  const sess = await sql`
+    SELECT DISTINCT pp.payable_id
+    FROM payable_payments pp JOIN payables_victor pv ON pv.id = pp.payable_id
+    WHERE pp.payable_type='victor' AND pv.company_id=${company_id}
+      AND pp.paid_at=${sess_paid_at} AND pp.notes=${sess_notes}`
+  const ids = sess.map(s => s.payable_id)
+  if (!ids.length) return []
+  await sql`DELETE FROM payable_payments WHERE payable_type='victor' AND payable_id = ANY(${ids}) AND paid_at=${sess_paid_at} AND notes=${sess_notes}`
+  for (const id of ids) await recalcVictorParent(sql, id)
+  return ids
+}
+
 // POST ?action=pagar-distribuido — Etapa 2: consumo de saldos entre múltiplos payables_victor.
 async function pagarDistribuido(sql, req, res) {
-  const { company_id, despesas = {}, mode, payable_id, overflow_action = null, overflow_target_id = null, paid_at, reference_month, reference_year } = req.body
+  const { company_id, despesas = {}, mode, payable_id, overflow_action = null, overflow_target_id = null, paid_at, reference_month, reference_year, edit_session = null } = req.body
 
   let total = 0
   const partes = []
@@ -53,6 +79,11 @@ async function pagarDistribuido(sql, req, res) {
   if (total <= 0) return res.status(400).json({ error: 'Total de despesas deve ser maior que zero' })
   const notes = partes.length ? partes.join(' | ') : 'distribuição geral'
   const when = paid_at || new Date().toISOString().split('T')[0]
+
+  // Edição: estorna a sessão original (após validar o total) antes de redistribuir — restaura os saldos.
+  if (edit_session && edit_session.paid_at && edit_session.notes) {
+    await estornarSessao(sql, company_id, edit_session.paid_at, edit_session.notes)
+  }
 
   // Mês de referência = filtro ativo da tela (fallback: mês do calendário).
   const now = new Date()
@@ -128,6 +159,25 @@ async function pagarDistribuido(sql, req, res) {
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
   if (req.method === 'GET') {
+    // Info da sessão de recebimento (para edição): payables afetados + valor consumido na sessão.
+    if (req.query.action === 'sessao') {
+      const { company_id, paid_at, notes } = req.query
+      const pays = await sql`
+        SELECT pp.payable_id, SUM(pp.amount) AS session_amount
+        FROM payable_payments pp JOIN payables_victor pv ON pv.id = pp.payable_id
+        WHERE pp.payable_type='victor' AND pv.company_id=${company_id}
+          AND pp.paid_at=${paid_at} AND pp.notes=${notes}
+        GROUP BY pp.payable_id`
+      const ids = pays.map(p => p.payable_id)
+      let affected = []
+      if (ids.length) {
+        const rows = await sql`SELECT p.*, c.name AS client_name FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id WHERE p.id = ANY(${ids})`
+        const amt = {}
+        for (const p of pays) amt[p.payable_id] = parseFloat(p.session_amount) || 0
+        affected = rows.map(r => ({ ...r, session_amount: amt[r.id] || 0 }))
+      }
+      return res.status(200).json({ paid_at, notes, affected })
+    }
     const { company_id, year, month, status, mode } = req.query
     const caixa = mode === 'caixa'  // caixa filtra por payment_month/payment_year
     const statusList = status ? status.split(',').map(s => s.trim()).filter(Boolean) : []
