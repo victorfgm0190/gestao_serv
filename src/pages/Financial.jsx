@@ -314,8 +314,9 @@ export default function Financial() {
     .filter(r => saldoOf(r) > 0)
     .filter(r => (r.year * 100 + r.month) <= REF_KEY)  // ignora meses futuros ao de referência
     .sort((a, b) => {
+      // Idêntico ao backend (ordenar): competência ASC — mês mais antigo primeiro.
       const ka = a.year * 100 + a.month, kb = b.year * 100 + b.month
-      if (ka !== kb) return kb - ka          // referência (maior chave) → mais antigo
+      if (ka !== kb) return ka - kb          // competência ASC (mais antigo primeiro)
       if (a.client_id === 7 && b.client_id !== 7) return -1  // Pharmalog/ANB primeiro
       if (b.client_id === 7 && a.client_id !== 7) return 1
       return saldoOf(b) - saldoOf(a)         // restante por saldo desc

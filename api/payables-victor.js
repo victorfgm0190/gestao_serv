@@ -4,14 +4,13 @@ const CLIENT_PHARMA = 7
 const CATS = { honorarios: 'Honorários', das: 'DAS', inss: 'INSS', pro_labore: 'Pro Labore', lucros: 'Lucros', escritorio: 'Escritório', demais: 'Demais despesas' }
 const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100
 
-// Ordenação canônica: mês atual primeiro; demais do mais novo ao mais antigo.
-// Dentro do mês: Pharmalog/ANB (client_id=7) primeiro, restante por saldo desc.
-function ordenar(records, curKey) {
+// Ordenação canônica: SEMPRE por competência (year/month) do mais antigo ao mais novo.
+// Idêntica ao preview do frontend (sortedPending). Dentro do mês: Pharmalog/ANB
+// (client_id=7) primeiro, restante por saldo desc. Nunca usa payment_month/year.
+function ordenar(records) {
   return [...records].sort((a, b) => {
     const ka = a.year * 100 + a.month, kb = b.year * 100 + b.month
-    const ca = ka === curKey ? 0 : 1, cb = kb === curKey ? 0 : 1
-    if (ca !== cb) return ca - cb
-    if (ka !== kb) return kb - ka
+    if (ka !== kb) return ka - kb  // competência ASC — mês mais antigo primeiro
     if (a.client_id === CLIENT_PHARMA && b.client_id !== CLIENT_PHARMA) return -1
     if (b.client_id === CLIENT_PHARMA && a.client_id !== CLIENT_PHARMA) return 1
     return b._saldo - a._saldo
@@ -62,14 +61,14 @@ async function pagarDistribuido(sql, req, res) {
   const curKey = refYear * 100 + refMonth
 
   // Distribuição SEMPRE por competência (year/month) — payment_month/year é só visão de caixa.
-  const all = await sql`SELECT * FROM payables_victor WHERE company_id = ${company_id} AND status IN ('pendente','parcial') ORDER BY year ASC, month ASC`
+  const all = await sql`SELECT * FROM payables_victor WHERE company_id = ${company_id} AND status IN ('pendente','parcial') ORDER BY year ASC, month ASC, created_at ASC`
   for (const rec of all) rec._saldo = r2((parseFloat(rec.total_amount) || 0) - (parseFloat(rec.paid_amount) || 0))
   // Ignora meses futuros ao de referência: nunca consome deles
   const candidatos = all.filter(rec => rec._saldo > 0 && (rec.year * 100 + rec.month) <= curKey)
 
   // FLOW A — geral
   if (mode === 'geral') {
-    const lista = ordenar(candidatos, curKey)
+    const lista = ordenar(candidatos)
     const { writes, applied, restante } = consumir(sql, total, lista, when, notes)
     if (writes.length) await sql.transaction(writes)
     return res.status(200).json({ mode: 'geral', applied, leftover: restante })
@@ -104,12 +103,12 @@ async function pagarDistribuido(sql, req, res) {
   if (overflow_action === 'nada') {
     poolList = []
   } else if (overflow_action === 'pharma') {
-    poolList = ordenar(others.filter(rec => rec.client_id === CLIENT_PHARMA), curKey)
+    poolList = ordenar(others.filter(rec => rec.client_id === CLIENT_PHARMA))
   } else if (overflow_action === 'demais') {
-    poolList = ordenar(others.filter(rec => rec.client_id !== CLIENT_PHARMA), curKey)
+    poolList = ordenar(others.filter(rec => rec.client_id !== CLIENT_PHARMA))
   } else if (overflow_action === 'mes') {
     const chosen = others.filter(rec => rec.id === Number(overflow_target_id))
-    const rest = ordenar(others.filter(rec => rec.id !== Number(overflow_target_id)), curKey)
+    const rest = ordenar(others.filter(rec => rec.id !== Number(overflow_target_id)))
     poolList = [...chosen, ...rest]
   } else {
     return res.status(400).json({ error: 'overflow_action inválido' })
