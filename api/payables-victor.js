@@ -131,9 +131,9 @@ export default async function handler(req, res) {
     const statusList = status ? status.split(',').map(s => s.trim()).filter(Boolean) : []
     let rows
     if (statusList.length && caixa) {
-      // Caixa: pendentes/parciais cujo mês de caixa (payment_month/year) casa com o filtro.
+      // Caixa: pendentes/parciais até o mês de caixa do filtro (inclusive), acumulando meses anteriores.
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_year DESC, p.payment_month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND (p.payment_year < ${year} OR (p.payment_year = ${year} AND p.payment_month <= ${month})) ORDER BY p.payment_year DESC, p.payment_month DESC, p.created_at DESC`
         : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND p.payment_year = ${year} ORDER BY p.payment_year DESC, p.payment_month DESC, p.created_at DESC`
     } else if (statusList.length) {
       // Competência (padrão): todos os pendentes/parciais — a tela filtra por competência.
