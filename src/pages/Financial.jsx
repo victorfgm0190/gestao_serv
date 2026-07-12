@@ -112,6 +112,8 @@ export default function Financial() {
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear, mode])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
+  // Reservas do Victor exibidas no card da aba (mês/ano/empresa do filtro ativo).
+  useEffect(() => { if (tab === 'victor') fetchReserves() }, [tab, filterMonth, filterYear, activeCompany])
 
   async function fetchAll() {
     setLoading(true)
@@ -682,7 +684,11 @@ export default function Financial() {
 
       {tab !== 'historico' && (<>
       {/* Totalizadores */}
-      <div className={`grid ${previewTotal > 0 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'} gap-4 mb-6`}>
+      {(() => {
+        const cardCount = 3 + (previewTotal > 0 ? 1 : 0) + (tab === 'victor' ? 1 : 0)
+        const gridCols = cardCount >= 5 ? 'grid-cols-2 md:grid-cols-5' : cardCount === 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'
+        return (
+      <div className={`grid ${gridCols} gap-4 mb-6`}>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-1">Total previsto</p>
           <p className="text-white text-lg font-bold">{fmt(totalAmount)}</p>
@@ -701,7 +707,24 @@ export default function Financial() {
             <p className="text-gray-300 text-lg font-bold">{fmt(previewTotal)}</p>
           </div>
         )}
+        {tab === 'victor' && (
+          <button
+            onClick={openReceive}
+            title={`DAS: ${fmt(reserves.das||0)} | Pro Labore: ${fmt(reserves.pro_labore||0)} | INSS: ${fmt(reserves.inss||0)} | Escritório: ${fmt(reserves.escritorio||0)}`}
+            className="text-left bg-gray-900 border border-amber-500/30 rounded-xl p-4 hover:border-amber-500/60 transition-colors"
+          >
+            <p className="text-gray-400 text-xs mb-1">🏦 Reservas do mês</p>
+            <p className={`text-lg font-bold ${reservesTotal > 0 ? 'text-orange-400' : 'text-gray-500'}`}>{fmt(reservesTotal)}</p>
+            {reservesTotal > 0 ? (
+              <p className="text-gray-500 text-[11px] mt-1 leading-tight">DAS: {fmt(reserves.das||0)} | Pro Labore: {fmt(reserves.pro_labore||0)} | INSS: {fmt(reserves.inss||0)} | Escritório: {fmt(reserves.escritorio||0)}</p>
+            ) : (
+              <p className="text-gray-600 text-[11px] mt-1">Não configurado</p>
+            )}
+          </button>
+        )}
       </div>
+        )
+      })()}
 
       <p className="text-gray-500 text-xs mb-4 -mt-2">
         {mode === 'caixa' ? 'Visualizando por caixa (mês do recebimento)' : 'Visualizando por competência (mês do faturamento)'}
