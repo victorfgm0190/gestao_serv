@@ -117,8 +117,8 @@ export default function Financial() {
       const [cl, rec, fab, vic] = await Promise.all([
         fetch(`/api/clients?company_id=${activeCompany.id}`),
         fetch(`/api/receivables?company_id=${activeCompany.id}&year=${filterYear}&mode=${mode}`),
-        fetch(`/api/payables-fabricio?company_id=${activeCompany.id}&year=${filterYear}&mode=${mode}`),
-        fetch(`/api/payables-victor?company_id=${activeCompany.id}&year=${filterYear}&mode=${mode}`),
+        fetch(`/api/payables-fabricio?company_id=${activeCompany.id}&year=${filterYear}&mode=${mode}&include_preview=true`),
+        fetch(`/api/payables-victor?company_id=${activeCompany.id}&year=${filterYear}&mode=${mode}&include_preview=true`),
       ])
       setClients((await cl.json()).clients || [])
       setReceivables((await rec.json()).data || [])
@@ -356,23 +356,28 @@ export default function Financial() {
   // Mês/ano efetivos conforme a visão: caixa usa payment_month/year; competência usa month/year.
   const effMonth = (r) => mode === 'caixa' ? (r.payment_month ?? r.month) : r.month
   const effYear = (r) => mode === 'caixa' ? (r.payment_year ?? r.year) : r.year
+  const isPreview = (r) => r.is_preview === true
+  const isPayTab = tab === 'victor' || tab === 'fabricio'
   const baseData = tab === 'receivables' ? receivables : tab === 'fabricio' ? payablesFab : payablesVictor
   const monthFiltered = filterMonth === ''
     ? baseData
     : baseData.filter(r => Number(effMonth(r)) === Number(filterMonth))
+  // Entradas "previsto" (recebível pendente, ainda sem payable) ficam à parte da lista real.
+  const previewData = isPayTab && filterStatus !== 'pago' ? monthFiltered.filter(isPreview) : []
+  const realMonthFiltered = monthFiltered.filter(r => !isPreview(r))
   // Oculta registros zerados (R$ 0,00 / null) nas abas de Pagar — não devem contaminar os totais
   const payValue = (r) => parseFloat(tab === 'victor' ? r.total_amount : r.amount) || 0
-  const nonZeroFiltered = (tab === 'victor' || tab === 'fabricio')
-    ? monthFiltered.filter(r => payValue(r) !== 0)
-    : monthFiltered
+  const nonZeroFiltered = isPayTab
+    ? realMonthFiltered.filter(r => payValue(r) !== 0)
+    : realMonthFiltered
   const currentData = filterStatus === 'all'
     ? nonZeroFiltered
     : nonZeroFiltered.filter(r => filterStatus === 'pendente_parcial' ? (r.status === 'pendente' || r.status === 'parcial') : r.status === filterStatus)
   // Disponível = manual (sem recebível) ou recebível do cliente já pago/parcial. Pendente = aguardando.
   const isAvailable = (r) => !r.receivable_status || r.receivable_status === 'pago' || r.receivable_status === 'parcial'
-  const isPayTab = tab === 'victor' || tab === 'fabricio'
   const availableData = isPayTab ? currentData.filter(isAvailable) : currentData
   const waitingData = isPayTab ? currentData.filter(r => !isAvailable(r)) : []
+  const previewTotal = previewData.reduce((s, r) => s + (parseFloat(r.amount || r.total_amount) || 0), 0)
   const victorCatTotal = victorCategoryTotal(victorCats)
   const receiveTotal = receiveCategoryTotal(receiveCats)
 
@@ -634,7 +639,7 @@ export default function Financial() {
 
       {tab !== 'historico' && (<>
       {/* Totalizadores */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className={`grid ${previewTotal > 0 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'} gap-4 mb-6`}>
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-1">Total previsto</p>
           <p className="text-white text-lg font-bold">{fmt(totalAmount)}</p>
@@ -647,6 +652,12 @@ export default function Financial() {
           <p className="text-gray-400 text-xs mb-1">Em aberto</p>
           <p className="text-yellow-400 text-lg font-bold">{fmt(totalOpen)}</p>
         </div>
+        {previewTotal > 0 && (
+          <div className="bg-gray-900/40 border border-dashed border-gray-700 rounded-xl p-4">
+            <p className="text-gray-400 text-xs mb-1">🔮 Previsto cliente</p>
+            <p className="text-gray-300 text-lg font-bold">{fmt(previewTotal)}</p>
+          </div>
+        )}
       </div>
 
       <p className="text-gray-500 text-xs mb-4 -mt-2">
@@ -666,13 +677,13 @@ export default function Financial() {
         <div className="mb-4">{statusFilter}</div>
       )}
 
-      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : currentData.length === 0 ? (
+      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : (currentData.length === 0 && previewData.length === 0) ? (
         <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">📂</p><p>Nenhum registro encontrado.</p></div>
       ) : (
         <div className="space-y-6">
           {availableData.length > 0 && (
             <div className="space-y-3">
-              {isPayTab && waitingData.length > 0 && (
+              {isPayTab && (waitingData.length > 0 || previewData.length > 0) && (
                 <p className="text-xs font-medium uppercase tracking-wider text-green-400/80">✅ Disponível para pagar</p>
               )}
               {availableData.map(item => renderRow(item, false))}
@@ -684,6 +695,24 @@ export default function Financial() {
               <div className="space-y-3 opacity-70">
                 {waitingData.map(item => renderRow(item, true))}
               </div>
+            </div>
+          )}
+          {isPayTab && previewData.length > 0 && (
+            <div className="space-y-3 bg-gray-900/30 border border-dashed border-gray-700 rounded-xl p-3 opacity-60">
+              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">🔮 Previsto (aguardando cliente pagar)</p>
+              <p className="text-gray-600 text-xs -mt-1">Será criado automaticamente quando o cliente pagar</p>
+              {previewData.map(item => (
+                <div key={item.id} className="bg-gray-900 border border-dashed border-gray-700 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
+                    <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-400">previsto</span>
+                  </div>
+                  <div className="flex gap-4 mt-1 text-xs">
+                    <span className="text-gray-500">Total: <span className="text-white font-medium">{fmt(item.amount || item.total_amount)}</span></span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

@@ -22,6 +22,24 @@ export default async function handler(req, res) {
     const byId = {}
     for (const p of payments) { (byId[p.payable_id] ||= []).push(p) }
     for (const r of rows) { r.payments = byId[r.id] || [] }
+
+    // Previsão: recebíveis pendentes/parciais sem payable ainda, usando invoices.fabricio_total.
+    if (req.query.include_preview === 'true') {
+      const prev = caixa
+        ? await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.fabricio_total FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.payment_year = ${year} AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
+        : await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.fabricio_total FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.year = ${year} AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
+      for (const p of prev) {
+        rows.push({
+          id: 'preview_' + p.receivable_id,
+          client_name: p.client_name,
+          month: p.month, year: p.year,
+          payment_month: p.payment_month, payment_year: p.payment_year,
+          amount: p.fabricio_total,
+          status: 'previsto', origin: 'faturamento', is_preview: true,
+          receivable_status: 'pendente', invoice_id: p.invoice_id, payments: [],
+        })
+      }
+    }
     return res.status(200).json({ data: rows })
   }
   if (req.method === 'POST') {
