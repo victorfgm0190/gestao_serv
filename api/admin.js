@@ -391,6 +391,26 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'migrate-payment-date OK' })
     }
 
+    if (action === 'migrate-victor-reserves') {
+      await sql`
+        CREATE TABLE IF NOT EXISTS victor_reserves (
+          id SERIAL PRIMARY KEY,
+          company_id INTEGER REFERENCES companies(id),
+          month INTEGER NOT NULL,
+          year INTEGER NOT NULL,
+          das NUMERIC(10,2) DEFAULT 0,
+          pro_labore NUMERIC(10,2) DEFAULT 0,
+          inss NUMERIC(10,2) DEFAULT 0,
+          escritorio NUMERIC(10,2) DEFAULT 0,
+          notes TEXT,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW(),
+          UNIQUE(company_id, month, year)
+        )
+      `
+      return res.status(200).json({ success: true, message: 'migrate-victor-reserves OK' })
+    }
+
     if (action === 'migrate-payment-paid-at') {
       // Mês de caixa por pagamento individual: data + mês/ano derivados em payable_payments.
       await sql`ALTER TABLE payable_payments ADD COLUMN IF NOT EXISTS paid_at DATE`

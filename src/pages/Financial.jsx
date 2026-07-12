@@ -101,6 +101,8 @@ export default function Financial() {
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
   const [receivePaidAt, setReceivePaidAt] = useState(new Date().toISOString().split('T')[0])
   const [editSession, setEditSession] = useState(null) // { paid_at, notes, affected[] } quando editando uma sessão
+  const [reserves, setReserves] = useState({ das: '', pro_labore: '', inss: '', escritorio: '', notes: '' })
+  const [savingReserves, setSavingReserves] = useState(false)
   const [breakdownView, setBreakdownView] = useState('geral') // 'geral' | 'cliente' — detalhamento de categorias
   const [receiving, setReceiving] = useState(false)
   const [pendingVictor, setPendingVictor] = useState([])
@@ -195,6 +197,37 @@ export default function Financial() {
     } catch (e) { console.error(e); setPendingVictor([]) }
   }
 
+  // Reservas do mês (ficam no caixa): mês/ano de referência = filtro ativo da tela.
+  function reserveRefPeriod() {
+    const rm = filterMonth === '' ? (new Date().getMonth() + 1) : Number(filterMonth)
+    const ry = Number(filterYear) || new Date().getFullYear()
+    return { rm, ry }
+  }
+  async function fetchReserves() {
+    const { rm, ry } = reserveRefPeriod()
+    try {
+      const res = await fetch(`/api/victor-reserves?company_id=${activeCompany.id}&month=${rm}&year=${ry}`)
+      const d = (await res.json()).data || {}
+      const s = (v) => parseFloat(v) ? String(parseFloat(v)) : ''
+      setReserves({ das: s(d.das), pro_labore: s(d.pro_labore), inss: s(d.inss), escritorio: s(d.escritorio), notes: d.notes || '' })
+    } catch (e) { console.error(e) }
+  }
+  async function saveReserves() {
+    const { rm, ry } = reserveRefPeriod()
+    setSavingReserves(true)
+    try {
+      await fetch('/api/victor-reserves', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_id: activeCompany.id, month: rm, year: ry,
+          das: parseFloat(reserves.das) || 0, pro_labore: parseFloat(reserves.pro_labore) || 0,
+          inss: parseFloat(reserves.inss) || 0, escritorio: parseFloat(reserves.escritorio) || 0,
+          notes: reserves.notes || null,
+        }),
+      })
+    } catch (e) { console.error(e) } finally { setSavingReserves(false) }
+  }
+
   // Flow A — Pagar Geral (não vinculado a um registro específico)
   async function openReceive() {
     setReceiveCats(EMPTY_RECEIVE_CATS)
@@ -205,6 +238,7 @@ export default function Financial() {
     setShowMesAnterior(false)
     setShowReceiveModal(true)
     fetchPendingVictor()
+    fetchReserves()
   }
 
   // Flow B — Pagar em um registro específico (consome o alvo primeiro)
@@ -217,6 +251,7 @@ export default function Financial() {
     setShowMesAnterior(false)
     setShowReceiveModal(true)
     fetchPendingVictor()
+    fetchReserves()
   }
 
   // Editar uma sessão de recebimento em massa: reabre o modal Receber pré-preenchido.
@@ -241,6 +276,7 @@ export default function Financial() {
     setPendingVictor([])
     setShowReceiveModal(true)
     fetchPendingVictor()
+    fetchReserves()
   }
 
   function closeReceive() {
@@ -440,6 +476,13 @@ export default function Financial() {
     return { id: r.id, month: r.month, year: r.year, client_name: r.client_name, saldo, liquido, state }
   })
   const distOverflow = distPool > 0.005 ? distPool : 0
+
+  // Reservas do mês (ficam no caixa) e saldo disponível para distribuir.
+  const reservesTotal = ['das', 'pro_labore', 'inss', 'escritorio'].reduce((s, k) => s + (parseFloat(reserves[k]) || 0), 0)
+  const saldoDisponivelBruto = sortedPending.reduce((s, r) => s + saldoOf(r), 0)
+  const disponivelParaDistribuir = Math.max(Math.round((saldoDisponivelBruto - reservesTotal) * 100) / 100, 0)
+  const reservesExceedSaldo = reservesTotal > saldoDisponivelBruto + 0.005
+  const receiveExcedeDisponivel = receiveTotal > disponivelParaDistribuir + 0.005
 
   // Detalhamento em dois níveis (Por cliente / Geral). Cada "entry" tem o valor consumido
   // e as categorias proporcionais (fatia do cliente/pagamento × cada categoria da sessão).
@@ -946,6 +989,24 @@ export default function Financial() {
             )}
             {!receiveTarget && !editSession && <div className="mb-4" />}
             <div className="space-y-3">
+              {/* Reservas do mês — ficam no caixa para impostos/despesas futuras */}
+              <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-3 space-y-2">
+                <p className="text-amber-300 text-xs font-medium uppercase tracking-wider">🏦 Reservas do mês (ficam no caixa)</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[['das','DAS'],['pro_labore','Pro Labore'],['inss','INSS'],['escritorio','Escritório']].map(([key,label]) => (
+                    <div key={key} className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-400 font-medium">{label} (R$)</label>
+                      <input type="number" placeholder="0" value={reserves[key]} onChange={e=>setReserves(r=>({...r,[key]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-amber-500"/>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-gray-300">Total reservas: <span className="text-orange-400 font-bold">{fmt(reservesTotal)}</span></p>
+                  <button onClick={saveReserves} disabled={savingReserves} className="px-3 py-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-lg text-xs font-medium">{savingReserves ? 'Salvando...' : '💾 Salvar reservas'}</button>
+                </div>
+                <p className="text-gray-600 text-[11px]">Salvo para {(() => { const {rm,ry} = reserveRefPeriod(); return `${months[rm-1]}/${ry}` })()} — editável a qualquer momento</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 {RECEIVE_VICTOR_CATEGORIES.map(([key, label]) => (
                   <div key={key} className="flex flex-col gap-1">
@@ -992,6 +1053,19 @@ export default function Financial() {
 
               {/* Detalhamento por categoria (Por cliente / Geral) — só na edição de sessão */}
               {editSession && breakdownPanel(editEntries)}
+
+              {/* Saldo disponível considerando as reservas do mês */}
+              <div className="border-t border-gray-800 pt-3 space-y-1 text-xs">
+                <div className="flex justify-between"><span className="text-gray-400">Saldo disponível bruto</span><span className="text-white">{fmt(saldoDisponivelBruto)}</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">(-) Reservas</span><span className="text-orange-400">-{fmt(reservesTotal)}</span></div>
+                <div className="flex justify-between font-semibold"><span className="text-gray-300">= Disponível para distribuir</span><span className="text-green-400">{fmt(disponivelParaDistribuir)}</span></div>
+                {reservesExceedSaldo && (
+                  <p className="text-red-400 text-xs pt-1">⚠️ Reservas excedem o saldo disponível</p>
+                )}
+                {!reservesExceedSaldo && receiveExcedeDisponivel && (
+                  <p className="text-red-400 text-xs pt-1">⚠️ Total a distribuir excede o disponível (após reservas) em {fmt(receiveTotal - disponivelParaDistribuir)}</p>
+                )}
+              </div>
 
               <p className="text-sm text-gray-300 border-t border-gray-800 pt-3">Total a distribuir: <span className="text-green-400 font-bold">{fmt(receiveTotal)}</span></p>
             </div>
