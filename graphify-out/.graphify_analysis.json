@@ -1,0 +1,418 @@
+{
+  "communities": {
+    "0": [
+      "ref_react",
+      "src_components_copybutton",
+      "src_components_copybutton_copybutton",
+      "src_components_layout",
+      "src_components_layout_companies",
+      "src_components_layout_layout",
+      "src_hooks_usenotifications",
+      "src_hooks_usenotifications_usenotifications",
+      "src_main",
+      "src_pages_billing",
+      "src_pages_billing_billing",
+      "src_pages_billing_months",
+      "src_pages_clientes",
+      "src_pages_clientes_clientes",
+      "src_pages_clientes_companies",
+      "src_pages_clientes_emptyform",
+      "src_pages_contracts",
+      "src_pages_contracts_contracts",
+      "src_pages_contracts_months",
+      "src_pages_demands",
+      "src_pages_demands_demands",
+      "src_pages_demands_status_colors",
+      "src_pages_demands_status_options",
+      "src_pages_emailrules",
+      "src_pages_emailrules_emailrules",
+      "src_pages_emailrules_rule_types",
+      "src_pages_financialrules",
+      "src_pages_financialrules_financialrules",
+      "src_pages_timeentries",
+      "src_pages_timeentries_decimaltohhmm",
+      "src_pages_timeentries_timeentries"
+    ],
+    "1": [
+      "dotenv",
+      "exceljs",
+      "imap_simple",
+      "mailparser",
+      "neondatabase_serverless",
+      "package_dependencies",
+      "package_dependencies_dotenv",
+      "package_dependencies_exceljs",
+      "package_dependencies_imap_simple",
+      "package_dependencies_mailparser",
+      "package_dependencies_neondatabase_serverless",
+      "package_dependencies_react",
+      "package_dependencies_react_dom",
+      "package_dependencies_react_router_dom",
+      "package_dependencies_xlsx",
+      "react",
+      "react_dom",
+      "react_router_dom",
+      "xlsx"
+    ],
+    "2": [
+      "autoprefixer",
+      "oxlint",
+      "package_devdependencies",
+      "package_devdependencies_autoprefixer",
+      "package_devdependencies_oxlint",
+      "package_devdependencies_postcss",
+      "package_devdependencies_tailwindcss",
+      "package_devdependencies_types_react",
+      "package_devdependencies_types_react_dom",
+      "package_devdependencies_vite",
+      "package_devdependencies_vitejs_plugin_react",
+      "postcss",
+      "tailwindcss",
+      "types_react",
+      "types_react_dom",
+      "vite",
+      "vitejs_plugin_react"
+    ],
+    "3": [
+      "src_pages_financial",
+      "src_pages_financial_empty_receive_cats",
+      "src_pages_financial_empty_victor_cats",
+      "src_pages_financial_finance_endpoints",
+      "src_pages_financial_financial",
+      "src_pages_financial_months",
+      "src_pages_financial_parsenotestoamounts",
+      "src_pages_financial_parsenotestoreceivecats",
+      "src_pages_financial_proportionalcats",
+      "src_pages_financial_receive_label_to_key",
+      "src_pages_financial_receive_victor_categories",
+      "src_pages_financial_receivecategorytotal",
+      "src_pages_financial_status_colors",
+      "src_pages_financial_victor_categories",
+      "src_pages_financial_victorcategorysummary",
+      "src_pages_financial_victorcategorytotal"
+    ],
+    "4": [
+      "package",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_dev",
+      "package_scripts_lint",
+      "package_scripts_preview",
+      "package_type",
+      "package_version"
+    ],
+    "5": [
+      "api_payables_victor",
+      "api_payables_victor_cats",
+      "api_payables_victor_consumir",
+      "api_payables_victor_estornarsessao",
+      "api_payables_victor_handler",
+      "api_payables_victor_ordenar",
+      "api_payables_victor_pagardistribuido",
+      "api_payables_victor_r2",
+      "api_payables_victor_recalcvictorparent"
+    ],
+    "6": [
+      "oxlintrc",
+      "oxlintrc_plugins",
+      "oxlintrc_rules",
+      "oxlintrc_rules_react_only_export_components",
+      "oxlintrc_rules_react_rules_of_hooks",
+      "oxlintrc_schema",
+      "ref_oxc",
+      "ref_warn"
+    ],
+    "7": [
+      "src_pages_dashboard",
+      "src_pages_dashboard_abertas",
+      "src_pages_dashboard_companies",
+      "src_pages_dashboard_dashboard",
+      "src_pages_dashboard_decimaltohhmm",
+      "src_pages_dashboard_financeblock",
+      "src_pages_dashboard_fmt",
+      "src_pages_dashboard_months"
+    ],
+    "8": [
+      "api_invoices",
+      "api_invoices_calcagenda",
+      "api_invoices_calccontrato",
+      "api_invoices_handler",
+      "api_invoices_paymentperiod",
+      "api_invoices_resolvepct",
+      "api_invoices_round"
+    ],
+    "9": [
+      "api_payable_payments",
+      "api_payable_payments_handler",
+      "api_payable_payments_periodfromdate",
+      "api_payable_payments_recalcparent",
+      "api_payable_payments_tables"
+    ],
+    "10": [
+      "api_time_entries",
+      "api_time_entries_calcular",
+      "api_time_entries_calcularhoras",
+      "api_time_entries_handler",
+      "api_time_entries_timetodecimal"
+    ],
+    "11": [
+      "api_clients",
+      "api_clients_handler",
+      "api_clients_parsecompanyids"
+    ],
+    "12": [
+      "api_cron_sync",
+      "api_cron_sync_fetchemailsfromaccount",
+      "api_cron_sync_handler"
+    ],
+    "13": [
+      "api_ingest_email",
+      "api_ingest_email_fetchemailsfromaccount",
+      "api_ingest_email_handler"
+    ],
+    "14": [
+      "api_receivables",
+      "api_receivables_handler",
+      "api_receivables_paymentperiod"
+    ],
+    "15": [
+      "vercel",
+      "vercel_crons",
+      "vercel_rewrites"
+    ],
+    "16": [
+      "api_admin",
+      "api_admin_handler"
+    ],
+    "17": [
+      "api_contract_months",
+      "api_contract_months_handler"
+    ],
+    "18": [
+      "api_contracts",
+      "api_contracts_handler"
+    ],
+    "19": [
+      "api_demands",
+      "api_demands_handler"
+    ],
+    "20": [
+      "api_email_rules",
+      "api_email_rules_handler"
+    ],
+    "21": [
+      "api_export_os",
+      "api_export_os_handler"
+    ],
+    "22": [
+      "api_finance",
+      "api_finance_handler"
+    ],
+    "23": [
+      "api_financial_rules",
+      "api_financial_rules_handler"
+    ],
+    "24": [
+      "api_migrate_contracts_deslocamento",
+      "api_migrate_contracts_deslocamento_handler"
+    ],
+    "25": [
+      "api_migrate_finance_origin",
+      "api_migrate_finance_origin_handler"
+    ],
+    "26": [
+      "api_migrate_financial_rules",
+      "api_migrate_financial_rules_handler"
+    ],
+    "27": [
+      "api_migrate_invoices",
+      "api_migrate_invoices_handler"
+    ],
+    "28": [
+      "api_migrate_payable_payments",
+      "api_migrate_payable_payments_handler"
+    ],
+    "29": [
+      "api_migrate_time_entries",
+      "api_migrate_time_entries_handler"
+    ],
+    "30": [
+      "api_payables_fabricio",
+      "api_payables_fabricio_handler"
+    ],
+    "31": [
+      "api_reclassify_demands",
+      "api_reclassify_demands_handler"
+    ],
+    "32": [
+      "api_setup_clients",
+      "api_setup_clients_handler"
+    ],
+    "33": [
+      "api_setup_db",
+      "api_setup_db_handler"
+    ],
+    "34": [
+      "api_victor_reserves",
+      "api_victor_reserves_handler"
+    ],
+    "35": [
+      "src_app",
+      "src_app_app"
+    ],
+    "36": [
+      "postcss_config"
+    ],
+    "37": [
+      "tailwind_config"
+    ],
+    "38": [
+      "vite_config"
+    ]
+  },
+  "cohesion": {
+    "0": 0.11397849462365592,
+    "1": 0.10526315789473684,
+    "2": 0.11764705882352941,
+    "3": 0.175,
+    "4": 0.2,
+    "5": 0.4166666666666667,
+    "6": 0.25,
+    "7": 0.35714285714285715,
+    "8": 0.5238095238095238,
+    "9": 0.7,
+    "10": 0.7,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 0.6666666666666666,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0
+  },
+  "gods": [
+    {
+      "id": "ref_react",
+      "label": "react",
+      "degree": 14
+    },
+    {
+      "id": "api_payables_victor_pagardistribuido",
+      "label": "pagarDistribuido()",
+      "degree": 6
+    },
+    {
+      "id": "src_pages_financial_financial",
+      "label": "Financial()",
+      "degree": 6
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "degree": 5
+    },
+    {
+      "id": "api_invoices_handler",
+      "label": "handler()",
+      "degree": 4
+    },
+    {
+      "id": "src_pages_dashboard_dashboard",
+      "label": "Dashboard()",
+      "degree": 4
+    },
+    {
+      "id": "oxlintrc_plugins",
+      "label": "plugins",
+      "degree": 3
+    },
+    {
+      "id": "oxlintrc_rules",
+      "label": "rules",
+      "degree": 3
+    },
+    {
+      "id": "api_invoices_resolvepct",
+      "label": "resolvePct()",
+      "degree": 3
+    },
+    {
+      "id": "api_invoices_calccontrato",
+      "label": "calcContrato()",
+      "degree": 3
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Layout()",
+      "target": "useNotifications()",
+      "source_files": [
+        "src/components/Layout.jsx",
+        "src/hooks/useNotifications.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "cross-file semantic connection"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `react` connect `main.jsx` to `Financial.jsx`, `.oxlintrc.json`, `Dashboard.jsx`?",
+      "why": "High betweenness centrality (0.043) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `dependencies` to `package.json`?",
+      "why": "High betweenness centrality (0.034) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `devDependencies` connect `devDependencies` to `package.json`?",
+      "why": "High betweenness centrality (0.031) - this node is a cross-community bridge."
+    },
+    {
+      "type": "isolated_nodes",
+      "question": "What connects `$schema`, `oxc`, `react/rules-of-hooks` to the rest of the system?",
+      "why": "49 weakly-connected nodes found - possible documentation gaps or missing edges."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `main.jsx` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.11397849462365592 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `dependencies` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `devDependencies` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.11764705882352941 - nodes in this community are weakly interconnected."
+    }
+  ]
+}
