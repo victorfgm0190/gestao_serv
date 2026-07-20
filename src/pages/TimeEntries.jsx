@@ -134,8 +134,8 @@ export default function TimeEntries() {
 
     // Split só sobre o líquido das horas de trabalho
     const net_trabalho = gross * (1 - imposto_pct)
-    // Fixo do Victor sobre a hora líquida (mesma base do backend).
-    const v_serv = h * victor_fixo * (1 - imposto_pct)
+    // Fixo sobre a hora bruta, limitado ao líquido do trabalho (mesma regra do backend).
+    const v_serv = Math.min(h * victor_fixo, Math.max(net_trabalho, 0))
     const restante = Math.max(net_trabalho - v_serv, 0)
     const v_lucro = restante * (victor_pct / 100)
     const fab = restante * (fabricio_pct / 100)

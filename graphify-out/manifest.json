@@ -70,8 +70,8 @@
     "semantic_hash": "b7202ebf404e15480abdc82f86c69a95"
   },
   "api/invoices.js": {
-    "mtime": 1784508121.200732,
-    "ast_hash": "6293f1a751c5cf1cf808ada723c2180d",
+    "mtime": 1784508384.3686652,
+    "ast_hash": "5cc2b161b19ddff964e888bf713fdff8",
     "semantic_hash": ""
   },
   "api/migrate-contracts-deslocamento.js": {
@@ -140,8 +140,8 @@
     "semantic_hash": "792ade670d8fbe390bc4435c10ae280a"
   },
   "api/time-entries.js": {
-    "mtime": 1784508276.6694865,
-    "ast_hash": "b3a1db09651085831fd634641b888b63",
+    "mtime": 1784508390.781393,
+    "ast_hash": "3863812af6be27bfec03220d63bccee0",
     "semantic_hash": ""
   },
   "api/victor-reserves.js": {
@@ -185,8 +185,8 @@
     "semantic_hash": "1bf6737499387a129411b53590a9074c"
   },
   "src/pages/Billing.jsx": {
-    "mtime": 1784508129.8687813,
-    "ast_hash": "ef9e71799623c597e5d1a6ecad148a30",
+    "mtime": 1784508394.8221843,
+    "ast_hash": "32a91b8d3feb5d5434483b31923ff2bd",
     "semantic_hash": ""
   },
   "src/pages/Clientes.jsx": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/pages/TimeEntries.jsx": {
-    "mtime": 1784508139.4411147,
-    "ast_hash": "d475bae2fb018efd90e8d9cad1f09614",
+    "mtime": 1784508401.1523094,
+    "ast_hash": "7cc6a0e806f4bdcd7d02aa9555c141c1",
     "semantic_hash": ""
   },
   "tailwind.config.js": {

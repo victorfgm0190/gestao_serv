@@ -80,9 +80,11 @@ export function calcAgenda(entries, rule, opts = {}) {
   const net = bruto - tax                            // líquido total
   // Deslocamento: 100% Victor, FORA do split — mas com imposto proporcional deduzido.
   const displacement_net = displacement_value * (1 - taxReal / 100)
-  // Fixo do Victor sobre a hora LÍQUIDA: o imposto já saiu do bruto, então cobrar
-  // o fixo sobre a hora cheia deixaria o imposto sem lastro quando fixo == valor/hora.
-  const victor_servico = total_hours * victor_fixo_hora * (1 - taxReal / 100)
+  // Fixo do Victor sobre a hora BRUTA, limitado ao líquido disponível. Sem o teto,
+  // quando o fixo iguala o valor/hora (fixo 85 x hora 85) Victor levaria os 850
+  // cheios de um bruto do qual o imposto já saiu, deixando-o sem lastro.
+  const pool_servico = Math.max(net - displacement_net, 0)
+  const victor_servico = Math.min(total_hours * victor_fixo_hora, pool_servico)
   // Só o serviço líquido (net - fixo - deslocamento líquido) é dividido Victor/Fabrício.
   const restante = Math.max(net - victor_servico - displacement_net, 0)
   const victor_lucro = restante * (victor_pct / 100)
