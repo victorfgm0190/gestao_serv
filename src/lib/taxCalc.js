@@ -27,9 +27,9 @@ export const INSS_RATE = 0.11
 
 const r2 = (v) => Math.round((Number(v) || 0) * 100) / 100
 
-// Seleciona a faixa da tabela conforme a receita bruta acumulada em 12 meses.
-function faixaFor(tabela, receita) {
-  return tabela.find(f => receita <= f.max) || tabela[tabela.length - 1]
+// Seleciona a faixa da tabela conforme a receita bruta acumulada em 12 meses (RBT12).
+function faixaFor(tabela, rbt12) {
+  return tabela.find(f => rbt12 <= f.max) || tabela[tabela.length - 1]
 }
 
 // INSS sobre o pró-labore (11% até o teto) — vale para todos os regimes.
@@ -39,18 +39,22 @@ export function calcINSS(prolabore_mensal) {
 }
 
 // Alíquota efetiva do Simples: (RBT12 × alíquota - dedução) / RBT12.
-export function aliquotaEfetiva(faixa, receita) {
-  if (!receita || receita <= 0) return 0
-  return (receita * faixa.rate - faixa.deduct) / receita
+export function aliquotaEfetiva(faixa, rbt12) {
+  if (!rbt12 || rbt12 <= 0) return 0
+  return (rbt12 * faixa.rate - faixa.deduct) / rbt12
 }
 
 // Cálculo principal. `faturamentoMes` = total de NF emitidas no mês.
+// A configuração informa o faturamento médio mensal; a RBT12 é estimada
+// como faturamento_medio_mensal × 12. A folha mensal (pró-labore + salários CLT)
+// serve ao Fator R — a razão é a mesma no mensal ou no anual, sem multiplicar por 12.
 // Retorna { regime, fatorR, anexo, itens:[{label,value}], das/inss/... , total }.
 export function calcularImpostos(settings, faturamentoMes) {
   const fat = Number(faturamentoMes) || 0
   const regime = settings?.regime || 'simples_iii'
-  const receita = Number(settings?.receita_bruta_12m) || 0
-  const folha = Number(settings?.folha_12m) || 0
+  const faturamentoMedioMensal = Number(settings?.faturamento_medio_mensal) || 0
+  const rbt12 = faturamentoMedioMensal * 12
+  const folhaMensal = (Number(settings?.prolabore_mensal) || 0) + (Number(settings?.salarios_mensal) || 0)
   const inss = calcINSS(settings?.prolabore_mensal)
 
   if (regime === 'lucro_presumido') {
@@ -87,12 +91,12 @@ export function calcularImpostos(settings, faturamentoMes) {
   let anexo = 'V'
   let fatorR = null
   if (regime === 'simples_iii') {
-    fatorR = receita > 0 ? folha / receita : 0
+    fatorR = faturamentoMedioMensal > 0 ? folhaMensal / faturamentoMedioMensal : 0
     if (fatorR >= 0.28) { tabela = SIMPLES_III; anexo = 'III' }
   }
 
-  const faixa = faixaFor(tabela, receita)
-  const aliq = aliquotaEfetiva(faixa, receita)
+  const faixa = faixaFor(tabela, rbt12)
+  const aliq = aliquotaEfetiva(faixa, rbt12)
   const das = r2(fat * aliq)
   const total = r2(das + inss)
   return {

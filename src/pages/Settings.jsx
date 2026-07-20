@@ -7,7 +7,7 @@ const REGIMES = [
   ['lucro_presumido', 'Lucro Presumido'],
 ]
 
-const EMPTY = { regime: 'simples_iii', receita_bruta_12m: '', folha_12m: '', prolabore_mensal: '', iss_percent: '5' }
+const EMPTY = { regime: 'simples_iii', faturamento_medio_mensal: '', prolabore_mensal: '', salarios_mensal: '', iss_percent: '5' }
 
 export default function Settings() {
   const { activeCompany } = useOutletContext()
@@ -29,9 +29,9 @@ export default function Settings() {
         const s = (v) => (v != null && parseFloat(v)) ? String(parseFloat(v)) : ''
         setForm({
           regime: data.regime || 'simples_iii',
-          receita_bruta_12m: s(data.receita_bruta_12m),
-          folha_12m: s(data.folha_12m),
+          faturamento_medio_mensal: s(data.faturamento_medio_mensal),
           prolabore_mensal: s(data.prolabore_mensal),
+          salarios_mensal: s(data.salarios_mensal),
           iss_percent: data.iss_percent != null ? String(parseFloat(data.iss_percent)) : '5',
         })
       } else {
@@ -51,9 +51,9 @@ export default function Settings() {
         body: JSON.stringify({
           company_id: activeCompany.id,
           regime: form.regime,
-          receita_bruta_12m: parseFloat(form.receita_bruta_12m) || 0,
-          folha_12m: parseFloat(form.folha_12m) || 0,
+          faturamento_medio_mensal: parseFloat(form.faturamento_medio_mensal) || 0,
           prolabore_mensal: parseFloat(form.prolabore_mensal) || 0,
+          salarios_mensal: parseFloat(form.salarios_mensal) || 0,
           iss_percent: parseFloat(form.iss_percent) || 0,
         }),
       })
@@ -90,23 +90,21 @@ export default function Settings() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Receita bruta últimos 12 meses (R$)</label>
-            <input type="number" placeholder="0,00" value={form.receita_bruta_12m} onChange={set('receita_bruta_12m')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-            <p className="text-gray-600 text-[11px]">Usada para achar a faixa do Simples (RBT12).</p>
+            <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Faturamento médio mensal (R$)</label>
+            <input type="number" placeholder="0,00" value={form.faturamento_medio_mensal} onChange={set('faturamento_medio_mensal')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+            <p className="text-gray-600 text-[11px]">Informe o faturamento do último mês. O sistema estima os 12 meses automaticamente.</p>
           </div>
-
-          {form.regime === 'simples_iii' && (
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Folha últimos 12 meses (R$)</label>
-              <input type="number" placeholder="0,00" value={form.folha_12m} onChange={set('folha_12m')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <p className="text-gray-600 text-[11px]">Salários + pró-labore + encargos. Usada no Fator R (≥ 28% → Anexo III, senão Anexo V).</p>
-            </div>
-          )}
 
           <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Pró-labore mensal (R$)</label>
             <input type="number" placeholder="0,00" value={form.prolabore_mensal} onChange={set('prolabore_mensal')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-            <p className="text-gray-600 text-[11px]">Base do INSS (11% até o teto).</p>
+            <p className="text-gray-600 text-[11px]">Usado para calcular o Fator R e o INSS.</p>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Salários mensais (CLT) (R$)</label>
+            <input type="number" placeholder="0,00" value={form.salarios_mensal} onChange={set('salarios_mensal')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+            <p className="text-gray-600 text-[11px]">Total de salários CLT pagos no mês. Some ao pró-labore na folha.</p>
           </div>
 
           {isLucro && (
