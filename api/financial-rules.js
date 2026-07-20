@@ -1,5 +1,12 @@
 import { neon } from '@neondatabase/serverless'
 
+// Split cadastrado. Não usar `|| 50`: 0 é um split legítimo (cliente 100/0)
+// e seria gravado como 50%.
+function splitPct(value, fallback) {
+  const n = parseFloat(value)
+  return isNaN(n) ? fallback : n
+}
+
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
 
@@ -48,8 +55,8 @@ export default async function handler(req, res) {
           ${victor_fixed_per_hour || null},
           ${has_fuel || false},
           ${fuel_value || null},
-          ${remainder_victor_pct || 50},
-          ${remainder_fabricio_pct || 50},
+          ${splitPct(remainder_victor_pct, 50)},
+          ${splitPct(remainder_fabricio_pct, 50)},
           ${tipo || 'hora'}
         ) RETURNING *
       `
@@ -80,8 +87,8 @@ export default async function handler(req, res) {
           victor_fixed_per_hour = ${victor_fixed_per_hour || null},
           has_fuel = ${has_fuel || false},
           fuel_value = ${fuel_value || null},
-          remainder_victor_pct = ${remainder_victor_pct || 50},
-          remainder_fabricio_pct = ${remainder_fabricio_pct || 50},
+          remainder_victor_pct = ${splitPct(remainder_victor_pct, 50)},
+          remainder_fabricio_pct = ${splitPct(remainder_fabricio_pct, 50)},
           tipo = ${tipo || 'hora'}
         WHERE id = ${id}
         RETURNING *

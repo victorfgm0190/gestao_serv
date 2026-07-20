@@ -1,5 +1,12 @@
 import { neon } from '@neondatabase/serverless'
 
+// Split cadastrado. Não usar `|| 50`: um split legítimo de 0% (cliente 100/0)
+// é falsy e viraria 50%, pagando Fabrício indevidamente.
+function splitPct(value, fallback) {
+  const n = parseFloat(value)
+  return isNaN(n) ? fallback : n
+}
+
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
 
@@ -30,8 +37,8 @@ export default async function handler(req, res) {
       const net = base - tax
       const victor_fixo = parseFloat(c.victor_fixed) || 0
       const restante = Math.max(net - victor_fixo, 0)
-      const victor_lucro = restante * (parseFloat(c.remainder_victor_pct) || 50) / 100
-      const fabricio = restante * (parseFloat(c.remainder_fabricio_pct) || 50) / 100
+      const victor_lucro = restante * splitPct(c.remainder_victor_pct, 50) / 100
+      const fabricio = restante * splitPct(c.remainder_fabricio_pct, 50) / 100
       const diff = inv - base
       const victor_total = victor_fixo + victor_lucro + diff
 

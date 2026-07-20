@@ -4,6 +4,13 @@ import CopyButton from '../components/CopyButton'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
+// Split cadastrado. Não usar `|| 50`: um split legítimo de 0% (cliente 100/0)
+// é falsy e viraria 50%, divergindo do cálculo do backend.
+const splitPct = (value, fallback) => {
+  const n = parseFloat(value)
+  return isNaN(n) ? fallback : n
+}
+
 const SPLIT_MODE_LABEL = {
   percent_victor: '% Victor primeiro',
   fixed_victor: 'Fixo Victor primeiro',
@@ -473,9 +480,8 @@ export default function Billing() {
                   const base = parseFloat(inst?.value) || 0
                   const taxReal = parseFloat(contractForm.tax_percentage_used) || 0
                   const taxClient = parseFloat(contractForm.tax_client_percent_used) || 0
-                  // Split de 0% é legítimo (cliente 100/0) — não usar `|| 50`, que o converteria em 50%.
-                  const victorPct = isNaN(parseFloat(c.remainder_victor_pct)) ? 50 : parseFloat(c.remainder_victor_pct)
-                  const fabPct = isNaN(parseFloat(c.remainder_fabricio_pct)) ? 50 : parseFloat(c.remainder_fabricio_pct)
+                  const victorPct = splitPct(c.remainder_victor_pct, 50)
+                  const fabPct = splitPct(c.remainder_fabricio_pct, 50)
                   const impostoReal = base * taxReal / 100
                   const net = base - impostoReal
                   const mode = c.projeto_split_mode || 'direct_split'
@@ -563,8 +569,8 @@ export default function Billing() {
 
                 const base = parseFloat(c.contract_value) || 0
                 const victorFixo = parseFloat(c.victor_fixed) || 0
-                const victorPct = parseFloat(c.remainder_victor_pct) || 50
-                const fabPct = parseFloat(c.remainder_fabricio_pct) || 50
+                const victorPct = splitPct(c.remainder_victor_pct, 50)
+                const fabPct = splitPct(c.remainder_fabricio_pct, 50)
                 const taxReal = parseFloat(contractForm.tax_percentage_used) || 0
                 const nf = parseFloat(contractForm.invoice_value) || base
                 const impostoReal = nf * taxReal / 100
@@ -760,8 +766,8 @@ export default function Billing() {
                 const totalHours = selected.reduce((s,e)=>s+(parseFloat(e.hours)||0),0)
                 const hourlyRate = parseFloat(agendaRule.hourly_rate) || parseFloat(selected.find(e=>e.hourly_rate)?.hourly_rate) || 0
                 const victorFixoHora = parseFloat(agendaRule.victor_fixed_per_hour) || 0
-                const victorPct = parseFloat(agendaRule.remainder_victor_pct) || 50
-                const fabPct = parseFloat(agendaRule.remainder_fabricio_pct) || 50
+                const victorPct = splitPct(agendaRule.remainder_victor_pct, 50)
+                const fabPct = splitPct(agendaRule.remainder_fabricio_pct, 50)
                 const taxReal = parseFloat(agendaForm.tax_percentage_used) || 0
                 const taxClient = parseFloat(agendaForm.tax_client_percent_used) || 0
                 // Serviço × deslocamento (gross_value já inclui o deslocamento faturado).

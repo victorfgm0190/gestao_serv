@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
+// Split cadastrado. Não usar `|| 50`: um split legítimo de 0% (cliente 100/0)
+// é falsy e viraria 50%, divergindo do cálculo do backend.
+const splitPct = (value, fallback) => {
+  const n = parseFloat(value)
+  return isNaN(n) ? fallback : n
+}
+
 function decimalToHHMM(decimal) {
   if (!decimal && decimal !== 0) return '--:--'
   const totalMinutes = Math.round(parseFloat(decimal) * 60)
@@ -92,8 +99,8 @@ export default function TimeEntries() {
     const valor_hora = parseFloat(rule.hourly_rate) || 0
     const imposto_pct = rule.has_tax ? (parseFloat(rule.tax_percentage) || 0) / 100 : 0
     const victor_fixo = parseFloat(rule.victor_fixed_per_hour) || 0
-    const victor_pct = parseFloat(rule.remainder_victor_pct) || 50
-    const fabricio_pct = parseFloat(rule.remainder_fabricio_pct) || 50
+    const victor_pct = splitPct(rule.remainder_victor_pct, 50)
+    const fabricio_pct = splitPct(rule.remainder_fabricio_pct, 50)
 
     const deslocamento_tipo = contrato?.deslocamento_tipo || 'nao_cobrado'
     const deslocamento_valor_hora = parseFloat(contrato?.deslocamento_valor_hora) || 0

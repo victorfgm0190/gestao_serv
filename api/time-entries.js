@@ -1,5 +1,12 @@
 import { neon } from '@neondatabase/serverless'
 
+// Split cadastrado. Não usar `|| 50`: um split legítimo de 0% (cliente 100/0)
+// é falsy e viraria 50%, pagando Fabrício indevidamente.
+function splitPct(value, fallback) {
+  const n = parseFloat(value)
+  return isNaN(n) ? fallback : n
+}
+
 function timeToDecimal(time) {
   if (!time) return 0
   const [h, m] = time.split(':').map(Number)
@@ -62,8 +69,8 @@ function calcular(horas, regra, horas_deslocamento = 0, contrato = null, despesa
   const victor_fixo = parseFloat(regra.victor_fixed_per_hour) || 0
   const victor_servico = hours * victor_fixo
   const restante = Math.max(net_trabalho - victor_servico, 0)
-  const victor_lucro = restante * (parseFloat(regra.remainder_victor_pct) || 50) / 100
-  const fabricio = restante * (parseFloat(regra.remainder_fabricio_pct) || 50) / 100
+  const victor_lucro = restante * splitPct(regra.remainder_victor_pct, 50) / 100
+  const fabricio = restante * splitPct(regra.remainder_fabricio_pct, 50) / 100
   const victor_total = victor_desloc + victor_desloc_despesas + victor_servico + victor_lucro
 
   return {

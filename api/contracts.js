@@ -1,5 +1,12 @@
 import { neon } from '@neondatabase/serverless'
 
+// Split cadastrado. Não usar `|| 50`: 0 é um split legítimo (cliente 100/0)
+// e seria gravado como 50%.
+function splitPct(value, fallback) {
+  const n = parseFloat(value)
+  return isNaN(n) ? fallback : n
+}
+
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
 
@@ -30,7 +37,7 @@ export default async function handler(req, res) {
     try {
       const result = await sql`
         INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id, projeto_split_mode, projeto_victor_pct, projeto_victor_fixed, projeto_expenses)
-        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value || 0}, ${victor_fixed || 0}, ${remainder_victor_pct || 50}, ${remainder_fabricio_pct || 50}, ${has_tax || false}, ${tax_percentage || null}, ${tax_client_percent || 0}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0}, ${displacement_hours || 0}, ${cnpj || null}, ${financial_rule_id || null}, ${projeto_split_mode || 'direct_split'}, ${projeto_victor_pct || 0}, ${projeto_victor_fixed || 0}, ${projeto_expenses || 0})
+        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value || 0}, ${victor_fixed || 0}, ${splitPct(remainder_victor_pct, 50)}, ${splitPct(remainder_fabricio_pct, 50)}, ${has_tax || false}, ${tax_percentage || null}, ${tax_client_percent || 0}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0}, ${displacement_hours || 0}, ${cnpj || null}, ${financial_rule_id || null}, ${projeto_split_mode || 'direct_split'}, ${projeto_victor_pct || 0}, ${projeto_victor_fixed || 0}, ${projeto_expenses || 0})
         RETURNING *
       `
       return res.status(201).json({ contract: result[0] })

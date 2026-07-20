@@ -27,11 +27,11 @@ function splitPct(value, fallback) {
 }
 
 // CONTRATO FIXO (billing_type = 'contract' / 'mensal')
-function calcContrato(contract, opts = {}) {
+export function calcContrato(contract, opts = {}) {
   const base = parseFloat(contract.contract_value) || 0
   const victor_fixo = parseFloat(contract.victor_fixed) || 0
-  const victor_pct = parseFloat(contract.remainder_victor_pct) || 50
-  const fab_pct = parseFloat(contract.remainder_fabricio_pct) || 50
+  const victor_pct = splitPct(contract.remainder_victor_pct, 50)
+  const fab_pct = splitPct(contract.remainder_fabricio_pct, 50)
   const taxClient = resolvePct(opts.tax_client_percent_used, contract.tax_client_percent)
   const taxReal = resolvePct(opts.tax_percentage_used, contract.has_tax ? contract.tax_percentage : 0)
 
@@ -58,12 +58,12 @@ function calcContrato(contract, opts = {}) {
 }
 
 // CONTRATO POR HORA (billing_type = 'hora' / 'agenda')
-function calcAgenda(entries, rule, opts = {}) {
+export function calcAgenda(entries, rule, opts = {}) {
   const total_hours = entries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
   const valor_hora = parseFloat(rule.hourly_rate) || 0
   const victor_fixo_hora = parseFloat(rule.victor_fixed_per_hour) || 0
-  const victor_pct = parseFloat(rule.remainder_victor_pct) || 50
-  const fab_pct = parseFloat(rule.remainder_fabricio_pct) || 50
+  const victor_pct = splitPct(rule.remainder_victor_pct, 50)
+  const fab_pct = splitPct(rule.remainder_fabricio_pct, 50)
   const taxReal = resolvePct(opts.tax_percentage_used, rule.has_tax ? rule.tax_percentage : 0)
   const taxClient = resolvePct(opts.tax_client_percent_used, 0)
 

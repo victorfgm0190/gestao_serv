@@ -169,10 +169,21 @@
       "norm_label": "contract-months.js"
     },
     {
+      "label": "splitPct()",
+      "file_type": "code",
+      "source_file": "api/contract-months.js",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "api_contract_months_splitpct",
+      "community": 17,
+      "community_name": "contract-months.js",
+      "norm_label": "splitpct()"
+    },
+    {
       "label": "handler()",
       "file_type": "code",
       "source_file": "api/contract-months.js",
-      "source_location": "L3",
+      "source_location": "L10",
       "_origin": "ast",
       "id": "api_contract_months_handler",
       "community": 17,
@@ -191,10 +202,21 @@
       "norm_label": "contracts.js"
     },
     {
+      "label": "splitPct()",
+      "file_type": "code",
+      "source_file": "api/contracts.js",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "api_contracts_splitpct",
+      "community": 18,
+      "community_name": "contracts.js",
+      "norm_label": "splitpct()"
+    },
+    {
       "label": "handler()",
       "file_type": "code",
       "source_file": "api/contracts.js",
-      "source_location": "L3",
+      "source_location": "L10",
       "_origin": "ast",
       "id": "api_contracts_handler",
       "community": 18,
@@ -334,10 +356,21 @@
       "norm_label": "financial-rules.js"
     },
     {
+      "label": "splitPct()",
+      "file_type": "code",
+      "source_file": "api/financial-rules.js",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "api_financial_rules_splitpct",
+      "community": 23,
+      "community_name": "financial-rules.js",
+      "norm_label": "splitpct()"
+    },
+    {
       "label": "handler()",
       "file_type": "code",
       "source_file": "api/financial-rules.js",
-      "source_location": "L3",
+      "source_location": "L10",
       "_origin": "ast",
       "id": "api_financial_rules_handler",
       "community": 23,
@@ -950,10 +983,21 @@
       "norm_label": "time-entries.js"
     },
     {
+      "label": "splitPct()",
+      "file_type": "code",
+      "source_file": "api/time-entries.js",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "api_time_entries_splitpct",
+      "community": 10,
+      "community_name": "time-entries.js",
+      "norm_label": "splitpct()"
+    },
+    {
       "label": "timeToDecimal()",
       "file_type": "code",
       "source_file": "api/time-entries.js",
-      "source_location": "L3",
+      "source_location": "L10",
       "_origin": "ast",
       "id": "api_time_entries_timetodecimal",
       "community": 10,
@@ -964,7 +1008,7 @@
       "label": "calcularHoras()",
       "file_type": "code",
       "source_file": "api/time-entries.js",
-      "source_location": "L9",
+      "source_location": "L16",
       "_origin": "ast",
       "id": "api_time_entries_calcularhoras",
       "community": 10,
@@ -975,7 +1019,7 @@
       "label": "calcular()",
       "file_type": "code",
       "source_file": "api/time-entries.js",
-      "source_location": "L21",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "api_time_entries_calcular",
       "community": 10,
@@ -986,7 +1030,7 @@
       "label": "handler()",
       "file_type": "code",
       "source_file": "api/time-entries.js",
-      "source_location": "L80",
+      "source_location": "L87",
       "_origin": "ast",
       "id": "api_time_entries_handler",
       "community": 10,
@@ -1022,8 +1066,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "package",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "package.json"
     },
     {
@@ -1033,8 +1077,8 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "package_name",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "name"
     },
     {
@@ -1044,8 +1088,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "package_private",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "private"
     },
     {
@@ -1055,8 +1099,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "package_version",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "version"
     },
     {
@@ -1066,8 +1110,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "package_type",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "type"
     },
     {
@@ -1077,8 +1121,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "package_scripts",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "scripts"
     },
     {
@@ -1088,8 +1132,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "package_scripts_dev",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "dev"
     },
     {
@@ -1099,8 +1143,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "package_scripts_build",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "build"
     },
     {
@@ -1110,8 +1154,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "package_scripts_lint",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "lint"
     },
     {
@@ -1121,8 +1165,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "package_scripts_preview",
-      "community": 4,
-      "community_name": "package.json",
+      "community": 2,
+      "community_name": "devDependencies",
       "norm_label": "preview"
     },
     {
@@ -1561,8 +1605,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_copybutton",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 3,
+      "community_name": "Financial.jsx",
       "norm_label": "copybutton.jsx"
     },
     {
@@ -1572,8 +1616,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_copybutton_copybutton",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 3,
+      "community_name": "Financial.jsx",
       "norm_label": "copybutton()"
     },
     {
@@ -1649,8 +1693,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_billing",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 3,
+      "community_name": "Financial.jsx",
       "norm_label": "billing.jsx"
     },
     {
@@ -1660,30 +1704,41 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_billing_months",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 3,
+      "community_name": "Financial.jsx",
       "norm_label": "months"
+    },
+    {
+      "label": "splitPct()",
+      "file_type": "code",
+      "source_file": "src/pages/Billing.jsx",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "src_pages_billing_splitpct",
+      "community": 3,
+      "community_name": "Financial.jsx",
+      "norm_label": "splitpct()"
     },
     {
       "label": "SPLIT_MODE_LABEL",
       "file_type": "code",
       "source_file": "src/pages/Billing.jsx",
-      "source_location": "L7",
+      "source_location": "L14",
       "_origin": "ast",
       "id": "src_pages_billing_split_mode_label",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 3,
+      "community_name": "Financial.jsx",
       "norm_label": "split_mode_label"
     },
     {
       "label": "Billing()",
       "file_type": "code",
       "source_file": "src/pages/Billing.jsx",
-      "source_location": "L14",
+      "source_location": "L21",
       "_origin": "ast",
       "id": "src_pages_billing_billing",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 3,
+      "community_name": "Financial.jsx",
       "norm_label": "billing()"
     },
     {
@@ -2160,10 +2215,21 @@
       "norm_label": "timeentries.jsx"
     },
     {
+      "label": "splitPct()",
+      "file_type": "code",
+      "source_file": "src/pages/TimeEntries.jsx",
+      "source_location": "L6",
+      "_origin": "ast",
+      "id": "src_pages_timeentries_splitpct",
+      "community": 0,
+      "community_name": "main.jsx",
+      "norm_label": "splitpct()"
+    },
+    {
       "label": "decimalToHHMM()",
       "file_type": "code",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L4",
+      "source_location": "L11",
       "_origin": "ast",
       "id": "src_pages_timeentries_decimaltohhmm",
       "community": 0,
@@ -2174,7 +2240,7 @@
       "label": "TimeEntries()",
       "file_type": "code",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L12",
+      "source_location": "L19",
       "_origin": "ast",
       "id": "src_pages_timeentries_timeentries",
       "community": 0,
@@ -2265,8 +2331,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "skill.md"
     },
     {
@@ -2276,8 +2342,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_graphify",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "/graphify"
     },
     {
@@ -2287,8 +2353,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_usage",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "usage"
     },
     {
@@ -2298,8 +2364,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_what_graphify_is_for",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "what graphify is for"
     },
     {
@@ -2474,8 +2540,8 @@
       "source_location": "L648",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_interpreter_guard_for_subcommands",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "interpreter guard for subcommands"
     },
     {
@@ -2485,8 +2551,8 @@
       "source_location": "L666",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_for_update_and_cluster_only",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "for --update and --cluster-only"
     },
     {
@@ -2496,8 +2562,8 @@
       "source_location": "L672",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_for_graphify_query",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "for /graphify query"
     },
     {
@@ -2507,8 +2573,8 @@
       "source_location": "L684",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_for_graphify_add_and_watch",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "for /graphify add and --watch"
     },
     {
@@ -2518,8 +2584,8 @@
       "source_location": "L690",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_for_the_commit_hook_and_native_claude_md_integration",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "for the commit hook and native claude.md integration"
     },
     {
@@ -2529,8 +2595,8 @@
       "source_location": "L696",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_troubleshooting",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "troubleshooting"
     },
     {
@@ -2540,8 +2606,8 @@
       "source_location": "L698",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_powershell_5_1_vertical_scrolling_stops_working",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "powershell 5.1: vertical scrolling stops working"
     },
     {
@@ -2551,8 +2617,8 @@
       "source_location": "L709",
       "_origin": "ast",
       "id": "claude_skills_graphify_skill_honesty_rules",
-      "community": 42,
-      "community_name": "/graphify",
+      "community": 41,
+      "community_name": "What You Must Do When Invoked",
       "norm_label": "honesty rules"
     },
     {
@@ -3755,7 +3821,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/contract-months.js",
-      "source_location": "L3",
+      "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_contract_months",
@@ -3765,12 +3831,58 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "api/contract-months.js",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_contract_months",
+      "target": "api_contract_months_splitpct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/contract-months.js",
+      "source_location": "L40",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_contract_months_handler",
+      "target": "api_contract_months_splitpct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "api/contracts.js",
-      "source_location": "L3",
+      "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_contracts",
       "target": "api_contracts_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/contracts.js",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_contracts",
+      "target": "api_contracts_splitpct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/contracts.js",
+      "source_location": "L40",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_contracts_handler",
+      "target": "api_contracts_splitpct",
       "confidence_score": 1.0
     },
     {
@@ -3855,11 +3967,34 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/financial-rules.js",
-      "source_location": "L3",
+      "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_financial_rules",
       "target": "api_financial_rules_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/financial-rules.js",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_financial_rules",
+      "target": "api_financial_rules_splitpct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/financial-rules.js",
+      "source_location": "L58",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_financial_rules_handler",
+      "target": "api_financial_rules_splitpct",
       "confidence_score": 1.0
     },
     {
@@ -4041,6 +4176,30 @@
       "_origin": "ast",
       "source": "api_invoices_calcprojeto",
       "target": "api_invoices_resolvepct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/invoices.js",
+      "source_location": "L65",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_invoices_calcagenda",
+      "target": "api_invoices_splitpct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/invoices.js",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_invoices_calccontrato",
+      "target": "api_invoices_splitpct",
       "confidence_score": 1.0
     },
     {
@@ -4525,7 +4684,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/time-entries.js",
-      "source_location": "L21",
+      "source_location": "L28",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_time_entries",
@@ -4536,7 +4695,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/time-entries.js",
-      "source_location": "L9",
+      "source_location": "L16",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_time_entries",
@@ -4547,7 +4706,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/time-entries.js",
-      "source_location": "L80",
+      "source_location": "L87",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_time_entries",
@@ -4558,7 +4717,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/time-entries.js",
-      "source_location": "L3",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_time_entries",
+      "target": "api_time_entries_splitpct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/time-entries.js",
+      "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_time_entries",
@@ -4570,7 +4740,19 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "api/time-entries.js",
-      "source_location": "L11",
+      "source_location": "L72",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_time_entries_calcular",
+      "target": "api_time_entries_splitpct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/time-entries.js",
+      "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_time_entries_calcularhoras",
@@ -4582,7 +4764,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "api/time-entries.js",
-      "source_location": "L116",
+      "source_location": "L123",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_time_entries_handler",
@@ -4594,7 +4776,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "api/time-entries.js",
-      "source_location": "L136",
+      "source_location": "L143",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_time_entries_handler",
@@ -5507,7 +5689,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Billing.jsx",
-      "source_location": "L14",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_billing",
@@ -5529,11 +5711,34 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Billing.jsx",
-      "source_location": "L7",
+      "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_billing",
       "target": "src_pages_billing_split_mode_label",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Billing.jsx",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_billing",
+      "target": "src_pages_billing_splitpct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Billing.jsx",
+      "source_location": "L483",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_billing_billing",
+      "target": "src_pages_billing_splitpct",
       "confidence_score": 1.0
     },
     {
@@ -6045,7 +6250,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L4",
+      "source_location": "L11",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -6056,7 +6261,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L12",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_timeentries",
+      "target": "src_pages_timeentries_splitpct",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/TimeEntries.jsx",
+      "source_location": "L19",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -6068,7 +6284,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L348",
+      "source_location": "L355",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries_timeentries",
@@ -7188,5 +7404,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "ffff024740b19e260543c31d060ff6e0a28109c8"
+  "built_at_commit": "b0bc89e04f93cf5a61c24ce5dddaae68a82238e6"
 }
