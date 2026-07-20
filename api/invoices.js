@@ -183,7 +183,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, client_id, contract_id, month, year, invoice_number, billing_type, time_entry_ids, installment_id, notes, tax_percentage_used, tax_client_percent_used, payment_date } = req.body
+    const { company_id, client_id, contract_id, month, year, invoice_number, billing_type, time_entry_ids, installment_id, notes, tax_percentage_used, tax_client_percent_used, payment_date, emission_date } = req.body
     try {
       let calc
       if (billing_type === 'projeto') {
@@ -221,8 +221,8 @@ export default async function handler(req, res) {
 
       const writes = [
         sql`
-          INSERT INTO invoices (id, company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date, receivable_id)
-          VALUES (${invId}, ${company_id}, ${client_id}, ${contract_id||null}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null}, ${recId})
+          INSERT INTO invoices (id, company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date, emission_date, receivable_id)
+          VALUES (${invId}, ${company_id}, ${client_id}, ${contract_id||null}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null}, ${emission_date||null}, ${recId})
           RETURNING *
         `,
         sql`
@@ -298,7 +298,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PUT') {
-    const { id, invoice_number, notes, billing_type, time_entry_ids, installment_id, contract_id, client_id, tax_percentage_used, tax_client_percent_used, payment_date } = req.body
+    const { id, invoice_number, notes, billing_type, time_entry_ids, installment_id, contract_id, client_id, tax_percentage_used, tax_client_percent_used, payment_date, emission_date } = req.body
     try {
       const invoices = await sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`
       if (!invoices.length) return res.status(404).json({ error: 'Fatura não encontrada' })
@@ -333,6 +333,8 @@ export default async function handler(req, res) {
 
       // payment_date: usa o enviado; se a chave não veio no body, mantém o atual.
       const newPaymentDate = payment_date !== undefined ? (payment_date || null) : inv.payment_date
+      // emission_date: mesma regra — só sobrescreve se a chave veio no body.
+      const newEmissionDate = emission_date !== undefined ? (emission_date || null) : inv.emission_date
       const { pmonth, pyear } = paymentPeriod(newPaymentDate, inv.month, inv.year)
 
       const updated = await sql`
@@ -347,7 +349,8 @@ export default async function handler(req, res) {
           victor_total = ${calc.victor_total},
           fabricio_total = ${calc.fabricio_total},
           notes = ${notes || null},
-          payment_date = ${newPaymentDate}
+          payment_date = ${newPaymentDate},
+          emission_date = ${newEmissionDate}
         WHERE id = ${id}
         RETURNING *
       `

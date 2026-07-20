@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "api/invoices.js": {
-    "mtime": 1784511552.516714,
-    "ast_hash": "f0fd699c4ca38979bdd132c4b2ab1517",
+    "mtime": 1784571540.937943,
+    "ast_hash": "bab2cfc03751829a80a69ca600a599a5",
     "semantic_hash": ""
   },
   "api/payable-payments.js": {
@@ -135,8 +135,8 @@
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
-    "mtime": 1784511594.2612343,
-    "ast_hash": "2ff705cd4ddd1b12a3576b080aa6b6aa",
+    "mtime": 1784571732.0206392,
+    "ast_hash": "3791a058d5307df536f6a2b27ebb10e2",
     "semantic_hash": ""
   },
   "src/pages/Clientes.jsx": {
@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1784510488.2734983,
-    "ast_hash": "66dce910456fb9ded45b8a0390ffcd0b",
+    "mtime": 1784571155.8078754,
+    "ast_hash": "291a61cce2c0582e222f4385d5fdaded",
     "semantic_hash": ""
   },
   "README.md": {
@@ -355,13 +355,13 @@
     "semantic_hash": ""
   },
   "api/migrate-settings.js": {
-    "mtime": 1784568747.3504753,
-    "ast_hash": "a6a86e851ab48aa56125370837055120",
+    "mtime": 1784571547.0489118,
+    "ast_hash": "c011f8b77747b91a92c44d6fa66b436e",
     "semantic_hash": ""
   },
   "api/settings.js": {
-    "mtime": 1784568736.625152,
-    "ast_hash": "c628aa9294648edd60f5ac2341bf92cb",
+    "mtime": 1784571601.2805939,
+    "ast_hash": "dea5277a8dfd40aed0697bdc6dd0dfb8",
     "semantic_hash": ""
   },
   "src/lib/taxCalc.js": {

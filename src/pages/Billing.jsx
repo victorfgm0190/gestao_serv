@@ -36,8 +36,9 @@ export default function Billing() {
   const [agendaRule, setAgendaRule] = useState(null)
   const [installments, setInstallments] = useState([])
   const [selectedInstallment, setSelectedInstallment] = useState('')
-  const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
-  const [agendaForm, setAgendaForm] = useState({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+  const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', emission_date: todayBR(), payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+  const [agendaForm, setAgendaForm] = useState({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', emission_date: todayBR(), payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+  const [fiscalInfo, setFiscalInfo] = useState('')
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
   useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth, filterYear])
@@ -173,6 +174,45 @@ export default function Billing() {
     return touched
   }
 
+  // Mês/ano de emissão de uma fatura: usa emission_date quando existe,
+  // senão cai na competência (month/year da própria fatura).
+  function invEmissionYM(inv) {
+    if (inv.emission_date) {
+      const [y, m] = String(inv.emission_date).slice(0, 10).split('-').map(Number)
+      if (y && m) return { y, m }
+    }
+    return { y: inv.year, m: inv.month }
+  }
+
+  // Só Lumen (company_id=1): após faturar, soma o faturamento (valor NF) do mês
+  // de emissão e atualiza o pró-labore fiscal (28% do faturamento), preservando
+  // regime, salários e ISS já cadastrados.
+  async function autoUpdateFiscalSettings(emissionDate) {
+    if (activeCompany.id !== 1) return
+    const ed = (emissionDate || todayBR()).slice(0, 10)
+    const [y, m] = ed.split('-').map(Number)
+    if (!y || !m) return
+    try {
+      const res = await fetch(`/api/invoices?company_id=1&year=${y}`)
+      const list = (await res.json()).invoices || []
+      const faturamento_mes = list.reduce((s, inv) => {
+        const ym = invEmissionYM(inv)
+        return ym.y === y && ym.m === m ? s + (parseFloat(inv.invoice_value) || 0) : s
+      }, 0)
+      const prolabore_novo = Math.round(faturamento_mes * 0.28 * 100) / 100
+      const faturamento_medio_mensal = faturamento_mes
+      const up = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_id: 1, faturamento_medio_mensal, prolabore_mensal: prolabore_novo }),
+      })
+      if (up.ok) {
+        const fmtBR = v => `R$ ${parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        setFiscalInfo(`Pró-labore atualizado para ${fmtBR(prolabore_novo)} com base no faturamento de ${fmtBR(faturamento_mes)} em ${months[m-1]}/${y}`)
+      }
+    } catch (e) { console.error(e) }
+  }
+
   async function saveContractInvoice() {
     const contract = contracts.find(c => String(c.id) === String(contractForm.contract_id))
     if (!contract) return
@@ -201,6 +241,7 @@ export default function Billing() {
       setInstallments([])
       setSelectedInstallment('')
       fetchAll()
+      autoUpdateFiscalSettings(contractForm.emission_date)
       if (data.breakdown) {
         const b = data.breakdown
         alert(`Fatura ${isEdit ? 'atualizada' : 'gerada'}!\n\nA Receber: R$ ${parseFloat(b.invoice_value).toFixed(2)}\n\nVictor serviço: R$ ${parseFloat(b.victor_service).toFixed(2)}\nVictor lucro: R$ ${parseFloat(b.victor_profit).toFixed(2)}\nVictor imposto NF: R$ ${parseFloat(b.victor_tax_diff||0).toFixed(2)}\nVictor TOTAL: R$ ${parseFloat(b.victor_total).toFixed(2)}\nFabrício TOTAL: R$ ${parseFloat(b.fabricio_total).toFixed(2)}`)
@@ -230,6 +271,7 @@ export default function Billing() {
       setTimeEntries([])
       setSelectedEntries([])
       fetchAll()
+      autoUpdateFiscalSettings(agendaForm.emission_date)
       if (data.breakdown) {
         const b = data.breakdown
         alert(`Fatura ${isEdit ? 'atualizada' : 'gerada'}!\n\nTotal horas: ${b.total_hours?.toFixed(2)}h\nBruto: R$ ${parseFloat(b.invoice_value).toFixed(2)}\nImposto: R$ ${parseFloat(b.tax_amount).toFixed(2)}\n\nVictor serviço: R$ ${parseFloat(b.victor_service).toFixed(2)}\nVictor lucro: R$ ${parseFloat(b.victor_profit).toFixed(2)}\nVictor TOTAL: R$ ${parseFloat(b.victor_total).toFixed(2)}\nFabrício TOTAL: R$ ${parseFloat(b.fabricio_total).toFixed(2)}`)
@@ -278,6 +320,7 @@ export default function Billing() {
         year: inv.year,
         invoice_value: inv.invoice_value ? parseFloat(inv.invoice_value).toFixed(2) : '',
         invoice_number: inv.invoice_number || '',
+        emission_date: inv.emission_date ? String(inv.emission_date).slice(0,10) : '',
         payment_date: inv.payment_date ? String(inv.payment_date).slice(0,10) : '',
         notes: inv.notes || '',
         tax_percentage_used: c?.has_tax ? String(c.tax_percentage ?? '') : '0',
@@ -299,6 +342,7 @@ export default function Billing() {
         year: inv.year,
         invoice_value: nf ? nf.toFixed(2) : '',
         invoice_number: inv.invoice_number || '',
+        emission_date: inv.emission_date ? String(inv.emission_date).slice(0,10) : '',
         payment_date: inv.payment_date ? String(inv.payment_date).slice(0,10) : '',
         notes: inv.notes || '',
         tax_percentage_used: c?.has_tax ? String(c.tax_percentage ?? '') : '0',
@@ -312,6 +356,7 @@ export default function Billing() {
         month: inv.month,
         year: inv.year,
         invoice_number: inv.invoice_number || '',
+        emission_date: inv.emission_date ? String(inv.emission_date).slice(0,10) : '',
         payment_date: inv.payment_date ? String(inv.payment_date).slice(0,10) : '',
         notes: inv.notes || '',
         tax_percentage_used: '',
@@ -326,7 +371,7 @@ export default function Billing() {
     setEditInvoice(null)
     setInstallments([])
     setSelectedInstallment('')
-    setContractForm({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
+    setContractForm({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', emission_date: todayBR(), payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
     setShowContractModal(true)
   }
 
@@ -335,7 +380,7 @@ export default function Billing() {
     setAgendaRule(null)
     setTimeEntries([])
     setSelectedEntries([])
-    setAgendaForm({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'0' })
+    setAgendaForm({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', emission_date: todayBR(), payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'0' })
     setShowAgendaModal(true)
   }
 
@@ -368,6 +413,14 @@ export default function Billing() {
           <button onClick={openAgendaModal} className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium">📅 Agenda</button>
         </div>
       </div>
+
+      {fiscalInfo && (
+        <div className="mb-6 flex items-start gap-3 bg-blue-500/10 border border-blue-500/40 rounded-xl px-4 py-3">
+          <span className="text-blue-400 text-sm">ℹ️</span>
+          <p className="text-blue-200 text-sm flex-1">{fiscalInfo}</p>
+          <button onClick={()=>setFiscalInfo('')} className="text-gray-400 hover:text-white text-sm shrink-0">✕</button>
+        </div>
+      )}
 
       <div className="flex gap-2 mb-6 flex-wrap items-center">
         <button onClick={() => setFilterMonth(0)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === 0 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>Todos</button>
@@ -627,6 +680,10 @@ export default function Billing() {
 
               <input placeholder="Número da NF (opcional)" value={contractForm.invoice_number} onChange={e=>setContractForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
               <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Data de emissão da NF</label>
+                <input type="date" value={contractForm.emission_date} onChange={e=>setContractForm(f=>({...f,emission_date:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Data prevista de recebimento (mês de caixa)</label>
                 <input type="date" value={contractForm.payment_date} onChange={e=>setContractForm(f=>({...f,payment_date:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
               </div>
@@ -681,6 +738,10 @@ export default function Billing() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Número da NF</label>
                 <input placeholder="Número da NF (opcional)" value={agendaForm.invoice_number} onChange={e=>setAgendaForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Data de emissão da NF</label>
+                <input type="date" value={agendaForm.emission_date} onChange={e=>setAgendaForm(f=>({...f,emission_date:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Data prevista de recebimento (mês de caixa)</label>

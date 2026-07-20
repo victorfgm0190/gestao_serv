@@ -24,6 +24,8 @@ export default async function handler(req, res) {
     await sql`ALTER TABLE company_settings ADD COLUMN IF NOT EXISTS salarios_mensal NUMERIC(14,2) DEFAULT 0`
     await sql`ALTER TABLE company_settings DROP COLUMN IF EXISTS receita_bruta_12m`
     await sql`ALTER TABLE company_settings DROP COLUMN IF EXISTS folha_12m`
+    // Data de emissão da NF (separada da data prevista de recebimento).
+    await sql`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS emission_date DATE`
     res.status(200).json({ success: true, message: 'Tabela company_settings pronta.' })
   } catch (error) {
     res.status(500).json({ error: error.message })
