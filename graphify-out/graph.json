@@ -873,6 +873,28 @@
       "norm_label": "handler()"
     },
     {
+      "label": "recalc-time-entries.js",
+      "file_type": "code",
+      "source_file": "api/recalc-time-entries.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_recalc_time_entries",
+      "community": 10,
+      "community_name": "time-entries.js",
+      "norm_label": "recalc-time-entries.js"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/recalc-time-entries.js",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "api_recalc_time_entries_handler",
+      "community": 10,
+      "community_name": "time-entries.js",
+      "norm_label": "handler()"
+    },
+    {
       "label": "receivables.js",
       "file_type": "code",
       "source_file": "api/receivables.js",
@@ -4616,6 +4638,53 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "api/recalc-time-entries.js",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_recalc_time_entries",
+      "target": "api_recalc_time_entries_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/recalc-time-entries.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_recalc_time_entries",
+      "target": "api_time_entries",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/recalc-time-entries.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_recalc_time_entries",
+      "target": "api_time_entries_calcular",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/recalc-time-entries.js",
+      "source_location": "L97",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_recalc_time_entries_handler",
+      "target": "api_time_entries_calcular"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "api/receivables.js",
       "source_location": "L12",
       "weight": 1.0,
@@ -7404,5 +7473,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "5d4cf9cde64cefc38516256763000ce878c985e3"
+  "built_at_commit": "b21965875207019e0f0253cea7cf143a07e77f24"
 }

@@ -1,16 +1,16 @@
 # Graph Report - gestao_serv  (2026-07-19)
 
 ## Corpus Check
-- 63 files · ~53,497 words
+- 64 files · ~54,184 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 320 nodes · 343 edges · 53 communities (41 shown, 12 thin omitted)
+- 322 nodes · 347 edges · 53 communities (41 shown, 12 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5d4cf9cd`
+- Built from commit: `b2196587`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -60,6 +60,8 @@
 10. `Financial()` - 6 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `handler()` --calls--> `calcular()`  [EXTRACTED]
+  api/recalc-time-entries.js → api/time-entries.js
 - `Layout()` --calls--> `useNotifications()`  [EXTRACTED]
   src/components/Layout.jsx → src/hooks/useNotifications.js
 
@@ -105,8 +107,8 @@ Cohesion: 0.70
 Nodes (4): handler(), periodFromDate(), recalcParent(), TABLES
 
 ### Community 10 - "time-entries.js"
-Cohesion: 0.60
-Nodes (5): calcular(), calcularHoras(), handler(), splitPct(), timeToDecimal()
+Cohesion: 0.46
+Nodes (6): handler(), calcular(), calcularHoras(), handler(), splitPct(), timeToDecimal()
 
 ### Community 39 - "CLAUDE.md — Contexto do Projeto gestao_serv"
 Cohesion: 0.07

@@ -25,7 +25,7 @@ function calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final
   return Math.max(parseFloat(total.toFixed(4)), 0)
 }
 
-function calcular(horas, regra, horas_deslocamento = 0, contrato = null, despesas_deslocamento = 0) {
+export function calcular(horas, regra, horas_deslocamento = 0, contrato = null, despesas_deslocamento = 0) {
   const hours = parseFloat(horas) || 0  // horas de trabalho (sem deslocamento)
   const horas_desloc = parseFloat(horas_deslocamento) || 0
   const despesas_desloc = parseFloat(despesas_deslocamento) || 0
