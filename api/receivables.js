@@ -67,29 +67,42 @@ export default async function handler(req, res) {
     }
 
     const { id, paid_amount, paid_at, status, notes } = req.body
-    const result = await sql`UPDATE receivables SET paid_amount=${paid_amount}, paid_at=${paid_at||null}, status=${status}, notes=${notes||null} WHERE id=${id} RETURNING *`
 
-    // Ao marcar como pago, propaga para a fatura vinculada gerando Pagar Fabrício/Victor (sem duplicar)
+    // As leituras ficam fora da transação (o driver HTTP do Neon só aceita um
+    // array de escritas), mas TODAS as escritas vão juntas. Antes eram 4
+    // statements soltos: se o INSERT do Fabrício passasse e o do Victor
+    // falhasse, o guard de idempotência (que olha só payables_fabricio)
+    // fazia qualquer retry pular tudo — e o lançamento do Victor nunca mais
+    // era criado, sem erro visível.
+    const writes = [
+      sql`UPDATE receivables SET paid_amount=${paid_amount}, paid_at=${paid_at||null}, status=${status}, notes=${notes||null} WHERE id=${id} RETURNING *`,
+    ]
+
     if (status === 'pago') {
       const invs = await sql`SELECT * FROM invoices WHERE receivable_id = ${id} LIMIT 1`
       if (invs.length) {
         const inv = invs[0]
         const jaExiste = await sql`SELECT id FROM payables_fabricio WHERE invoice_id = ${inv.id} LIMIT 1`
         if (!jaExiste.length) {
-          // invoices não possui coluna paid_at; o paid_at é registrado no receivable
-          await sql`UPDATE invoices SET status = 'recebido' WHERE id = ${inv.id}`
           const clients = await sql`SELECT name FROM clients WHERE id = ${inv.client_id} LIMIT 1`
           const client_name = clients[0]?.name || 'Cliente'
           const desc = `${client_name} - ${inv.month}/${inv.year}`
           // Mês de caixa = data real do recebimento (paid_at); depois payment_date da fatura; por fim competência.
           const { pmonth, pyear } = paymentPeriod(paid_at || inv.payment_date, inv.month, inv.year)
-          await sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, origin, invoice_id, payment_month, payment_year) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.fabricio_total}, 'faturamento', ${inv.id}, ${pmonth}, ${pyear})`
-          await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, origin, invoice_id, payment_month, payment_year) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.victor_service}, ${parseFloat(inv.victor_profit)+parseFloat(inv.victor_tax_diff)}, ${inv.victor_total}, 'faturamento', ${inv.id}, ${pmonth}, ${pyear})`
+          // victor_profit/victor_tax_diff podem ser NULL em faturas antigas
+          // (colunas vieram de migração): sem o || 0 a soma virava NaN.
+          const victorProfit = (parseFloat(inv.victor_profit) || 0) + (parseFloat(inv.victor_tax_diff) || 0)
+
+          // invoices não possui coluna paid_at; o paid_at é registrado no receivable
+          writes.push(sql`UPDATE invoices SET status = 'recebido' WHERE id = ${inv.id}`)
+          writes.push(sql`INSERT INTO payables_fabricio (company_id, client_id, month, year, description, amount, origin, invoice_id, payment_month, payment_year) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.fabricio_total}, 'faturamento', ${inv.id}, ${pmonth}, ${pyear})`)
+          writes.push(sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, origin, invoice_id, payment_month, payment_year) VALUES (${inv.company_id}, ${inv.client_id}, ${inv.month}, ${inv.year}, ${desc}, ${inv.victor_service}, ${victorProfit}, ${inv.victor_total}, 'faturamento', ${inv.id}, ${pmonth}, ${pyear})`)
         }
       }
     }
 
-    return res.status(200).json({ data: result[0] })
+    const results = await sql.transaction(writes)
+    return res.status(200).json({ data: results[0][0] })
   }
   if (req.method === 'DELETE') {
     const { id } = req.body

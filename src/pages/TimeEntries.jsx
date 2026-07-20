@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { todayBR } from '../lib/dateUtils'
 
 // Split cadastrado. Não usar `|| 50`: um split legítimo de 0% (cliente 100/0)
 // é falsy e viraria 50%, divergindo do cálculo do backend.
@@ -29,7 +30,7 @@ export default function TimeEntries() {
   const [form, setForm] = useState({
     client_id: '',
     contract_id: '',
-    entry_date: new Date().toISOString().split('T')[0],
+    entry_date: todayBR(),
     hora_inicial: '',
     intervalo_inicio: '',
     intervalo_fim: '',
@@ -44,9 +45,23 @@ export default function TimeEntries() {
   const [filterClient, setFilterClient] = useState('')
   const [clientContracts, setClientContracts] = useState([])
   const [contractsLoading, setContractsLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [erro, setErro] = useState('')
 
   useEffect(() => { fetchAll() }, [activeCompany, filterMonth, filterYear])
   useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth])
+
+  // Fecha o modal ao trocar de empresa. Sem isso, editar um lançamento da
+  // Lumen e trocar para Imperium antes de salvar enviava o id da Lumen com o
+  // company_id da Imperium — migrando o registro de empresa silenciosamente.
+  useEffect(() => {
+    setShowModal(false)
+    setEditEntry(null)
+    setForm(f => ({ ...f, client_id: '', contract_id: '' }))
+    setClientContracts([])
+    setPreview(null)
+    setErro('')
+  }, [activeCompany])
 
   async function fetchAll() {
     setLoading(true)
@@ -178,7 +193,7 @@ export default function TimeEntries() {
 
   function openNew() {
     setEditEntry(null)
-    setForm({ client_id: '', contract_id: '', entry_date: new Date().toISOString().split('T')[0], hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', despesas_deslocamento: '0', notes: '' })
+    setForm({ client_id: '', contract_id: '', entry_date: todayBR(), hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', despesas_deslocamento: '0', notes: '' })
     setClientContracts([])
     setPreview(null)
     setShowModal(true)
@@ -186,23 +201,42 @@ export default function TimeEntries() {
 
   async function save() {
     if (!form.client_id || !form.contract_id || !form.hora_inicial || !form.hora_final || !form.entry_date) return
+    if (saving) return
+    setSaving(true)
+    setErro('')
     try {
       const method = editEntry ? 'PUT' : 'POST'
       const body = editEntry
         ? { ...form, company_id: activeCompany.id, id: editEntry.id }
         : { ...form, company_id: activeCompany.id }
-      await fetch('/api/time-entries', {
+      const res = await fetch('/api/time-entries', {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      setShowModal(false)
-      setEditEntry(null)
-      setForm({ client_id: '', contract_id: '', entry_date: new Date().toISOString().split('T')[0], hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', despesas_deslocamento: '0', notes: '' })
-      setClientContracts([])
-      setPreview(null)
+      // Antes o status era ignorado: um 500 fechava o modal e limpava o
+      // formulário, e o usuário achava que tinha salvo.
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErro(data.error || 'Não foi possível salvar o lançamento.')
+        return
+      }
+      closeModal()
       fetchAll()
-    } catch(e) { console.error(e) }
+    } catch {
+      setErro('Erro de conexão com o servidor.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function closeModal() {
+    setShowModal(false)
+    setEditEntry(null)
+    setForm({ client_id: '', contract_id: '', entry_date: todayBR(), hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', despesas_deslocamento: '0', notes: '' })
+    setClientContracts([])
+    setPreview(null)
+    setErro('')
   }
 
   async function deleteEntry(id) {
@@ -221,7 +255,7 @@ export default function TimeEntries() {
     const f = {
       client_id: String(entry.client_id || ''),
       contract_id: String(entry.contract_id || ''),
-      entry_date: entry.entry_date ? entry.entry_date.split('T')[0] : new Date().toISOString().split('T')[0],
+      entry_date: entry.entry_date ? entry.entry_date.split('T')[0] : todayBR(),
       hora_inicial: entry.hora_inicial || '',
       intervalo_inicio: entry.intervalo_inicio || '',
       intervalo_fim: entry.intervalo_fim || '',
@@ -511,9 +545,12 @@ export default function TimeEntries() {
                 </div>
               )}
             </div>
+            {erro && (
+              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erro}</p>
+            )}
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>{setShowModal(false);setPreview(null);setEditEntry(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
-              <button onClick={save} disabled={!form.client_id || !form.contract_id} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors">Salvar</button>
+              <button onClick={closeModal} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
+              <button onClick={save} disabled={saving || !form.client_id || !form.contract_id} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors">{saving ? 'Salvando...' : 'Salvar'}</button>
             </div>
           </div>
         </div>

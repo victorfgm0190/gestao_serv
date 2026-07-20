@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import CopyButton from '../components/CopyButton'
+import { todayBR } from '../lib/dateUtils'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -239,7 +240,7 @@ export default function Billing() {
   }
 
   async function markReceived(invoice) {
-    const paid_at = prompt('Data de recebimento (AAAA-MM-DD):', new Date().toISOString().split('T')[0])
+    const paid_at = prompt('Data de recebimento (AAAA-MM-DD):', todayBR())
     if (!paid_at) return
     const res = await fetch('/api/invoices', {
       method:'PATCH', headers:{'Content-Type':'application/json'},

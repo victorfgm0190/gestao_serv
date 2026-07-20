@@ -206,25 +206,39 @@ export default async function handler(req, res) {
 
       const { pmonth, pyear } = paymentPeriod(payment_date, month, year)
 
-      const invoice = await sql`
-        INSERT INTO invoices (company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date)
-        VALUES (${company_id}, ${client_id}, ${contract_id||null}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null})
-        RETURNING *
-      `
+      // Os ids são reservados antes das escritas. Motivo: a fatura precisa do
+      // receivable_id e a descrição do recebível precisa do id da fatura —
+      // dependência circular que um array de escritas não resolve. Conhecendo
+      // os dois ids de antemão, o UPDATE de ligação some e as escritas cabem
+      // numa transação única (antes eram 4 statements soltos: falhar no meio
+      // deixava fatura órfã sem recebível).
+      const seq = await sql`
+        SELECT nextval(pg_get_serial_sequence('invoices','id')) AS inv_id,
+               nextval(pg_get_serial_sequence('receivables','id')) AS rec_id`
+      const invId = Number(seq[0].inv_id)
+      const recId = Number(seq[0].rec_id)
+      const descricao = `Fatura ${invoice_number || '#' + invId} - ${month}/${year}`
 
-      const receivable = await sql`
-        INSERT INTO receivables (company_id, client_id, month, year, description, amount, notes, origin, payment_month, payment_year)
-        VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${`Fatura ${invoice_number || '#'+invoice[0].id} - ${month}/${year}`}, ${calc.invoice_value}, ${notes||null}, 'faturamento', ${pmonth}, ${pyear})
-        RETURNING *
-      `
-
-      await sql`UPDATE invoices SET receivable_id = ${receivable[0].id} WHERE id = ${invoice[0].id}`
+      const writes = [
+        sql`
+          INSERT INTO invoices (id, company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date, receivable_id)
+          VALUES (${invId}, ${company_id}, ${client_id}, ${contract_id||null}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null}, ${recId})
+          RETURNING *
+        `,
+        sql`
+          INSERT INTO receivables (id, company_id, client_id, month, year, description, amount, notes, origin, payment_month, payment_year)
+          VALUES (${recId}, ${company_id}, ${client_id}, ${month}, ${year}, ${descricao}, ${calc.invoice_value}, ${notes||null}, 'faturamento', ${pmonth}, ${pyear})
+          RETURNING *
+        `,
+      ]
 
       if (billing_type === 'projeto') {
-        await sql`UPDATE project_installments SET invoice_id = ${invoice[0].id}, status = 'faturado' WHERE id = ${installment_id}`
+        writes.push(sql`UPDATE project_installments SET invoice_id = ${invId}, status = 'faturado' WHERE id = ${installment_id}`)
       }
 
-      return res.status(201).json({ invoice: invoice[0], receivable: receivable[0], breakdown: calc })
+      const results = await sql.transaction(writes)
+
+      return res.status(201).json({ invoice: results[0][0], receivable: results[1][0], breakdown: calc })
     } catch (error) {
       return res.status(500).json({ error: error.message })
     }

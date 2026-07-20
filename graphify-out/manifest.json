@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1784509162.0071678,
-    "ast_hash": "20237a63a037da17c0174b4a06ebaf5d",
+    "mtime": 1784511808.950838,
+    "ast_hash": "dff50ec587b3815fcbc08e0bcd4242da",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -60,13 +60,13 @@
     "semantic_hash": ""
   },
   "api/invoices.js": {
-    "mtime": 1784510268.5808532,
-    "ast_hash": "abd1814611d80373658e239ee90da445",
+    "mtime": 1784511552.516714,
+    "ast_hash": "f0fd699c4ca38979bdd132c4b2ab1517",
     "semantic_hash": ""
   },
   "api/payable-payments.js": {
-    "mtime": 1784510268.8814533,
-    "ast_hash": "90730bbbd04497652908191d15fa6132",
+    "mtime": 1784511485.0407746,
+    "ast_hash": "3df0595432e07035920998a4a3e09e48",
     "semantic_hash": ""
   },
   "api/payables-fabricio.js": {
@@ -75,13 +75,13 @@
     "semantic_hash": ""
   },
   "api/payables-victor.js": {
-    "mtime": 1784510269.2442765,
-    "ast_hash": "9c3fec17572eadd60f00d66d18ea5d56",
+    "mtime": 1784511505.620872,
+    "ast_hash": "d4ba375e7f557e72393e50a801ccdb65",
     "semantic_hash": ""
   },
   "api/receivables.js": {
-    "mtime": 1784510269.65623,
-    "ast_hash": "05058edfd87c2cf6acb59eccbd3b4b78",
+    "mtime": 1784511527.871703,
+    "ast_hash": "2da805c1780203e29618740d3436bfc7",
     "semantic_hash": ""
   },
   "api/reclassify-demands.js": {
@@ -135,8 +135,8 @@
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
-    "mtime": 1784508394.8221843,
-    "ast_hash": "32a91b8d3feb5d5434483b31923ff2bd",
+    "mtime": 1784511594.2612343,
+    "ast_hash": "2ff705cd4ddd1b12a3576b080aa6b6aa",
     "semantic_hash": ""
   },
   "src/pages/Clientes.jsx": {
@@ -155,19 +155,19 @@
     "semantic_hash": "5e5f666f50b353be19ea34f473c7b1f4"
   },
   "src/pages/Demands.jsx": {
-    "mtime": 1784509855.4717913,
-    "ast_hash": "909158af08dbc65569c708583bf92887",
+    "mtime": 1784511678.4020061,
+    "ast_hash": "bde3508ea3bab42f9b9ab5566c33a996",
     "semantic_hash": ""
   },
   "src/pages/EmailRules.jsx": {
-    "mtime": 1782248170.6496115,
-    "ast_hash": "20a6c09698c0a6b27d8c9546b0a6633a",
-    "semantic_hash": "20a6c09698c0a6b27d8c9546b0a6633a"
+    "mtime": 1784511703.1681485,
+    "ast_hash": "91b596a2cfacd4bfaedaf8e42c914c5f",
+    "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1783816247.6797826,
-    "ast_hash": "497c62a897777957949c3956f49109d6",
-    "semantic_hash": "497c62a897777957949c3956f49109d6"
+    "mtime": 1784512030.18578,
+    "ast_hash": "80182e9d6bd4c1d1a509b139fb503289",
+    "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
     "mtime": 1784506613.8419485,
@@ -175,8 +175,8 @@
     "semantic_hash": ""
   },
   "src/pages/TimeEntries.jsx": {
-    "mtime": 1784508401.1523094,
-    "ast_hash": "7cc6a0e806f4bdcd7d02aa9555c141c1",
+    "mtime": 1784511643.023902,
+    "ast_hash": "2199c0373505f36f8c33630039567e8b",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -342,6 +342,16 @@
   "src/pages/Users.jsx": {
     "mtime": 1784510367.5063531,
     "ast_hash": "833d94c0cff8d02a34627fbca0b133d9",
+    "semantic_hash": ""
+  },
+  "lib/payment-status.js": {
+    "mtime": 1784511455.4591124,
+    "ast_hash": "980147978e7cb0e63ac7299a97002db0",
+    "semantic_hash": ""
+  },
+  "src/lib/dateUtils.js": {
+    "mtime": 1784511559.6655178,
+    "ast_hash": "6468fd5bc3a7a3c26663ff3fabf5be04",
     "semantic_hash": ""
   }
 }

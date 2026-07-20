@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
+import { statusFor, PAID_EPSILON } from '../lib/payment-status.js'
 
 const CLIENT_PHARMA = 7
 const CATS = { honorarios: 'Honorários', das: 'DAS', inss: 'INSS', pro_labore: 'Pro Labore', lucros: 'Lucros', escritorio: 'Escritório', demais: 'Demais despesas' }
@@ -32,7 +33,7 @@ function consumir(sql, pool, lista, when, notes) {
     if (consumed <= 0) continue
     const total = r2(parseFloat(rec.total_amount) || 0)
     const newPaid = r2((parseFloat(rec.paid_amount) || 0) + consumed)
-    const status = newPaid >= total - 0.005 ? 'pago' : 'parcial'
+    const status = newPaid >= total - PAID_EPSILON ? 'pago' : 'parcial'
     writes.push(sql`INSERT INTO payable_payments (payable_type, payable_id, amount, paid_at, notes, payment_month, payment_year) VALUES ('victor', ${rec.id}, ${consumed}, ${when}, ${notes}, ${wm || null}, ${wy || null})`)
     writes.push(sql`UPDATE payables_victor SET paid_amount=${newPaid}, status=${status}, paid_at=${when}, payment_month=${wm || null}, payment_year=${wy || null} WHERE id=${rec.id}`)
     applied.push({ id: rec.id, consumed, status })
@@ -48,7 +49,7 @@ async function recalcVictorParent(sql, payable_id) {
   const last = agg[0].last || null
   const pr = await sql`SELECT total_amount FROM payables_victor WHERE id=${payable_id}`
   const tot = parseFloat(pr[0]?.total_amount) || 0
-  const st = s <= 0.005 ? 'pendente' : (s >= tot - 0.005 ? 'pago' : 'parcial')
+  const st = statusFor(s, tot)
   await sql`UPDATE payables_victor SET paid_amount=${s.toFixed(2)}, status=${st}, paid_at=${last} WHERE id=${payable_id}`
 }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { todayBR } from '../lib/dateUtils'
 import CopyButton from '../components/CopyButton'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -89,9 +90,9 @@ export default function Financial() {
   const [histType, setHistType] = useState('receivables')
   const [histClient, setHistClient] = useState('')
   const [form, setForm] = useState({ client_id: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), description: '', amount: '', service_amount: '', profit_amount: '', notes: '' })
-  const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: new Date().toISOString().split('T')[0], payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
+  const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
   const [modalPayments, setModalPayments] = useState([])
-  const [newPay, setNewPay] = useState({ amount: '', paid_at: new Date().toISOString().split('T')[0], notes: '' })
+  const [newPay, setNewPay] = useState({ amount: '', paid_at: todayBR(), notes: '' })
   const [estornoConfirm, setEstornoConfirm] = useState(null)
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1)
   const [filterStatus, setFilterStatus] = useState('all')
@@ -99,7 +100,7 @@ export default function Financial() {
   const [victorCats, setVictorCats] = useState(EMPTY_VICTOR_CATS)
   const [showReceiveModal, setShowReceiveModal] = useState(false)
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
-  const [receivePaidAt, setReceivePaidAt] = useState(new Date().toISOString().split('T')[0])
+  const [receivePaidAt, setReceivePaidAt] = useState(todayBR())
   const [editSession, setEditSession] = useState(null) // { paid_at, notes, affected[] } quando editando uma sessão
   const [reserves, setReserves] = useState({ das: '', pro_labore: '', inss: '', escritorio: '', notes: '' })
   const [savingReserves, setSavingReserves] = useState(false)
@@ -109,9 +110,32 @@ export default function Financial() {
   const [receiveTarget, setReceiveTarget] = useState(null) // item quando Flow B (específico), null = Flow A (geral)
   const [overflowInfo, setOverflowInfo] = useState(null)   // { overflow, targetSaldo, target_id } quando há sobra
   const [showMesAnterior, setShowMesAnterior] = useState(false)
+  const [saving, setSaving] = useState(false)         // modal de novo lançamento
+  const [paying, setPaying] = useState(false)         // modal de pagamento simples
+  const [addingPay, setAddingPay] = useState(false)   // modal de múltiplos pagamentos
+  const [erroModal, setErroModal] = useState('')
+  const [erroPay, setErroPay] = useState('')
+  const [erroPayments, setErroPayments] = useState('')
+  const [erroReceive, setErroReceive] = useState('')
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear, mode])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
+
+  // Fecha TODOS os modais ao trocar de empresa. Sem isso, um modal aberto com
+  // item da Lumen combinava payable_id da Lumen com company_id da Imperium na
+  // mesma requisição — gravando no lugar errado.
+  useEffect(() => {
+    setShowModal(false)
+    setShowPayModal(null)
+    setShowReceiveModal(false)
+    setEstornoConfirm(null)
+    setReceiveTarget(null)
+    setOverflowInfo(null)
+    setEditSession(null)
+    setModalPayments([])
+    setPendingVictor([])
+    setErroModal(''); setErroPay(''); setErroPayments(''); setErroReceive('')
+  }, [activeCompany])
   // Reservas do Victor exibidas no card da aba (mês/ano/empresa do filtro ativo).
   useEffect(() => { if (tab === 'victor') fetchReserves() }, [tab, filterMonth, filterYear, activeCompany])
 
@@ -132,30 +156,63 @@ export default function Financial() {
     finally { setLoading(false) }
   }
 
-  async function save() {
-    const body = tab === 'victor'
-      ? { ...form, company_id: activeCompany.id }
-      : { ...form, company_id: activeCompany.id }
-    await fetch(FINANCE_ENDPOINTS[tab], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  function closeModal() {
     setShowModal(false)
     setForm({ client_id: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), description: '', amount: '', service_amount: '', profit_amount: '', notes: '' })
-    fetchAll()
+    setErroModal('')
+  }
+
+  async function save() {
+    if (saving) return
+    setSaving(true)
+    setErroModal('')
+    try {
+      const body = { ...form, company_id: activeCompany.id }
+      const res = await fetch(FINANCE_ENDPOINTS[tab], { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      // Antes o status era ignorado: num 500 o modal fechava e o formulário era
+      // limpo, então o usuário perdia o que digitou achando que tinha salvo.
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErroModal(data.error || 'Não foi possível salvar o lançamento.')
+        return
+      }
+      closeModal()
+      fetchAll()
+    } catch {
+      setErroModal('Erro de conexão com o servidor.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function pay(item) {
-    await fetch(FINANCE_ENDPOINTS[tab], {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: item.id, ...payForm }),
-    })
-    setShowPayModal(null)
-    setPayForm({ paid_amount: '', paid_at: new Date().toISOString().split('T')[0], payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
-    fetchAll()
+    if (paying) return
+    setPaying(true)
+    setErroPay('')
+    try {
+      const res = await fetch(FINANCE_ENDPOINTS[tab], {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, ...payForm }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErroPay(data.error || 'Não foi possível registrar o pagamento.')
+        return
+      }
+      setShowPayModal(null)
+      setPayForm({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
+      fetchAll()
+    } catch {
+      setErroPay('Erro de conexão com o servidor.')
+    } finally {
+      setPaying(false)
+    }
   }
 
   async function openPayments(item) {
     setShowPayModal(item)
-    setNewPay({ amount: '', paid_at: new Date().toISOString().split('T')[0], notes: '' })
+    setNewPay({ amount: '', paid_at: todayBR(), notes: '' })
     setVictorCats(EMPTY_VICTOR_CATS)
     setBreakdownView('geral')
     setModalPayments(item.payments || [])
@@ -178,15 +235,31 @@ export default function Financial() {
       amount = newPay.amount
       notes = newPay.notes
     }
-    await fetch('/api/payable-payments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payable_type: tab, payable_id: showPayModal.id, amount, paid_at: newPay.paid_at, notes }),
-    })
-    setNewPay({ amount: '', paid_at: new Date().toISOString().split('T')[0], notes: '' })
-    setVictorCats(EMPTY_VICTOR_CATS)
-    await loadPayments(showPayModal)
-    fetchAll()
+    if (addingPay) return
+    setAddingPay(true)
+    setErroPayments('')
+    try {
+      const res = await fetch('/api/payable-payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payable_type: tab, payable_id: showPayModal.id, amount, paid_at: newPay.paid_at, notes }),
+      })
+      // O backend agora recusa valor acima do saldo devedor — a mensagem dele
+      // já informa quanto resta, então exibimos como veio.
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErroPayments(data.error || 'Não foi possível registrar o pagamento.')
+        return
+      }
+      setNewPay({ amount: '', paid_at: todayBR(), notes: '' })
+      setVictorCats(EMPTY_VICTOR_CATS)
+      await loadPayments(showPayModal)
+      fetchAll()
+    } catch {
+      setErroPayments('Erro de conexão com o servidor.')
+    } finally {
+      setAddingPay(false)
+    }
   }
 
   async function fetchPendingVictor() {
@@ -233,11 +306,12 @@ export default function Financial() {
   // Flow A — Pagar Geral (não vinculado a um registro específico)
   async function openReceive() {
     setReceiveCats(EMPTY_RECEIVE_CATS)
-    setReceivePaidAt(new Date().toISOString().split('T')[0])
+    setReceivePaidAt(todayBR())
     setPendingVictor([])
     setReceiveTarget(null)
     setOverflowInfo(null)
     setShowMesAnterior(false)
+    setErroReceive('')
     setShowReceiveModal(true)
     fetchPendingVictor()
     fetchReserves()
@@ -246,11 +320,12 @@ export default function Financial() {
   // Flow B — Pagar em um registro específico (consome o alvo primeiro)
   async function openDistribuir(item) {
     setReceiveCats(EMPTY_RECEIVE_CATS)
-    setReceivePaidAt(new Date().toISOString().split('T')[0])
+    setReceivePaidAt(todayBR())
     setPendingVictor([])
     setReceiveTarget(item)
     setOverflowInfo(null)
     setShowMesAnterior(false)
+    setErroReceive('')
     setShowReceiveModal(true)
     fetchPendingVictor()
     fetchReserves()
@@ -276,6 +351,7 @@ export default function Financial() {
     setOverflowInfo(null)
     setShowMesAnterior(false)
     setPendingVictor([])
+    setErroReceive('')
     setShowReceiveModal(true)
     fetchPendingVictor()
     fetchReserves()
@@ -288,6 +364,7 @@ export default function Financial() {
     setOverflowInfo(null)
     setShowMesAnterior(false)
     setEditSession(null)
+    setErroReceive('')
   }
 
   async function confirmReceive() {
@@ -307,7 +384,7 @@ export default function Financial() {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       })
       const data = await res.json()
-      if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao distribuir')); return }
+      if (!res.ok) { setErroReceive(data.error || 'Falha ao distribuir'); return }
       if (data.needsDecision) {
         setOverflowInfo({ overflow: data.overflow, targetSaldo: data.targetSaldo, target_id: data.target_id })
         return // mantém o modal aberto para o painel de decisão
@@ -329,7 +406,7 @@ export default function Financial() {
         body: JSON.stringify({ company_id: activeCompany.id, despesas: receiveCats, mode: 'especifico', payable_id: receiveTarget.id, overflow_action: action, overflow_target_id, paid_at, reference_month: refMonth, reference_year: refYear }),
       })
       const data = await res.json()
-      if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao distribuir')); return }
+      if (!res.ok) { setErroReceive(data.error || 'Falha ao distribuir'); return }
       closeReceive()
       await fetchAll()
     } finally {
@@ -338,14 +415,31 @@ export default function Financial() {
   }
 
   async function deletePayment(p) {
-    await fetch('/api/payable-payments', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: p.id, payable_type: tab, payable_id: showPayModal.id }),
-    })
-    setEstornoConfirm(null)
-    await loadPayments(showPayModal)
-    fetchAll()
+    if (addingPay) return
+    setAddingPay(true)
+    setErroPayments('')
+    try {
+      // Só o id vai no body: o backend descobre o payable pai pela própria linha
+      // apagada (antes ele recalculava o payable informado aqui, o que podia
+      // deixar outro lançamento com paid_amount e status errados).
+      const res = await fetch('/api/payable-payments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: p.id }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErroPayments(data.error || 'Não foi possível estornar o pagamento.')
+        return
+      }
+      setEstornoConfirm(null)
+      await loadPayments(showPayModal)
+      fetchAll()
+    } catch {
+      setErroPayments('Erro de conexão com o servidor.')
+    } finally {
+      setAddingPay(false)
+    }
   }
 
   async function estornar(item) {
@@ -575,7 +669,7 @@ export default function Financial() {
                 <span className="text-gray-500">Valor: <span className="text-white font-medium">{fmt(item.amount)}</span></span>
               )}
               {parseFloat(item.paid_amount) > 0 && <span className="text-gray-500">Pago: <span className="text-green-400">{fmt(item.paid_amount)}</span></span>}
-              {item.paid_at && <span className="text-gray-500">Em: <span className="text-gray-300">{new Date(item.paid_at).toLocaleDateString('pt-BR')}</span></span>}
+              {item.paid_at && <span className="text-gray-500">Em: <span className="text-gray-300">{new Date(item.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></span>}
               {item.is_compensation && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">Compensação</span>}
             </div>
           </div>
@@ -872,9 +966,12 @@ export default function Financial() {
                 <textarea placeholder="Observações" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
               </div>
             </div>
+            {erroModal && (
+              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroModal}</p>
+            )}
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>setShowModal(false)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
-              <button onClick={save} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">Salvar</button>
+              <button onClick={closeModal} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={save} disabled={saving} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{saving ? 'Salvando...' : 'Salvar'}</button>
             </div>
           </div>
         </div>
@@ -907,9 +1004,12 @@ export default function Financial() {
               </select>
               <textarea placeholder="Observações" value={payForm.notes} onChange={e=>setPayForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
+            {erroPay && (
+              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroPay}</p>
+            )}
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>setShowPayModal(null)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
-              <button onClick={() => pay(showPayModal)} className="flex-1 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">Confirmar</button>
+              <button onClick={()=>{setShowPayModal(null);setErroPay('')}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={() => pay(showPayModal)} disabled={paying} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{paying ? 'Confirmando...' : 'Confirmar'}</button>
             </div>
           </div>
         </div>
@@ -965,7 +1065,7 @@ export default function Financial() {
                     <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
                   </div>
                   <p className="text-sm text-gray-300">Total a pagar: <span className="text-green-400 font-bold">{fmt(victorCatTotal)}</span></p>
-                  <button onClick={addPayment} disabled={victorCatTotal <= 0 || !newPay.paid_at} className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">Registrar Pagamento</button>
+                  <button onClick={addPayment} disabled={addingPay || victorCatTotal <= 0 || !newPay.paid_at} className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{addingPay ? 'Registrando...' : 'Registrar Pagamento'}</button>
                 </>
               ) : (
                 <>
@@ -975,12 +1075,15 @@ export default function Financial() {
                     <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
                   </div>
                   <textarea placeholder="Observação" value={newPay.notes} onChange={e=>setNewPay(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
-                  <button onClick={addPayment} disabled={!newPay.amount || !newPay.paid_at} className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">Registrar Pagamento</button>
+                  <button onClick={addPayment} disabled={addingPay || !newPay.amount || !newPay.paid_at} className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{addingPay ? 'Registrando...' : 'Registrar Pagamento'}</button>
                 </>
               )}
             </div>
 
-            <button onClick={()=>setShowPayModal(null)} className="w-full mt-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Fechar</button>
+            {erroPayments && (
+              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroPayments}</p>
+            )}
+            <button onClick={()=>{setShowPayModal(null);setErroPayments('')}} className="w-full mt-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Fechar</button>
           </div>
         </div>
       )}
@@ -993,7 +1096,7 @@ export default function Financial() {
             <p className="text-gray-400 text-sm mb-5">Deseja estornar o pagamento de {fmt(estornoConfirm.amount)} realizado em {new Date(estornoConfirm.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}?</p>
             <div className="flex gap-3">
               <button onClick={()=>setEstornoConfirm(null)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
-              <button onClick={()=>deletePayment(estornoConfirm)} className="flex-1 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium">Estornar</button>
+              <button onClick={()=>deletePayment(estornoConfirm)} disabled={addingPay} className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{addingPay ? 'Estornando...' : 'Estornar'}</button>
             </div>
           </div>
         </div>
@@ -1092,6 +1195,10 @@ export default function Financial() {
 
               <p className="text-sm text-gray-300 border-t border-gray-800 pt-3">Total a distribuir: <span className="text-green-400 font-bold">{fmt(receiveTotal)}</span></p>
             </div>
+
+            {erroReceive && (
+              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroReceive}</p>
+            )}
 
             {/* Flow B — painel de decisão da sobra (overflow) */}
             {overflowInfo ? (

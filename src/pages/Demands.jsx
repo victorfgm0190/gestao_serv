@@ -28,9 +28,20 @@ export default function Demands() {
     body: '',
     status: 'nova',
   })
+  const [saving, setSaving] = useState(false)
+  const [erro, setErro] = useState('')
 
   useEffect(() => {
     fetchAll()
+  }, [activeCompany])
+
+  // Fecha o modal ao trocar de empresa: o save envia company_id da empresa
+  // ativa, então um modal aberto gravaria na empresa errada.
+  useEffect(() => {
+    setShowModal(false)
+    setForm({ sender_name: '', sender_email: '', subject: '', body: '', status: 'nova' })
+    setErro('')
+    setFilterClient('')
   }, [activeCompany])
 
   async function fetchAll() {
@@ -61,31 +72,52 @@ export default function Demands() {
     }
   }
 
+  function closeModal() {
+    setShowModal(false)
+    setForm({ sender_name: '', sender_email: '', subject: '', body: '', status: 'nova' })
+    setErro('')
+  }
+
   async function createDemand() {
+    if (saving) return
+    setSaving(true)
+    setErro('')
     try {
-      await fetch('/api/demands', {
+      const res = await fetch('/api/demands', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, company_id: activeCompany.id }),
       })
-      setShowModal(false)
-      setForm({ sender_name: '', sender_email: '', subject: '', body: '', status: 'nova' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setErro(data.error || 'Não foi possível salvar a demanda.')
+        return
+      }
+      closeModal()
       fetchDemands()
-    } catch (e) {
-      console.error(e)
+    } catch {
+      setErro('Erro de conexão com o servidor.')
+    } finally {
+      setSaving(false)
     }
   }
 
   async function updateStatus(id, status) {
     try {
-      await fetch('/api/demands', {
+      const res = await fetch('/api/demands', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status }),
       })
+      // O select é controlado por d.status: numa falha ele voltava sozinho ao
+      // valor antigo, sem nenhuma mensagem — parecia um bug aleatório.
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert('Não foi possível alterar o status: ' + (data.error || 'erro no servidor'))
+      }
       fetchDemands()
-    } catch (e) {
-      console.error(e)
+    } catch {
+      alert('Erro de conexão ao alterar o status.')
     }
   }
 
@@ -250,7 +282,7 @@ export default function Demands() {
                 </div>
               </div>
               <p className="text-gray-600 text-xs mt-3">
-                {d.received_at ? new Date(d.received_at).toLocaleDateString('pt-BR') : new Date(d.created_at).toLocaleDateString('pt-BR')}
+                {d.received_at ? new Date(d.received_at).toLocaleDateString('pt-BR', {timeZone:'UTC'}) : new Date(d.created_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}
               </p>
             </div>
           ))}
@@ -298,18 +330,22 @@ export default function Demands() {
                 ))}
               </select>
             </div>
+            {erro && (
+              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erro}</p>
+            )}
             <div className="flex gap-3 mt-5">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={closeModal}
                 className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={createDemand}
-                className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors"
+                disabled={saving}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
               >
-                Criar demanda
+                {saving ? 'Salvando...' : 'Criar demanda'}
               </button>
             </div>
           </div>
