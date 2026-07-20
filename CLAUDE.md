@@ -1,3 +1,17 @@
+## IDENTIFICAÇÃO DO PROJETO
+
+Este é o projeto **SITE PROJETO VICTOR — gestao_serv**.
+
+**REGRA OBRIGATÓRIA:** Toda resposta deve começar com:
+`🔷 PROJETO: SITE PROJETO VICTOR — gestao_serv`
+
+E terminar com:
+`🔷 FIM — SITE PROJETO VICTOR — gestao_serv`
+
+Isso é necessário porque o usuário trabalha com múltiplos projetos simultaneamente.
+
+---
+
 # CLAUDE.md — Contexto do Projeto gestao_serv
 
 > Estado atual do projeto (atualizado 2026-07). Documento gerado a partir da
