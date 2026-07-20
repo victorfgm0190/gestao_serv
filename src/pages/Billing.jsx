@@ -4,6 +4,13 @@ import CopyButton from '../components/CopyButton'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
+const SPLIT_MODE_LABEL = {
+  percent_victor: '% Victor primeiro',
+  fixed_victor: 'Fixo Victor primeiro',
+  direct_split: 'Split direto',
+  expenses: 'Despesas Victor primeiro',
+}
+
 export default function Billing() {
   const { activeCompany } = useOutletContext()
   const [invoices, setInvoices] = useState([])
@@ -19,6 +26,8 @@ export default function Billing() {
   const [filterClient, setFilterClient] = useState('')
   const [editInvoice, setEditInvoice] = useState(null)
   const [agendaRule, setAgendaRule] = useState(null)
+  const [installments, setInstallments] = useState([])
+  const [selectedInstallment, setSelectedInstallment] = useState('')
   const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
   const [agendaForm, setAgendaForm] = useState({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
 
@@ -59,9 +68,35 @@ export default function Billing() {
     setSelectedEntries(p => p.includes(id) ? p.filter(x=>x!==id) : [...p,id])
   }
 
+  async function loadInstallments(contractId) {
+    try {
+      const r = await fetch(`/api/project-installments?contract_id=${contractId}`)
+      const list = (await r.json()).installments || []
+      setInstallments(list)
+      return list
+    } catch(e) { console.error(e); setInstallments([]); return [] }
+  }
+
   function onSelectContract(contractId) {
     const c = contracts.find(x => String(x.id) === String(contractId))
-    if (!c) { setContractForm(f => ({ ...f, contract_id: contractId })); return }
+    if (!c) { setContractForm(f => ({ ...f, contract_id: contractId })); setInstallments([]); setSelectedInstallment(''); return }
+
+    if (c.billing_type === 'por_projeto') {
+      // O valor da fatura vem da parcela escolhida, não do contrato.
+      setSelectedInstallment('')
+      loadInstallments(c.id)
+      setContractForm(f => ({
+        ...f,
+        contract_id: contractId,
+        invoice_value: '',
+        tax_percentage_used: c.has_tax ? String(c.tax_percentage ?? '') : '0',
+        tax_client_percent_used: c.has_tax ? String(c.tax_client_percent ?? '0') : '0',
+      }))
+      return
+    }
+
+    setInstallments([])
+    setSelectedInstallment('')
     const base = parseFloat(c.contract_value) || 0
     const tcp = c.has_tax ? (parseFloat(c.tax_client_percent) || 0) : 0
     const nf = tcp > 0 && tcp < 100 ? base / (1 - tcp / 100) : base
@@ -101,6 +136,10 @@ export default function Billing() {
       has_tax: contract.has_tax, tax_percentage: contract.tax_percentage, tax_client_percent: contract.tax_client_percent,
       is_active: contract.is_active, financial_rule_id: contract.financial_rule_id, notes: contract.notes,
       displacement_hours: contract.displacement_hours, cnpj: contract.cnpj,
+      // PATCH reescreve a linha inteira — sem estes campos o contrato por projeto
+      // perderia a configuração de split ao atualizar o imposto por aqui.
+      projeto_split_mode: contract.projeto_split_mode, projeto_victor_pct: contract.projeto_victor_pct,
+      projeto_victor_fixed: contract.projeto_victor_fixed, projeto_expenses: contract.projeto_expenses,
       ...overrides,
     }
     await fetch('/api/contracts', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -128,15 +167,19 @@ export default function Billing() {
 
   async function saveContractInvoice() {
     const contract = contracts.find(c => String(c.id) === String(contractForm.contract_id))
-    if (!contract || !contractForm.invoice_value) return
+    if (!contract) return
+    const isProjeto = contract.billing_type === 'por_projeto'
+    if (isProjeto ? !selectedInstallment : !contractForm.invoice_value) return
 
     await maybeUpdateContractTaxes(contract)
 
     const isEdit = !!editInvoice
     const method = isEdit ? 'PUT' : 'POST'
+    const type = isProjeto ? 'projeto' : 'contract'
+    const extra = isProjeto ? { installment_id: Number(selectedInstallment) } : {}
     const body = isEdit
-      ? { id: editInvoice.id, ...contractForm, billing_type: 'contract', contract_id: contract.id, client_id: contract.client_id }
-      : { ...contractForm, company_id: activeCompany.id, client_id: contract.client_id, billing_type: 'contract' }
+      ? { id: editInvoice.id, ...contractForm, ...extra, billing_type: type, contract_id: contract.id, client_id: contract.client_id }
+      : { ...contractForm, ...extra, company_id: activeCompany.id, client_id: contract.client_id, billing_type: type }
 
     const res = await fetch('/api/invoices', {
       method,
@@ -147,6 +190,8 @@ export default function Billing() {
     if (data.invoice || data.success) {
       setShowContractModal(false)
       setEditInvoice(null)
+      setInstallments([])
+      setSelectedInstallment('')
       fetchAll()
       if (data.breakdown) {
         const b = data.breakdown
@@ -217,7 +262,25 @@ export default function Billing() {
 
   function openEditInvoice(inv) {
     setEditInvoice(inv)
-    if (inv.billing_type === 'contract') {
+    if (inv.billing_type === 'projeto') {
+      const c = contracts.find(x => String(x.id) === String(inv.contract_id))
+      setContractForm({
+        contract_id: inv.contract_id || '',
+        month: inv.month,
+        year: inv.year,
+        invoice_value: inv.invoice_value ? parseFloat(inv.invoice_value).toFixed(2) : '',
+        invoice_number: inv.invoice_number || '',
+        payment_date: inv.payment_date ? String(inv.payment_date).slice(0,10) : '',
+        notes: inv.notes || '',
+        tax_percentage_used: c?.has_tax ? String(c.tax_percentage ?? '') : '0',
+        tax_client_percent_used: c?.has_tax ? String(c.tax_client_percent ?? '0') : '0',
+      })
+      loadInstallments(inv.contract_id).then(list => {
+        const linked = list.find(it => String(it.invoice_id) === String(inv.id))
+        setSelectedInstallment(linked ? String(linked.id) : '')
+      })
+      setShowContractModal(true)
+    } else if (inv.billing_type === 'contract') {
       const c = contracts.find(x => String(x.id) === String(inv.contract_id))
       const base = parseFloat(c?.contract_value) || 0
       const nf = parseFloat(inv.invoice_value) || base
@@ -253,6 +316,8 @@ export default function Billing() {
 
   function openContractModal() {
     setEditInvoice(null)
+    setInstallments([])
+    setSelectedInstallment('')
     setContractForm({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
     setShowContractModal(true)
   }
@@ -341,7 +406,7 @@ export default function Billing() {
                     <span className="text-gray-400 text-xs">{months[inv.month-1]}/{inv.year}</span>
                     {inv.invoice_number && <span className="text-gray-500 text-xs">NF: {inv.invoice_number}</span>}
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[inv.status]||'bg-gray-700 text-gray-400'}`}>{inv.status}</span>
-                    <span className="text-gray-600 text-xs">{inv.billing_type==='contract'?'📄 Contrato':'📅 Agenda'}</span>
+                    <span className="text-gray-600 text-xs">{inv.billing_type==='contract'?'📄 Contrato':inv.billing_type==='projeto'?'📦 Projeto':'📅 Agenda'}</span>
                   </div>
                   {inv.contract_name && <p className="text-gray-400 text-sm mb-2">{inv.contract_name}</p>}
                   <div className="bg-gray-800 rounded-lg p-3 space-y-1 text-xs">
@@ -402,6 +467,100 @@ export default function Billing() {
               {(() => {
                 const c = contracts.find(x => String(x.id) === String(contractForm.contract_id))
                 if (!c) return null
+
+                if (c.billing_type === 'por_projeto') {
+                  const inst = installments.find(it => String(it.id) === String(selectedInstallment))
+                  const base = parseFloat(inst?.value) || 0
+                  const taxReal = parseFloat(contractForm.tax_percentage_used) || 0
+                  const taxClient = parseFloat(contractForm.tax_client_percent_used) || 0
+                  // Split de 0% é legítimo (cliente 100/0) — não usar `|| 50`, que o converteria em 50%.
+                  const victorPct = isNaN(parseFloat(c.remainder_victor_pct)) ? 50 : parseFloat(c.remainder_victor_pct)
+                  const fabPct = isNaN(parseFloat(c.remainder_fabricio_pct)) ? 50 : parseFloat(c.remainder_fabricio_pct)
+                  const impostoReal = base * taxReal / 100
+                  const net = base - impostoReal
+                  const mode = c.projeto_split_mode || 'direct_split'
+                  let priority = 0
+                  if (mode === 'percent_victor') priority = net * ((parseFloat(c.projeto_victor_pct) || 0) / 100)
+                  else if (mode === 'fixed_victor') priority = parseFloat(c.projeto_victor_fixed) || 0
+                  else if (mode === 'expenses') priority = parseFloat(c.projeto_expenses) || 0
+                  priority = Math.min(Math.max(priority, 0), net)
+                  const restante = Math.max(net - priority, 0)
+                  const victorLucro = restante * victorPct / 100
+                  const fabricio = restante * fabPct / 100
+                  const nf = taxClient > 0 && taxClient < 100 ? base / (1 - taxClient / 100) : base
+                  const diffNf = Math.max(nf - base, 0)
+                  const victorTotal = priority + victorLucro + diffNf
+                  const PRIORITY_LABEL = {
+                    percent_victor: `Victor ${parseFloat(c.projeto_victor_pct) || 0}% (prioritário)`,
+                    fixed_victor: 'Victor fixo (prioritário)',
+                    expenses: 'Despesas Victor (reembolso)',
+                    direct_split: null,
+                  }
+                  return (
+                    <>
+                      <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Parcelas do projeto</p>
+                        {installments.length === 0 ? (
+                          <p className="text-gray-500 text-xs py-1">Este contrato não tem parcelas cadastradas.</p>
+                        ) : installments.map(it => {
+                          const isLinked = editInvoice && String(it.invoice_id) === String(editInvoice.id)
+                          const selectable = it.status === 'pendente' || isLinked
+                          return (
+                            <label key={it.id} className={`flex items-center gap-2 p-2 rounded-lg ${selectable ? 'cursor-pointer hover:bg-gray-800' : 'opacity-50 cursor-not-allowed'}`}>
+                              <input type="radio" name="installment" value={it.id} disabled={!selectable} checked={String(selectedInstallment) === String(it.id)} onChange={()=>setSelectedInstallment(String(it.id))} className="shrink-0"/>
+                              <span className="text-gray-400 text-xs w-6">#{it.installment_number}</span>
+                              <span className="text-white text-xs flex-1 truncate">{it.description || 'Parcela'}</span>
+                              {it.due_date && <span className="text-gray-500 text-xs">{new Date(it.due_date).toLocaleDateString('pt-BR',{timeZone:'UTC'})}</span>}
+                              <span className="text-white text-xs font-medium">{fmt(it.value)}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${it.status === 'faturado' ? 'bg-amber-500/20 text-amber-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{it.status}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+
+                      <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Impostos</p>
+                        <div className="flex gap-3">
+                          <div className="flex flex-col gap-1 flex-1">
+                            <label className="text-xs text-gray-400 font-medium">% Imposto real (Victor)</label>
+                            <input type="number" step="0.01" value={contractForm.tax_percentage_used} onChange={e=>setContractForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                          </div>
+                          <div className="flex flex-col gap-1 flex-1">
+                            <label className="text-xs text-gray-400 font-medium">% Imposto cliente</label>
+                            <input type="number" step="0.01" value={contractForm.tax_client_percent_used} onChange={e=>setContractForm(f=>({...f,tax_client_percent_used:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                          </div>
+                        </div>
+                        <p className="text-gray-500 text-xs">O valor NF é calculado a partir da parcela selecionada.</p>
+                      </div>
+
+                      {inst && (
+                        <div className="bg-gray-800 rounded-xl p-3 space-y-1 text-xs">
+                          <p className="text-gray-400 font-medium uppercase tracking-wider mb-1">Demonstrativo — {SPLIT_MODE_LABEL[mode]}</p>
+                          <div className="flex justify-between"><span className="text-gray-400">Valor da parcela</span><span className="text-white">{fmt(base)}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(impostoReal)}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">Líquido</span><span className="text-white font-medium">{fmt(net)}</span></div>
+                          {PRIORITY_LABEL[mode] && (
+                            <div className="flex justify-between"><span className="text-gray-400">(-) {PRIORITY_LABEL[mode]}</span><span className="text-blue-300">-{fmt(priority)}</span></div>
+                          )}
+                          <div className="flex justify-between"><span className="text-gray-400">Restante p/ split ({victorPct}% V / {fabPct}% F)</span><span className="text-white">{fmt(restante)}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(nf)}</span></div>
+                          {diffNf > 0.005 && (
+                            <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(diffNf)}</span></div>
+                          )}
+                          <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
+                            {priority > 0.005 && (
+                              <div className="flex justify-between"><span className="text-gray-400">Victor prioritário</span><span className="text-blue-300">+{fmt(priority)}</span></div>
+                            )}
+                            <div className="flex justify-between"><span className="text-gray-400">Victor lucro</span><span className="text-blue-300">+{fmt(victorLucro)}</span></div>
+                            <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor total</span><span className="text-blue-400">{fmt(victorTotal)}</span></div>
+                          </div>
+                          <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício total</span><span className="text-purple-400">{fmt(fabricio)}</span></div>
+                        </div>
+                      )}
+                    </>
+                  )
+                }
+
                 const base = parseFloat(c.contract_value) || 0
                 const victorFixo = parseFloat(c.victor_fixed) || 0
                 const victorPct = parseFloat(c.remainder_victor_pct) || 50
@@ -467,8 +626,12 @@ export default function Billing() {
               <textarea placeholder="Observações" value={contractForm.notes} onChange={e=>setContractForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
             <div className="flex gap-3 mt-5 sticky bottom-0 -mx-6 -mb-6 px-6 pt-3 pb-6 bg-gray-900 border-t border-gray-800">
-              <button onClick={()=>{setShowContractModal(false);setEditInvoice(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
-              <button onClick={saveContractInvoice} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">Gerar Fatura</button>
+              <button onClick={()=>{setShowContractModal(false);setEditInvoice(null);setInstallments([]);setSelectedInstallment('')}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              {(() => {
+                const c = contracts.find(x => String(x.id) === String(contractForm.contract_id))
+                const blocked = c?.billing_type === 'por_projeto' && !selectedInstallment
+                return <button onClick={saveContractInvoice} disabled={blocked} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">Gerar Fatura</button>
+              })()}
             </div>
           </div>
         </div>

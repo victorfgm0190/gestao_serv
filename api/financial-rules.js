@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     const {
       client_id, hourly_rate, has_tax, tax_percentage,
       victor_fixed_per_hour, has_fuel, fuel_value,
-      remainder_victor_pct, remainder_fabricio_pct,
+      remainder_victor_pct, remainder_fabricio_pct, tipo,
     } = req.body
 
     if (!client_id) return res.status(400).json({ error: 'client_id obrigatório' })
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
         INSERT INTO financial_rules (
           client_id, hourly_rate, has_tax, tax_percentage,
           victor_fixed_per_hour, has_fuel, fuel_value,
-          remainder_victor_pct, remainder_fabricio_pct
+          remainder_victor_pct, remainder_fabricio_pct, tipo
         ) VALUES (
           ${client_id},
           ${hourly_rate || null},
@@ -49,7 +49,8 @@ export default async function handler(req, res) {
           ${has_fuel || false},
           ${fuel_value || null},
           ${remainder_victor_pct || 50},
-          ${remainder_fabricio_pct || 50}
+          ${remainder_fabricio_pct || 50},
+          ${tipo || 'hora'}
         ) RETURNING *
       `
       return res.status(201).json({ rule: result[0] })
@@ -63,7 +64,7 @@ export default async function handler(req, res) {
     const {
       client_id, hourly_rate, has_tax, tax_percentage,
       victor_fixed_per_hour, has_fuel, fuel_value,
-      remainder_victor_pct, remainder_fabricio_pct,
+      remainder_victor_pct, remainder_fabricio_pct, tipo,
     } = req.body
 
     if (!id) return res.status(400).json({ error: 'id obrigatório' })
@@ -80,7 +81,8 @@ export default async function handler(req, res) {
           has_fuel = ${has_fuel || false},
           fuel_value = ${fuel_value || null},
           remainder_victor_pct = ${remainder_victor_pct || 50},
-          remainder_fabricio_pct = ${remainder_fabricio_pct || 50}
+          remainder_fabricio_pct = ${remainder_fabricio_pct || 50},
+          tipo = ${tipo || 'hora'}
         WHERE id = ${id}
         RETURNING *
       `

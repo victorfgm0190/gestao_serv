@@ -13,6 +13,7 @@ export default function FinancialRules() {
   const [savingClient, setSavingClient] = useState(false)
   const [form, setForm] = useState({
     client_id: '',
+    tipo: 'hora',
     hourly_rate: '',
     has_tax: false,
     tax_percentage: '',
@@ -41,13 +42,14 @@ export default function FinancialRules() {
   }
 
   function resetForm() {
-    setForm({ client_id: '', hourly_rate: '', has_tax: false, tax_percentage: '', victor_fixed_per_hour: '', has_fuel: false, fuel_value: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50' })
+    setForm({ client_id: '', tipo: 'hora', hourly_rate: '', has_tax: false, tax_percentage: '', victor_fixed_per_hour: '', has_fuel: false, fuel_value: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50' })
   }
 
   function openEdit(r) {
     setEditRule(r)
     setForm({
       client_id: r.client_id ?? '',
+      tipo: r.tipo ?? 'hora',
       hourly_rate: r.hourly_rate ?? '',
       has_tax: r.has_tax ?? false,
       tax_percentage: r.tax_percentage ?? '',
@@ -67,7 +69,9 @@ export default function FinancialRules() {
   }
 
   async function save() {
-    if (!form.client_id || !form.hourly_rate) return
+    // Por projeto não tem valor/hora — os valores vêm das parcelas do contrato.
+    if (!form.client_id) return
+    if (form.tipo === 'hora' && !form.hourly_rate) return
     try {
       const url = editRule ? `/api/financial-rules?id=${editRule.id}` : '/api/financial-rules'
       await fetch(url, {
@@ -135,11 +139,14 @@ export default function FinancialRules() {
             <div key={r.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-white font-semibold text-lg">{r.client_name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-semibold text-lg">{r.client_name}</p>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.tipo === 'por_projeto' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}`}>{r.tipo === 'por_projeto' ? 'Por projeto' : 'Por hora'}</span>
+                  </div>
                   <div className="flex flex-wrap gap-4 mt-3 text-sm">
-                    <span className="text-gray-400">Hora: <span className="text-white">{fmt(r.hourly_rate)}</span></span>
+                    {r.tipo !== 'por_projeto' && <span className="text-gray-400">Hora: <span className="text-white">{fmt(r.hourly_rate)}</span></span>}
                     {r.has_tax && <span className="text-gray-400">Imposto: <span className="text-red-400">{r.tax_percentage}%</span></span>}
-                    <span className="text-gray-400">Victor/h: <span className="text-blue-400">{fmt(r.victor_fixed_per_hour)}</span></span>
+                    {r.tipo !== 'por_projeto' && <span className="text-gray-400">Victor/h: <span className="text-blue-400">{fmt(r.victor_fixed_per_hour)}</span></span>}
                     {r.has_fuel && <span className="text-gray-400">Combustível: <span className="text-yellow-400">{fmt(r.fuel_value)}</span></span>}
                     <span className="text-gray-400">Restante: <span className="text-green-400">{r.remainder_victor_pct}% Victor / {r.remainder_fabricio_pct}% Fab</span></span>
                   </div>
@@ -163,8 +170,22 @@ export default function FinancialRules() {
                 <option value="">Selecione o cliente</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
-              <input placeholder="Valor hora bruto (R$)" type="number" value={form.hourly_rate} onChange={e=>setForm(f=>({...f,hourly_rate:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <input placeholder="Valor fixo Victor por hora (R$)" type="number" value={form.victor_fixed_per_hour} onChange={e=>setForm(f=>({...f,victor_fixed_per_hour:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Tipo</label>
+                <select value={form.tipo} onChange={e=>setForm(f=>({...f,tipo:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                  <option value="hora">Por hora</option>
+                  <option value="por_projeto">Por projeto</option>
+                </select>
+              </div>
+              {form.tipo === 'hora' && (
+                <>
+                  <input placeholder="Valor hora bruto (R$)" type="number" value={form.hourly_rate} onChange={e=>setForm(f=>({...f,hourly_rate:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <input placeholder="Valor fixo Victor por hora (R$)" type="number" value={form.victor_fixed_per_hour} onChange={e=>setForm(f=>({...f,victor_fixed_per_hour:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                </>
+              )}
+              {form.tipo === 'por_projeto' && (
+                <p className="text-gray-500 text-xs bg-gray-800/50 rounded-lg px-3 py-2">Os valores vêm das parcelas cadastradas no contrato. Aqui defina só imposto, split e deslocamento.</p>
+              )}
               <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.has_tax} onChange={e=>setForm(f=>({...f,has_tax:e.target.checked}))} className="rounded"/>
                 Tem imposto?

@@ -26,11 +26,11 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id } = req.body
+    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id, projeto_split_mode, projeto_victor_pct, projeto_victor_fixed, projeto_expenses } = req.body
     try {
       const result = await sql`
-        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id)
-        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value}, ${victor_fixed}, ${remainder_victor_pct || 50}, ${remainder_fabricio_pct || 50}, ${has_tax || false}, ${tax_percentage || null}, ${tax_client_percent || 0}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0}, ${displacement_hours || 0}, ${cnpj || null}, ${financial_rule_id || null})
+        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id, projeto_split_mode, projeto_victor_pct, projeto_victor_fixed, projeto_expenses)
+        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value || 0}, ${victor_fixed || 0}, ${remainder_victor_pct || 50}, ${remainder_fabricio_pct || 50}, ${has_tax || false}, ${tax_percentage || null}, ${tax_client_percent || 0}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0}, ${displacement_hours || 0}, ${cnpj || null}, ${financial_rule_id || null}, ${projeto_split_mode || 'direct_split'}, ${projeto_victor_pct || 0}, ${projeto_victor_fixed || 0}, ${projeto_expenses || 0})
         RETURNING *
       `
       return res.status(201).json({ contract: result[0] })
@@ -59,6 +59,10 @@ export default async function handler(req, res) {
           tax_client_percent = ${fields.tax_client_percent || 0},
           is_active = ${fields.is_active},
           financial_rule_id = ${fields.financial_rule_id || null},
+          projeto_split_mode = ${fields.projeto_split_mode || 'direct_split'},
+          projeto_victor_pct = ${fields.projeto_victor_pct || 0},
+          projeto_victor_fixed = ${fields.projeto_victor_fixed || 0},
+          projeto_expenses = ${fields.projeto_expenses || 0},
           notes = ${fields.notes}
         WHERE id = ${id}
         RETURNING *

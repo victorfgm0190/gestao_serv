@@ -3,6 +3,21 @@ import { useOutletContext } from 'react-router-dom'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
+const EMPTY_FORM = {
+  client_id: '', name: '', cnpj: '', billing_type: 'mensal', contract_value: '', victor_fixed: '',
+  remainder_victor_pct: '50', remainder_fabricio_pct: '50',
+  has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '',
+  deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', displacement_hours: '', financial_rule_id: '',
+  projeto_split_mode: 'direct_split', projeto_victor_pct: '', projeto_victor_fixed: '', projeto_expenses: '',
+}
+
+const SPLIT_MODE_LABEL = {
+  percent_victor: 'Victor % primeiro, depois split',
+  fixed_victor: 'Victor valor fixo, depois split',
+  direct_split: 'Split direto (sem prioridade)',
+  expenses: 'Despesas p/ Victor, depois split',
+}
+
 export default function Contracts() {
   const { activeCompany } = useOutletContext()
   const [contracts, setContracts] = useState([])
@@ -14,14 +29,12 @@ export default function Contracts() {
   const [editContract, setEditContract] = useState(null)
   const [selectedContract, setSelectedContract] = useState(null)
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
-  const [form, setForm] = useState({
-    client_id: '', name: '', cnpj: '', billing_type: 'mensal', contract_value: '', victor_fixed: '',
-    remainder_victor_pct: '50', remainder_fabricio_pct: '50',
-    has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '',
-    deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', displacement_hours: '', financial_rule_id: '',
-  })
+  const [form, setForm] = useState(EMPTY_FORM)
   const [clientRules, setClientRules] = useState([])
   const [rulesLoading, setRulesLoading] = useState(false)
+  const [installments, setInstallments] = useState([])
+  const [deletedInstallments, setDeletedInstallments] = useState([])
+  const [savingContract, setSavingContract] = useState(false)
   const [monthForm, setMonthForm] = useState({
     contract_id: '', client_id: '', month: new Date().getMonth() + 1,
     year: new Date().getFullYear(), invoice_value: '', notes: '',
@@ -56,21 +69,99 @@ export default function Contracts() {
 
   function openNew() {
     setEditContract(null)
-    setForm({ client_id: '', name: '', cnpj: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', displacement_hours: '', financial_rule_id: '' })
+    setForm(EMPTY_FORM)
     setClientRules([])
+    setInstallments([])
+    setDeletedInstallments([])
     setShowModal(true)
   }
 
+  async function loadInstallments(contractId) {
+    if (!contractId) { setInstallments([]); return }
+    try {
+      const r = await fetch(`/api/project-installments?contract_id=${contractId}`)
+      setInstallments((await r.json()).installments || [])
+    } catch(e) { console.error(e); setInstallments([]) }
+  }
+
+  function addInstallment() {
+    setInstallments(list => [...list, {
+      _key: `new-${Date.now()}-${list.length}`,
+      installment_number: list.length + 1,
+      description: '', value: '', due_date: '',
+      status: 'pendente', invoice_id: null,
+    }])
+  }
+
+  function updateInstallment(idx, patch) {
+    setInstallments(list => list.map((it, i) => i === idx ? { ...it, ...patch } : it))
+  }
+
+  function removeInstallment(idx) {
+    const it = installments[idx]
+    if (it.invoice_id) { alert('Parcela já faturada. Estorne a fatura antes de excluir.'); return }
+    if (it.id) setDeletedInstallments(d => [...d, it.id])
+    setInstallments(list => list.filter((_, i) => i !== idx))
+  }
+
+  // Salva/atualiza/remove as parcelas de um contrato por projeto.
+  async function persistInstallments(contractId) {
+    for (const id of deletedInstallments) {
+      await fetch(`/api/project-installments?id=${id}`, { method: 'DELETE' })
+    }
+    for (const [i, it] of installments.entries()) {
+      if (it.invoice_id) continue   // faturada: imutável
+      const body = {
+        contract_id: contractId,
+        installment_number: i + 1,
+        description: it.description || null,
+        value: parseFloat(it.value) || 0,
+        due_date: it.due_date || null,
+      }
+      if (it.id) {
+        await fetch(`/api/project-installments?id=${it.id}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        })
+      } else {
+        await fetch('/api/project-installments', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        })
+      }
+    }
+  }
+
   async function saveContract() {
-    if (!form.client_id || !form.name || !form.contract_value || !form.financial_rule_id) return
-    const method = editContract ? 'PATCH' : 'POST'
-    const body = editContract ? { id: editContract.id, ...form, is_active: true } : { ...form, company_id: activeCompany.id }
-    await fetch('/api/contracts', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    setShowModal(false)
-    setEditContract(null)
-    setForm({ client_id: '', name: '', cnpj: '', billing_type: 'mensal', contract_value: '', victor_fixed: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50', has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '', deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', displacement_hours: '', financial_rule_id: '' })
-    setClientRules([])
-    fetchAll()
+    if (!form.client_id || !form.name || !form.financial_rule_id) return
+    const isProjeto = form.billing_type === 'por_projeto'
+    // Por projeto: o valor vem da soma das parcelas, então exige ao menos uma.
+    if (isProjeto ? installments.length === 0 : !form.contract_value) return
+    if (savingContract) return
+    setSavingContract(true)
+    try {
+      const payload = isProjeto
+        ? { ...form, contract_value: installmentsTotal, victor_fixed: 0 }
+        : form
+      const method = editContract ? 'PATCH' : 'POST'
+      const body = editContract ? { id: editContract.id, ...payload, is_active: true } : { ...payload, company_id: activeCompany.id }
+      const res = await fetch('/api/contracts', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const data = await res.json()
+      const contractId = editContract ? editContract.id : data.contract?.id
+      if (!contractId) { alert('Erro ao salvar contrato: ' + (data.error || 'Falha')); return }
+      if (isProjeto) await persistInstallments(contractId)
+
+      setShowModal(false)
+      setEditContract(null)
+      setForm(EMPTY_FORM)
+      setClientRules([])
+      setInstallments([])
+      setDeletedInstallments([])
+      fetchAll()
+    } catch(e) {
+      console.error(e)
+      alert('Erro ao salvar contrato.')
+    } finally {
+      setSavingContract(false)
+    }
   }
 
   async function saveMonth() {
@@ -98,8 +189,11 @@ export default function Contracts() {
     const base = parseFloat(c.contract_value) || 0
     const pct = parseFloat(c.tax_client_percent) || 0
     const nf = base > 0 && pct > 0 && pct < 100 ? (base / (1 - pct / 100)).toFixed(2) : ''
-    setForm({ client_id: c.client_id, name: c.name, cnpj: c.cnpj || '', billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', tax_client_percent: c.tax_client_percent || '', tax_client_nf: nf, notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', displacement_hours: c.displacement_hours || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '' })
+    setForm({ client_id: c.client_id, name: c.name, cnpj: c.cnpj || '', billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', tax_client_percent: c.tax_client_percent || '', tax_client_nf: nf, notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', displacement_hours: c.displacement_hours || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '', projeto_split_mode: c.projeto_split_mode || 'direct_split', projeto_victor_pct: c.projeto_victor_pct || '', projeto_victor_fixed: c.projeto_victor_fixed || '', projeto_expenses: c.projeto_expenses || '' })
     loadRulesForClient(c.client_id)
+    setDeletedInstallments([])
+    if ((c.billing_type || 'mensal') === 'por_projeto') loadInstallments(c.id)
+    else setInstallments([])
     setShowModal(true)
   }
 
@@ -109,8 +203,15 @@ export default function Contracts() {
     setShowMonthModal(true)
   }
 
+  // Base do gross-up: por projeto é a soma das parcelas; nos demais, o valor do contrato.
+  function taxBase() {
+    return form.billing_type === 'por_projeto'
+      ? installments.reduce((s, it) => s + (parseFloat(it.value) || 0), 0)
+      : parseFloat(form.contract_value) || 0
+  }
+
   function onTaxPercentChange(v) {
-    const base = parseFloat(form.contract_value) || 0
+    const base = taxBase()
     const percent = parseFloat(v)
     let nf = ''
     if (base > 0 && !isNaN(percent) && percent < 100) {
@@ -120,7 +221,7 @@ export default function Contracts() {
   }
 
   function onTaxNfChange(v) {
-    const base = parseFloat(form.contract_value) || 0
+    const base = taxBase()
     const nf = parseFloat(v)
     let percent = ''
     if (!isNaN(nf) && nf > 0) {
@@ -130,12 +231,15 @@ export default function Contracts() {
   }
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
+  const isProjeto = form.billing_type === 'por_projeto'
+  const installmentsTotal = installments.reduce((s, it) => s + (parseFloat(it.value) || 0), 0)
   const valuePlaceholder = form.billing_type === 'hora' ? 'Valor por hora (R$)' : form.billing_type === 'dia' ? 'Valor por dia (R$)' : 'Valor do contrato líquido (R$)'
   const victorPlaceholder = form.billing_type === 'hora' ? 'Valor fixo Victor por hora (R$)' : form.billing_type === 'dia' ? 'Valor fixo Victor por dia (R$)' : 'Valor fixo Victor (R$)'
   const BILLING_BADGE = {
     mensal: { label: 'Mensal', cls: 'bg-gray-700 text-gray-300' },
     hora: { label: 'Por hora', cls: 'bg-blue-500/20 text-blue-400' },
     dia: { label: 'Por dia', cls: 'bg-green-500/20 text-green-400' },
+    por_projeto: { label: 'Por projeto', cls: 'bg-amber-500/20 text-amber-400' },
   }
   const DESLOC_LABEL = {
     nao_cobrado: 'Não cobrado ao cliente',
@@ -169,7 +273,9 @@ export default function Contracts() {
                 <p className="text-indigo-400 text-sm">{c.client_name}</p>
                 <div className="flex gap-4 mt-2 text-xs text-gray-400">
                   <span>Contrato: <span className="text-white">{fmt(c.contract_value)}</span></span>
-                  <span>Victor fixo: <span className="text-blue-400">{fmt(c.victor_fixed)}</span></span>
+                  {c.billing_type === 'por_projeto'
+                    ? <span>Divisão: <span className="text-amber-400">{SPLIT_MODE_LABEL[c.projeto_split_mode] || SPLIT_MODE_LABEL.direct_split}</span></span>
+                    : <span>Victor fixo: <span className="text-blue-400">{fmt(c.victor_fixed)}</span></span>}
                   <span>Restante: <span className="text-green-400">{c.remainder_victor_pct}% V / {c.remainder_fabricio_pct}% F</span></span>
                   {c.has_tax && <span>Imposto: <span className="text-red-400">{c.tax_percentage}%</span></span>}
                   <span>Deslocamento: <span className="text-gray-300">{DESLOC_LABEL[c.deslocamento_tipo] || DESLOC_LABEL.nao_cobrado}{(c.deslocamento_tipo === 'hora' || c.deslocamento_tipo === 'hora_despesas') && parseFloat(c.deslocamento_valor_hora) > 0 ? ` (${fmt(c.deslocamento_valor_hora)}/h)` : ''}</span></span>
@@ -286,6 +392,7 @@ export default function Contracts() {
                 <option value="mensal">Mensal (valor fixo por mês)</option>
                 <option value="hora">Por hora</option>
                 <option value="dia">Por dia</option>
+                <option value="por_projeto">Por projeto (parcelas)</option>
               </select>
 
               <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
@@ -308,14 +415,100 @@ export default function Contracts() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Valor do contrato líquido</label>
-                <input placeholder={valuePlaceholder} type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Valor fixo Victor</label>
-                <input placeholder={victorPlaceholder} type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              </div>
+              {!isProjeto && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-medium">Valor do contrato líquido</label>
+                    <input placeholder={valuePlaceholder} type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-medium">Valor fixo Victor</label>
+                    <input placeholder={victorPlaceholder} type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  </div>
+                </>
+              )}
+
+              {isProjeto && (
+                <>
+                  <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                    <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Divisão do projeto</p>
+                    <select value={form.projeto_split_mode} onChange={e=>setForm(f=>({...f,projeto_split_mode:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                      <option value="direct_split">Split direto — divide o líquido por %V/%F</option>
+                      <option value="percent_victor">% Victor primeiro, depois split do restante</option>
+                      <option value="fixed_victor">Valor fixo Victor primeiro, depois split do restante</option>
+                      <option value="expenses">Despesas 100% Victor, depois split do restante</option>
+                    </select>
+                    {form.projeto_split_mode === 'percent_victor' && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-400 font-medium">% Victor sobre o líquido (antes do split)</label>
+                        <input placeholder="Ex: 30" type="number" step="0.01" value={form.projeto_victor_pct} onChange={e=>setForm(f=>({...f,projeto_victor_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                      </div>
+                    )}
+                    {form.projeto_split_mode === 'fixed_victor' && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-400 font-medium">Valor fixo Victor por parcela (R$)</label>
+                        <input placeholder="Ex: 2000.00" type="number" step="0.01" value={form.projeto_victor_fixed} onChange={e=>setForm(f=>({...f,projeto_victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                      </div>
+                    )}
+                    {form.projeto_split_mode === 'expenses' && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-400 font-medium">Despesas por parcela — reembolso 100% Victor (R$)</label>
+                        <input placeholder="Ex: 500.00" type="number" step="0.01" value={form.projeto_expenses} onChange={e=>setForm(f=>({...f,projeto_expenses:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                      </div>
+                    )}
+                    <p className="text-gray-500 text-xs">Imposto sempre primeiro. Depois sai a parte prioritária do Victor e só o restante é dividido por %V/%F.</p>
+                  </div>
+
+                  <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Parcelas</p>
+                      <button type="button" onClick={addInstallment} className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs">+ Adicionar parcela</button>
+                    </div>
+                    {installments.length === 0 ? (
+                      <p className="text-gray-500 text-xs py-2">Nenhuma parcela. Adicione ao menos uma para salvar o contrato.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="text-gray-500 text-left">
+                              <th className="pb-1 pr-2 font-medium w-8">Nº</th>
+                              <th className="pb-1 pr-2 font-medium">Descrição</th>
+                              <th className="pb-1 pr-2 font-medium w-24">Valor (R$)</th>
+                              <th className="pb-1 pr-2 font-medium w-32">Vencimento</th>
+                              <th className="pb-1 font-medium w-8"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {installments.map((it, idx) => (
+                              <tr key={it.id || it._key}>
+                                <td className="py-1 pr-2 text-gray-400">{idx + 1}</td>
+                                <td className="py-1 pr-2">
+                                  <input placeholder="Ex: Entrada" value={it.description || ''} disabled={!!it.invoice_id} onChange={e=>updateInstallment(idx,{description:e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-blue-500 disabled:opacity-50"/>
+                                </td>
+                                <td className="py-1 pr-2">
+                                  <input placeholder="0.00" type="number" step="0.01" value={it.value ?? ''} disabled={!!it.invoice_id} onChange={e=>updateInstallment(idx,{value:e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-blue-500 disabled:opacity-50"/>
+                                </td>
+                                <td className="py-1 pr-2">
+                                  <input type="date" value={it.due_date ? String(it.due_date).slice(0,10) : ''} disabled={!!it.invoice_id} onChange={e=>updateInstallment(idx,{due_date:e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50"/>
+                                </td>
+                                <td className="py-1 text-right">
+                                  {it.invoice_id
+                                    ? <span className="text-amber-400" title="Parcela faturada">🔒</span>
+                                    : <button type="button" onClick={()=>removeInstallment(idx)} className="text-gray-600 hover:text-red-400" title="Excluir parcela">🗑</button>}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-gray-700 pt-2 text-xs">
+                      <span className="text-gray-400">Valor do contrato (soma das parcelas)</span>
+                      <span className="text-white font-semibold">{fmt(installmentsTotal)}</span>
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="flex gap-3">
                 <div className="flex flex-col gap-1 flex-1">
                   <label className="text-xs text-gray-400 font-medium">% Victor</label>
@@ -332,7 +525,7 @@ export default function Contracts() {
               </label>
               {form.has_tax && <input placeholder="% imposto" type="number" value={form.tax_percentage} onChange={e=>setForm(f=>({...f,tax_percentage:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>}
               {form.has_tax && (() => {
-                const base = parseFloat(form.contract_value) || 0
+                const base = taxBase()
                 const nf = parseFloat(form.tax_client_nf)
                 const imposto = !isNaN(nf) ? nf - base : (parseFloat(form.tax_client_percent) > 0 && base > 0 && parseFloat(form.tax_client_percent) < 100 ? base / (1 - parseFloat(form.tax_client_percent) / 100) - base : 0)
                 return (
@@ -366,7 +559,7 @@ export default function Contracts() {
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={()=>{setShowModal(false);setEditContract(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
-              <button onClick={saveContract} disabled={!form.financial_rule_id} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">Salvar</button>
+              <button onClick={saveContract} disabled={!form.financial_rule_id || savingContract || (isProjeto && installments.length === 0)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{savingContract ? 'Salvando...' : 'Salvar'}</button>
             </div>
           </div>
         </div>

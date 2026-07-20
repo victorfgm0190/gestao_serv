@@ -19,6 +19,13 @@ function resolvePct(used, fallback) {
   return parseFloat(fallback) || 0
 }
 
+// Split cadastrado. Não usar `|| 50`: um split legítimo de 0% (cliente 100/0)
+// é falsy e viraria 50%, pagando Fabrício indevidamente.
+function splitPct(value, fallback) {
+  const n = parseFloat(value)
+  return isNaN(n) ? fallback : n
+}
+
 // CONTRATO FIXO (billing_type = 'contract' / 'mensal')
 function calcContrato(contract, opts = {}) {
   const base = parseFloat(contract.contract_value) || 0
@@ -100,6 +107,64 @@ function calcAgenda(entries, rule, opts = {}) {
   }
 }
 
+// CONTRATO POR PROJETO (billing_type = 'por_projeto') — fatura UMA parcela.
+// Imposto sempre primeiro; depois um valor prioritário do Victor sai do líquido
+// e só o restante é dividido por %Victor / %Fabrício.
+//   percent_victor → prioridade = líquido × projeto_victor_pct
+//   fixed_victor   → prioridade = projeto_victor_fixed
+//   direct_split   → sem prioridade, divide o líquido inteiro
+//   expenses       → prioridade = projeto_expenses (reembolso 100% Victor)
+export function calcProjeto(contract, installment, opts = {}) {
+  const base = parseFloat(installment.value) || 0
+  const victor_pct = splitPct(contract.remainder_victor_pct, 50)
+  const fab_pct = splitPct(contract.remainder_fabricio_pct, 50)
+  const taxClient = resolvePct(opts.tax_client_percent_used, contract.tax_client_percent)
+  const taxReal = resolvePct(opts.tax_percentage_used, contract.has_tax ? contract.tax_percentage : 0)
+
+  const tax_amount = base * (taxReal / 100)   // imposto sempre primeiro
+  const net = base - tax_amount
+
+  const mode = contract.projeto_split_mode || 'direct_split'
+  let priority = 0
+  if (mode === 'percent_victor') priority = net * ((parseFloat(contract.projeto_victor_pct) || 0) / 100)
+  else if (mode === 'fixed_victor') priority = parseFloat(contract.projeto_victor_fixed) || 0
+  else if (mode === 'expenses') priority = parseFloat(contract.projeto_expenses) || 0
+  priority = Math.min(Math.max(priority, 0), net)   // nunca excede o líquido
+
+  const restante = Math.max(net - priority, 0)
+  const victor_lucro = restante * (victor_pct / 100)
+  const fabricio = restante * (fab_pct / 100)
+
+  const nf = taxClient > 0 && taxClient < 100 ? base / (1 - taxClient / 100) : base
+  const diff_nf = Math.max(nf - base, 0)            // gross-up do imposto do cliente → 100% Victor
+  const victor_total = priority + victor_lucro + diff_nf
+
+  return {
+    invoice_value: round(nf),
+    contract_value: round(base),
+    tax_amount: round(tax_amount),
+    tax_percentage_used: taxReal,
+    tax_client_percent_used: taxClient,
+    victor_service: round(priority),
+    victor_profit: round(victor_lucro),
+    victor_tax_diff: round(diff_nf),
+    victor_total: round(victor_total),
+    fabricio_total: round(fabricio),
+    projeto_split_mode: mode,
+    net_value: round(net),
+  }
+}
+
+// Carrega contrato + parcela para uma fatura por projeto. Retorna { error } se algo falhar.
+async function loadProjeto(sql, contract_id, installment_id) {
+  if (!installment_id) return { error: 'Selecione a parcela a faturar.' }
+  const inst = await sql`SELECT * FROM project_installments WHERE id = ${installment_id} LIMIT 1`
+  if (!inst.length) return { error: 'Parcela não encontrada' }
+  const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id || inst[0].contract_id} LIMIT 1`
+  if (!contracts.length) return { error: 'Contrato não encontrado' }
+  return { installment: inst[0], contract: contracts[0] }
+}
+
 export default async function handler(req, res) {
   const sql = neon(process.env.DATABASE_URL)
 
@@ -112,10 +177,17 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, client_id, contract_id, month, year, invoice_number, billing_type, time_entry_ids, notes, tax_percentage_used, tax_client_percent_used, payment_date } = req.body
+    const { company_id, client_id, contract_id, month, year, invoice_number, billing_type, time_entry_ids, installment_id, notes, tax_percentage_used, tax_client_percent_used, payment_date } = req.body
     try {
       let calc
-      if (billing_type === 'contract') {
+      if (billing_type === 'projeto') {
+        const loaded = await loadProjeto(sql, contract_id, installment_id)
+        if (loaded.error) return res.status(400).json({ error: loaded.error })
+        if (loaded.installment.invoice_id) {
+          return res.status(400).json({ error: 'Esta parcela já foi faturada.' })
+        }
+        calc = calcProjeto(loaded.contract, loaded.installment, { tax_percentage_used, tax_client_percent_used })
+      } else if (billing_type === 'contract') {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
@@ -141,6 +213,10 @@ export default async function handler(req, res) {
       `
 
       await sql`UPDATE invoices SET receivable_id = ${receivable[0].id} WHERE id = ${invoice[0].id}`
+
+      if (billing_type === 'projeto') {
+        await sql`UPDATE project_installments SET invoice_id = ${invoice[0].id}, status = 'faturado' WHERE id = ${installment_id}`
+      }
 
       return res.status(201).json({ invoice: invoice[0], receivable: receivable[0], breakdown: calc })
     } catch (error) {
@@ -172,6 +248,8 @@ export default async function handler(req, res) {
         // Remover payables gerados por esta fatura
         await sql`DELETE FROM payables_fabricio WHERE invoice_id = ${id}`
         await sql`DELETE FROM payables_victor WHERE invoice_id = ${id}`
+        // Liberar a parcela do projeto para ser faturada de novo
+        await sql`UPDATE project_installments SET invoice_id = NULL, status = 'pendente' WHERE invoice_id = ${id}`
         // Reverter status da fatura
         await sql`UPDATE invoices SET status='pendente' WHERE id=${id}`
         return res.status(200).json({ success: true, action: 'estorno' })
@@ -200,7 +278,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PUT') {
-    const { id, invoice_number, notes, billing_type, time_entry_ids, contract_id, client_id, tax_percentage_used, tax_client_percent_used, payment_date } = req.body
+    const { id, invoice_number, notes, billing_type, time_entry_ids, installment_id, contract_id, client_id, tax_percentage_used, tax_client_percent_used, payment_date } = req.body
     try {
       const invoices = await sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`
       if (!invoices.length) return res.status(404).json({ error: 'Fatura não encontrada' })
@@ -211,7 +289,17 @@ export default async function handler(req, res) {
       }
 
       let calc
-      if (billing_type === 'contract') {
+      if (billing_type === 'projeto') {
+        // Sem installment_id no body, recalcula em cima da parcela já vinculada à fatura.
+        let instId = installment_id
+        if (!instId) {
+          const linked = await sql`SELECT id FROM project_installments WHERE invoice_id = ${id} LIMIT 1`
+          instId = linked[0]?.id
+        }
+        const loaded = await loadProjeto(sql, contract_id || inv.contract_id, instId)
+        if (loaded.error) return res.status(400).json({ error: loaded.error })
+        calc = calcProjeto(loaded.contract, loaded.installment, { tax_percentage_used, tax_client_percent_used })
+      } else if (billing_type === 'contract') {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id || inv.contract_id} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
@@ -271,6 +359,8 @@ export default async function handler(req, res) {
 
       await sql`DELETE FROM payables_fabricio WHERE invoice_id = ${id}`
       await sql`DELETE FROM payables_victor WHERE invoice_id = ${id}`
+      // Libera a parcela antes de apagar a fatura, senão ela fica presa em 'faturado'.
+      await sql`UPDATE project_installments SET invoice_id = NULL, status = 'pendente' WHERE invoice_id = ${id}`
       await sql`DELETE FROM invoices WHERE id = ${id}`
 
       return res.status(200).json({ success: true })
