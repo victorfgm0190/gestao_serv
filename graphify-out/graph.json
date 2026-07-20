@@ -103,28 +103,6 @@
       "norm_label": "warn"
     },
     {
-      "label": "admin.js",
-      "file_type": "code",
-      "source_file": "api/admin.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_admin",
-      "community": 16,
-      "community_name": "admin.js",
-      "norm_label": "admin.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/admin.js",
-      "source_location": "L3",
-      "_origin": "ast",
-      "id": "api_admin_handler",
-      "community": 16,
-      "community_name": "admin.js",
-      "norm_label": "handler()"
-    },
-    {
       "label": "clients.js",
       "file_type": "code",
       "source_file": "api/clients.js",
@@ -235,21 +213,10 @@
       "norm_label": "cron-sync.js"
     },
     {
-      "label": "fetchEmailsFromAccount()",
-      "file_type": "code",
-      "source_file": "api/cron-sync.js",
-      "source_location": "L5",
-      "_origin": "ast",
-      "id": "api_cron_sync_fetchemailsfromaccount",
-      "community": 12,
-      "community_name": "cron-sync.js",
-      "norm_label": "fetchemailsfromaccount()"
-    },
-    {
       "label": "handler()",
       "file_type": "code",
       "source_file": "api/cron-sync.js",
-      "source_location": "L50",
+      "source_location": "L4",
       "_origin": "ast",
       "id": "api_cron_sync_handler",
       "community": 12,
@@ -323,28 +290,6 @@
       "norm_label": "handler()"
     },
     {
-      "label": "finance.js",
-      "file_type": "code",
-      "source_file": "api/finance.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_finance",
-      "community": 22,
-      "community_name": "finance.js",
-      "norm_label": "finance.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/finance.js",
-      "source_location": "L3",
-      "_origin": "ast",
-      "id": "api_finance_handler",
-      "community": 22,
-      "community_name": "finance.js",
-      "norm_label": "handler()"
-    },
-    {
       "label": "financial-rules.js",
       "file_type": "code",
       "source_file": "api/financial-rules.js",
@@ -384,30 +329,19 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_ingest_email",
-      "community": 13,
-      "community_name": "ingest-email.js",
+      "community": 12,
+      "community_name": "cron-sync.js",
       "norm_label": "ingest-email.js"
-    },
-    {
-      "label": "fetchEmailsFromAccount()",
-      "file_type": "code",
-      "source_file": "api/ingest-email.js",
-      "source_location": "L5",
-      "_origin": "ast",
-      "id": "api_ingest_email_fetchemailsfromaccount",
-      "community": 13,
-      "community_name": "ingest-email.js",
-      "norm_label": "fetchemailsfromaccount()"
     },
     {
       "label": "handler()",
       "file_type": "code",
       "source_file": "api/ingest-email.js",
-      "source_location": "L73",
+      "source_location": "L4",
       "_origin": "ast",
       "id": "api_ingest_email_handler",
-      "community": 13,
-      "community_name": "ingest-email.js",
+      "community": 12,
+      "community_name": "cron-sync.js",
       "norm_label": "handler()"
     },
     {
@@ -521,157 +455,25 @@
       "norm_label": "handler()"
     },
     {
-      "label": "migrate-contracts-deslocamento.js",
-      "file_type": "code",
-      "source_file": "api/migrate-contracts-deslocamento.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_migrate_contracts_deslocamento",
-      "community": 24,
-      "community_name": "migrate-contracts-deslocamento.js",
-      "norm_label": "migrate-contracts-deslocamento.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/migrate-contracts-deslocamento.js",
-      "source_location": "L2",
-      "_origin": "ast",
-      "id": "api_migrate_contracts_deslocamento_handler",
-      "community": 24,
-      "community_name": "migrate-contracts-deslocamento.js",
-      "norm_label": "handler()"
-    },
-    {
-      "label": "migrate-finance-origin.js",
-      "file_type": "code",
-      "source_file": "api/migrate-finance-origin.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_migrate_finance_origin",
-      "community": 25,
-      "community_name": "migrate-finance-origin.js",
-      "norm_label": "migrate-finance-origin.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/migrate-finance-origin.js",
-      "source_location": "L3",
-      "_origin": "ast",
-      "id": "api_migrate_finance_origin_handler",
-      "community": 25,
-      "community_name": "migrate-finance-origin.js",
-      "norm_label": "handler()"
-    },
-    {
-      "label": "migrate-financial-rules.js",
-      "file_type": "code",
-      "source_file": "api/migrate-financial-rules.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_migrate_financial_rules",
-      "community": 26,
-      "community_name": "migrate-financial-rules.js",
-      "norm_label": "migrate-financial-rules.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/migrate-financial-rules.js",
-      "source_location": "L2",
-      "_origin": "ast",
-      "id": "api_migrate_financial_rules_handler",
-      "community": 26,
-      "community_name": "migrate-financial-rules.js",
-      "norm_label": "handler()"
-    },
-    {
-      "label": "migrate-invoices.js",
-      "file_type": "code",
-      "source_file": "api/migrate-invoices.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_migrate_invoices",
-      "community": 27,
-      "community_name": "migrate-invoices.js",
-      "norm_label": "migrate-invoices.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/migrate-invoices.js",
-      "source_location": "L2",
-      "_origin": "ast",
-      "id": "api_migrate_invoices_handler",
-      "community": 27,
-      "community_name": "migrate-invoices.js",
-      "norm_label": "handler()"
-    },
-    {
-      "label": "migrate-payable-payments.js",
-      "file_type": "code",
-      "source_file": "api/migrate-payable-payments.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_migrate_payable_payments",
-      "community": 28,
-      "community_name": "migrate-payable-payments.js",
-      "norm_label": "migrate-payable-payments.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/migrate-payable-payments.js",
-      "source_location": "L3",
-      "_origin": "ast",
-      "id": "api_migrate_payable_payments_handler",
-      "community": 28,
-      "community_name": "migrate-payable-payments.js",
-      "norm_label": "handler()"
-    },
-    {
       "label": "migrate-por-projeto.js",
       "file_type": "code",
       "source_file": "api/migrate-por-projeto.js",
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_migrate_por_projeto",
-      "community": 51,
-      "community_name": "migrate-por-projeto.js",
+      "community": 10,
+      "community_name": "time-entries.js",
       "norm_label": "migrate-por-projeto.js"
     },
     {
       "label": "handler()",
       "file_type": "code",
       "source_file": "api/migrate-por-projeto.js",
-      "source_location": "L3",
+      "source_location": "L4",
       "_origin": "ast",
       "id": "api_migrate_por_projeto_handler",
-      "community": 51,
-      "community_name": "migrate-por-projeto.js",
-      "norm_label": "handler()"
-    },
-    {
-      "label": "migrate-time-entries.js",
-      "file_type": "code",
-      "source_file": "api/migrate-time-entries.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_migrate_time_entries",
-      "community": 29,
-      "community_name": "migrate-time-entries.js",
-      "norm_label": "migrate-time-entries.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/migrate-time-entries.js",
-      "source_location": "L2",
-      "_origin": "ast",
-      "id": "api_migrate_time_entries_handler",
-      "community": 29,
-      "community_name": "migrate-time-entries.js",
+      "community": 10,
+      "community_name": "time-entries.js",
       "norm_label": "handler()"
     },
     {
@@ -887,7 +689,7 @@
       "label": "handler()",
       "file_type": "code",
       "source_file": "api/recalc-time-entries.js",
-      "source_location": "L14",
+      "source_location": "L15",
       "_origin": "ast",
       "id": "api_recalc_time_entries_handler",
       "community": 10,
@@ -947,50 +749,6 @@
       "id": "api_reclassify_demands_handler",
       "community": 31,
       "community_name": "reclassify-demands.js",
-      "norm_label": "handler()"
-    },
-    {
-      "label": "setup-clients.js",
-      "file_type": "code",
-      "source_file": "api/setup-clients.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_setup_clients",
-      "community": 32,
-      "community_name": "setup-clients.js",
-      "norm_label": "setup-clients.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/setup-clients.js",
-      "source_location": "L3",
-      "_origin": "ast",
-      "id": "api_setup_clients_handler",
-      "community": 32,
-      "community_name": "setup-clients.js",
-      "norm_label": "handler()"
-    },
-    {
-      "label": "setup-db.js",
-      "file_type": "code",
-      "source_file": "api/setup-db.js",
-      "source_location": "L1",
-      "_origin": "ast",
-      "id": "api_setup_db",
-      "community": 33,
-      "community_name": "setup-db.js",
-      "norm_label": "setup-db.js"
-    },
-    {
-      "label": "handler()",
-      "file_type": "code",
-      "source_file": "api/setup-db.js",
-      "source_location": "L3",
-      "_origin": "ast",
-      "id": "api_setup_db_handler",
-      "community": 33,
-      "community_name": "setup-db.js",
       "norm_label": "handler()"
     },
     {
@@ -1080,6 +838,94 @@
       "community": 34,
       "community_name": "victor-reserves.js",
       "norm_label": "handler()"
+    },
+    {
+      "label": "admin-auth.js",
+      "file_type": "code",
+      "source_file": "lib/admin-auth.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_admin_auth",
+      "community": 10,
+      "community_name": "time-entries.js",
+      "norm_label": "admin-auth.js"
+    },
+    {
+      "label": "requireAdmin()",
+      "file_type": "code",
+      "source_file": "lib/admin-auth.js",
+      "source_location": "L10",
+      "_origin": "ast",
+      "id": "lib_admin_auth_requireadmin",
+      "community": 10,
+      "community_name": "time-entries.js",
+      "norm_label": "requireadmin()"
+    },
+    {
+      "label": "email-ingest.js",
+      "file_type": "code",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_email_ingest",
+      "community": 12,
+      "community_name": "cron-sync.js",
+      "norm_label": "email-ingest.js"
+    },
+    {
+      "label": "makeImapConfig()",
+      "file_type": "code",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "lib_email_ingest_makeimapconfig",
+      "community": 12,
+      "community_name": "cron-sync.js",
+      "norm_label": "makeimapconfig()"
+    },
+    {
+      "label": "classify()",
+      "file_type": "code",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "lib_email_ingest_classify",
+      "community": 12,
+      "community_name": "cron-sync.js",
+      "norm_label": "classify()"
+    },
+    {
+      "label": "fetchEmailsFromAccount()",
+      "file_type": "code",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L44",
+      "_origin": "ast",
+      "id": "lib_email_ingest_fetchemailsfromaccount",
+      "community": 12,
+      "community_name": "cron-sync.js",
+      "norm_label": "fetchemailsfromaccount()"
+    },
+    {
+      "label": "ingestAccounts()",
+      "file_type": "code",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L111",
+      "_origin": "ast",
+      "id": "lib_email_ingest_ingestaccounts",
+      "community": 12,
+      "community_name": "cron-sync.js",
+      "norm_label": "ingestaccounts()"
+    },
+    {
+      "label": "imperiumAccounts()",
+      "file_type": "code",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L132",
+      "_origin": "ast",
+      "id": "lib_email_ingest_imperiumaccounts",
+      "community": 12,
+      "community_name": "cron-sync.js",
+      "norm_label": "imperiumaccounts()"
     },
     {
       "label": "package.json",
@@ -1627,8 +1473,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_copybutton",
-      "community": 3,
-      "community_name": "Financial.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "copybutton.jsx"
     },
     {
@@ -1638,8 +1484,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_copybutton_copybutton",
-      "community": 3,
-      "community_name": "Financial.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "copybutton()"
     },
     {
@@ -1715,8 +1561,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_billing",
-      "community": 3,
-      "community_name": "Financial.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "billing.jsx"
     },
     {
@@ -1726,8 +1572,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_billing_months",
-      "community": 3,
-      "community_name": "Financial.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "months"
     },
     {
@@ -1737,8 +1583,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_pages_billing_splitpct",
-      "community": 3,
-      "community_name": "Financial.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "splitpct()"
     },
     {
@@ -1748,8 +1594,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_pages_billing_split_mode_label",
-      "community": 3,
-      "community_name": "Financial.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "split_mode_label"
     },
     {
@@ -1759,8 +1605,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_pages_billing_billing",
-      "community": 3,
-      "community_name": "Financial.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "billing()"
     },
     {
@@ -3797,17 +3643,6 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "api/admin.js",
-      "source_location": "L3",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_admin",
-      "target": "api_admin_handler",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
       "source_file": "api/clients.js",
       "source_location": "L11",
       "weight": 1.0,
@@ -3911,18 +3746,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/cron-sync.js",
-      "source_location": "L5",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_cron_sync",
-      "target": "api_cron_sync_fetchemailsfromaccount",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/cron-sync.js",
-      "source_location": "L50",
+      "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_cron_sync",
@@ -3930,16 +3754,64 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-sync.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_sync",
+      "target": "lib_email_ingest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-sync.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_sync",
+      "target": "lib_email_ingest_imperiumaccounts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-sync.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_sync",
+      "target": "lib_email_ingest_ingestaccounts",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
       "source_file": "api/cron-sync.js",
-      "source_location": "L78",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_cron_sync_handler",
-      "target": "api_cron_sync_fetchemailsfromaccount",
-      "confidence_score": 1.0
+      "target": "lib_email_ingest_imperiumaccounts"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/cron-sync.js",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_sync_handler",
+      "target": "lib_email_ingest_ingestaccounts"
     },
     {
       "relation": "contains",
@@ -3972,17 +3844,6 @@
       "_origin": "ast",
       "source": "api_export_os",
       "target": "api_export_os_handler",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/finance.js",
-      "source_location": "L3",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_finance",
-      "target": "api_finance_handler",
       "confidence_score": 1.0
     },
     {
@@ -4023,18 +3884,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/ingest-email.js",
-      "source_location": "L5",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_ingest_email",
-      "target": "api_ingest_email_fetchemailsfromaccount",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/ingest-email.js",
-      "source_location": "L73",
+      "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_ingest_email",
@@ -4042,16 +3892,64 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/ingest-email.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_ingest_email",
+      "target": "lib_email_ingest",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/ingest-email.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_ingest_email",
+      "target": "lib_email_ingest_imperiumaccounts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/ingest-email.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_ingest_email",
+      "target": "lib_email_ingest_ingestaccounts",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
       "source_file": "api/ingest-email.js",
-      "source_location": "L127",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_ingest_email_handler",
-      "target": "api_ingest_email_fetchemailsfromaccount",
-      "confidence_score": 1.0
+      "target": "lib_email_ingest_imperiumaccounts"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/ingest-email.js",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_ingest_email_handler",
+      "target": "lib_email_ingest_ingestaccounts"
     },
     {
       "relation": "contains",
@@ -4287,63 +4185,8 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
-      "source_file": "api/migrate-contracts-deslocamento.js",
-      "source_location": "L2",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_migrate_contracts_deslocamento",
-      "target": "api_migrate_contracts_deslocamento_handler",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/migrate-finance-origin.js",
-      "source_location": "L3",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_migrate_finance_origin",
-      "target": "api_migrate_finance_origin_handler",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/migrate-financial-rules.js",
-      "source_location": "L2",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_migrate_financial_rules",
-      "target": "api_migrate_financial_rules_handler",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/migrate-invoices.js",
-      "source_location": "L2",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_migrate_invoices",
-      "target": "api_migrate_invoices_handler",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/migrate-payable-payments.js",
-      "source_location": "L3",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_migrate_payable_payments",
-      "target": "api_migrate_payable_payments_handler",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
       "source_file": "api/migrate-por-projeto.js",
-      "source_location": "L3",
+      "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_migrate_por_projeto",
@@ -4351,15 +4194,40 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "contains",
+      "relation": "imports_from",
+      "context": "import",
       "confidence": "EXTRACTED",
-      "source_file": "api/migrate-time-entries.js",
+      "source_file": "api/migrate-por-projeto.js",
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "api_migrate_time_entries",
-      "target": "api_migrate_time_entries_handler",
+      "source": "api_migrate_por_projeto",
+      "target": "lib_admin_auth",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/migrate-por-projeto.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_migrate_por_projeto",
+      "target": "lib_admin_auth_requireadmin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/migrate-por-projeto.js",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_migrate_por_projeto_handler",
+      "target": "lib_admin_auth_requireadmin"
     },
     {
       "relation": "contains",
@@ -4639,7 +4507,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/recalc-time-entries.js",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_recalc_time_entries",
@@ -4671,16 +4539,52 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/recalc-time-entries.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_recalc_time_entries",
+      "target": "lib_admin_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/recalc-time-entries.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_recalc_time_entries",
+      "target": "lib_admin_auth_requireadmin",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "api/recalc-time-entries.js",
-      "source_location": "L97",
+      "source_location": "L99",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_recalc_time_entries_handler",
       "target": "api_time_entries_calcular"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/recalc-time-entries.js",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_recalc_time_entries_handler",
+      "target": "lib_admin_auth_requireadmin"
     },
     {
       "relation": "contains",
@@ -4725,28 +4629,6 @@
       "_origin": "ast",
       "source": "api_reclassify_demands",
       "target": "api_reclassify_demands_handler",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/setup-clients.js",
-      "source_location": "L3",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_setup_clients",
-      "target": "api_setup_clients_handler",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/setup-db.js",
-      "source_location": "L3",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_setup_db",
-      "target": "api_setup_db_handler",
       "confidence_score": 1.0
     },
     {
@@ -4861,6 +4743,108 @@
       "_origin": "ast",
       "source": "api_victor_reserves",
       "target": "api_victor_reserves_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/admin-auth.js",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_admin_auth",
+      "target": "lib_admin_auth_requireadmin",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L24",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_ingest",
+      "target": "lib_email_ingest_classify",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L44",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_ingest",
+      "target": "lib_email_ingest_fetchemailsfromaccount",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L132",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_ingest",
+      "target": "lib_email_ingest_imperiumaccounts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L111",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_ingest",
+      "target": "lib_email_ingest_ingestaccounts",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_ingest",
+      "target": "lib_email_ingest_makeimapconfig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L134",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_ingest_imperiumaccounts",
+      "target": "lib_email_ingest_makeimapconfig",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L70",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_ingest_fetchemailsfromaccount",
+      "target": "lib_email_ingest_classify",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-ingest.js",
+      "source_location": "L118",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_ingest_ingestaccounts",
+      "target": "lib_email_ingest_fetchemailsfromaccount",
       "confidence_score": 1.0
     },
     {
@@ -7473,5 +7457,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "a0c59bd47c362152616564f90fa0c7c97d15504a"
+  "built_at_commit": "3c1c8fe9beb5a2ca2878c0e0346ddc0964ef2c26"
 }

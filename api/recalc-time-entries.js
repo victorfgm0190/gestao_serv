@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import { calcular } from './time-entries.js'
+import { requireAdmin } from '../lib/admin-auth.js'
 
 // Reprocessa victor_share/fabricio_share de lançamentos já gravados usando a
 // regra financeira e o contrato atuais. Necessário porque os valores são
@@ -13,6 +14,7 @@ import { calcular } from './time-entries.js'
 // dessincronizaria a fatura e os payables já gerados.
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (!requireAdmin(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
 
   const { company_id, month, year, client_id, apply = false, include_invoiced = false } = req.body || {}

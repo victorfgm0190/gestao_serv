@@ -98,11 +98,17 @@ export default function Demands() {
         body: JSON.stringify({ company_id: activeCompany.id }),
       })
       const data = await res.json()
+      const falhas = data.errors?.length || 0
       if (data.success) {
         alert(`Sincronização concluída: ${data.imported} e-mail(s) importado(s).`)
         fetchDemands()
+      } else if (data.imported > 0) {
+        // Sucesso parcial: parte entrou, parte falhou. Os que falharam continuam
+        // não lidos no servidor e serão tentados de novo na próxima sincronização.
+        alert(`Sincronização parcial: ${data.imported} importado(s), ${falhas} com erro.\n\nOs que falharam serão tentados novamente.`)
+        fetchDemands()
       } else {
-        alert('Erro: ' + (data.error || 'Falha na sincronização'))
+        alert('Erro: ' + (data.error || `Falha na sincronização (${falhas} erro(s)).`))
       }
     } catch (e) {
       alert('Erro de conexão com o servidor.')

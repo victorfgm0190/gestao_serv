@@ -1,7 +1,9 @@
 import { neon } from '@neondatabase/serverless'
+import { requireAdmin } from '../lib/admin-auth.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (!requireAdmin(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
   try {
     // billing_type é varchar livre (sem CHECK/enum) — 'por_projeto' passa a ser

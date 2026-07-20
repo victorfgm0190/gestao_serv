@@ -1,16 +1,16 @@
 # Graph Report - gestao_serv  (2026-07-19)
 
 ## Corpus Check
-- 64 files · ~54,214 words
+- 56 files · ~50,256 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 322 nodes · 347 edges · 53 communities (41 shown, 12 thin omitted)
+- 308 nodes · 358 edges · 41 communities (31 shown, 10 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a0c59bd4`
+- Built from commit: `3c1c8fe9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -27,7 +27,6 @@
 - time-entries.js
 - clients.js
 - cron-sync.js
-- ingest-email.js
 - receivables.js
 - vercel.json
 - contract-months.js
@@ -57,22 +56,28 @@
 7. `6. Regras de negócio financeiro` - 8 edges
 8. `handler()` - 6 edges
 9. `pagarDistribuido()` - 6 edges
-10. `Financial()` - 6 edges
+10. `ingestAccounts()` - 6 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `handler()` --calls--> `calcular()`  [EXTRACTED]
-  api/recalc-time-entries.js → api/time-entries.js
-- `Layout()` --calls--> `useNotifications()`  [EXTRACTED]
-  src/components/Layout.jsx → src/hooks/useNotifications.js
+- `handler()` --calls--> `requireAdmin()`  [EXTRACTED]
+  api/migrate-por-projeto.js → lib/admin-auth.js
+- `handler()` --calls--> `imperiumAccounts()`  [EXTRACTED]
+  api/cron-sync.js → lib/email-ingest.js
+- `handler()` --calls--> `ingestAccounts()`  [EXTRACTED]
+  api/cron-sync.js → lib/email-ingest.js
+- `handler()` --calls--> `imperiumAccounts()`  [EXTRACTED]
+  api/ingest-email.js → lib/email-ingest.js
+- `handler()` --calls--> `ingestAccounts()`  [EXTRACTED]
+  api/ingest-email.js → lib/email-ingest.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (53 total, 12 thin omitted)
+## Communities (41 total, 10 thin omitted)
 
 ### Community 0 - "main.jsx"
-Cohesion: 0.12
-Nodes (19): react, companies, Layout(), useNotifications(), Clientes(), COMPANIES, emptyForm, Contracts() (+11 more)
+Cohesion: 0.09
+Nodes (24): react, CopyButton(), companies, Layout(), useNotifications(), Billing(), months, SPLIT_MODE_LABEL (+16 more)
 
 ### Community 1 - "dependencies"
 Cohesion: 0.11
@@ -83,8 +88,8 @@ Cohesion: 0.07
 Nodes (26): autoprefixer, oxlint, devDependencies, autoprefixer, oxlint, postcss, tailwindcss, @types/react (+18 more)
 
 ### Community 3 - "Financial.jsx"
-Cohesion: 0.12
-Nodes (18): CopyButton(), Billing(), months, SPLIT_MODE_LABEL, splitPct(), EMPTY_RECEIVE_CATS, EMPTY_VICTOR_CATS, FINANCE_ENDPOINTS (+10 more)
+Cohesion: 0.17
+Nodes (13): EMPTY_RECEIVE_CATS, EMPTY_VICTOR_CATS, FINANCE_ENDPOINTS, Financial(), months, parseNotesToAmounts(), proportionalCats(), RECEIVE_LABEL_TO_KEY (+5 more)
 
 ### Community 5 - "payables-victor.js"
 Cohesion: 0.42
@@ -107,8 +112,12 @@ Cohesion: 0.70
 Nodes (4): handler(), periodFromDate(), recalcParent(), TABLES
 
 ### Community 10 - "time-entries.js"
-Cohesion: 0.46
-Nodes (6): handler(), calcular(), calcularHoras(), handler(), splitPct(), timeToDecimal()
+Cohesion: 0.32
+Nodes (8): handler(), handler(), calcular(), calcularHoras(), handler(), splitPct(), timeToDecimal(), requireAdmin()
+
+### Community 12 - "cron-sync.js"
+Cohesion: 0.44
+Nodes (7): handler(), handler(), classify(), fetchEmailsFromAccount(), imperiumAccounts(), ingestAccounts(), makeImapConfig()
 
 ### Community 39 - "CLAUDE.md — Contexto do Projeto gestao_serv"
 Cohesion: 0.07
@@ -149,21 +158,21 @@ Nodes (3): Expanding the Oxlint configuration, React Compiler, React + Vite
 ## Knowledge Gaps
 - **132 isolated node(s):** `$schema`, `oxc`, `react/rules-of-hooks`, `warn`, `TABLES` (+127 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **12 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **10 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `react` connect `main.jsx` to `Financial.jsx`, `.oxlintrc.json`, `Dashboard.jsx`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+  _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Why does `CLAUDE.md — Contexto do Projeto gestao_serv` connect `CLAUDE.md — Contexto do Projeto gestao_serv` to `3. Banco de dados — tabelas, colunas e tipos`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
 - **Why does `dependencies` connect `dependencies` to `devDependencies`?**
-  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **What connects `$schema`, `oxc`, `react/rules-of-hooks` to the rest of the system?**
   _132 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `main.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.11576354679802955 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.09365079365079365 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**
