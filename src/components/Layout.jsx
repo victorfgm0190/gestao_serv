@@ -143,6 +143,9 @@ export default function Layout() {
           >
             <span>🧾</span> Faturamento
           </NavLink>
+          <NavLink to="/settings" className={navClass}>
+            <span>⚙️</span> Configurações
+          </NavLink>
           {/* Gestão de usuários: exclusiva do administrador master. */}
           {master && (
             <NavLink to="/users" className={navClass}>

@@ -14,6 +14,7 @@ import Financial from './pages/Financial'
 import Billing from './pages/Billing'
 import Login from './pages/Login'
 import Users from './pages/Users'
+import Settings from './pages/Settings'
 import { installFetchInterceptor, isLoggedIn } from './lib/session'
 
 // Anexa o token em toda chamada /api/ e trata 401 de forma central.
@@ -45,6 +46,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="contracts" element={<Contracts />} />
           <Route path="financial" element={<Financial />} />
           <Route path="billing" element={<Billing />} />
+          <Route path="settings" element={<Settings />} />
           <Route path="users" element={<Users />} />
         </Route>
       </Routes>

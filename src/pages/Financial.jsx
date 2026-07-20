@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { todayBR } from '../lib/dateUtils'
 import CopyButton from '../components/CopyButton'
+import { calcularImpostos } from '../lib/taxCalc'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const STATUS_COLORS = {
@@ -117,6 +118,9 @@ export default function Financial() {
   const [erroPay, setErroPay] = useState('')
   const [erroPayments, setErroPayments] = useState('')
   const [erroReceive, setErroReceive] = useState('')
+  // Previsão de impostos (só Lumen / company_id=1) — reserva de caixa na aba Pagar Victor.
+  const [companySettings, setCompanySettings] = useState(null)
+  const [monthFaturamento, setMonthFaturamento] = useState(0)
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear, mode])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
@@ -138,6 +142,27 @@ export default function Financial() {
   }, [activeCompany])
   // Reservas do Victor exibidas no card da aba (mês/ano/empresa do filtro ativo).
   useEffect(() => { if (tab === 'victor') fetchReserves() }, [tab, filterMonth, filterYear, activeCompany])
+  // Previsão de impostos: só Lumen. Busca config fiscal + total de NF do mês do filtro.
+  useEffect(() => {
+    if (tab === 'victor' && activeCompany.id === 1) fetchTaxPreview()
+    else { setCompanySettings(null); setMonthFaturamento(0) }
+  }, [tab, filterMonth, filterYear, activeCompany])
+
+  async function fetchTaxPreview() {
+    const { rm, ry } = reserveRefPeriod()
+    try {
+      const [setRes, invRes] = await Promise.all([
+        fetch(`/api/settings?company_id=${activeCompany.id}`),
+        fetch(`/api/invoices?company_id=${activeCompany.id}&year=${ry}`),
+      ])
+      setCompanySettings((await setRes.json()).data || null)
+      const invoices = (await invRes.json()).invoices || []
+      const total = invoices
+        .filter(i => Number(i.month) === Number(rm))
+        .reduce((s, i) => s + (parseFloat(i.invoice_value) || 0), 0)
+      setMonthFaturamento(total)
+    } catch (e) { console.error(e) }
+  }
 
   async function fetchAll() {
     setLoading(true)
@@ -518,6 +543,12 @@ export default function Financial() {
   const refMonth = filterMonth === '' ? (new Date().getMonth() + 1) : Number(filterMonth)
   const refYear = Number(filterYear) || new Date().getFullYear()
   const REF_KEY = refYear * 100 + refMonth
+  // Previsão de impostos (só Lumen, aba Victor, config fiscal preenchida).
+  const taxPreview = (tab === 'victor' && activeCompany.id === 1 && companySettings && companySettings.regime)
+    ? calcularImpostos(companySettings, monthFaturamento) : null
+  // No caixa, NF emitida no mês M é paga no mês M+1.
+  const nextMonth = refMonth === 12 ? 1 : refMonth + 1
+  const nextYear = refMonth === 12 ? refYear + 1 : refYear
   // Chave de CAIXA do registro (payment_month/year, com fallback na competência).
   const payKey = (r) => (Number(r.payment_year) || r.year) * 100 + (Number(r.payment_month) || r.month)
   // Na edição, a referência precisa cobrir o mês de CAIXA mais recente entre os payables da sessão
@@ -835,6 +866,42 @@ export default function Financial() {
 
       {tab === 'receivables' && (
         <div className="mb-4">{statusFilter}</div>
+      )}
+
+      {/* Previsão de impostos — só Lumen, aba Pagar Victor */}
+      {tab === 'victor' && taxPreview && (
+        <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-5 mb-6">
+          <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+            <h3 className="text-white font-semibold">📊 Previsão de Impostos — {months[refMonth-1]}/{refYear}</h3>
+            <span className="text-xs text-gray-400">{taxPreview.regimeLabel}</span>
+          </div>
+          {mode === 'caixa' && (
+            <p className="text-amber-300/90 text-xs mb-3">💸 Impostos previstos para pagamento em {months[nextMonth-1]}/{nextYear}</p>
+          )}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+            <div className="flex justify-between col-span-2 border-b border-gray-800 pb-2 mb-1">
+              <span className="text-gray-400">Faturamento do mês (NF)</span>
+              <span className="text-white font-medium">{fmt(taxPreview.faturamentoMes)}</span>
+            </div>
+            {taxPreview.fatorR != null && (
+              <div className="flex justify-between col-span-2 text-xs">
+                <span className="text-gray-500">Fator R</span>
+                <span className="text-gray-300">{(taxPreview.fatorR * 100).toFixed(1)}% → Anexo {taxPreview.anexo}</span>
+              </div>
+            )}
+            {taxPreview.itens.map((it) => (
+              <div key={it.label} className="flex justify-between col-span-2 sm:col-span-1">
+                <span className="text-gray-400">{it.label}</span>
+                <span className="text-gray-200 font-mono">{fmt(it.value)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between items-center border-t border-gray-800 mt-3 pt-3">
+            <span className="text-gray-300 font-medium">Total a reservar</span>
+            <span className="text-orange-400 text-lg font-bold">{fmt(taxPreview.total)}</span>
+          </div>
+          <p className="text-gray-600 text-[11px] mt-3">⚠️ Previsão estimada. Consulte seu contador.</p>
+        </div>
       )}
 
       {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : (currentData.length === 0 && previewData.length === 0) ? (

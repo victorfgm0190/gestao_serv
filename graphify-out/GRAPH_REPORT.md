@@ -1,16 +1,16 @@
-# Graph Report - gestao_serv  (2026-07-19)
+# Graph Report - gestao_serv  (2026-07-20)
 
 ## Corpus Check
-- 65 files · ~55,216 words
+- 69 files · ~57,116 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 348 nodes · 512 edges · 28 communities (23 shown, 5 thin omitted)
+- 364 nodes · 541 edges · 28 communities (23 shown, 5 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9f68f781`
+- Built from commit: `7d8483a9`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -41,16 +41,16 @@
 - extraction-spec.md
 
 ## God Nodes (most connected - your core abstractions)
-1. `requireAuth()` - 38 edges
-2. `react` - 16 edges
+1. `requireAuth()` - 42 edges
+2. `react` - 17 edges
 3. `3. Banco de dados — tabelas, colunas e tipos` - 16 edges
 4. `CLAUDE.md — Contexto do Projeto gestao_serv` - 13 edges
 5. `What You Must Do When Invoked` - 12 edges
 6. `/graphify` - 11 edges
-7. `graphify reference: extra exports and benchmark` - 8 edges
-8. `6. Regras de negócio financeiro` - 8 edges
-9. `handler()` - 7 edges
-10. `Financial()` - 7 edges
+7. `Financial()` - 8 edges
+8. `graphify reference: extra exports and benchmark` - 8 edges
+9. `6. Regras de negócio financeiro` - 8 edges
+10. `handler()` - 7 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `handler()` --calls--> `requireAuth()`  [EXTRACTED]
@@ -70,8 +70,8 @@
 ## Communities (28 total, 5 thin omitted)
 
 ### Community 0 - "main.jsx"
-Cohesion: 0.10
-Nodes (29): react, companies, Layout(), useNotifications(), clearToken(), getToken(), getUser(), installFetchInterceptor() (+21 more)
+Cohesion: 0.09
+Nodes (32): react, companies, Layout(), useNotifications(), clearToken(), getToken(), getUser(), installFetchInterceptor() (+24 more)
 
 ### Community 1 - "dependencies"
 Cohesion: 0.11
@@ -82,8 +82,8 @@ Cohesion: 0.07
 Nodes (26): autoprefixer, oxlint, devDependencies, autoprefixer, oxlint, postcss, tailwindcss, @types/react (+18 more)
 
 ### Community 3 - "Financial.jsx"
-Cohesion: 0.11
-Nodes (21): CopyButton(), todayBR(), Billing(), months, SPLIT_MODE_LABEL, splitPct(), EMPTY_RECEIVE_CATS, EMPTY_VICTOR_CATS (+13 more)
+Cohesion: 0.09
+Nodes (28): CopyButton(), todayBR(), aliquotaEfetiva(), calcINSS(), calcularImpostos(), faixaFor(), r2(), SIMPLES_III (+20 more)
 
 ### Community 5 - "payables-victor.js"
 Cohesion: 0.24
@@ -103,7 +103,7 @@ Nodes (8): calcAgenda(), calcContrato(), calcProjeto(), handler(), loadProjeto()
 
 ### Community 9 - "payable-payments.js"
 Cohesion: 0.09
-Nodes (31): handler(), parseCompanyIds(), handler(), splitPct(), handler(), splitPct(), handler(), handler() (+23 more)
+Nodes (33): handler(), parseCompanyIds(), handler(), splitPct(), handler(), splitPct(), handler(), handler() (+25 more)
 
 ### Community 10 - "time-entries.js"
 Cohesion: 0.32
@@ -146,7 +146,7 @@ Cohesion: 0.50
 Nodes (3): Expanding the Oxlint configuration, React Compiler, React + Vite
 
 ## Knowledge Gaps
-- **134 isolated node(s):** `$schema`, `oxc`, `react/rules-of-hooks`, `warn`, `TABLES` (+129 more)
+- **138 isolated node(s):** `$schema`, `oxc`, `react/rules-of-hooks`, `warn`, `TABLES` (+133 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -154,16 +154,16 @@ Nodes (3): Expanding the Oxlint configuration, React Compiler, React + Vite
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `requireAuth()` connect `payable-payments.js` to `invoices.js`, `time-entries.js`, `cron-sync.js`, `payables-victor.js`?**
-  _High betweenness centrality (0.040) - this node is a cross-community bridge._
+  _High betweenness centrality (0.041) - this node is a cross-community bridge._
 - **Why does `react` connect `main.jsx` to `Financial.jsx`, `.oxlintrc.json`, `Dashboard.jsx`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
 - **What connects `$schema`, `oxc`, `react/rules-of-hooks` to the rest of the system?**
-  _134 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _138 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `main.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.0975609756097561 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08686868686868687 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.07407407407407407 - nodes in this community are weakly interconnected._
 - **Should `Financial.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.10837438423645321 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08858858858858859 - nodes in this community are weakly interconnected._

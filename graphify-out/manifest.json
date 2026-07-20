@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1784511808.950838,
-    "ast_hash": "dff50ec587b3815fcbc08e0bcd4242da",
+    "mtime": 1784564212.7928991,
+    "ast_hash": "893da419eac640476159c1b07345501c",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -120,8 +120,8 @@
     "semantic_hash": "d070709419d1c5e263b53059b20974e1"
   },
   "src/components/Layout.jsx": {
-    "mtime": 1784510393.1052399,
-    "ast_hash": "16505ed49b1eade7d4e30a5abd7eb250",
+    "mtime": 1784563930.6709538,
+    "ast_hash": "7d0f456b75d13f9740e174add61867c4",
     "semantic_hash": ""
   },
   "src/hooks/useNotifications.js": {
@@ -130,8 +130,8 @@
     "semantic_hash": "cf7a0b6b5c1795a4e2a729422f79036a"
   },
   "src/main.jsx": {
-    "mtime": 1784510377.531599,
-    "ast_hash": "b39d1ae40c3b65de4047d05bcf55c82b",
+    "mtime": 1784563925.9356048,
+    "ast_hash": "72ee9b3c057225079ba303b85fa7064b",
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
@@ -165,8 +165,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1784512030.18578,
-    "ast_hash": "80182e9d6bd4c1d1a509b139fb503289",
+    "mtime": 1784564011.0051389,
+    "ast_hash": "a1608ed17c44721464ed02de338851c1",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -352,6 +352,26 @@
   "src/lib/dateUtils.js": {
     "mtime": 1784511559.6655178,
     "ast_hash": "6468fd5bc3a7a3c26663ff3fabf5be04",
+    "semantic_hash": ""
+  },
+  "api/migrate-settings.js": {
+    "mtime": 1784563890.4442194,
+    "ast_hash": "4bb5e2121bc906e9ec97510bbfd277a2",
+    "semantic_hash": ""
+  },
+  "api/settings.js": {
+    "mtime": 1784563882.038461,
+    "ast_hash": "cc90ec16d0a317c78365e96f82586643",
+    "semantic_hash": ""
+  },
+  "src/lib/taxCalc.js": {
+    "mtime": 1784563872.8657596,
+    "ast_hash": "653906cd0e13028e82e297484f764f3f",
+    "semantic_hash": ""
+  },
+  "src/pages/Settings.jsx": {
+    "mtime": 1784563920.6877108,
+    "ast_hash": "b666a6a953ba80d7f35be53ad01853d6",
     "semantic_hash": ""
   }
 }
