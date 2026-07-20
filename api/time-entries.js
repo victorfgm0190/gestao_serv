@@ -67,7 +67,9 @@ function calcular(horas, regra, horas_deslocamento = 0, contrato = null, despesa
   // Split só sobre horas de trabalho líquido
   const net_trabalho = gross * (1 - imposto_pct)
   const victor_fixo = parseFloat(regra.victor_fixed_per_hour) || 0
-  const victor_servico = hours * victor_fixo
+  // Fixo do Victor sobre a hora LÍQUIDA (mesma base do deslocamento, que já usa
+  // valor_hora_liq): o imposto já saiu do bruto em net_trabalho.
+  const victor_servico = hours * victor_fixo * (1 - imposto_pct)
   const restante = Math.max(net_trabalho - victor_servico, 0)
   const victor_lucro = restante * splitPct(regra.remainder_victor_pct, 50) / 100
   const fabricio = restante * splitPct(regra.remainder_fabricio_pct, 50) / 100

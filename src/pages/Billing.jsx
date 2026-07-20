@@ -778,7 +778,8 @@ export default function Billing() {
                 const net = bruto - impostoReal
                 // Deslocamento: 100% Victor, fora do split, com imposto proporcional deduzido.
                 const deslocNet = deslocValue * (1 - taxReal / 100)
-                const victorServico = totalHours * victorFixoHora
+                // Fixo do Victor sobre a hora líquida (mesma base do backend).
+                const victorServico = totalHours * victorFixoHora * (1 - taxReal / 100)
                 const restante = Math.max(net - victorServico - deslocNet, 0)
                 const victorLucro = restante * victorPct / 100
                 const fabricio = restante * fabPct / 100
