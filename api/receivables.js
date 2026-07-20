@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless'
+import { requireAuth } from '../lib/auth.js'
 
 // Deriva mês/ano de caixa da data de recebimento; sem data, cai na competência.
 function paymentPeriod(payment_date, fbMonth, fbYear) {
@@ -10,6 +11,7 @@ function paymentPeriod(payment_date, fbMonth, fbYear) {
 }
 
 export default async function handler(req, res) {
+  if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
   if (req.method === 'GET') {
     const { company_id, year, month, mode } = req.query

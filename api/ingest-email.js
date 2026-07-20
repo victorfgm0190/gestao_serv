@@ -1,7 +1,9 @@
 import { neon } from '@neondatabase/serverless'
+import { requireAuth } from '../lib/auth.js'
 import { ingestAccounts, imperiumAccounts } from '../lib/email-ingest.js'
 
 export default async function handler(req, res) {
+  if (!requireAuth(req, res)) return
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }

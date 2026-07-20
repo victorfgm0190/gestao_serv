@@ -157,7 +157,25 @@ Tabelas do fechamento mensal (modelo antigo). Pouco/ não usadas pelas telas atu
 ## 4. APIs ativas (`/api/`)
 
 Todas exportam um `handler(req, res)` default e instanciam
-`neon(process.env.DATABASE_URL)`. Sem autenticação (ver Pendências).
+`neon(process.env.DATABASE_URL)`.
+
+### 🔒 Autenticação (obrigatória em endpoints novos)
+Todo endpoint começa com `if (!requireAuth(req, res)) return` (de `lib/auth.js`).
+Exceções, cada uma com proteção própria:
+- `login.js` — público (é o endpoint de entrada).
+- `cron-sync.js` — `Bearer $CRON_SECRET` ou header `x-vercel-cron`.
+- `users.js` — `requireMaster` (só o ADMIN_USER).
+- `migrate-*.js`, `recalc-*.js` — `requireAdmin` (`Bearer $ADMIN_SECRET`).
+
+**Ao criar um endpoint novo, adicione o `requireAuth`** — sem ele a rota nasce
+pública na internet.
+
+Variáveis de ambiente exigidas: `JWT_SECRET` (≥16 chars), `ADMIN_USER`,
+`ADMIN_PASS`. Sem `JWT_SECRET` a API inteira responde 503 (falha fechada).
+
+No frontend, o token é anexado por um interceptor global de `fetch`
+(`src/lib/session.js`), instalado em `main.jsx` — não é preciso passar header
+em cada chamada.
 
 | Arquivo | Métodos | O que faz |
 |---------|---------|-----------|
@@ -340,8 +358,8 @@ Ambiente (Windows):
 - [ ] **Deslocamento no faturamento por agenda** — o calculador de fatura
       (`calcAgenda`) usa `horas × hourly_rate`, sem aplicar a lógica de deslocamento
       de `time-entries.js`.
-- [ ] **Autenticação nos endpoints** — as rotas `/api/` (exceto `cron-sync`) não
-      exigem autenticação. Neon protegido só por não ser exposto ao browser.
+- [x] **Autenticação nos endpoints** — feito: login JWT (8h) + `requireAuth` em
+      todos os endpoints. Ver seção 4. Trocar `ADMIN_PASS` do valor inicial.
 - [ ] Regras financeiras/contratos para os demais clientes Lumen (Nutribom, LecaCau,
       Hidronorth) e Imperium.
 - [ ] Editar/rotacionar senha do banco; DNS `lumendev.com.br`.

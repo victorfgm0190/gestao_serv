@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless'
+import { requireAuth } from '../lib/auth.js'
 
 // Split cadastrado. Não usar `|| 50`: 0 é um split legítimo (cliente 100/0)
 // e seria gravado como 50%.
@@ -8,6 +9,7 @@ function splitPct(value, fallback) {
 }
 
 export default async function handler(req, res) {
+  if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
 
   if (req.method === 'GET') {

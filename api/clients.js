@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless'
+import { requireAuth } from '../lib/auth.js'
 
 // Normaliza company_ids a partir do body: aceita `company_ids` (array) ou
 // `company_id` (single, retrocompatível com telas antigas como FinancialRules).
@@ -9,6 +10,7 @@ function parseCompanyIds(body) {
 }
 
 export default async function handler(req, res) {
+  if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
 
   try {

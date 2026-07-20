@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless'
+import { requireAuth } from '../lib/auth.js'
 
 const round = (n) => parseFloat((Number(n) || 0).toFixed(2))
 
@@ -170,6 +171,7 @@ async function loadProjeto(sql, contract_id, installment_id) {
 }
 
 export default async function handler(req, res) {
+  if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
 
   if (req.method === 'GET') {

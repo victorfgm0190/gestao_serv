@@ -1,14 +1,22 @@
 import { useState } from 'react'
 import { Outlet, NavLink } from 'react-router-dom'
 import useNotifications from '../hooks/useNotifications'
+import { getUser, isMaster, logout } from '../lib/session'
 
 const companies = [
   { id: 1, name: 'Lumen', color: '#3B82F6' },
   { id: 2, name: 'Imperium', color: '#8B5CF6' },
 ]
 
+const navClass = ({ isActive }) =>
+  `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+    isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+  }`
+
 export default function Layout() {
   const [activeCompany, setActiveCompany] = useState(companies[0])
+  const user = getUser()
+  const master = isMaster()
 
   useNotifications(activeCompany)
 
@@ -135,16 +143,36 @@ export default function Layout() {
           >
             <span>🧾</span> Faturamento
           </NavLink>
+          {/* Gestão de usuários: exclusiva do administrador master. */}
+          {master && (
+            <NavLink to="/users" className={navClass}>
+              <span>🔑</span> Usuários
+            </NavLink>
+          )}
         </nav>
 
-        {/* Active company indicator */}
-        <div className="p-4 border-t border-gray-800">
+        {/* Usuário logado + empresa ativa */}
+        <div className="p-4 border-t border-gray-800 space-y-3">
           <div className="flex items-center gap-2">
             <div
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: activeCompany.color }}
             />
             <span className="text-xs text-gray-400">{activeCompany.name}</span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-sm text-white truncate">{user?.name || user?.username || 'Usuário'}</p>
+              {master && <p className="text-xs text-amber-400">administrador master</p>}
+            </div>
+            <button
+              onClick={logout}
+              title="Sair"
+              aria-label="Sair do sistema"
+              className="shrink-0 px-3 py-1.5 bg-gray-800 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-lg text-xs transition-colors"
+            >
+              Sair
+            </button>
           </div>
         </div>
       </aside>

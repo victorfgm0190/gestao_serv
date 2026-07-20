@@ -15,18 +15,18 @@
     "semantic_hash": "5e6e3cea3e89137071c142dd7835b0ef"
   },
   "api/clients.js": {
-    "mtime": 1783785409.26726,
-    "ast_hash": "e6a393358f1e34624d2dc46ba77830c0",
-    "semantic_hash": "e6a393358f1e34624d2dc46ba77830c0"
+    "mtime": 1784510267.0298235,
+    "ast_hash": "d0b98cd629249c4bfa63bc8a31862afb",
+    "semantic_hash": ""
   },
   "api/contract-months.js": {
-    "mtime": 1784507593.3030488,
-    "ast_hash": "be8424a988ca987913083a64b0366e76",
+    "mtime": 1784510267.173004,
+    "ast_hash": "5a809a5396afe672cd424cf2dca1415d",
     "semantic_hash": ""
   },
   "api/contracts.js": {
-    "mtime": 1784507613.6950295,
-    "ast_hash": "ba1e8cae074b94943ae3ac5fff5916a7",
+    "mtime": 1784510267.3387861,
+    "ast_hash": "cc5534ca5d9a939409c9482bd700da3e",
     "semantic_hash": ""
   },
   "api/cron-sync.js": {
@@ -35,69 +35,69 @@
     "semantic_hash": ""
   },
   "api/demands.js": {
-    "mtime": 1782239729.1637912,
-    "ast_hash": "f6620fff26051edfdd17af50de270f29",
-    "semantic_hash": "f6620fff26051edfdd17af50de270f29"
+    "mtime": 1784510267.5673742,
+    "ast_hash": "b2e700ea9d957938501e102b8bfc45dc",
+    "semantic_hash": ""
   },
   "api/email-rules.js": {
-    "mtime": 1782248148.9535582,
-    "ast_hash": "3d8273d995a50188dcffaa3c85a79b57",
-    "semantic_hash": "3d8273d995a50188dcffaa3c85a79b57"
+    "mtime": 1784510267.726605,
+    "ast_hash": "d2e96d37dd8968f7213231583e661dae",
+    "semantic_hash": ""
   },
   "api/export-os.js": {
-    "mtime": 1783008116.0356505,
-    "ast_hash": "a3a08a602a5af5593d51f817e07b8e34",
-    "semantic_hash": "a3a08a602a5af5593d51f817e07b8e34"
+    "mtime": 1784510267.9329076,
+    "ast_hash": "fd44c0c9f7afb58ed5c30fdc42311183",
+    "semantic_hash": ""
   },
   "api/financial-rules.js": {
-    "mtime": 1784507605.2983656,
-    "ast_hash": "6da4cbaf7dd014a37e002e4494d5bb07",
+    "mtime": 1784510268.1227453,
+    "ast_hash": "a18404c241b98b72f76c1b8455cf515c",
     "semantic_hash": ""
   },
   "api/ingest-email.js": {
-    "mtime": 1784509836.5056007,
-    "ast_hash": "2ff39a1f0438392e79edb4053214b4c5",
+    "mtime": 1784510268.3916607,
+    "ast_hash": "38727659d5dac93b8869c987ce7c2a67",
     "semantic_hash": ""
   },
   "api/invoices.js": {
-    "mtime": 1784508384.3686652,
-    "ast_hash": "5cc2b161b19ddff964e888bf713fdff8",
+    "mtime": 1784510268.5808532,
+    "ast_hash": "abd1814611d80373658e239ee90da445",
     "semantic_hash": ""
   },
   "api/payable-payments.js": {
-    "mtime": 1783789102.4617343,
-    "ast_hash": "5156f08996d1a0b1e2b3b55cdb04f1a0",
-    "semantic_hash": "5156f08996d1a0b1e2b3b55cdb04f1a0"
+    "mtime": 1784510268.8814533,
+    "ast_hash": "90730bbbd04497652908191d15fa6132",
+    "semantic_hash": ""
   },
   "api/payables-fabricio.js": {
-    "mtime": 1783814805.3825989,
-    "ast_hash": "a2bd737ecaa024b05787b2b36c984c43",
-    "semantic_hash": "a2bd737ecaa024b05787b2b36c984c43"
+    "mtime": 1784510269.054855,
+    "ast_hash": "35743eae81655de5ea25736f7e87d141",
+    "semantic_hash": ""
   },
   "api/payables-victor.js": {
-    "mtime": 1783814789.4308758,
-    "ast_hash": "b62985d033b46ac85c99ed34cb1835d9",
-    "semantic_hash": "b62985d033b46ac85c99ed34cb1835d9"
+    "mtime": 1784510269.2442765,
+    "ast_hash": "9c3fec17572eadd60f00d66d18ea5d56",
+    "semantic_hash": ""
   },
   "api/receivables.js": {
-    "mtime": 1783787665.6243992,
-    "ast_hash": "da6937615210c1abfc4846009d46015d",
-    "semantic_hash": "da6937615210c1abfc4846009d46015d"
+    "mtime": 1784510269.65623,
+    "ast_hash": "05058edfd87c2cf6acb59eccbd3b4b78",
+    "semantic_hash": ""
   },
   "api/reclassify-demands.js": {
-    "mtime": 1782251704.1910412,
-    "ast_hash": "2894b4602be2ad5174a6cac350c22cc5",
-    "semantic_hash": "2894b4602be2ad5174a6cac350c22cc5"
+    "mtime": 1784510269.8950179,
+    "ast_hash": "f67f5690ec97b5919016d7a327eb48c9",
+    "semantic_hash": ""
   },
   "api/time-entries.js": {
-    "mtime": 1784508390.781393,
-    "ast_hash": "3863812af6be27bfec03220d63bccee0",
+    "mtime": 1784510270.1325638,
+    "ast_hash": "30b1b8a77956b09e2b1584b32708f3b3",
     "semantic_hash": ""
   },
   "api/victor-reserves.js": {
-    "mtime": 1783815557.0362988,
-    "ast_hash": "151b86f6e8f2705688433aaaecd47443",
-    "semantic_hash": "151b86f6e8f2705688433aaaecd47443"
+    "mtime": 1784510270.3867214,
+    "ast_hash": "392bc15f8ab5e94502464626c54f4594",
+    "semantic_hash": ""
   },
   "package.json": {
     "mtime": 1782305179.614369,
@@ -120,9 +120,9 @@
     "semantic_hash": "d070709419d1c5e263b53059b20974e1"
   },
   "src/components/Layout.jsx": {
-    "mtime": 1783785485.9984536,
-    "ast_hash": "3cacaa84c9e47fd93065b286873a34f5",
-    "semantic_hash": "3cacaa84c9e47fd93065b286873a34f5"
+    "mtime": 1784510393.1052399,
+    "ast_hash": "16505ed49b1eade7d4e30a5abd7eb250",
+    "semantic_hash": ""
   },
   "src/hooks/useNotifications.js": {
     "mtime": 1782313564.4371028,
@@ -130,9 +130,9 @@
     "semantic_hash": "cf7a0b6b5c1795a4e2a729422f79036a"
   },
   "src/main.jsx": {
-    "mtime": 1783785480.7207105,
-    "ast_hash": "1bf6737499387a129411b53590a9074c",
-    "semantic_hash": "1bf6737499387a129411b53590a9074c"
+    "mtime": 1784510377.531599,
+    "ast_hash": "b39d1ae40c3b65de4047d05bcf55c82b",
+    "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
     "mtime": 1784508394.8221843,
@@ -200,8 +200,8 @@
     "semantic_hash": ""
   },
   "api/project-installments.js": {
-    "mtime": 1784506495.7550447,
-    "ast_hash": "d04ec1511bc3edb35bfa40132eb39967",
+    "mtime": 1784510269.4029906,
+    "ast_hash": "5e034070c353b49af40332685ba99f6b",
     "semantic_hash": ""
   },
   ".claude/CLAUDE.md": {
@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1784504512.9032743,
-    "ast_hash": "a629d094e6f4d6b66dbe219de1bda415",
+    "mtime": 1784510488.2734983,
+    "ast_hash": "66dce910456fb9ded45b8a0390ffcd0b",
     "semantic_hash": ""
   },
   "README.md": {
@@ -307,6 +307,41 @@
   "lib/email-ingest.js": {
     "mtime": 1784509922.2309277,
     "ast_hash": "de7e6ffb12a98b19a627cf9f742b08f6",
+    "semantic_hash": ""
+  },
+  "api/login.js": {
+    "mtime": 1784510239.096692,
+    "ast_hash": "dcb629a626356567d5e128eeb45c575f",
+    "semantic_hash": ""
+  },
+  "api/users.js": {
+    "mtime": 1784510255.2848659,
+    "ast_hash": "8d5c77cfbad53377b6b0347e88b2839c",
+    "semantic_hash": ""
+  },
+  "lib/auth.js": {
+    "mtime": 1784510221.4353788,
+    "ast_hash": "62f8d95d89be36ff39a5fe2fddea3eb7",
+    "semantic_hash": ""
+  },
+  "lib/users-table.js": {
+    "mtime": 1784510228.584381,
+    "ast_hash": "b3ce87d432fe21ff60e099af49aedca3",
+    "semantic_hash": ""
+  },
+  "src/lib/session.js": {
+    "mtime": 1784510319.6281734,
+    "ast_hash": "4a65fa36f516d43b14308db01372b1d4",
+    "semantic_hash": ""
+  },
+  "src/pages/Login.jsx": {
+    "mtime": 1784510331.8999546,
+    "ast_hash": "0b352eac4a39601ac952c29777a178a2",
+    "semantic_hash": ""
+  },
+  "src/pages/Users.jsx": {
+    "mtime": 1784510367.5063531,
+    "ast_hash": "833d94c0cff8d02a34627fbca0b133d9",
     "semantic_hash": ""
   }
 }

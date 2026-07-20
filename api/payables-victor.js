@@ -1,4 +1,5 @@
 import { neon } from '@neondatabase/serverless'
+import { requireAuth } from '../lib/auth.js'
 
 const CLIENT_PHARMA = 7
 const CATS = { honorarios: 'Honorários', das: 'DAS', inss: 'INSS', pro_labore: 'Pro Labore', lucros: 'Lucros', escritorio: 'Escritório', demais: 'Demais despesas' }
@@ -170,6 +171,7 @@ async function pagarDistribuido(sql, req, res) {
 }
 
 export default async function handler(req, res) {
+  if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
   if (req.method === 'GET') {
     // Info da sessão de recebimento (para edição): payables afetados + valor consumido na sessão.
