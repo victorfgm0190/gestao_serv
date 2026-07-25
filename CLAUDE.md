@@ -245,7 +245,7 @@ em cada chamada.
 | `payables-fabricio.js` | GET/POST/PATCH/DELETE | Contas a pagar Fabrício. Valor no campo `amount`. Traz `payments[]`. |
 | `payables-victor.js` | GET/POST/PATCH/DELETE | Contas a pagar Victor. Valor em `total_amount` (`service_amount`+`profit_amount`). Traz `payments[]`. |
 | `payable-payments.js` | GET/POST/DELETE | Múltiplos pagamentos por payable; recalcula `status`/`paid_amount` do pai (pendente/parcial/pago). |
-| `fiscal-obligations.js` | GET/POST `?action=apurar` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. |
+| `fiscal-obligations.js` | GET/POST `?action=apurar`/PATCH `?action=lancar-guia` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. `PATCH ?action=lancar-guia` grava `amount_actual`/`due_date`/`doc_number` quando a guia oficial chega (só sobrescreve os campos enviados); `amount_actual: null` desfaz o lançamento. |
 | `fiscal-payments.js` | GET/POST `?action=pagar`/DELETE | **Quitação da guia.** Múltiplos pagamentos por obrigação. `paid_amount`/`status` da obrigação são sempre **re-somados** de `fiscal_payments` (nunca incrementados), em transação com o INSERT/DELETE. Estornar tudo devolve a obrigação a `apurado` (se a guia oficial já chegou) ou `previsto`. Usa o `PAID_EPSILON` de `lib/payment-status.js`. |
 | `export-os.js` | GET | Gera Excel (ExcelJS) das horas do mês, opcionalmente filtrado por `client_id`. |
 | `admin.js` | POST `?action=` | Setup/migração: `setup-db`, `setup-clients`, `migrate-financial-rules`, `migrate-time-entries`, `migrate-etapa6`. |
@@ -413,13 +413,12 @@ Ambiente (Windows):
       gravada ainda; se o Victor já recolheu DAS pelo valor antigo, a diferença é
       crédito a apurar com a contabilidade, fora do sistema.
 - [ ] **Apuração fiscal — o que falta.** Já feito: `api/fiscal-obligations.js`
-      (`?action=apurar` + GET), `api/fiscal-payments.js` (quitação) e `taxCalc.js`
-      movido para `lib/` (compartilhado front+back). Falta: **ação para lançar
-      `amount_actual`** quando a guia oficial chegar — sem ela o status `apurado`
-      é inalcançável pela API (o `fiscal-payments.js` já o trata corretamente);
-      tela de gestão das obrigações; ligação `fiscal_allocations.payable_victor_id`
-      com a distribuição de `payables-victor.js`; e migração de `victor_reserves`
-      → `fiscal_obligations`.
+      (`?action=apurar`, `?action=lancar-guia`, GET), `api/fiscal-payments.js`
+      (quitação), `lib/fiscal-status.js` (status da obrigação — fonte única das duas
+      rotas) e `taxCalc.js` movido para `lib/`. O ciclo previsto → apurado → parcial →
+      pago está fechado pela API. Falta: **tela** de gestão das obrigações; ligação
+      `fiscal_allocations.payable_victor_id` com a distribuição de `payables-victor.js`;
+      e migração de `victor_reserves` → `fiscal_obligations`.
 - [ ] **Honorários e piso do pró-labore hardcoded** — `HONORARIOS_MENSAL = 150` e
       `PROLABORE_MINIMO = 1621` são constantes em `api/fiscal-obligations.js`.
       Migrar para colunas em `company_settings` quando variarem por empresa/ano

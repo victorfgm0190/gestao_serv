@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { calcularImpostos, calcINSS } from '../lib/taxCalc.js'
+import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
 
 // APURAÇÃO FISCAL — DAS / INSS / Honorários.
 //
@@ -10,8 +11,10 @@ import { calcularImpostos, calcINSS } from '../lib/taxCalc.js'
 //   fiscal_allocations  → quanto disso cabe a cada cliente
 //   fiscal_payments     → quando a guia foi efetivamente quitada (outro endpoint)
 //
-// POST ?action=apurar  { company_id, month, year }  → calcula e grava (idempotente)
-// GET  ?company_id&month&year                       → lê o que já foi apurado
+// POST  ?action=apurar       { company_id, month, year }   → calcula e grava (idempotente)
+// PATCH ?action=lancar-guia  { obligation_id, amount_actual, due_date, doc_number }
+//                                                          → guia oficial chegou
+// GET   ?company_id&month&year                             → lê o que já foi apurado
 
 const round2 = (v) => Math.round(((Number(v) || 0) + Number.EPSILON) * 100) / 100
 // numeric do Postgres chega como string no driver — sem isso, `a + b` concatena.
@@ -221,6 +224,61 @@ async function apurar(sql, req, res) {
   })
 }
 
+// PATCH ?action=lancar-guia — a guia oficial chegou.
+// Grava o valor real (amount_actual), vencimento e nº do documento. A partir daí o
+// valor devido passa a ser este, não mais a estimativa: quem manda nisso é o
+// valorDevido() de lib/fiscal-status.js, respeitado também pelo fiscal-payments.js.
+async function lancarGuia(sql, req, res) {
+  const { obligation_id, amount_actual, due_date, doc_number, notes } = req.body || {}
+  if (!obligation_id || amount_actual === undefined) {
+    return res.status(400).json({ error: 'obligation_id e amount_actual são obrigatórios' })
+  }
+  // null explícito é aceito de propósito: desfaz o lançamento e devolve a obrigação
+  // à estimativa (guia cancelada / lançada por engano).
+  const valor = amount_actual === null || amount_actual === '' ? null : round2(amount_actual)
+  if (valor !== null && valor < 0) {
+    return res.status(400).json({ error: 'amount_actual não pode ser negativo' })
+  }
+
+  const rows = await sql`SELECT * FROM fiscal_obligations WHERE id = ${obligation_id} LIMIT 1`
+  if (!rows.length) return res.status(404).json({ error: 'Obrigação não encontrada' })
+
+  // COALESCE preserva o que não veio no corpo: retificar só o valor da guia não pode
+  // apagar o vencimento e o nº do documento já cadastrados. Mesmo padrão do PATCH de
+  // api/settings.js. Os casts são necessários porque um parâmetro nulo sem tipo
+  // deixa o Postgres sem conseguir inferir o tipo do COALESCE.
+  //
+  // O status sai do recalcularObrigacao na mesma transação — nunca calculado aqui,
+  // senão esta rota e o fiscal-payments.js divergiriam sobre o mesmo registro.
+  const [, atualizado] = await sql.transaction([
+    sql`
+      UPDATE fiscal_obligations SET
+        amount_actual = ${valor}::numeric,
+        due_date      = COALESCE(${due_date ?? null}::date, due_date),
+        doc_number    = COALESCE(${doc_number ?? null}::varchar, doc_number),
+        notes         = COALESCE(${notes ?? null}::text, notes),
+        updated_at    = now()
+      WHERE id = ${obligation_id}`,
+    recalcularObrigacao(sql, obligation_id),
+  ])
+
+  const ob = atualizado[0]
+  const total = valorDevido(ob)
+  const pago = num(ob.paid_amount)
+  return res.status(200).json({
+    obligation: ob,
+    summary: {
+      total_amount: total,
+      amount_estimated: num(ob.amount_estimated),
+      // Quanto a guia real diverge da apuração interna.
+      diferenca_vs_estimado: valor === null ? null : round2(total - num(ob.amount_estimated)),
+      paid_amount: pago,
+      remaining: Math.max(round2(total - pago), 0),
+      status: ob.status,
+    },
+  })
+}
+
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -261,6 +319,11 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       if (req.query.action === 'apurar') return apurar(sql, req, res)
       return res.status(400).json({ error: 'action inválida. Use ?action=apurar' })
+    }
+
+    if (req.method === 'PATCH') {
+      if (req.query.action === 'lancar-guia') return lancarGuia(sql, req, res)
+      return res.status(400).json({ error: 'action inválida. Use ?action=lancar-guia' })
     }
 
     return res.status(405).json({ error: 'Method not allowed' })

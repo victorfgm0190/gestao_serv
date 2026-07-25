@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { PAID_EPSILON, remainingBalance } from '../lib/payment-status.js'
+import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
 
 // QUITAÇÃO DE OBRIGAÇÕES FISCAIS — pagamentos da guia (DAS/INSS/honorários).
 //
@@ -21,52 +22,6 @@ const num = (v) => parseFloat(v) || 0
 // direto para a tela. Arredondado aqui em vez de no helper, que é compartilhado
 // com os payables e não deve mudar de comportamento por causa deste endpoint.
 const saldoAberto = (total, pago) => round2(remainingBalance(total, pago))
-
-// Valor devido: a guia oficial quando já chegou, senão a estimativa.
-// Checagem por null, não por falsy — uma guia legítima de R$ 0,00 não pode
-// cair de volta na estimativa.
-const valorDevido = (ob) =>
-  ob.amount_actual !== null && ob.amount_actual !== undefined
-    ? num(ob.amount_actual)
-    : num(ob.amount_estimated)
-
-// Status de fiscal_obligations recalculado a partir do total pago.
-//
-// Duas diferenças em relação ao statusFor() de lib/payment-status.js, que trata
-// payables de 3 estados:
-//  1. o estado "sem pagamento" aqui não é único — é 'apurado' se a guia oficial já
-//     chegou (amount_actual preenchido) e 'previsto' se ainda não. Estornar tudo tem
-//     de devolver a obrigação ao estado em que ela estava, não rebaixá-la a 'previsto'.
-//  2. o mesmo PAID_EPSILON é reaproveitado: comparar `pago >= total` exato faz um
-//     registro quitado com resíduo de centavos oscilar entre 'pago' e 'parcial'.
-// Roda em SQL dentro do UPDATE (ver recalcular) para o cálculo ser atômico; esta
-// versão em JS existe para os testes e para leitura.
-export function statusObrigacao(pago, total, temGuiaOficial) {
-  if (pago <= PAID_EPSILON) return temGuiaOficial ? 'apurado' : 'previsto'
-  if (pago >= total - PAID_EPSILON) return 'pago'
-  return 'parcial'
-}
-
-// UPDATE que re-soma fiscal_payments e regrava paid_amount/status da obrigação.
-// Sempre derivado da soma real — nunca `paid_amount + valor`, que acumularia
-// qualquer divergência em vez de corrigi-la.
-const recalcular = (sql, obligation_id) => sql`
-  UPDATE fiscal_obligations o SET
-    paid_amount = s.total,
-    status = CASE
-      WHEN s.total <= ${PAID_EPSILON}
-        THEN CASE WHEN o.amount_actual IS NOT NULL THEN 'apurado' ELSE 'previsto' END
-      WHEN s.total >= COALESCE(o.amount_actual, o.amount_estimated, 0) - ${PAID_EPSILON}
-        THEN 'pago'
-      ELSE 'parcial'
-    END,
-    updated_at = now()
-  FROM (
-    SELECT COALESCE(SUM(amount), 0) AS total
-    FROM fiscal_payments WHERE obligation_id = ${obligation_id}
-  ) s
-  WHERE o.id = ${obligation_id}
-  RETURNING o.*`
 
 async function pagar(sql, req, res) {
   const { obligation_id, amount, paid_at, method, notes } = req.body || {}
@@ -94,7 +49,7 @@ async function pagar(sql, req, res) {
       INSERT INTO fiscal_payments (obligation_id, amount, paid_at, method, notes)
       VALUES (${obligation_id}, ${valor}, ${paid_at}, ${method || 'outro'}, ${notes || null})
       RETURNING *`,
-    recalcular(sql, obligation_id),
+    recalcularObrigacao(sql, obligation_id),
   ])
 
   const obAtualizada = atualizado[0]
@@ -123,7 +78,7 @@ async function estornar(sql, req, res) {
 
   const [, atualizado] = await sql.transaction([
     sql`DELETE FROM fiscal_payments WHERE id = ${payment_id}`,
-    recalcular(sql, obligation_id),
+    recalcularObrigacao(sql, obligation_id),
   ])
 
   const ob = atualizado[0]
