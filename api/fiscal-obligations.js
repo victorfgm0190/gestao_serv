@@ -397,7 +397,29 @@ async function distribuir(sql, req, res) {
           AND pp.paid_at = ${when} AND pp.notes = ${notes}`)
     }
   }
-  await sql.transaction([...writes, ...ligacoes])
+  // Abater dos payables É a quitação: o imposto saiu do que o Victor tinha a receber.
+  // Sem registrar isso, a obrigação continuaria em aberto e o card de Reservas do
+  // Financial.jsx seguiria retendo o valor no caixa — descontando o mesmo dinheiro
+  // duas vezes, uma no saldo dos payables e outra na reserva.
+  //
+  // Cada obrigação recebe a fatia do que foi efetivamente consumido (proporcional ao
+  // peso dela no pool); com `nao_coberto > 0` isso vira pagamento parcial. O resíduo
+  // do arredondamento vai para a maior fatia, para a soma fechar no centavo.
+  const cobertura = usadas.map((o) => ({ o, valor: round2(consumidoTotal * (round2(valorDevido(o)) / pool)) }))
+  const somaCob = round2(cobertura.reduce((s, c) => s + c.valor, 0))
+  if (Math.abs(consumidoTotal - somaCob) >= 0.01 && cobertura.length) {
+    cobertura.reduce((a, b) => (b.valor > a.valor ? b : a)).valor += round2(consumidoTotal - somaCob)
+  }
+  const quitacoes = cobertura
+    .filter((c) => c.valor > 0.005)
+    .map((c) => sql`
+      INSERT INTO fiscal_payments (obligation_id, amount, paid_at, method, notes)
+      VALUES (${c.o.id}, ${c.valor}, ${when}, 'abatimento', 'Abatido dos lançamentos a pagar do Victor')`)
+
+  await sql.transaction([...writes, ...ligacoes, ...quitacoes])
+  // Fora da transação: recalcularObrigacao lê a soma dos fiscal_payments, que só
+  // existe depois do commit.
+  for (const c of cobertura) await recalcularObrigacao(sql, c.o.id)
 
   return res.status(200).json({
     distribuicao: {
@@ -441,6 +463,11 @@ async function estornarDistribuicao(sql, req, res) {
   if (paymentIds.length) {
     await sql`DELETE FROM payable_payments WHERE payable_type = 'victor' AND id = ANY(${paymentIds})`
   }
+  // As quitações geradas pelo abatimento saem junto. `method='abatimento'` as separa
+  // de pagamentos que o Victor tenha registrado à mão na tela de apuração, que ficam.
+  // Um mês só pode ter uma distribuição ativa (a guarda dos 409), então não há ambiguidade.
+  await sql`DELETE FROM fiscal_payments WHERE obligation_id = ANY(${ids}) AND method = 'abatimento'`
+  for (const id of ids) await recalcularObrigacao(sql, id)
   // Recalcula cada payable a partir dos pagamentos restantes — nunca por subtração,
   // que acumularia divergência.
   for (const id of payableIds) {

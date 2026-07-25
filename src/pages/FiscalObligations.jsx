@@ -12,8 +12,11 @@ import { todayBR } from '../lib/dateUtils'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-const KIND_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Honorários' }
-const KIND_ICON = { das: '🏛️', inss: '🧾', honorarios: '📋' }
+// `das`, `inss` e `honorarios` são gerados pelo ?action=apurar. `pro_labore` e
+// `escritorio` vieram da migração de victor_reserves e são lançados à mão — a apuração
+// não os recalcula, então sobrevivem a uma reapuração.
+const KIND_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Honorários', pro_labore: 'Pró-labore', escritorio: 'Escritório' }
+const KIND_ICON = { das: '🏛️', inss: '🧾', honorarios: '📋', pro_labore: '👤', escritorio: '🏢' }
 
 const STATUS_STYLE = {
   previsto: 'bg-gray-700 text-gray-300',
@@ -159,12 +162,14 @@ export default function FiscalObligations() {
   // O rateio da apuração (proporcional_nf) é o que mostra o custo por cliente;
   // as linhas de consumo_payable são o registro do abatimento, não o rateio.
   const rateio = {}
+  const kindsRateados = []
   let distribuido = false
   for (const ob of obligations) {
     for (const a of ob.allocations || []) {
       if (a.payable_victor_id) { distribuido = true; continue }
+      if (!kindsRateados.includes(ob.kind)) kindsRateados.push(ob.kind)
       const k = a.client_name || `Cliente ${a.client_id}`
-      rateio[k] ||= { das: 0, inss: 0, honorarios: 0, total: 0 }
+      rateio[k] ||= { total: 0 }
       rateio[k][ob.kind] = (rateio[k][ob.kind] || 0) + (parseFloat(a.amount) || 0)
       rateio[k].total += parseFloat(a.amount) || 0
     }
@@ -289,9 +294,7 @@ export default function FiscalObligations() {
                     <thead>
                       <tr className="text-gray-500 border-b border-gray-800">
                         <th className="text-left font-medium py-2">Cliente</th>
-                        <th className="text-right font-medium py-2">DAS</th>
-                        <th className="text-right font-medium py-2">INSS</th>
-                        <th className="text-right font-medium py-2">Honorários</th>
+                        {kindsRateados.map((k) => <th key={k} className="text-right font-medium py-2">{KIND_LABEL[k] || k}</th>)}
                         <th className="text-right font-medium py-2">Total</th>
                       </tr>
                     </thead>
@@ -299,9 +302,7 @@ export default function FiscalObligations() {
                       {rateioLista.map(([cliente, v]) => (
                         <tr key={cliente} className="border-b border-gray-800/60">
                           <td className="py-2 text-gray-300">{cliente}</td>
-                          <td className="py-2 text-right text-gray-400">{fmt(v.das)}</td>
-                          <td className="py-2 text-right text-gray-400">{fmt(v.inss)}</td>
-                          <td className="py-2 text-right text-gray-400">{fmt(v.honorarios)}</td>
+                          {kindsRateados.map((k) => <td key={k} className="py-2 text-right text-gray-400">{fmt(v[k])}</td>)}
                           <td className="py-2 text-right text-white font-medium">{fmt(v.total)}</td>
                         </tr>
                       ))}

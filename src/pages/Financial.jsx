@@ -38,6 +38,9 @@ const RECEIVE_VICTOR_CATEGORIES = [
   ['demais', 'Demais despesas'],
 ]
 const EMPTY_RECEIVE_CATS = { honorarios: '', das: '', inss: '', pro_labore: '', lucros: '', escritorio: '', demais: '' }
+
+// Rótulos dos `kind` de fiscal_obligations no card de Reservas.
+const RESERVA_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Honorários', pro_labore: 'Pro Labore', escritorio: 'Escritório' }
 const receiveCategoryTotal = (cats) => RECEIVE_VICTOR_CATEGORIES.reduce((s, [k]) => s + (parseFloat(cats[k]) || 0), 0)
 const RECEIVE_LABEL_TO_KEY = Object.fromEntries(RECEIVE_VICTOR_CATEGORIES.map(([k, label]) => [label, k]))
 // Reconstrói as categorias a partir da string de notes gravada pelo pagarDistribuido
@@ -103,8 +106,8 @@ export default function Financial() {
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
   const [receivePaidAt, setReceivePaidAt] = useState(todayBR())
   const [editSession, setEditSession] = useState(null) // { paid_at, notes, affected[] } quando editando uma sessão
-  const [reserves, setReserves] = useState({ das: '', pro_labore: '', inss: '', escritorio: '', notes: '' })
-  const [savingReserves, setSavingReserves] = useState(false)
+  // Reservas do mês: { kind: valor em aberto }, derivado de fiscal_obligations.
+  const [reserves, setReserves] = useState({})
   const [breakdownView, setBreakdownView] = useState('geral') // 'geral' | 'cliente' — detalhamento de categorias
   const [receiving, setReceiving] = useState(false)
   const [pendingVictor, setPendingVictor] = useState([])
@@ -303,29 +306,28 @@ export default function Financial() {
     const ry = Number(filterYear) || new Date().getFullYear()
     return { rm, ry }
   }
+  // As reservas deixaram de ser digitadas aqui: vêm da apuração (/fiscal), que calcula
+  // DAS e INSS a partir das NFs do mês. A tabela victor_reserves foi migrada para
+  // fiscal_obligations e removida — não havia como manter os dois em sincronia.
+  //
+  // O que se reserva é o que AINDA falta pagar (devido − pago). Obrigação já quitada
+  // não precisa mais ser retida no caixa, e se ela foi quitada pelo próprio
+  // ?action=distribuir os payables já foram consumidos — contar de novo aqui
+  // descontaria o mesmo dinheiro duas vezes.
   async function fetchReserves() {
     const { rm, ry } = reserveRefPeriod()
     try {
-      const res = await fetch(`/api/victor-reserves?company_id=${activeCompany.id}&month=${rm}&year=${ry}`)
-      const d = (await res.json()).data || {}
-      const s = (v) => parseFloat(v) ? String(parseFloat(v)) : ''
-      setReserves({ das: s(d.das), pro_labore: s(d.pro_labore), inss: s(d.inss), escritorio: s(d.escritorio), notes: d.notes || '' })
-    } catch (e) { console.error(e) }
-  }
-  async function saveReserves() {
-    const { rm, ry } = reserveRefPeriod()
-    setSavingReserves(true)
-    try {
-      await fetch('/api/victor-reserves', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          company_id: activeCompany.id, month: rm, year: ry,
-          das: parseFloat(reserves.das) || 0, pro_labore: parseFloat(reserves.pro_labore) || 0,
-          inss: parseFloat(reserves.inss) || 0, escritorio: parseFloat(reserves.escritorio) || 0,
-          notes: reserves.notes || null,
-        }),
-      })
-    } catch (e) { console.error(e) } finally { setSavingReserves(false) }
+      const res = await fetch(`/api/fiscal-obligations?company_id=${activeCompany.id}&year=${ry}&month=${rm}`)
+      if (!res.ok) { setReserves({}); return }
+      const obrigacoes = (await res.json()).data || []
+      const emAberto = {}
+      for (const o of obrigacoes) {
+        const devido = o.amount_actual != null ? parseFloat(o.amount_actual) : (parseFloat(o.amount_estimated) || 0)
+        const falta = Math.max(devido - (parseFloat(o.paid_amount) || 0), 0)
+        if (falta > 0.005) emAberto[o.kind] = (emAberto[o.kind] || 0) + falta
+      }
+      setReserves(emAberto)
+    } catch (e) { console.error(e); setReserves({}) }
   }
 
   // Flow A — Pagar Geral (não vinculado a um registro específico)
@@ -605,7 +607,10 @@ export default function Financial() {
   const distOverflow = distPool > 0.005 ? distPool : 0
 
   // Reservas do mês (ficam no caixa) e saldo disponível para distribuir.
-  const reservesTotal = ['das', 'pro_labore', 'inss', 'escritorio'].reduce((s, k) => s + (parseFloat(reserves[k]) || 0), 0)
+  // Soma o que a apuração ainda tem em aberto no mês, qualquer que seja o tipo —
+  // fixar a lista de categorias deixaria de fora um kind novo (honorários já entrou assim).
+  const reservesTotal = Object.values(reserves).reduce((s, v) => s + (parseFloat(v) || 0), 0)
+  const reservesLista = Object.entries(reserves).filter(([, v]) => (parseFloat(v) || 0) > 0.005)
   const saldoDisponivelBruto = sortedPending.reduce((s, r) => s + saldoOf(r), 0)
   const disponivelParaDistribuir = Math.max(Math.round((saldoDisponivelBruto - reservesTotal) * 100) / 100, 0)
   const reservesExceedSaldo = reservesTotal > saldoDisponivelBruto + 0.005
@@ -835,15 +840,15 @@ export default function Financial() {
         {tab === 'victor' && (
           <button
             onClick={openReceive}
-            title={`DAS: ${fmt(reserves.das||0)} | Pro Labore: ${fmt(reserves.pro_labore||0)} | INSS: ${fmt(reserves.inss||0)} | Escritório: ${fmt(reserves.escritorio||0)}`}
+            title={reservesLista.map(([k, v]) => `${RESERVA_LABEL[k] || k}: ${fmt(v)}`).join(' | ') || 'Nada apurado neste mês'}
             className="text-left bg-gray-900 border border-amber-500/30 rounded-xl p-4 hover:border-amber-500/60 transition-colors"
           >
             <p className="text-gray-400 text-xs mb-1">🏦 Reservas do mês</p>
             <p className={`text-lg font-bold ${reservesTotal > 0 ? 'text-orange-400' : 'text-gray-500'}`}>{fmt(reservesTotal)}</p>
             {reservesTotal > 0 ? (
-              <p className="text-gray-500 text-[11px] mt-1 leading-tight">DAS: {fmt(reserves.das||0)} | Pro Labore: {fmt(reserves.pro_labore||0)} | INSS: {fmt(reserves.inss||0)} | Escritório: {fmt(reserves.escritorio||0)}</p>
+              <p className="text-gray-500 text-[11px] mt-1 leading-tight">{reservesLista.map(([k, v]) => `${RESERVA_LABEL[k] || k}: ${fmt(v)}`).join(' | ')}</p>
             ) : (
-              <p className="text-gray-600 text-[11px] mt-1">Não configurado</p>
+              <p className="text-gray-600 text-[11px] mt-1">Nada em aberto na apuração</p>
             )}
           </button>
         )}
@@ -1182,22 +1187,29 @@ export default function Financial() {
             )}
             {!receiveTarget && !editSession && <div className="mb-4" />}
             <div className="space-y-3">
-              {/* Reservas do mês — ficam no caixa para impostos/despesas futuras */}
+              {/* Reservas do mês — vêm da apuração fiscal, não são mais digitadas aqui. */}
               <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-3 space-y-2">
                 <p className="text-amber-300 text-xs font-medium uppercase tracking-wider">🏦 Reservas do mês (ficam no caixa)</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[['das','DAS'],['pro_labore','Pro Labore'],['inss','INSS'],['escritorio','Escritório']].map(([key,label]) => (
-                    <div key={key} className="flex flex-col gap-1">
-                      <label className="text-xs text-gray-400 font-medium">{label} (R$)</label>
-                      <input type="number" placeholder="0" value={reserves[key]} onChange={e=>setReserves(r=>({...r,[key]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-amber-500"/>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between gap-2">
+                {reservesLista.length ? (
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                    {reservesLista.map(([key, v]) => (
+                      <div key={key} className="flex items-center justify-between text-xs">
+                        <span className="text-gray-400">{RESERVA_LABEL[key] || key}</span>
+                        <span className="text-gray-200">{fmt(v)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-xs">Nada em aberto na apuração deste mês.</p>
+                )}
+                <div className="flex items-center justify-between gap-2 border-t border-amber-500/20 pt-2">
                   <p className="text-xs text-gray-300">Total reservas: <span className="text-orange-400 font-bold">{fmt(reservesTotal)}</span></p>
-                  <button onClick={saveReserves} disabled={savingReserves} className="px-3 py-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white rounded-lg text-xs font-medium">{savingReserves ? 'Salvando...' : '💾 Salvar reservas'}</button>
+                  <a href="/fiscal" className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-medium">Abrir apuração</a>
                 </div>
-                <p className="text-gray-600 text-[11px]">Salvo para {(() => { const {rm,ry} = reserveRefPeriod(); return `${months[rm-1]}/${ry}` })()} — editável a qualquer momento</p>
+                <p className="text-gray-600 text-[11px]">
+                  Valor em aberto (devido − pago) da apuração de {(() => { const {rm,ry} = reserveRefPeriod(); return `${months[rm-1]}/${ry}` })()}.
+                  Para alterar, apure ou lance a guia em Apuração Fiscal.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2">

@@ -183,11 +183,11 @@ ORDER BY table_name, ordinal_position;
 
 Separam três eventos que antes viviam colapsados em `payable_payments.notes`:
 **apurar a obrigação**, **ratear entre clientes** e **quitar a guia**.
-Ainda **sem endpoint** — tabelas criadas, API e telas pendentes.
+API em `api/fiscal-obligations.js` + `api/fiscal-payments.js`; tela em `/fiscal`.
 
 #### `fiscal_obligations` — o que a empresa deve, por competência
 `id` int · `company_id` int · `month` int · `year` int ·
-`kind` varchar (`das`|`inss`|`honorarios`|`escritorio`|`demais`) ·
+`kind` varchar (`das`|`inss`|`honorarios`|`pro_labore`|`escritorio`) ·
 `amount_estimated` numeric (apuração interna, via `taxCalc.js`) ·
 `amount_actual` numeric (valor da guia oficial) · `base_amount` numeric (faturamento) ·
 `rate_used` numeric (alíquota efetiva) · `calc_snapshot` jsonb (`{rbt12, fatorR, anexo, prolabore}` congelado p/ auditoria) ·
@@ -195,11 +195,13 @@ Ainda **sem endpoint** — tabelas criadas, API e telas pendentes.
 `status` varchar (`previsto`|`apurado`|`parcial`|`pago`) · `notes` text ·
 `created_at` timestamp · `updated_at` timestamp
 > `UNIQUE (company_id, month, year, kind)` — uma obrigação por tipo/competência.
-> Aposenta `victor_reserves` (que só tem 4 categorias, sem cliente e sem ciclo de vida).
+> Substituiu `victor_reserves` (4 categorias, sem cliente e sem ciclo de vida), migrada
+> e removida em 2026-07-25. Os `kind` `pro_labore` e `escritorio` vieram de lá: são
+> lançados à mão e o `?action=apurar` não os recalcula, então sobrevivem a reapurações.
 
 #### `fiscal_payments` — quitação da guia (múltiplos pagamentos)
 `id` int · `obligation_id` int **FK → fiscal_obligations ON DELETE CASCADE** ·
-`amount` numeric · `paid_at` date · `method` varchar (`boleto`|`pix`|`darf`) ·
+`amount` numeric · `paid_at` date · `method` varchar (`boleto`|`pix`|`darf`|`abatimento`) ·
 `notes` text · `created_at` timestamp
 > Espelha o padrão de `payable_payments`. `paid_at` aqui é quando a **guia** foi paga —
 > distinto de `payable_payments.paid_at`, que é quando se descontou dos clientes.
@@ -434,15 +436,19 @@ Ambiente (Windows):
       (~R$ 447/mês). **Nada foi reprocessado** — nenhuma obrigação fiscal havia sido
       gravada ainda; se o Victor já recolheu DAS pelo valor antigo, a diferença é
       crédito a apurar com a contabilidade, fora do sistema.
+- [x] **`victor_reserves` → `fiscal_obligations`** — migrada (4 linhas, jul/2026,
+      R$ 2.658,00) e a tabela + `api/victor-reserves.js` removidos. O card de Reservas
+      da aba Pagar Victor passou a **ler** a apuração em vez de ter valores digitados:
+      mostra o que ainda falta pagar (devido − pago), então cai sozinho conforme as
+      guias são quitadas. Editar é em `/fiscal`.
 - [ ] **Apuração fiscal — o que falta.** Já feito: `api/fiscal-obligations.js`
       (`?action=apurar`, `lancar-guia`, `distribuir`, `estornar-distribuicao`, GET),
       `api/fiscal-payments.js` (quitação), `lib/fiscal-status.js` (status da obrigação)
       e `lib/victor-distribution.js` (cascata de consumo — motor único do
       `pagar-distribuido` e do `distribuir`). O ciclo apurar → lançar guia → quitar →
       abater dos payables está fechado pela API, e a tela `/fiscal`
-      (`src/pages/FiscalObligations.jsx`) cobre o ciclo inteiro. Falta: migração de
-      `victor_reserves` → `fiscal_obligations` (a aba Pagar Victor ainda lê as reservas
-      antigas, em paralelo à apuração).
+      (`src/pages/FiscalObligations.jsx`) cobre o ciclo inteiro. O backend fiscal está
+      completo.
 - [x] **Honorários e piso do pró-labore hardcoded** — feito: viraram
       `company_settings.prolabore_percentual` / `prolabore_minimo` / `honorarios_mensal`,
       editáveis por `api/settings.js` (PATCH parcial). As constantes em
