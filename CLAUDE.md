@@ -437,12 +437,15 @@ Ambiente (Windows):
       empresa sem linha cadastrada. Os parâmetros usados ficam congelados em
       `calc_snapshot.params`, então uma apuração antiga continua legível depois que
       o piso mudar.
-- [ ] **Pró-labore: dois donos** — `Billing.jsx:202` grava
-      `company_settings.prolabore_mensal = faturamento × 28%` (sem piso e ignorando
-      `prolabore_percentual`), enquanto a apuração calcula
-      `max(faturamento × prolabore_percentual, prolabore_minimo)` por mês sem persistir.
-      Divergem quando o faturamento fica abaixo do piso ÷ percentual (hoje R$ 5.789).
-      Definir qual é a fonte de verdade — o `Billing.jsx` deveria usar os parâmetros.
+- [x] **Pró-labore: dois donos** — resolvido. `Billing.jsx` lia 28% hardcoded e não
+      aplicava piso nenhum; agora usa `fetchFiscalParams()` e grava
+      `max(faturamento × prolabore_percentual, prolabore_minimo)`, a mesma fórmula de
+      `api/fiscal-obligations.js`. Efeito colateral: a previsão de impostos da aba
+      Pagar Victor passou a bater com o apurado (INSS de jul/2026: 144,80 → 178,31)
+      e o Fator R saiu da fronteira exata de 28% (28,00% → 34,48%).
+      > ⚠️ `company_settings.prolabore_mensal` só é regravado quando uma nova fatura
+      > é emitida. Até lá o valor antigo (1316,35) segue no banco e a previsão da
+      > tela mostra o INSS defasado.
 - [ ] **RBT12 estimada** — `taxCalc.js:56` usa `faturamento_medio_mensal × 12`, e
       `Billing.jsx:203` sobrescreve esse campo com o faturamento de **um** mês.
       A RBT12 real (soma de 12 meses de `invoices.invoice_value`) já está no banco.

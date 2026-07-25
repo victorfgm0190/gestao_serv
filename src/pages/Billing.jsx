@@ -12,6 +12,28 @@ const splitPct = (value, fallback) => {
   return isNaN(n) ? fallback : n
 }
 
+// Parâmetros fiscais — espelham PARAMS_PADRAO de api/fiscal-obligations.js.
+// Só o fallback: os valores reais vivem em company_settings.
+const PARAMS_PADRAO = { prolabore_percentual: 0.28, prolabore_minimo: 1621, honorarios_mensal: 150 }
+
+// Lê os parâmetros fiscais da empresa. Checagem por null, não por falsy: 0% de
+// pró-labore e honorários zerados são valores legítimos, e um `|| padrão` os
+// sobrescreveria de volta silenciosamente.
+async function fetchFiscalParams(companyId) {
+  try {
+    const res = await fetch(`/api/settings?company_id=${companyId}`)
+    if (!res.ok) return PARAMS_PADRAO
+    const row = (await res.json()).data
+    if (!row) return PARAMS_PADRAO
+    const pick = (k) => (row[k] === null || row[k] === undefined || row[k] === '' ? PARAMS_PADRAO[k] : Number(row[k]))
+    return {
+      prolabore_percentual: pick('prolabore_percentual'),
+      prolabore_minimo: pick('prolabore_minimo'),
+      honorarios_mensal: pick('honorarios_mensal'),
+    }
+  } catch { return PARAMS_PADRAO }
+}
+
 const SPLIT_MODE_LABEL = {
   percent_victor: '% Victor primeiro',
   fixed_victor: 'Fixo Victor primeiro',
@@ -39,9 +61,11 @@ export default function Billing() {
   const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', emission_date: todayBR(), payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
   const [agendaForm, setAgendaForm] = useState({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', emission_date: todayBR(), payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
   const [fiscalInfo, setFiscalInfo] = useState('')
+  const [fiscalParams, setFiscalParams] = useState(PARAMS_PADRAO)
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear])
   useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth, filterYear])
+  useEffect(() => { fetchFiscalParams(activeCompany.id).then(setFiscalParams) }, [activeCompany])
 
   async function fetchAll() {
     setLoading(true)
@@ -184,9 +208,18 @@ export default function Billing() {
     return { y: inv.year, m: inv.month }
   }
 
-  // Só Lumen (company_id=1): após faturar, soma o faturamento (valor NF) do mês
-  // de emissão e atualiza o pró-labore fiscal (28% do faturamento), preservando
-  // regime, salários e ISS já cadastrados.
+  // Só Lumen (company_id=1): após faturar, soma o faturamento (valor NF) do mês de
+  // emissão e atualiza o pró-labore fiscal, preservando regime, salários e ISS já
+  // cadastrados.
+  //
+  // Usa os MESMOS parâmetros da apuração (company_settings): percentual e piso.
+  // Antes eram 28% fixos no frontend e sem piso nenhum, então este valor divergia do
+  // que api/fiscal-obligations.js calcula — e `prolabore_mensal` alimenta a previsão
+  // de impostos da aba Pagar Victor, que ficava com um INSS menor que o apurado.
+  //
+  // Os parâmetros são relidos aqui em vez de sair do state: esta função roda logo
+  // após salvar a fatura e o state pode não ter resolvido ainda no primeiro render,
+  // o que gravaria o pró-labore com os valores padrão sem ninguém perceber.
   async function autoUpdateFiscalSettings(emissionDate) {
     if (activeCompany.id !== 1) return
     const ed = (emissionDate || todayBR()).slice(0, 10)
@@ -199,7 +232,12 @@ export default function Billing() {
         const ym = invEmissionYM(inv)
         return ym.y === y && ym.m === m ? s + (parseFloat(inv.invoice_value) || 0) : s
       }, 0)
-      const prolabore_novo = Math.round(faturamento_mes * 0.28 * 100) / 100
+      const params = await fetchFiscalParams(1)
+      setFiscalParams(params)
+      const prolabore_novo = Math.max(
+        Math.round(faturamento_mes * params.prolabore_percentual * 100) / 100,
+        params.prolabore_minimo,
+      )
       const faturamento_medio_mensal = faturamento_mes
       const up = await fetch('/api/settings', {
         method: 'PATCH',
@@ -208,7 +246,13 @@ export default function Billing() {
       })
       if (up.ok) {
         const fmtBR = v => `R$ ${parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        setFiscalInfo(`Pró-labore atualizado para ${fmtBR(prolabore_novo)} com base no faturamento de ${fmtBR(faturamento_mes)} em ${months[m-1]}/${y}`)
+        const pct = (params.prolabore_percentual * 100).toFixed(params.prolabore_percentual * 100 % 1 === 0 ? 0 : 2)
+        const noPiso = prolabore_novo === params.prolabore_minimo
+        setFiscalInfo(
+          `Pró-labore atualizado para ${fmtBR(prolabore_novo)} (${pct}% do faturamento` +
+          `${noPiso ? `, elevado ao piso de ${fmtBR(params.prolabore_minimo)}` : ''})` +
+          ` com base no faturamento de ${fmtBR(faturamento_mes)} em ${months[m-1]}/${y}`,
+        )
       }
     } catch (e) { console.error(e) }
   }
@@ -420,6 +464,25 @@ export default function Billing() {
           <p className="text-blue-200 text-sm flex-1">{fiscalInfo}</p>
           <button onClick={()=>setFiscalInfo('')} className="text-gray-400 hover:text-white text-sm shrink-0">✕</button>
         </div>
+      )}
+
+      {/* Parâmetros vigentes da apuração — deixa visível com que regra o pró-labore
+          será gravado, já que agora eles são configuráveis em Configurações. */}
+      {activeCompany.id === 1 && (
+        <p className="mb-6 text-xs text-gray-500">
+          Pró-labore fiscal:{' '}
+          <span className="text-gray-300">
+            {(fiscalParams.prolabore_percentual * 100).toFixed(fiscalParams.prolabore_percentual * 100 % 1 === 0 ? 0 : 2)}%
+          </span>{' '}
+          do faturamento, piso de{' '}
+          <span className="text-gray-300">
+            R$ {fiscalParams.prolabore_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+          {' '}· honorários{' '}
+          <span className="text-gray-300">
+            R$ {fiscalParams.honorarios_mensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </span>
+        </p>
       )}
 
       <div className="flex gap-2 mb-6 flex-wrap items-center">
