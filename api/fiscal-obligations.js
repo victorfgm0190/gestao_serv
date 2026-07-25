@@ -1,6 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
-import { calcularImpostos, calcINSS } from '../lib/taxCalc.js'
+import { calcularImpostos, parametrosFiscais, proLaboreDoMes } from '../lib/taxCalc.js'
 import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
 
 // APURAÇÃO FISCAL — DAS / INSS / Honorários.
@@ -20,31 +20,10 @@ const round2 = (v) => Math.round(((Number(v) || 0) + Number.EPSILON) * 100) / 10
 // numeric do Postgres chega como string no driver — sem isso, `a + b` concatena.
 const num = (v) => parseFloat(v) || 0
 
-// Regras de negócio da apuração. Confirmadas com o Victor.
-// Parâmetros da apuração. Vivem em company_settings (editáveis por
-// api/settings.js); estes valores são só o fallback para empresa sem linha
-// cadastrada. O piso do pró-labore acompanha o salário mínimo e muda todo janeiro,
-// por isso não pode continuar hardcoded.
-const PARAMS_PADRAO = {
-  prolabore_percentual: 0.28,   // Fator R: folha/RBT12 >= 28% mantém o Anexo III
-  prolabore_minimo: 1621.00,    // piso — nunca apura pró-labore abaixo disso
-  honorarios_mensal: 150.00,    // honorários do contador
-}
-
-// Lê os parâmetros da linha de company_settings já carregada em apurar() — sem
-// segunda consulta. Checagem por null, não por falsy: 0% de pró-labore ou
-// honorários zerados são valores legítimos, e um `|| padrão` os sobrescreveria.
-function obterParametros(settings) {
-  const pick = (campo) => {
-    const v = settings?.[campo]
-    return v === null || v === undefined || v === '' ? PARAMS_PADRAO[campo] : num(v)
-  }
-  return {
-    prolabore_percentual: pick('prolabore_percentual'),
-    prolabore_minimo: pick('prolabore_minimo'),
-    honorarios_mensal: pick('honorarios_mensal'),
-  }
-}
+// Os parâmetros da apuração (percentual, piso, honorários) e a fórmula do pró-labore
+// vêm de lib/taxCalc.js — `parametrosFiscais` e `proLaboreDoMes`. Ficam lá porque a
+// previsão da tela e o Billing.jsx usam exatamente as mesmas, e antes cada um tinha
+// a sua cópia divergindo em silêncio.
 const KINDS = ['das', 'inss', 'honorarios']
 
 // Competência da NF = mês de EMISSÃO, resolvida no SQL (ver `comp_year`/`comp_month`
@@ -55,9 +34,6 @@ const KINDS = ['das', 'inss', 'honorarios']
 // `String(date)` não é ISO — o parse caía no fallback e jogava NF de julho em junho.
 const chaveCompetencia = (inv) => ({ y: Number(inv.comp_year), m: Number(inv.comp_month) })
 
-// Pró-labore do mês: 28% do faturamento, respeitando o piso.
-const proLaboreDoMes = (faturamentoMes, params) =>
-  Math.max(round2(faturamentoMes * params.prolabore_percentual), params.prolabore_minimo)
 
 // Janela de 12 meses terminando no mês apurado (inclusive).
 function janela12(month, year) {
@@ -87,8 +63,8 @@ function acumular12(invoices, month, year, salariosMensais, params) {
   let folha = 0
   for (const fatMes of porMes.values()) {
     receita += fatMes
-    // Folha reconstruída pela mesma regra do mês corrente — o pró-labore histórico
-    // não é guardado em lugar nenhum (company_settings.prolabore_mensal é um valor só).
+    // Folha reconstruída pela mesma regra do mês corrente: o pró-labore é derivado
+    // do faturamento, não é dado guardado, então o histórico se recalcula.
     folha += proLaboreDoMes(fatMes, params) + salariosMensais
   }
   const proporcionalizado = meses < 12
@@ -129,7 +105,7 @@ async function apurar(sql, req, res) {
   const settings = (await sql`
     SELECT * FROM company_settings WHERE company_id = ${company_id} LIMIT 1`)[0] || {}
   const salariosMensais = num(settings.salarios_mensal)
-  const params = obterParametros(settings)
+  const params = parametrosFiscais(settings)
 
   // Uma leitura só: alimenta faturamento do mês, RBT12 e rateio.
   const invoices = await sql`
@@ -151,19 +127,22 @@ async function apurar(sql, req, res) {
   const prolabore = proLaboreDoMes(faturamento, params)
 
   // taxCalc calcula internamente rbt12 = faturamento_medio_mensal × 12 e
-  // fatorR = (prolabore + salarios) / faturamento_medio_mensal. Alimentando as médias
-  // dos 12 meses, ele reproduz exatamente RBT12 e Fator R acumulados — e a correção do
-  // epsilon na fronteira dos 28% vem junto, sem duplicar a tabela do Simples aqui.
+  // fatorR = folhaMensal / faturamento_medio_mensal. Alimentando as médias dos 12 meses,
+  // ele reproduz exatamente RBT12 e Fator R acumulados — e a correção do epsilon na
+  // fronteira dos 28% vem junto, sem duplicar a tabela do Simples aqui.
+  //
+  // A folha vai por `opts` porque aqui ela é somada mês a mês: aplicar a fórmula sobre a
+  // média daria outro número quando o piso pega em parte dos meses e não em outros.
   const impostos = calcularImpostos({
     regime: settings.regime || 'simples_iii',
     faturamento_medio_mensal: rbt12 / 12,
-    prolabore_mensal: folha12 / 12,
     salarios_mensal: 0,
     iss_percent: settings.iss_percent,
-  }, faturamento)
+  }, faturamento, { prolabore, folhaMensal: folha12 / 12 })
 
-  // INSS é sobre o pró-labore DO MÊS (11% até o teto), não sobre a média da folha.
-  const inss = calcINSS(prolabore)
+  // INSS é sobre o pró-labore DO MÊS (11% até o teto), não sobre a média da folha —
+  // por isso `opts.prolabore` acima; o taxCalc já devolve o INSS certo.
+  const inss = impostos.inss
   const das = round2(impostos.das ?? 0)
   const honorarios = params.honorarios_mensal
 

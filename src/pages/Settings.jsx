@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { proLaboreDoMes } from '../../lib/taxCalc.js'
 
 const REGIMES = [
   ['simples_iii', 'Simples Nacional — Anexo III'],
@@ -7,7 +8,12 @@ const REGIMES = [
   ['lucro_presumido', 'Lucro Presumido'],
 ]
 
-const EMPTY = { regime: 'simples_iii', faturamento_medio_mensal: '', prolabore_mensal: '', salarios_mensal: '', iss_percent: '5' }
+// `prolabore_mensal` saiu: o pró-labore é derivado do faturamento pelos parâmetros
+// abaixo (proLaboreDoMes em lib/taxCalc.js), não é mais um valor digitado.
+const EMPTY = {
+  regime: 'simples_iii', faturamento_medio_mensal: '', salarios_mensal: '', iss_percent: '5',
+  prolabore_percentual: '28', prolabore_minimo: '1621', honorarios_mensal: '150',
+}
 
 export default function Settings() {
   const { activeCompany } = useOutletContext()
@@ -27,12 +33,18 @@ export default function Settings() {
       const data = (await res.json()).data
       if (data) {
         const s = (v) => (v != null && parseFloat(v)) ? String(parseFloat(v)) : ''
+        // Os parâmetros usam checagem por null, não por falsy: 0% de pró-labore e
+        // honorários zerados são valores legítimos e `s()` os apagaria do formulário.
+        const n = (v, padrao) => (v == null || v === '' ? padrao : String(parseFloat(v)))
         setForm({
           regime: data.regime || 'simples_iii',
           faturamento_medio_mensal: s(data.faturamento_medio_mensal),
-          prolabore_mensal: s(data.prolabore_mensal),
           salarios_mensal: s(data.salarios_mensal),
-          iss_percent: data.iss_percent != null ? String(parseFloat(data.iss_percent)) : '5',
+          iss_percent: n(data.iss_percent, '5'),
+          // Percentual é guardado como fração (0.28) e exibido como 28.
+          prolabore_percentual: n(data.prolabore_percentual != null ? data.prolabore_percentual * 100 : null, '28'),
+          prolabore_minimo: n(data.prolabore_minimo, '1621'),
+          honorarios_mensal: n(data.honorarios_mensal, '150'),
         })
       } else {
         setForm(EMPTY)
@@ -52,9 +64,12 @@ export default function Settings() {
           company_id: activeCompany.id,
           regime: form.regime,
           faturamento_medio_mensal: parseFloat(form.faturamento_medio_mensal) || 0,
-          prolabore_mensal: parseFloat(form.prolabore_mensal) || 0,
           salarios_mensal: parseFloat(form.salarios_mensal) || 0,
           iss_percent: parseFloat(form.iss_percent) || 0,
+          // Volta a fração no banco: 28 na tela → 0.28 em company_settings.
+          prolabore_percentual: (parseFloat(form.prolabore_percentual) || 0) / 100,
+          prolabore_minimo: parseFloat(form.prolabore_minimo) || 0,
+          honorarios_mensal: parseFloat(form.honorarios_mensal) || 0,
         }),
       })
       if (!res.ok) {
@@ -68,6 +83,12 @@ export default function Settings() {
   }
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
+  // Prévia usando a mesma fórmula do backend — a tela mostra exatamente o que a
+  // apuração vai calcular, em vez de o usuário ter que fazer a conta de cabeça.
+  const prolaborePreview = proLaboreDoMes(parseFloat(form.faturamento_medio_mensal) || 0, {
+    prolabore_percentual: (parseFloat(form.prolabore_percentual) || 0) / 100,
+    prolabore_minimo: parseFloat(form.prolabore_minimo) || 0,
+  })
   const isSimples = form.regime === 'simples_iii' || form.regime === 'simples_v'
   const isLucro = form.regime === 'lucro_presumido'
 
@@ -96,15 +117,45 @@ export default function Settings() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Pró-labore mensal (R$)</label>
-            <input type="number" placeholder="0,00" value={form.prolabore_mensal} onChange={set('prolabore_mensal')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-            <p className="text-gray-600 text-[11px]">Usado para calcular o Fator R e o INSS.</p>
-          </div>
-
-          <div className="flex flex-col gap-1">
             <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Salários mensais (CLT) (R$)</label>
             <input type="number" placeholder="0,00" value={form.salarios_mensal} onChange={set('salarios_mensal')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-            <p className="text-gray-600 text-[11px]">Total de salários CLT pagos no mês. Some ao pró-labore na folha.</p>
+            <p className="text-gray-600 text-[11px]">Total de salários CLT pagos no mês. Soma ao pró-labore na folha.</p>
+          </div>
+
+          <div className="border-t border-gray-800 pt-5 space-y-5">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Parâmetros da apuração</h3>
+              <p className="text-gray-500 text-[11px] mt-1">
+                O pró-labore é <strong className="text-gray-400">calculado</strong> a partir do faturamento:
+                o maior valor entre o percentual e o piso. Usado no Fator R, no INSS e na apuração mensal.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Pró-labore — percentual do faturamento (%)</label>
+              <input type="number" step="0.01" placeholder="28" value={form.prolabore_percentual} onChange={set('prolabore_percentual')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <p className="text-gray-600 text-[11px]">28% é o mínimo do Fator R para permanecer no Anexo III (6%) em vez do V (15,5%).</p>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Pró-labore — piso (R$)</label>
+              <input type="number" placeholder="1621" value={form.prolabore_minimo} onChange={set('prolabore_minimo')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <p className="text-gray-600 text-[11px]">Acompanha o salário mínimo — atualize em janeiro.</p>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Honorários do contador (R$/mês)</label>
+              <input type="number" placeholder="150" value={form.honorarios_mensal} onChange={set('honorarios_mensal')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+            </div>
+
+            {prolaborePreview != null && (
+              <p className="text-xs text-gray-400 bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2">
+                Com faturamento de R$ {Number(form.faturamento_medio_mensal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })},
+                {' '}o pró-labore será{' '}
+                <strong className="text-white">R$ {prolaborePreview.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                {prolaborePreview === (parseFloat(form.prolabore_minimo) || 0) ? ' (piso)' : ` (${parseFloat(form.prolabore_percentual) || 0}%)`}.
+              </p>
+            )}
           </div>
 
           {isLucro && (

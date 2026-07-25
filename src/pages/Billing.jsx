@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import CopyButton from '../components/CopyButton'
 import { todayBR } from '../lib/dateUtils'
+import { PARAMS_PADRAO, parametrosFiscais, proLaboreDoMes } from '../../lib/taxCalc.js'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -12,25 +13,13 @@ const splitPct = (value, fallback) => {
   return isNaN(n) ? fallback : n
 }
 
-// Parâmetros fiscais — espelham PARAMS_PADRAO de api/fiscal-obligations.js.
-// Só o fallback: os valores reais vivem em company_settings.
-const PARAMS_PADRAO = { prolabore_percentual: 0.28, prolabore_minimo: 1621, honorarios_mensal: 150 }
-
-// Lê os parâmetros fiscais da empresa. Checagem por null, não por falsy: 0% de
-// pró-labore e honorários zerados são valores legítimos, e um `|| padrão` os
-// sobrescreveria de volta silenciosamente.
+// Lê os parâmetros fiscais da empresa. A normalização e o fallback vivem em
+// lib/taxCalc.js, que é a fórmula única compartilhada com a apuração.
 async function fetchFiscalParams(companyId) {
   try {
     const res = await fetch(`/api/settings?company_id=${companyId}`)
     if (!res.ok) return PARAMS_PADRAO
-    const row = (await res.json()).data
-    if (!row) return PARAMS_PADRAO
-    const pick = (k) => (row[k] === null || row[k] === undefined || row[k] === '' ? PARAMS_PADRAO[k] : Number(row[k]))
-    return {
-      prolabore_percentual: pick('prolabore_percentual'),
-      prolabore_minimo: pick('prolabore_minimo'),
-      honorarios_mensal: pick('honorarios_mensal'),
-    }
+    return parametrosFiscais((await res.json()).data)
   } catch { return PARAMS_PADRAO }
 }
 
@@ -209,17 +198,14 @@ export default function Billing() {
   }
 
   // Só Lumen (company_id=1): após faturar, soma o faturamento (valor NF) do mês de
-  // emissão e atualiza o pró-labore fiscal, preservando regime, salários e ISS já
-  // cadastrados.
+  // emissão e grava `faturamento_medio_mensal`, preservando regime, salários e ISS.
   //
-  // Usa os MESMOS parâmetros da apuração (company_settings): percentual e piso.
-  // Antes eram 28% fixos no frontend e sem piso nenhum, então este valor divergia do
-  // que api/fiscal-obligations.js calcula — e `prolabore_mensal` alimenta a previsão
-  // de impostos da aba Pagar Victor, que ficava com um INSS menor que o apurado.
+  // O pró-labore NÃO é mais gravado: ele é derivado do faturamento pelos parâmetros
+  // (proLaboreDoMes), então guardá-lo era manter um cache que saía do ar toda vez que
+  // o faturamento ou os parâmetros mudavam. Aqui ele só é calculado para a mensagem.
   //
-  // Os parâmetros são relidos aqui em vez de sair do state: esta função roda logo
-  // após salvar a fatura e o state pode não ter resolvido ainda no primeiro render,
-  // o que gravaria o pró-labore com os valores padrão sem ninguém perceber.
+  // Os parâmetros são relidos em vez de sair do state: esta função roda logo após
+  // salvar a fatura e o state pode não ter resolvido ainda no primeiro render.
   async function autoUpdateFiscalSettings(emissionDate) {
     if (activeCompany.id !== 1) return
     const ed = (emissionDate || todayBR()).slice(0, 10)
@@ -234,24 +220,21 @@ export default function Billing() {
       }, 0)
       const params = await fetchFiscalParams(1)
       setFiscalParams(params)
-      const prolabore_novo = Math.max(
-        Math.round(faturamento_mes * params.prolabore_percentual * 100) / 100,
-        params.prolabore_minimo,
-      )
+      const prolabore = proLaboreDoMes(faturamento_mes, params)
       const faturamento_medio_mensal = faturamento_mes
       const up = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ company_id: 1, faturamento_medio_mensal, prolabore_mensal: prolabore_novo }),
+        body: JSON.stringify({ company_id: 1, faturamento_medio_mensal }),
       })
       if (up.ok) {
         const fmtBR = v => `R$ ${parseFloat(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         const pct = (params.prolabore_percentual * 100).toFixed(params.prolabore_percentual * 100 % 1 === 0 ? 0 : 2)
-        const noPiso = prolabore_novo === params.prolabore_minimo
+        const noPiso = prolabore === params.prolabore_minimo
         setFiscalInfo(
-          `Pró-labore atualizado para ${fmtBR(prolabore_novo)} (${pct}% do faturamento` +
-          `${noPiso ? `, elevado ao piso de ${fmtBR(params.prolabore_minimo)}` : ''})` +
-          ` com base no faturamento de ${fmtBR(faturamento_mes)} em ${months[m-1]}/${y}`,
+          `Faturamento de ${months[m-1]}/${y}: ${fmtBR(faturamento_mes)}. ` +
+          `Pró-labore fiscal: ${fmtBR(prolabore)} (${pct}% do faturamento` +
+          `${noPiso ? `, elevado ao piso de ${fmtBR(params.prolabore_minimo)}` : ''}).`,
         )
       }
     } catch (e) { console.error(e) }

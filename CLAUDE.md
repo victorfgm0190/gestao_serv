@@ -165,14 +165,19 @@ ORDER BY table_name, ordinal_position;
 
 ### `company_settings` (configuração fiscal por empresa)
 `id` int · `company_id` int · `regime` varchar (`simples_iii`|`simples_v`|`lucro_presumido`) ·
-`faturamento_medio_mensal` numeric · `prolabore_mensal` numeric · `salarios_mensal` numeric ·
-`iss_percent` numeric · `updated_at` timestamp ·
-**`prolabore_percentual`** numeric (default 0.28) · **`prolabore_minimo`** numeric (default 1621.00) ·
-**`honorarios_mensal`** numeric (default 150.00)
+`faturamento_medio_mensal` numeric · `salarios_mensal` numeric · `iss_percent` numeric ·
+`prolabore_percentual` numeric (default 0.28) · `prolabore_minimo` numeric (default 1621.00) ·
+`honorarios_mensal` numeric (default 150.00) · `updated_at` timestamp
 > `UNIQUE (company_id)`. Escrita **só** por `api/settings.js` — não criar endpoint
-> paralelo para os mesmos campos. Os três últimos parametrizam a apuração de
-> `api/fiscal-obligations.js`; o piso do pró-labore acompanha o salário mínimo e
-> muda todo janeiro, por isso não pode ser hardcoded.
+> paralelo para os mesmos campos. Os três parâmetros alimentam a apuração de
+> `api/fiscal-obligations.js`; o piso acompanha o salário mínimo e muda todo janeiro.
+>
+> ⚠️ **Não existe coluna de pró-labore.** Ele é **derivado**:
+> `proLaboreDoMes(faturamento, settings) = max(faturamento × percentual, piso)`,
+> em `lib/taxCalc.js`. A coluna `prolabore_mensal` existiu como cache desse cálculo
+> e foi removida em 2026-07-25 — três lugares a recalculavam de formas diferentes
+> (Billing com 28% fixo sem piso, apuração com os parâmetros, previsão lendo a coluna)
+> e os números divergiam. Ao mexer em pró-labore, use a função, não recrie a coluna.
 
 ### Apuração fiscal (DAS/INSS/Honorários) — criadas 2026-07-25
 
@@ -437,15 +442,13 @@ Ambiente (Windows):
       empresa sem linha cadastrada. Os parâmetros usados ficam congelados em
       `calc_snapshot.params`, então uma apuração antiga continua legível depois que
       o piso mudar.
-- [x] **Pró-labore: dois donos** — resolvido. `Billing.jsx` lia 28% hardcoded e não
-      aplicava piso nenhum; agora usa `fetchFiscalParams()` e grava
-      `max(faturamento × prolabore_percentual, prolabore_minimo)`, a mesma fórmula de
-      `api/fiscal-obligations.js`. Efeito colateral: a previsão de impostos da aba
-      Pagar Victor passou a bater com o apurado (INSS de jul/2026: 144,80 → 178,31)
-      e o Fator R saiu da fronteira exata de 28% (28,00% → 34,48%).
-      > ⚠️ `company_settings.prolabore_mensal` só é regravado quando uma nova fatura
-      > é emitida. Até lá o valor antigo (1316,35) segue no banco e a previsão da
-      > tela mostra o INSS defasado.
+- [x] **Pró-labore: dois donos** — resolvido de vez. O pró-labore deixou de ser dado
+      guardado e virou cálculo: `proLaboreDoMes()` em `lib/taxCalc.js` é a fórmula
+      única usada pela apuração, pelo Billing e pela previsão da tela. A coluna
+      `company_settings.prolabore_mensal` (cache) foi removida, e com ela o problema
+      de sincronização — não há mais valor para ficar defasado. `Settings.jsx` passou
+      a editar os parâmetros (percentual, piso, honorários) em vez do valor final.
+      Previsão e apuração agora dão exatamente o mesmo INSS (jul/2026: 178,31).
 - [ ] **RBT12 estimada** — `taxCalc.js:56` usa `faturamento_medio_mensal × 12`, e
       `Billing.jsx:203` sobrescreve esse campo com o faturamento de **um** mês.
       A RBT12 real (soma de 12 meses de `invoices.invoice_value`) já está no banco.

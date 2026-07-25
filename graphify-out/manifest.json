@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1784990715.5870833,
-    "ast_hash": "25608fa851da3f34296ca922641b16b8",
+    "mtime": 1784995403.6395767,
+    "ast_hash": "4acc82dc8d6b5219afe9ded78531ed13",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -135,8 +135,8 @@
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
-    "mtime": 1784994122.167343,
-    "ast_hash": "f096b2802c1ff8a5fbc856cdaceb6767",
+    "mtime": 1784995452.7326393,
+    "ast_hash": "425d2ab140949b5194677426c644997f",
     "semantic_hash": ""
   },
   "src/pages/Clientes.jsx": {
@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1784994422.6137705,
-    "ast_hash": "0db3756c13ed80bbc1cdf9ec35dfb86d",
+    "mtime": 1784995661.2362325,
+    "ast_hash": "6fdf2cc454539d2a0234fd43e2078703",
     "semantic_hash": ""
   },
   "README.md": {
@@ -355,28 +355,28 @@
     "semantic_hash": ""
   },
   "api/migrate-settings.js": {
-    "mtime": 1784571547.0489118,
-    "ast_hash": "c011f8b77747b91a92c44d6fa66b436e",
+    "mtime": 1784995565.0718024,
+    "ast_hash": "763250202a79b02c4d3d73af415d8db7",
     "semantic_hash": ""
   },
   "api/settings.js": {
-    "mtime": 1784993546.338483,
-    "ast_hash": "6233a5f16967c82f61e361874b95cbe7",
+    "mtime": 1784995481.276025,
+    "ast_hash": "470c6e6307a55c531a6822d47629a6fc",
     "semantic_hash": ""
   },
   "src/pages/Settings.jsx": {
-    "mtime": 1784568781.8307886,
-    "ast_hash": "f3692f8084baeecf8da7ef73eaf811df",
+    "mtime": 1784995528.9023657,
+    "ast_hash": "c8bca2273d0f45c20b8500784e94d507",
     "semantic_hash": ""
   },
   "api/fiscal-obligations.js": {
-    "mtime": 1784993628.0106897,
-    "ast_hash": "cd2f33d3d9cb2ce5ec319860d860190f",
+    "mtime": 1784995415.7225738,
+    "ast_hash": "ecd56566dea6057767e3a25379d8a720",
     "semantic_hash": ""
   },
   "lib/taxCalc.js": {
-    "mtime": 1784990454.2475178,
-    "ast_hash": "6f6cfa6117745a61833d4af503acb8c2",
+    "mtime": 1784995292.3417003,
+    "ast_hash": "5604f8ac983e7ca20c0c54088e5fed87",
     "semantic_hash": ""
   },
   "api/fiscal-payments.js": {
