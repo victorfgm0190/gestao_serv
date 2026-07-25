@@ -400,12 +400,15 @@ Ambiente (Windows):
 
 ## 10. Pendências conhecidas
 
-- [ ] 🐞 **Fator R trava no Anexo V** — `Billing.jsx:202` grava
-      `prolabore = faturamento × 0.28` (exatamente na fronteira); em ponto flutuante
-      `1316.35 / 4701.25 = 0.27999999999999997`, então `fatorR >= 0.28`
-      (`taxCalc.js:95`) dá **false** e cai no Anexo V (15,5%) em vez do III (6%).
-      Sobrecusto ~R$ 447/mês, afeta todos os meses de 2026. Correção pendente de
-      decisão do Victor: epsilon na comparação **ou** gravar 28,5% no pró-labore.
+- [x] 🐞 **Fator R travava no Anexo V** — corrigido com epsilon. `Billing.jsx:202`
+      grava `prolabore = faturamento × 0.28`, exatamente na fronteira; em ponto
+      flutuante `1316.35 / 4701.25 = 0.27999999999999997`, e o `fatorR >= 0.28`
+      literal dava **false**, caindo no Anexo V (15,5%) em vez do III (6%).
+      Agora `fatorR >= FATOR_R_MIN - FATOR_R_EPSILON` (`taxCalc.js`), com
+      `FATOR_R_EPSILON = 1e-9`. Impacto: DAS de 2026 caiu R$ 5.189,94 no acumulado
+      (~R$ 447/mês). **Nada foi reprocessado** — nenhuma obrigação fiscal havia sido
+      gravada ainda; se o Victor já recolheu DAS pelo valor antigo, a diferença é
+      crédito a apurar com a contabilidade, fora do sistema.
 - [ ] **API + telas da apuração fiscal** — `fiscal_obligations` / `fiscal_payments` /
       `fiscal_allocations` já existem no banco (seção 3), mas ainda não há endpoint.
       Falta: `api/fiscal-obligations.js` (`?action=apurar`, `?action=ratear`),

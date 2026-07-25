@@ -25,6 +25,15 @@ export const SIMPLES_V = [
 export const INSS_TETO = 7786.02
 export const INSS_RATE = 0.11
 
+// Fator R: folha / faturamento >= 28% cai no Anexo III (6% na 1ª faixa) em vez do V (15,5%).
+// O pró-labore é gravado como exatamente 28% do faturamento (Billing.jsx), ou seja, sempre
+// EM CIMA da fronteira — e aí o ponto flutuante decide: 1316.35 / 4701.25 dá
+// 0.27999999999999997, que reprova num `>= 0.28` literal e joga tudo para o Anexo V.
+// O epsilon absorve esse erro de representação (~1e-16 na escala do Fator R) com folga de
+// 7 ordens de grandeza; economicamente 1e-9 de folha é fração de centavo, irrelevante.
+export const FATOR_R_MIN = 0.28
+export const FATOR_R_EPSILON = 1e-9
+
 const r2 = (v) => Math.round((Number(v) || 0) * 100) / 100
 
 // Seleciona a faixa da tabela conforme a receita bruta acumulada em 12 meses (RBT12).
@@ -92,7 +101,7 @@ export function calcularImpostos(settings, faturamentoMes) {
   let fatorR = null
   if (regime === 'simples_iii') {
     fatorR = faturamentoMedioMensal > 0 ? folhaMensal / faturamentoMedioMensal : 0
-    if (fatorR >= 0.28) { tabela = SIMPLES_III; anexo = 'III' }
+    if (fatorR >= FATOR_R_MIN - FATOR_R_EPSILON) { tabela = SIMPLES_III; anexo = 'III' }
   }
 
   const faixa = faixaFor(tabela, rbt12)
