@@ -244,6 +244,7 @@ em cada chamada.
 | `payables-fabricio.js` | GET/POST/PATCH/DELETE | Contas a pagar Fabrício. Valor no campo `amount`. Traz `payments[]`. |
 | `payables-victor.js` | GET/POST/PATCH/DELETE | Contas a pagar Victor. Valor em `total_amount` (`service_amount`+`profit_amount`). Traz `payments[]`. |
 | `payable-payments.js` | GET/POST/DELETE | Múltiplos pagamentos por payable; recalcula `status`/`paid_amount` do pai (pendente/parcial/pago). |
+| `fiscal-obligations.js` | GET/POST `?action=apurar` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. |
 | `export-os.js` | GET | Gera Excel (ExcelJS) das horas do mês, opcionalmente filtrado por `client_id`. |
 | `admin.js` | POST `?action=` | Setup/migração: `setup-db`, `setup-clients`, `migrate-financial-rules`, `migrate-time-entries`, `migrate-etapa6`. |
 
@@ -409,11 +410,21 @@ Ambiente (Windows):
       (~R$ 447/mês). **Nada foi reprocessado** — nenhuma obrigação fiscal havia sido
       gravada ainda; se o Victor já recolheu DAS pelo valor antigo, a diferença é
       crédito a apurar com a contabilidade, fora do sistema.
-- [ ] **API + telas da apuração fiscal** — `fiscal_obligations` / `fiscal_payments` /
-      `fiscal_allocations` já existem no banco (seção 3), mas ainda não há endpoint.
-      Falta: `api/fiscal-obligations.js` (`?action=apurar`, `?action=ratear`),
-      `api/fiscal-payments.js`, migração de `victor_reserves` → `fiscal_obligations`,
-      e mover `taxCalc.js` de `src/lib/` para `lib/` (compartilhado front+back).
+- [ ] **Apuração fiscal — o que falta.** Já feito: `api/fiscal-obligations.js`
+      (`?action=apurar` + GET) e `taxCalc.js` movido para `lib/` (compartilhado
+      front+back). Falta: `api/fiscal-payments.js` (quitação da guia, recalculando
+      `paid_amount`/`status` da obrigação), endpoint/ação para lançar `amount_actual`
+      quando a guia oficial chegar, tela de gestão das obrigações, ligação
+      `fiscal_allocations.payable_victor_id` com a distribuição de `payables-victor.js`,
+      e migração de `victor_reserves` → `fiscal_obligations`.
+- [ ] **Honorários e piso do pró-labore hardcoded** — `HONORARIOS_MENSAL = 150` e
+      `PROLABORE_MINIMO = 1621` são constantes em `api/fiscal-obligations.js`.
+      Migrar para colunas em `company_settings` quando variarem por empresa/ano
+      (o piso segue o salário mínimo e muda todo janeiro).
+- [ ] **Pró-labore: dois donos** — `Billing.jsx:202` grava
+      `company_settings.prolabore_mensal = faturamento × 28%` (sem piso), enquanto a
+      apuração calcula `max(28%, 1621)` por mês sem persistir. Valores divergem quando
+      o faturamento fica abaixo de R$ 5.789. Definir qual é a fonte de verdade.
 - [ ] **RBT12 estimada** — `taxCalc.js:56` usa `faturamento_medio_mensal × 12`, e
       `Billing.jsx:203` sobrescreve esse campo com o faturamento de **um** mês.
       A RBT12 real (soma de 12 meses de `invoices.invoice_value`) já está no banco.
