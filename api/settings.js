@@ -3,6 +3,11 @@ import { requireAuth } from '../lib/auth.js'
 
 // Configuração fiscal por empresa (regime, faturamento médio mensal, pró-labore,
 // salários CLT, ISS). Alimenta a previsão de impostos da aba Pagar Victor. Upsert por company_id.
+//
+// Também guarda os parâmetros da apuração de api/fiscal-obligations.js:
+// `prolabore_percentual` (base do Fator R), `prolabore_minimo` (piso, acompanha o
+// salário mínimo e muda todo janeiro) e `honorarios_mensal`. Esta é a única rota que
+// escreve em company_settings — não criar endpoint paralelo para os mesmos campos.
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -16,20 +21,28 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, regime, faturamento_medio_mensal, prolabore_mensal, salarios_mensal, iss_percent } = req.body
+    const {
+      company_id, regime, faturamento_medio_mensal, prolabore_mensal, salarios_mensal, iss_percent,
+      prolabore_percentual, prolabore_minimo, honorarios_mensal,
+    } = req.body
     if (!company_id) return res.status(400).json({ error: 'company_id é obrigatório' })
     const rows = await sql`
       INSERT INTO company_settings
-        (company_id, regime, faturamento_medio_mensal, prolabore_mensal, salarios_mensal, iss_percent, updated_at)
+        (company_id, regime, faturamento_medio_mensal, prolabore_mensal, salarios_mensal, iss_percent,
+         prolabore_percentual, prolabore_minimo, honorarios_mensal, updated_at)
       VALUES
         (${company_id}, ${regime || 'simples_iii'}, ${faturamento_medio_mensal || 0},
-         ${prolabore_mensal || 0}, ${salarios_mensal || 0}, ${iss_percent ?? 5}, NOW())
+         ${prolabore_mensal || 0}, ${salarios_mensal || 0}, ${iss_percent ?? 5},
+         ${prolabore_percentual ?? 0.28}, ${prolabore_minimo ?? 1621}, ${honorarios_mensal ?? 150}, NOW())
       ON CONFLICT (company_id) DO UPDATE SET
         regime = EXCLUDED.regime,
         faturamento_medio_mensal = EXCLUDED.faturamento_medio_mensal,
         prolabore_mensal = EXCLUDED.prolabore_mensal,
         salarios_mensal = EXCLUDED.salarios_mensal,
         iss_percent = EXCLUDED.iss_percent,
+        prolabore_percentual = EXCLUDED.prolabore_percentual,
+        prolabore_minimo = EXCLUDED.prolabore_minimo,
+        honorarios_mensal = EXCLUDED.honorarios_mensal,
         updated_at = NOW()
       RETURNING *`
     return res.status(200).json({ data: rows[0] })
@@ -39,7 +52,10 @@ export default async function handler(req, res) {
   // Usado pela auto-atualização do pró-labore no faturamento, sem sobrescrever
   // regime, salários ou ISS já cadastrados.
   if (req.method === 'PATCH') {
-    const { company_id, regime, faturamento_medio_mensal, prolabore_mensal, salarios_mensal, iss_percent } = req.body
+    const {
+      company_id, regime, faturamento_medio_mensal, prolabore_mensal, salarios_mensal, iss_percent,
+      prolabore_percentual, prolabore_minimo, honorarios_mensal,
+    } = req.body
     if (!company_id) return res.status(400).json({ error: 'company_id é obrigatório' })
     const rows = await sql`
       UPDATE company_settings SET
@@ -48,6 +64,9 @@ export default async function handler(req, res) {
         prolabore_mensal = COALESCE(${prolabore_mensal ?? null}, prolabore_mensal),
         salarios_mensal = COALESCE(${salarios_mensal ?? null}, salarios_mensal),
         iss_percent = COALESCE(${iss_percent ?? null}, iss_percent),
+        prolabore_percentual = COALESCE(${prolabore_percentual ?? null}::numeric, prolabore_percentual),
+        prolabore_minimo = COALESCE(${prolabore_minimo ?? null}::numeric, prolabore_minimo),
+        honorarios_mensal = COALESCE(${honorarios_mensal ?? null}::numeric, honorarios_mensal),
         updated_at = NOW()
       WHERE company_id = ${company_id}
       RETURNING *`
@@ -55,10 +74,12 @@ export default async function handler(req, res) {
       // Sem linha ainda: cria com os campos enviados; os demais caem no default da tabela.
       const created = await sql`
         INSERT INTO company_settings
-          (company_id, regime, faturamento_medio_mensal, prolabore_mensal, salarios_mensal, iss_percent, updated_at)
+          (company_id, regime, faturamento_medio_mensal, prolabore_mensal, salarios_mensal, iss_percent,
+           prolabore_percentual, prolabore_minimo, honorarios_mensal, updated_at)
         VALUES
           (${company_id}, ${regime || 'simples_iii'}, ${faturamento_medio_mensal || 0},
-           ${prolabore_mensal || 0}, ${salarios_mensal || 0}, ${iss_percent ?? 5}, NOW())
+           ${prolabore_mensal || 0}, ${salarios_mensal || 0}, ${iss_percent ?? 5},
+           ${prolabore_percentual ?? 0.28}, ${prolabore_minimo ?? 1621}, ${honorarios_mensal ?? 150}, NOW())
         RETURNING *`
       return res.status(200).json({ data: created[0] })
     }

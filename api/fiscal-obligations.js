@@ -21,9 +21,30 @@ const round2 = (v) => Math.round(((Number(v) || 0) + Number.EPSILON) * 100) / 10
 const num = (v) => parseFloat(v) || 0
 
 // Regras de negócio da apuração. Confirmadas com o Victor.
-const PROLABORE_PCT = 0.28        // Fator R: folha/RBT12 >= 28% mantém o Anexo III
-const PROLABORE_MINIMO = 1621.00  // piso — nunca apura pró-labore abaixo disso
-const HONORARIOS_MENSAL = 150.00  // honorários do contador (valor fixo)
+// Parâmetros da apuração. Vivem em company_settings (editáveis por
+// api/settings.js); estes valores são só o fallback para empresa sem linha
+// cadastrada. O piso do pró-labore acompanha o salário mínimo e muda todo janeiro,
+// por isso não pode continuar hardcoded.
+const PARAMS_PADRAO = {
+  prolabore_percentual: 0.28,   // Fator R: folha/RBT12 >= 28% mantém o Anexo III
+  prolabore_minimo: 1621.00,    // piso — nunca apura pró-labore abaixo disso
+  honorarios_mensal: 150.00,    // honorários do contador
+}
+
+// Lê os parâmetros da linha de company_settings já carregada em apurar() — sem
+// segunda consulta. Checagem por null, não por falsy: 0% de pró-labore ou
+// honorários zerados são valores legítimos, e um `|| padrão` os sobrescreveria.
+function obterParametros(settings) {
+  const pick = (campo) => {
+    const v = settings?.[campo]
+    return v === null || v === undefined || v === '' ? PARAMS_PADRAO[campo] : num(v)
+  }
+  return {
+    prolabore_percentual: pick('prolabore_percentual'),
+    prolabore_minimo: pick('prolabore_minimo'),
+    honorarios_mensal: pick('honorarios_mensal'),
+  }
+}
 const KINDS = ['das', 'inss', 'honorarios']
 
 // Competência da NF = mês de EMISSÃO, resolvida no SQL (ver `comp_year`/`comp_month`
@@ -35,8 +56,8 @@ const KINDS = ['das', 'inss', 'honorarios']
 const chaveCompetencia = (inv) => ({ y: Number(inv.comp_year), m: Number(inv.comp_month) })
 
 // Pró-labore do mês: 28% do faturamento, respeitando o piso.
-const proLaboreDoMes = (faturamentoMes) =>
-  Math.max(round2(faturamentoMes * PROLABORE_PCT), PROLABORE_MINIMO)
+const proLaboreDoMes = (faturamentoMes, params) =>
+  Math.max(round2(faturamentoMes * params.prolabore_percentual), params.prolabore_minimo)
 
 // Janela de 12 meses terminando no mês apurado (inclusive).
 function janela12(month, year) {
@@ -48,7 +69,10 @@ const chaveOrdinal = ({ y, m }) => y * 12 + (m - 1)
 // RBT12 + folha dos 12 meses, proporcionalizados enquanto a empresa não tem 12
 // meses de faturamento (LC 123, art. 18 §2 — receita bruta proporcional).
 // Ambos usam o MESMO divisor, senão o Fator R sairia distorcido.
-function acumular12(invoices, month, year, salariosMensais) {
+// `params` chega até aqui porque a folha histórica é reconstruída pela mesma regra
+// do mês corrente. Se só a chamada do mês usasse os parâmetros do banco, o Fator R
+// continuaria calculado sobre 28%/1621 fixos e discordaria do pró-labore apurado.
+function acumular12(invoices, month, year, salariosMensais, params) {
   const { inicio, fim } = janela12(month, year)
   const porMes = new Map()
   for (const inv of invoices) {
@@ -65,7 +89,7 @@ function acumular12(invoices, month, year, salariosMensais) {
     receita += fatMes
     // Folha reconstruída pela mesma regra do mês corrente — o pró-labore histórico
     // não é guardado em lugar nenhum (company_settings.prolabore_mensal é um valor só).
-    folha += proLaboreDoMes(fatMes) + salariosMensais
+    folha += proLaboreDoMes(fatMes, params) + salariosMensais
   }
   const proporcionalizado = meses < 12
   const fator = proporcionalizado ? 12 / meses : 1
@@ -105,6 +129,7 @@ async function apurar(sql, req, res) {
   const settings = (await sql`
     SELECT * FROM company_settings WHERE company_id = ${company_id} LIMIT 1`)[0] || {}
   const salariosMensais = num(settings.salarios_mensal)
+  const params = obterParametros(settings)
 
   // Uma leitura só: alimenta faturamento do mês, RBT12 e rateio.
   const invoices = await sql`
@@ -122,8 +147,8 @@ async function apurar(sql, req, res) {
     return res.status(404).json({ error: 'Nenhum faturamento neste mês' })
   }
 
-  const { rbt12, folha12, meses, proporcionalizado } = acumular12(invoices, m, y, salariosMensais)
-  const prolabore = proLaboreDoMes(faturamento)
+  const { rbt12, folha12, meses, proporcionalizado } = acumular12(invoices, m, y, salariosMensais, params)
+  const prolabore = proLaboreDoMes(faturamento, params)
 
   // taxCalc calcula internamente rbt12 = faturamento_medio_mensal × 12 e
   // fatorR = (prolabore + salarios) / faturamento_medio_mensal. Alimentando as médias
@@ -140,7 +165,7 @@ async function apurar(sql, req, res) {
   // INSS é sobre o pró-labore DO MÊS (11% até o teto), não sobre a média da folha.
   const inss = calcINSS(prolabore)
   const das = round2(impostos.das ?? 0)
-  const honorarios = HONORARIOS_MENSAL
+  const honorarios = params.honorarios_mensal
 
   const snapshot = {
     rbt12,
@@ -153,7 +178,11 @@ async function apurar(sql, req, res) {
     regime: impostos.regime,
     faturamento_mes: faturamento,
     prolabore,
-    prolabore_no_piso: prolabore === PROLABORE_MINIMO,
+    prolabore_no_piso: prolabore === params.prolabore_minimo,
+    // Os parâmetros agora variam por empresa e mudam no tempo (o piso sobe todo
+    // janeiro). Congelá-los no snapshot é o que permite reler uma apuração antiga
+    // e entender com que regras ela foi feita.
+    params,
     apurado_em: new Date().toISOString(),
   }
 
@@ -165,7 +194,7 @@ async function apurar(sql, req, res) {
     honorarios: { amount: honorarios, base: null, rate: null },
   }
 
-  const obligations = []
+  const upserts = []
   for (const kind of KINDS) {
     const v = valores[kind]
     const row = (await sql`
@@ -181,8 +210,17 @@ async function apurar(sql, req, res) {
         calc_snapshot    = EXCLUDED.calc_snapshot,
         updated_at       = now()
       RETURNING *`)[0]
-    obligations.push(row)
+    upserts.push(row)
   }
+
+  // O status nunca é decidido aqui. O UPSERT grava 'previsto' só na criação e não
+  // toca no status ao reapurar; quem resolve é o recalcularObrigacao, que conhece as
+  // regras todas: nada devido = 'pago' (senão uma obrigação de R$ 0,00 nasceria
+  // pendente e não teria como ser quitada, já que pagar exige amount > 0), guia
+  // oficial lançada = 'apurado', e pagamentos já registrados = 'parcial'/'pago'.
+  const obligations = (await sql.transaction(
+    upserts.map((o) => recalcularObrigacao(sql, o.id)),
+  )).map((r) => r[0])
 
   // Rateio. Reapurar substitui o rateio anterior — sem isso rodar duas vezes
   // duplicaria tudo (fiscal_allocations não tem UNIQUE que segure).

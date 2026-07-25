@@ -163,6 +163,17 @@ ORDER BY table_name, ordinal_position;
 `id` int · `payable_type` varchar (`victor`|`fabricio`) · `payable_id` int · `amount` numeric ·
 `paid_at` date · `notes` text · `created_at` timestamp
 
+### `company_settings` (configuração fiscal por empresa)
+`id` int · `company_id` int · `regime` varchar (`simples_iii`|`simples_v`|`lucro_presumido`) ·
+`faturamento_medio_mensal` numeric · `prolabore_mensal` numeric · `salarios_mensal` numeric ·
+`iss_percent` numeric · `updated_at` timestamp ·
+**`prolabore_percentual`** numeric (default 0.28) · **`prolabore_minimo`** numeric (default 1621.00) ·
+**`honorarios_mensal`** numeric (default 150.00)
+> `UNIQUE (company_id)`. Escrita **só** por `api/settings.js` — não criar endpoint
+> paralelo para os mesmos campos. Os três últimos parametrizam a apuração de
+> `api/fiscal-obligations.js`; o piso do pró-labore acompanha o salário mínimo e
+> muda todo janeiro, por isso não pode ser hardcoded.
+
 ### Apuração fiscal (DAS/INSS/Honorários) — criadas 2026-07-25
 
 Separam três eventos que antes viviam colapsados em `payable_payments.notes`:
@@ -419,14 +430,19 @@ Ambiente (Windows):
       pago está fechado pela API. Falta: **tela** de gestão das obrigações; ligação
       `fiscal_allocations.payable_victor_id` com a distribuição de `payables-victor.js`;
       e migração de `victor_reserves` → `fiscal_obligations`.
-- [ ] **Honorários e piso do pró-labore hardcoded** — `HONORARIOS_MENSAL = 150` e
-      `PROLABORE_MINIMO = 1621` são constantes em `api/fiscal-obligations.js`.
-      Migrar para colunas em `company_settings` quando variarem por empresa/ano
-      (o piso segue o salário mínimo e muda todo janeiro).
+- [x] **Honorários e piso do pró-labore hardcoded** — feito: viraram
+      `company_settings.prolabore_percentual` / `prolabore_minimo` / `honorarios_mensal`,
+      editáveis por `api/settings.js` (PATCH parcial). As constantes em
+      `api/fiscal-obligations.js` sobraram só como fallback (`PARAMS_PADRAO`) para
+      empresa sem linha cadastrada. Os parâmetros usados ficam congelados em
+      `calc_snapshot.params`, então uma apuração antiga continua legível depois que
+      o piso mudar.
 - [ ] **Pró-labore: dois donos** — `Billing.jsx:202` grava
-      `company_settings.prolabore_mensal = faturamento × 28%` (sem piso), enquanto a
-      apuração calcula `max(28%, 1621)` por mês sem persistir. Valores divergem quando
-      o faturamento fica abaixo de R$ 5.789. Definir qual é a fonte de verdade.
+      `company_settings.prolabore_mensal = faturamento × 28%` (sem piso e ignorando
+      `prolabore_percentual`), enquanto a apuração calcula
+      `max(faturamento × prolabore_percentual, prolabore_minimo)` por mês sem persistir.
+      Divergem quando o faturamento fica abaixo do piso ÷ percentual (hoje R$ 5.789).
+      Definir qual é a fonte de verdade — o `Billing.jsx` deveria usar os parâmetros.
 - [ ] **RBT12 estimada** — `taxCalc.js:56` usa `faturamento_medio_mensal × 12`, e
       `Billing.jsx:203` sobrescreve esse campo com o faturamento de **um** mês.
       A RBT12 real (soma de 12 meses de `invoices.invoice_value`) já está no banco.
