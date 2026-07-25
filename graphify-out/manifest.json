@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1784991126.0486488,
-    "ast_hash": "d54385ab688bb527425477e6e1f7d919",
+    "mtime": 1784992737.0131636,
+    "ast_hash": "ea4f18ab994f518d534dfd7ced247499",
     "semantic_hash": ""
   },
   "README.md": {
@@ -377,6 +377,11 @@
   "lib/taxCalc.js": {
     "mtime": 1784990454.2475178,
     "ast_hash": "6f6cfa6117745a61833d4af503acb8c2",
+    "semantic_hash": ""
+  },
+  "api/fiscal-payments.js": {
+    "mtime": 1784992682.7833278,
+    "ast_hash": "54aef882d73477a0e5f0031e91c2d75f",
     "semantic_hash": ""
   }
 }
