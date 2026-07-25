@@ -1,16 +1,16 @@
-# Graph Report - gestao_serv  (2026-07-20)
+# Graph Report - gestao_serv  (2026-07-25)
 
 ## Corpus Check
-- 69 files · ~57,846 words
+- 70 files · ~60,065 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 365 nodes · 543 edges · 29 communities (24 shown, 5 thin omitted)
+- 381 nodes · 582 edges · 30 communities (25 shown, 5 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1a26fb72`
+- Built from commit: `73d34ee7`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -26,6 +26,7 @@
 - invoices.js
 - payable-payments.js
 - time-entries.js
+- 3. Banco de dados — tabelas, colunas e tipos
 - cron-sync.js
 - vercel.json
 - CLAUDE.md — Contexto do Projeto gestao_serv
@@ -42,16 +43,16 @@
 - extraction-spec.md
 
 ## God Nodes (most connected - your core abstractions)
-1. `requireAuth()` - 42 edges
+1. `requireAuth()` - 44 edges
 2. `react` - 17 edges
-3. `3. Banco de dados — tabelas, colunas e tipos` - 16 edges
+3. `3. Banco de dados — tabelas, colunas e tipos` - 17 edges
 4. `CLAUDE.md — Contexto do Projeto gestao_serv` - 13 edges
 5. `What You Must Do When Invoked` - 12 edges
 6. `/graphify` - 11 edges
-7. `Financial()` - 8 edges
-8. `graphify reference: extra exports and benchmark` - 8 edges
-9. `6. Regras de negócio financeiro` - 8 edges
-10. `handler()` - 7 edges
+7. `apurar()` - 10 edges
+8. `calcularImpostos()` - 9 edges
+9. `acumular12()` - 8 edges
+10. `Financial()` - 8 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `handler()` --calls--> `requireAuth()`  [EXTRACTED]
@@ -61,14 +62,14 @@
 - `handler()` --calls--> `requireAuth()`  [EXTRACTED]
   api/export-os.js → lib/auth.js
 - `handler()` --calls--> `requireAuth()`  [EXTRACTED]
-  api/ingest-email.js → lib/auth.js
+  api/fiscal-obligations.js → lib/auth.js
 - `handler()` --calls--> `requireAuth()`  [EXTRACTED]
-  api/invoices.js → lib/auth.js
+  api/ingest-email.js → lib/auth.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (29 total, 5 thin omitted)
+## Communities (30 total, 5 thin omitted)
 
 ### Community 0 - "main.jsx"
 Cohesion: 0.09
@@ -83,12 +84,12 @@ Cohesion: 0.07
 Nodes (26): autoprefixer, oxlint, devDependencies, autoprefixer, oxlint, postcss, tailwindcss, @types/react (+18 more)
 
 ### Community 3 - "Financial.jsx"
-Cohesion: 0.09
-Nodes (28): CopyButton(), todayBR(), aliquotaEfetiva(), calcINSS(), calcularImpostos(), faixaFor(), r2(), SIMPLES_III (+20 more)
+Cohesion: 0.11
+Nodes (21): CopyButton(), todayBR(), Billing(), months, SPLIT_MODE_LABEL, splitPct(), EMPTY_RECEIVE_CATS, EMPTY_VICTOR_CATS (+13 more)
 
 ### Community 4 - "6. Regras de negócio financeiro"
-Cohesion: 0.25
-Nodes (8): 6. Regras de negócio financeiro, Contrato fixo (`billing_type = 'contract'` ou `'mensal'`), Contrato por hora (`billing_type = 'hora'` / fatura `agenda`), Deslocamento (por contrato), Dois tipos de imposto (distintos!), Fluxo de faturamento, Múltiplos pagamentos, Split Victor/Fabrício
+Cohesion: 0.23
+Nodes (18): acumular12(), apurar(), chaveCompetencia(), chaveOrdinal(), handler(), janela12(), KINDS, num() (+10 more)
 
 ### Community 5 - "payables-victor.js"
 Cohesion: 0.24
@@ -114,13 +115,17 @@ Nodes (33): handler(), parseCompanyIds(), handler(), splitPct(), handler(), spli
 Cohesion: 0.32
 Nodes (8): handler(), handler(), calcular(), calcularHoras(), handler(), splitPct(), timeToDecimal(), requireAdmin()
 
+### Community 11 - "3. Banco de dados — tabelas, colunas e tipos"
+Cohesion: 0.10
+Nodes (20): 3. Banco de dados — tabelas, colunas e tipos, Apuração fiscal (DAS/INSS/Honorários) — criadas 2026-07-25, `clients`, `companies`, `contract_months`, `contracts`, `demands`, `email_rules` (+12 more)
+
 ### Community 12 - "cron-sync.js"
 Cohesion: 0.44
 Nodes (7): handler(), handler(), classify(), fetchEmailsFromAccount(), imperiumAccounts(), ingestAccounts(), makeImapConfig()
 
 ### Community 39 - "CLAUDE.md — Contexto do Projeto gestao_serv"
-Cohesion: 0.05
-Nodes (36): 10. Pendências conhecidas, 1. Visão geral, 2. Empresas e clientes, 3. Banco de dados — tabelas, colunas e tipos, 4. APIs ativas (`/api/`), 5. Telas (`/src/pages/`), 7. Contratos existentes no banco, 8. Workflow de desenvolvimento (+28 more)
+Cohesion: 0.07
+Nodes (28): 10. Pendências conhecidas, 1. Visão geral, 2. Empresas e clientes, 4. APIs ativas (`/api/`), 5. Telas (`/src/pages/`), 6. Regras de negócio financeiro, 7. Contratos existentes no banco, 8. Workflow de desenvolvimento (+20 more)
 
 ### Community 41 - "What You Must Do When Invoked"
 Cohesion: 0.07
@@ -151,21 +156,21 @@ Cohesion: 0.50
 Nodes (3): Expanding the Oxlint configuration, React Compiler, React + Vite
 
 ## Knowledge Gaps
-- **139 isolated node(s):** `$schema`, `oxc`, `react/rules-of-hooks`, `warn`, `TABLES` (+134 more)
+- **143 isolated node(s):** `$schema`, `oxc`, `react/rules-of-hooks`, `warn`, `KINDS` (+138 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `requireAuth()` connect `payable-payments.js` to `invoices.js`, `time-entries.js`, `cron-sync.js`, `payables-victor.js`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+- **Why does `requireAuth()` connect `payable-payments.js` to `6. Regras de negócio financeiro`, `payables-victor.js`, `invoices.js`, `time-entries.js`, `cron-sync.js`?**
+  _High betweenness centrality (0.123) - this node is a cross-community bridge._
+- **Why does `calcularImpostos()` connect `6. Regras de negócio financeiro` to `Financial.jsx`?**
+  _High betweenness centrality (0.091) - this node is a cross-community bridge._
 - **Why does `react` connect `main.jsx` to `Financial.jsx`, `.oxlintrc.json`, `Dashboard.jsx`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
-- **Why does `CLAUDE.md — Contexto do Projeto gestao_serv` connect `CLAUDE.md — Contexto do Projeto gestao_serv` to `6. Regras de negócio financeiro`?**
-  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+  _High betweenness centrality (0.056) - this node is a cross-community bridge._
 - **What connects `$schema`, `oxc`, `react/rules-of-hooks` to the rest of the system?**
-  _139 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _143 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `main.jsx` be split into smaller, more focused modules?**
   _Cohesion score 0.08686868686868687 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**

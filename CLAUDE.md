@@ -195,7 +195,8 @@ Ainda **sem endpoint** — tabelas criadas, API e telas pendentes.
 `adjustment` numeric (`amount - provisioned`, a reconciliação) ·
 `from_service` numeric · `from_profit` numeric ·
 `basis` varchar (`proporcional_nf`) · `created_at` timestamp
-> Índice `(client_id, obligation_id)`. Substitui o parse de
+> Índice `idx_fiscal_allocations_client_obligation (client_id, obligation_id)`.
+> Substitui o parse de
 > `payable_payments.notes` (`parseNotesToAmounts`/`proportionalCats` em `Financial.jsx`),
 > que hoje infere o rateio de uma string no browser.
 
