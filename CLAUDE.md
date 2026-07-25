@@ -163,6 +163,42 @@ ORDER BY table_name, ordinal_position;
 `id` int · `payable_type` varchar (`victor`|`fabricio`) · `payable_id` int · `amount` numeric ·
 `paid_at` date · `notes` text · `created_at` timestamp
 
+### Apuração fiscal (DAS/INSS/Honorários) — criadas 2026-07-25
+
+Separam três eventos que antes viviam colapsados em `payable_payments.notes`:
+**apurar a obrigação**, **ratear entre clientes** e **quitar a guia**.
+Ainda **sem endpoint** — tabelas criadas, API e telas pendentes.
+
+#### `fiscal_obligations` — o que a empresa deve, por competência
+`id` int · `company_id` int · `month` int · `year` int ·
+`kind` varchar (`das`|`inss`|`honorarios`|`escritorio`|`demais`) ·
+`amount_estimated` numeric (apuração interna, via `taxCalc.js`) ·
+`amount_actual` numeric (valor da guia oficial) · `base_amount` numeric (faturamento) ·
+`rate_used` numeric (alíquota efetiva) · `calc_snapshot` jsonb (`{rbt12, fatorR, anexo, prolabore}` congelado p/ auditoria) ·
+`due_date` date · `doc_number` varchar (nº da guia) · `paid_amount` numeric ·
+`status` varchar (`previsto`|`apurado`|`parcial`|`pago`) · `notes` text ·
+`created_at` timestamp · `updated_at` timestamp
+> `UNIQUE (company_id, month, year, kind)` — uma obrigação por tipo/competência.
+> Aposenta `victor_reserves` (que só tem 4 categorias, sem cliente e sem ciclo de vida).
+
+#### `fiscal_payments` — quitação da guia (múltiplos pagamentos)
+`id` int · `obligation_id` int **FK → fiscal_obligations ON DELETE CASCADE** ·
+`amount` numeric · `paid_at` date · `method` varchar (`boleto`|`pix`|`darf`) ·
+`notes` text · `created_at` timestamp
+> Espelha o padrão de `payable_payments`. `paid_at` aqui é quando a **guia** foi paga —
+> distinto de `payable_payments.paid_at`, que é quando se descontou dos clientes.
+
+#### `fiscal_allocations` — rateio por cliente
+`id` int · `obligation_id` int **FK → fiscal_obligations ON DELETE CASCADE** ·
+`client_id` int · `invoice_id` int (âncora da base) · `payable_victor_id` int ·
+`amount` numeric (rateado p/ o cliente) · `provisioned` numeric (`invoices.tax_amount` original) ·
+`adjustment` numeric (`amount - provisioned`, a reconciliação) ·
+`from_service` numeric · `from_profit` numeric ·
+`basis` varchar (`proporcional_nf`) · `created_at` timestamp
+> Índice `(client_id, obligation_id)`. Substitui o parse de
+> `payable_payments.notes` (`parseNotesToAmounts`/`proportionalCats` em `Financial.jsx`),
+> que hoje infere o rateio de uma string no browser.
+
 ### `monthly_closings` / `payments`
 Tabelas do fechamento mensal (modelo antigo). Pouco/ não usadas pelas telas atuais.
 
@@ -364,6 +400,20 @@ Ambiente (Windows):
 
 ## 10. Pendências conhecidas
 
+- [ ] 🐞 **Fator R trava no Anexo V** — `Billing.jsx:202` grava
+      `prolabore = faturamento × 0.28` (exatamente na fronteira); em ponto flutuante
+      `1316.35 / 4701.25 = 0.27999999999999997`, então `fatorR >= 0.28`
+      (`taxCalc.js:95`) dá **false** e cai no Anexo V (15,5%) em vez do III (6%).
+      Sobrecusto ~R$ 447/mês, afeta todos os meses de 2026. Correção pendente de
+      decisão do Victor: epsilon na comparação **ou** gravar 28,5% no pró-labore.
+- [ ] **API + telas da apuração fiscal** — `fiscal_obligations` / `fiscal_payments` /
+      `fiscal_allocations` já existem no banco (seção 3), mas ainda não há endpoint.
+      Falta: `api/fiscal-obligations.js` (`?action=apurar`, `?action=ratear`),
+      `api/fiscal-payments.js`, migração de `victor_reserves` → `fiscal_obligations`,
+      e mover `taxCalc.js` de `src/lib/` para `lib/` (compartilhado front+back).
+- [ ] **RBT12 estimada** — `taxCalc.js:56` usa `faturamento_medio_mensal × 12`, e
+      `Billing.jsx:203` sobrescreve esse campo com o faturamento de **um** mês.
+      A RBT12 real (soma de 12 meses de `invoices.invoice_value`) já está no banco.
 - [ ] **Lumen IMAP** (`victor@lumendev.com.br`) — ingestão de e-mail só cobre Imperium hoje.
 - [ ] **Migrations faltantes** para popular `time_entries.contract_id` e
       `contracts.financial_rule_id` em registros antigos (colunas já existem no schema).
