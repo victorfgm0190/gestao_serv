@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "api/payables-victor.js": {
-    "mtime": 1784511505.620872,
-    "ast_hash": "d4ba375e7f557e72393e50a801ccdb65",
+    "mtime": 1784996060.5557785,
+    "ast_hash": "799776727e26f9e7d42b45bdbdf55412",
     "semantic_hash": ""
   },
   "api/receivables.js": {
@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1784995661.2362325,
-    "ast_hash": "6fdf2cc454539d2a0234fd43e2078703",
+    "mtime": 1784997147.7025683,
+    "ast_hash": "e42e27cf65622de9d8ff0abd16c4c100",
     "semantic_hash": ""
   },
   "README.md": {
@@ -370,8 +370,8 @@
     "semantic_hash": ""
   },
   "api/fiscal-obligations.js": {
-    "mtime": 1784995415.7225738,
-    "ast_hash": "ecd56566dea6057767e3a25379d8a720",
+    "mtime": 1784996947.1344233,
+    "ast_hash": "7aa6eb951b6f7f0816d70ab5cfda200a",
     "semantic_hash": ""
   },
   "lib/taxCalc.js": {
@@ -387,6 +387,11 @@
   "lib/fiscal-status.js": {
     "mtime": 1784993153.005497,
     "ast_hash": "e637156cd3b538b04275989e4fb8a29c",
+    "semantic_hash": ""
+  },
+  "lib/victor-distribution.js": {
+    "mtime": 1784996033.7632637,
+    "ast_hash": "350c0fcfbdcfded3e0e188c40d5c9413",
     "semantic_hash": ""
   }
 }

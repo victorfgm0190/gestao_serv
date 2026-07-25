@@ -1,46 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
-import { statusFor, PAID_EPSILON } from '../lib/payment-status.js'
-
-const CLIENT_PHARMA = 7
-const CATS = { honorarios: 'Honorários', das: 'DAS', inss: 'INSS', pro_labore: 'Pro Labore', lucros: 'Lucros', escritorio: 'Escritório', demais: 'Demais despesas' }
-const r2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100
-
-// Ordenação canônica: SEMPRE por competência (year/month) do mais antigo ao mais novo.
-// Idêntica ao preview do frontend (sortedPending). Dentro do mês: Pharmalog/ANB
-// (client_id=7) primeiro, restante por saldo desc. Nunca usa payment_month/year.
-function ordenar(records) {
-  return [...records].sort((a, b) => {
-    const ka = a.year * 100 + a.month, kb = b.year * 100 + b.month
-    if (ka !== kb) return ka - kb  // competência ASC — mês mais antigo primeiro
-    if (a.client_id === CLIENT_PHARMA && b.client_id !== CLIENT_PHARMA) return -1
-    if (b.client_id === CLIENT_PHARMA && a.client_id !== CLIENT_PHARMA) return 1
-    return b._saldo - a._saldo
-  })
-}
-
-// Consome `pool` sequencialmente sobre `lista` (registros com ._saldo calculado).
-// Retorna os writes (fragmentos SQL não-aguardados) para a transação, o que foi aplicado e o restante.
-function consumir(sql, pool, lista, when, notes) {
-  const writes = []
-  const applied = []
-  let restante = r2(pool)
-  // Mês/ano de caixa derivados da data do pagamento (when).
-  const [wy, wm] = String(when).slice(0, 10).split('-').map(Number)
-  for (const rec of lista) {
-    if (restante <= 0.005) break
-    const consumed = r2(Math.min(restante, rec._saldo))
-    if (consumed <= 0) continue
-    const total = r2(parseFloat(rec.total_amount) || 0)
-    const newPaid = r2((parseFloat(rec.paid_amount) || 0) + consumed)
-    const status = newPaid >= total - PAID_EPSILON ? 'pago' : 'parcial'
-    writes.push(sql`INSERT INTO payable_payments (payable_type, payable_id, amount, paid_at, notes, payment_month, payment_year) VALUES ('victor', ${rec.id}, ${consumed}, ${when}, ${notes}, ${wm || null}, ${wy || null})`)
-    writes.push(sql`UPDATE payables_victor SET paid_amount=${newPaid}, status=${status}, paid_at=${when}, payment_month=${wm || null}, payment_year=${wy || null} WHERE id=${rec.id}`)
-    applied.push({ id: rec.id, consumed, status })
-    restante = r2(restante - consumed)
-  }
-  return { writes, applied, restante }
-}
+import { statusFor } from '../lib/payment-status.js'
+import { CLIENT_PHARMA, CATS, r2, ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
 
 // Recalcula o pai de um payable_victor após alterar seus pagamentos.
 async function recalcVictorParent(sql, payable_id) {
@@ -73,13 +34,9 @@ async function pagarDistribuido(sql, req, res) {
   const { company_id, despesas = {}, mode, payable_id, overflow_action = null, overflow_target_id = null, paid_at, reference_month, reference_year, edit_session = null } = req.body
 
   let total = 0
-  const partes = []
-  for (const [k, label] of Object.entries(CATS)) {
-    const v = parseFloat(despesas[k]) || 0
-    if (v > 0) { total = r2(total + v); partes.push(`${label}: R$${String(v).replace('.', ',')}`) }
-  }
+  for (const k of Object.keys(CATS)) total = r2(total + (parseFloat(despesas[k]) || 0))
   if (total <= 0) return res.status(400).json({ error: 'Total de despesas deve ser maior que zero' })
-  const notes = partes.length ? partes.join(' | ') : 'distribuição geral'
+  const notes = montarNotes(despesas)
   const when = paid_at || new Date().toISOString().split('T')[0]
 
   // Edição: estorna a sessão original (após validar o total) antes de redistribuir — restaura os saldos.
@@ -93,24 +50,7 @@ async function pagarDistribuido(sql, req, res) {
   const refYear = reference_year ? Number(reference_year) : now.getFullYear()
   const curKey = refYear * 100 + refMonth
 
-  // Ordenação SEMPRE por competência (year/month); o limite superior é o MÊS DE CAIXA.
-  // Só entram payables DISPONÍVEIS: manuais (sem invoice) ou cujo recebível do cliente já foi pago/parcial.
-  const all = await sql`
-    SELECT p.* FROM payables_victor p
-    LEFT JOIN invoices i ON i.id = p.invoice_id
-    LEFT JOIN receivables rcv ON rcv.id = i.receivable_id
-    WHERE p.company_id = ${company_id} AND p.status IN ('pendente','parcial')
-      AND (p.invoice_id IS NULL OR rcv.status IN ('pago','parcial'))
-    ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
-  for (const rec of all) rec._saldo = r2((parseFloat(rec.total_amount) || 0) - (parseFloat(rec.paid_amount) || 0))
-  // Limite superior = mês de CAIXA (payment_month/year) ≤ período ativo. Nunca consome caixa futuro;
-  // a sobra (pool - consumido) simplesmente não é distribuída (capital próprio).
-  const candidatos = all.filter(rec => {
-    if (rec._saldo <= 0) return false
-    const py = Number(rec.payment_year) || rec.year
-    const pm = Number(rec.payment_month) || rec.month
-    return (py * 100 + pm) <= curKey
-  })
+  const candidatos = await candidatosDisponiveis(sql, company_id, curKey)
 
   // FLOW A — geral
   if (mode === 'geral') {

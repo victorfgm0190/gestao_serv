@@ -2,6 +2,10 @@ import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { calcularImpostos, parametrosFiscais, proLaboreDoMes } from '../lib/taxCalc.js'
 import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
+import { ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
+
+// Data de hoje em ISO. Isolado para o fuso: new Date() no servidor da Vercel é UTC.
+const todayISO = () => new Date().toISOString().slice(0, 10)
 
 // APURAÇÃO FISCAL — DAS / INSS / Honorários.
 //
@@ -11,10 +15,11 @@ import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
 //   fiscal_allocations  → quanto disso cabe a cada cliente
 //   fiscal_payments     → quando a guia foi efetivamente quitada (outro endpoint)
 //
-// POST  ?action=apurar       { company_id, month, year }   → calcula e grava (idempotente)
-// PATCH ?action=lancar-guia  { obligation_id, amount_actual, due_date, doc_number }
-//                                                          → guia oficial chegou
-// GET   ?company_id&month&year                             → lê o que já foi apurado
+// POST  ?action=apurar                 { company_id, month, year }  → calcula e grava (idempotente)
+// PATCH ?action=lancar-guia            { obligation_id, amount_actual, due_date, doc_number }
+// POST  ?action=distribuir             { company_id, month, year }  → abate dos payables do Victor
+// POST  ?action=estornar-distribuicao  { company_id, month, year }  → desfaz o abatimento
+// GET   ?company_id&month&year                                      → lê o que já foi apurado
 
 const round2 = (v) => Math.round(((Number(v) || 0) + Number.EPSILON) * 100) / 100
 // numeric do Postgres chega como string no driver — sem isso, `a + b` concatena.
@@ -296,6 +301,163 @@ async function lancarGuia(sql, req, res) {
   })
 }
 
+// POST ?action=distribuir — abate as despesas fiscais apuradas do que o Victor recebe.
+//
+// NÃO recalcula lucro. Victor e Fabrício já vêm de invoices (calcContrato/calcAgenda/
+// calcProjeto), e os payables por cliente já existem desde que o recebível foi pago.
+// Aqui só se consome esses saldos, na mesma cascata do ?action=pagar-distribuido —
+// a diferença é que o pool vem da apuração em vez de ser digitado no modal.
+//
+// Grava `fiscal_allocations.payable_victor_id` em cada payable efetivamente consumido,
+// fechando o elo entre a obrigação e de quem ela foi descontada.
+async function distribuir(sql, req, res) {
+  const { company_id, month, year, paid_at, reference_month, reference_year, incluir_previsto = false } = req.body || {}
+  if (!company_id || !month || !year) {
+    return res.status(400).json({ error: 'company_id, month e year são obrigatórios' })
+  }
+  const m = Number(month)
+  const y = Number(year)
+
+  const obrigacoes = await sql`
+    SELECT * FROM fiscal_obligations
+    WHERE company_id = ${company_id} AND month = ${m} AND year = ${y}
+    ORDER BY kind`
+  if (!obrigacoes.length) {
+    return res.status(404).json({ error: 'Nada apurado neste mês. Rode ?action=apurar antes.' })
+  }
+
+  // Já distribuído? Reexecutar consumiria os saldos de novo. Estorne primeiro.
+  const jaLigadas = await sql`
+    SELECT count(*)::int n FROM fiscal_allocations
+    WHERE obligation_id = ANY(${obrigacoes.map((o) => o.id)}) AND payable_victor_id IS NOT NULL`
+  if (jaLigadas[0].n > 0) {
+    return res.status(409).json({
+      error: 'Este mês já foi distribuído. Use ?action=estornar-distribuicao antes de refazer.',
+    })
+  }
+
+  // Por padrão só entram obrigações com valor real — guia lançada (`apurado`) ou já
+  // com pagamento. `incluir_previsto` opta por usar a estimativa, para quem quer
+  // reservar antes da guia chegar.
+  const elegivel = (o) => (incluir_previsto ? true : o.status !== 'previsto')
+  const usadas = obrigacoes.filter((o) => elegivel(o) && valorDevido(o) > 0)
+  const ignoradas = obrigacoes
+    .filter((o) => !usadas.includes(o))
+    .map((o) => ({ kind: o.kind, status: o.status, motivo: valorDevido(o) <= 0 ? 'valor zero' : 'ainda previsto' }))
+  if (!usadas.length) {
+    return res.status(400).json({
+      error: 'Nenhuma obrigação elegível. Lance a guia oficial (?action=lancar-guia) ou envie incluir_previsto: true.',
+      ignoradas,
+    })
+  }
+
+  // `despesas` usa as chaves de CATS para o notes sair na grafia que o Financial.jsx
+  // já sabe ler — o detalhamento por categoria da tela funciona sem alteração.
+  const despesas = {}
+  let pool = 0
+  for (const o of usadas) {
+    const v = round2(valorDevido(o))
+    despesas[o.kind] = (despesas[o.kind] || 0) + v
+    pool = round2(pool + v)
+  }
+  const notes = montarNotes(despesas)
+  const when = (paid_at || todayISO()).slice(0, 10)
+
+  // Mês de caixa de referência: por padrão o próprio mês apurado.
+  const curKey = (Number(reference_year) || y) * 100 + (Number(reference_month) || m)
+  const candidatos = await candidatosDisponiveis(sql, company_id, curKey)
+  const { writes, applied, restante } = consumir(sql, pool, ordenar(candidatos), when, notes)
+
+  if (!applied.length) {
+    return res.status(400).json({
+      error: 'Nenhum saldo disponível para abater. Só entram payables cujo recebível do cliente já foi pago.',
+      pool,
+    })
+  }
+
+  // Liga cada obrigação aos payables consumidos. Uma alocação por (obrigação, payable):
+  // o `amount` é a fatia daquela obrigação no que foi consumido daquele payable,
+  // proporcional ao peso da obrigação no pool.
+  //
+  // `payable_payment_id` sai de um SELECT em vez de vir de um RETURNING porque tudo roda
+  // numa transação só — o INSERT do pagamento está antes nesta mesma lista, então já é
+  // visível aqui. Guardar o id exato é o que permite estornar apenas os pagamentos DESTA
+  // distribuição: apagar por payable_id levaria junto pagamentos anteriores do cliente.
+  const consumidoTotal = round2(applied.reduce((s, a) => s + a.consumed, 0))
+  const ligacoes = []
+  for (const o of usadas) {
+    const peso = round2(valorDevido(o)) / pool
+    for (const a of applied) {
+      ligacoes.push(sql`
+        INSERT INTO fiscal_allocations
+          (obligation_id, client_id, payable_victor_id, payable_payment_id, amount, basis)
+        SELECT ${o.id}, ${a.client_id}, ${a.id}, pp.id, ${round2(a.consumed * peso)}, 'consumo_payable'
+        FROM payable_payments pp
+        WHERE pp.payable_type = 'victor' AND pp.payable_id = ${a.id}
+          AND pp.paid_at = ${when} AND pp.notes = ${notes}`)
+    }
+  }
+  await sql.transaction([...writes, ...ligacoes])
+
+  return res.status(200).json({
+    distribuicao: {
+      pool,
+      consumido: consumidoTotal,
+      // Sobra = despesa que os saldos disponíveis não cobriram; sai do capital do Victor.
+      nao_coberto: round2(restante),
+      despesas,
+      notes,
+      paid_at: when,
+    },
+    obrigacoes_usadas: usadas.map((o) => ({ id: o.id, kind: o.kind, valor: round2(valorDevido(o)), status: o.status })),
+    obrigacoes_ignoradas: ignoradas,
+    payables_afetados: applied,
+  })
+}
+
+// POST ?action=estornar-distribuicao — desfaz a distribuição de um mês.
+async function estornarDistribuicao(sql, req, res) {
+  const { company_id, month, year } = req.body || {}
+  if (!company_id || !month || !year) {
+    return res.status(400).json({ error: 'company_id, month e year são obrigatórios' })
+  }
+  const obrigacoes = await sql`
+    SELECT id FROM fiscal_obligations
+    WHERE company_id = ${company_id} AND month = ${Number(month)} AND year = ${Number(year)}`
+  if (!obrigacoes.length) return res.status(404).json({ error: 'Nada apurado neste mês' })
+  const ids = obrigacoes.map((o) => o.id)
+
+  // Os payables e os PAGAMENTOS desta distribuição vêm das próprias alocações.
+  // Apagar por payable_id levaria junto pagamentos anteriores do mesmo cliente —
+  // só saem as linhas de payable_payments que esta distribuição criou.
+  const ligadas = await sql`
+    SELECT DISTINCT payable_victor_id, payable_payment_id FROM fiscal_allocations
+    WHERE obligation_id = ANY(${ids}) AND payable_victor_id IS NOT NULL`
+  if (!ligadas.length) return res.status(400).json({ error: 'Este mês não foi distribuído' })
+  const payableIds = [...new Set(ligadas.map((l) => l.payable_victor_id))]
+  const paymentIds = [...new Set(ligadas.map((l) => l.payable_payment_id).filter(Boolean))]
+
+  await sql`DELETE FROM fiscal_allocations WHERE obligation_id = ANY(${ids}) AND payable_victor_id IS NOT NULL`
+  if (paymentIds.length) {
+    await sql`DELETE FROM payable_payments WHERE payable_type = 'victor' AND id = ANY(${paymentIds})`
+  }
+  // Recalcula cada payable a partir dos pagamentos restantes — nunca por subtração,
+  // que acumularia divergência.
+  for (const id of payableIds) {
+    await sql`
+      UPDATE payables_victor p SET
+        paid_amount = s.total,
+        status = CASE WHEN s.total <= 0.01 THEN 'pendente'
+                      WHEN s.total >= p.total_amount - 0.01 THEN 'pago'
+                      ELSE 'parcial' END,
+        paid_at = s.ultimo
+      FROM (SELECT COALESCE(SUM(amount),0) total, MAX(paid_at) ultimo
+            FROM payable_payments WHERE payable_type='victor' AND payable_id=${id}) s
+      WHERE p.id = ${id}`
+  }
+  return res.status(200).json({ estornados: payableIds.length, payable_ids: payableIds })
+}
+
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -335,7 +497,9 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       if (req.query.action === 'apurar') return apurar(sql, req, res)
-      return res.status(400).json({ error: 'action inválida. Use ?action=apurar' })
+      if (req.query.action === 'distribuir') return distribuir(sql, req, res)
+      if (req.query.action === 'estornar-distribuicao') return estornarDistribuicao(sql, req, res)
+      return res.status(400).json({ error: 'action inválida. Use apurar, distribuir ou estornar-distribuicao' })
     }
 
     if (req.method === 'PATCH') {

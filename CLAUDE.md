@@ -207,11 +207,16 @@ Ainda **sem endpoint** — tabelas criadas, API e telas pendentes.
 #### `fiscal_allocations` — rateio por cliente
 `id` int · `obligation_id` int **FK → fiscal_obligations ON DELETE CASCADE** ·
 `client_id` int · `invoice_id` int (âncora da base) · `payable_victor_id` int ·
+`payable_payment_id` int **FK → payable_payments ON DELETE CASCADE** ·
 `amount` numeric (rateado p/ o cliente) · `provisioned` numeric (`invoices.tax_amount` original) ·
 `adjustment` numeric (`amount - provisioned`, a reconciliação) ·
 `from_service` numeric · `from_profit` numeric ·
 `basis` varchar (`proporcional_nf`) · `created_at` timestamp
 > Índice `idx_fiscal_allocations_client_obligation (client_id, obligation_id)`.
+> Duas origens de linha: `basis='proporcional_nf'` (rateio criado pelo `?action=apurar`,
+> sem payable) e `basis='consumo_payable'` (criada pelo `?action=distribuir`, com
+> `payable_victor_id` + `payable_payment_id` preenchidos). O `payable_payment_id` é o
+> que permite estornar **só** os pagamentos daquela distribuição.
 > Substitui o parse de
 > `payable_payments.notes` (`parseNotesToAmounts`/`proportionalCats` em `Financial.jsx`),
 > que hoje infere o rateio de uma string no browser.
@@ -429,12 +434,14 @@ Ambiente (Windows):
       gravada ainda; se o Victor já recolheu DAS pelo valor antigo, a diferença é
       crédito a apurar com a contabilidade, fora do sistema.
 - [ ] **Apuração fiscal — o que falta.** Já feito: `api/fiscal-obligations.js`
-      (`?action=apurar`, `?action=lancar-guia`, GET), `api/fiscal-payments.js`
-      (quitação), `lib/fiscal-status.js` (status da obrigação — fonte única das duas
-      rotas) e `taxCalc.js` movido para `lib/`. O ciclo previsto → apurado → parcial →
-      pago está fechado pela API. Falta: **tela** de gestão das obrigações; ligação
-      `fiscal_allocations.payable_victor_id` com a distribuição de `payables-victor.js`;
-      e migração de `victor_reserves` → `fiscal_obligations`.
+      (`?action=apurar`, `lancar-guia`, `distribuir`, `estornar-distribuicao`, GET),
+      `api/fiscal-payments.js` (quitação), `lib/fiscal-status.js` (status da obrigação)
+      e `lib/victor-distribution.js` (cascata de consumo — motor único do
+      `pagar-distribuido` e do `distribuir`). O ciclo apurar → lançar guia → quitar →
+      abater dos payables está fechado pela API. Falta: **tela** de gestão das
+      obrigações (`src/pages/FiscalObligations.jsx` ainda não existe, todo o backend
+      fiscal só é acessível via API) e migração de `victor_reserves` →
+      `fiscal_obligations`.
 - [x] **Honorários e piso do pró-labore hardcoded** — feito: viraram
       `company_settings.prolabore_percentual` / `prolabore_minimo` / `honorarios_mensal`,
       editáveis por `api/settings.js` (PATCH parcial). As constantes em
