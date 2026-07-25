@@ -120,8 +120,8 @@
     "semantic_hash": "d070709419d1c5e263b53059b20974e1"
   },
   "src/components/Layout.jsx": {
-    "mtime": 1784563930.6709538,
-    "ast_hash": "7d0f456b75d13f9740e174add61867c4",
+    "mtime": 1784997591.2384934,
+    "ast_hash": "898806c3ad952ca5dbbaa67434ca09de",
     "semantic_hash": ""
   },
   "src/hooks/useNotifications.js": {
@@ -130,8 +130,8 @@
     "semantic_hash": "cf7a0b6b5c1795a4e2a729422f79036a"
   },
   "src/main.jsx": {
-    "mtime": 1784563925.9356048,
-    "ast_hash": "72ee9b3c057225079ba303b85fa7064b",
+    "mtime": 1784997587.0466094,
+    "ast_hash": "3246683a40ac866d25fc503987001cbe",
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1784997147.7025683,
-    "ast_hash": "e42e27cf65622de9d8ff0abd16c4c100",
+    "mtime": 1784997676.6520083,
+    "ast_hash": "f689746fbade7f5bf9e3283aa58f7c6f",
     "semantic_hash": ""
   },
   "README.md": {
@@ -392,6 +392,11 @@
   "lib/victor-distribution.js": {
     "mtime": 1784996033.7632637,
     "ast_hash": "350c0fcfbdcfded3e0e188c40d5c9413",
+    "semantic_hash": ""
+  },
+  "src/pages/FiscalObligations.jsx": {
+    "mtime": 1784997578.9628172,
+    "ast_hash": "1cd8ccec16a64bf4ab4929f3b8e36707",
     "semantic_hash": ""
   }
 }

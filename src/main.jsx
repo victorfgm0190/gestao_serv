@@ -12,6 +12,7 @@ import TimeEntries from './pages/TimeEntries'
 import Contracts from './pages/Contracts'
 import Financial from './pages/Financial'
 import Billing from './pages/Billing'
+import FiscalObligations from './pages/FiscalObligations'
 import Login from './pages/Login'
 import Users from './pages/Users'
 import Settings from './pages/Settings'
@@ -46,6 +47,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="contracts" element={<Contracts />} />
           <Route path="financial" element={<Financial />} />
           <Route path="billing" element={<Billing />} />
+          <Route path="fiscal" element={<FiscalObligations />} />
           <Route path="settings" element={<Settings />} />
           <Route path="users" element={<Users />} />
         </Route>

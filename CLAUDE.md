@@ -292,6 +292,7 @@ Rotas definidas em `src/main.jsx` dentro de `<Layout>` (sidebar). `App.jsx` é v
 | `/financial-rules` | `FinancialRules.jsx` | CRUD de regras financeiras por cliente; também cadastra clientes. | financial-rules, clients |
 | `/contracts` | `Contracts.jsx` | CRUD de contratos (vinculados a uma regra financeira). Cálculo bidirecional de imposto do cliente (NF ↔ %). Lançamentos mensais. | contracts, clients, contract-months, financial-rules |
 | `/financial` | `Financial.jsx` | 4 abas: A Receber, Pagar Fab, Pagar Victor, Histórico. Filtro pill de mês + status. Múltiplos pagamentos, estorno, "Receber" (distribui entre payables do Victor). Oculta registros R$ 0,00 nas abas de Pagar. | receivables, payables-*, payable-payments, clients |
+| `/fiscal` | `FiscalObligations.jsx` | **Apuração fiscal.** Cards de DAS/INSS/Honorários (estimado × guia × pago), lançamento da guia oficial, múltiplos pagamentos com estorno, tabela de custo por cliente, painel do `calc_snapshot` (RBT12, Fator R, anexo, pró-labore) e abatimento nos payables do Victor. | fiscal-obligations, fiscal-payments |
 | `/billing` | `Billing.jsx` | Geração de fatura por Contrato ou por Agenda (horas). Seção "Impostos" editável (imposto real + imposto do cliente, NF bidirecional) e demonstrativo. Filtros pill mês/cliente. | invoices, contracts, clients, time-entries, financial-rules |
 
 Componentes: `src/components/Layout.jsx` (sidebar + switcher de empresa).
@@ -438,10 +439,10 @@ Ambiente (Windows):
       `api/fiscal-payments.js` (quitação), `lib/fiscal-status.js` (status da obrigação)
       e `lib/victor-distribution.js` (cascata de consumo — motor único do
       `pagar-distribuido` e do `distribuir`). O ciclo apurar → lançar guia → quitar →
-      abater dos payables está fechado pela API. Falta: **tela** de gestão das
-      obrigações (`src/pages/FiscalObligations.jsx` ainda não existe, todo o backend
-      fiscal só é acessível via API) e migração de `victor_reserves` →
-      `fiscal_obligations`.
+      abater dos payables está fechado pela API, e a tela `/fiscal`
+      (`src/pages/FiscalObligations.jsx`) cobre o ciclo inteiro. Falta: migração de
+      `victor_reserves` → `fiscal_obligations` (a aba Pagar Victor ainda lê as reservas
+      antigas, em paralelo à apuração).
 - [x] **Honorários e piso do pró-labore hardcoded** — feito: viraram
       `company_settings.prolabore_percentual` / `prolabore_minimo` / `honorarios_mensal`,
       editáveis por `api/settings.js` (PATCH parcial). As constantes em

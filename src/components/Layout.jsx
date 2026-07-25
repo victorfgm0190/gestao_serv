@@ -143,6 +143,9 @@ export default function Layout() {
           >
             <span>🧾</span> Faturamento
           </NavLink>
+          <NavLink to="/fiscal" className={navClass}>
+            <span>🏛️</span> Apuração Fiscal
+          </NavLink>
           <NavLink to="/settings" className={navClass}>
             <span>⚙️</span> Configurações
           </NavLink>
