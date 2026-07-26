@@ -297,7 +297,7 @@ em cada chamada.
 | `fiscal-obligations.js` | GET/POST `?action=apurar\|recalcular`/PATCH `?action=lancar-guia\|corrigir-escritorio` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. `PATCH ?action=lancar-guia` grava `amount_actual`/`due_date`/`doc_number` quando a guia oficial chega (só sobrescreve os campos enviados); `amount_actual: null` desfaz o lançamento — e **refaz o rateio** com o valor real. `POST ?action=recalcular` é a **redistribuição**: compara a provisão de imposto da fatura (`invoices.tax_amount`) com o custo fiscal real rateado e devolve o antes/depois do que o Victor recebe; é **prévia por padrão** e só grava com `aplicar: true`. `PATCH ?action=corrigir-escritorio` = lançar guia + rerateio + prévia, numa chamada. |
 | `fiscal-payments.js` | GET/POST `?action=pagar`/DELETE | **Quitação da guia.** Múltiplos pagamentos por obrigação. `paid_amount`/`status` da obrigação são sempre **re-somados** de `fiscal_payments` (nunca incrementados), em transação com o INSERT/DELETE. Estornar tudo devolve a obrigação a `apurado` (se a guia oficial já chegou) ou `previsto`. Usa o `PAID_EPSILON` de `lib/payment-status.js`. |
 | `export-os.js` | GET | Gera Excel (ExcelJS) das horas do mês, opcionalmente filtrado por `client_id`. |
-| `admin.js` | POST `?action=` | Setup/migração: `setup-db`, `setup-clients`, `migrate-financial-rules`, `migrate-time-entries`, `migrate-etapa6`. |
+| `admin.js` | POST `?action=estornar-periodo` | **Operações em massa** (`requireAdmin`, Bearer `$ADMIN_SECRET`). Estorna uma competência inteira na ordem inversa da criação: apaga a apuração fiscal (CASCADE leva pagamentos e alocações), apaga os payables com `origin='faturamento'` e seus pagamentos, recompõe o saldo de payables de outros meses que a distribuição havia consumido, e devolve recebíveis e faturas a `pendente` — prontos para refaturar. **`dry_run: true` é o padrão**; sem `company_id`+`year`+`month_from`+`month_to` explícitos responde 400 (operação destrutiva não tem valor padrão). Payables lançados à mão (`origin IS NULL`) são preservados. |
 
 ### Endpoints de setup/migração one-off (standalone)
 `setup-db.js`, `setup-clients.js`, `migrate-financial-rules.js`,
@@ -439,6 +439,15 @@ Ambiente (Windows):
   `DATABASE_URL` do `.env`, confirmar e remover — sem commitar a migração.
 
 ---
+
+### ⚠️ Não existe status `estornado`
+Os vocabulários reais são: `invoices` pendente|recebido · `receivables` pendente|pago ·
+`payables_*` pendente|parcial|pago · `fiscal_obligations` previsto|apurado|parcial|pago.
+Gravar um status fora dessa lista não arquiva o registro — ele sai dos filtros de todas
+as telas, escapa do CASE de `recalcularObrigacao()` e do `status IN ('pendente','parcial')`
+de `candidatosDisponiveis()`, e a cascata de consumo passa a ignorá-lo em silêncio.
+Estorno é reversão de verdade (apagar o que a fatura gerou e voltar a `pendente`), não
+marcação. Ver `api/admin.js` e os PATCH `estorno` de `invoices.js`/`receivables.js`.
 
 ## 9. APIs legadas / mortas
 
