@@ -222,6 +222,32 @@ API em `api/fiscal-obligations.js` + `api/fiscal-payments.js`; tela em `/fiscal`
 > Substitui o parse de
 > `payable_payments.notes` (`parseNotesToAmounts`/`proportionalCats` em `Financial.jsx`),
 > que hoje infere o rateio de uma string no browser.
+> `from_service`/`from_profit` passaram a ser gravados pelo `?action=recalcular`: dizem
+> de onde saiu o imposto daquele cliente (o lucro absorve antes do serviço).
+
+### Redistribuição fiscal (`lib/fiscal-redistribution.js`) — 2026-07-26
+
+A fatura desconta uma **provisão** de imposto (`contracts.tax_percentage`, hoje 7%);
+o custo **real** só se conhece na apuração (alíquota efetiva do Simples + INSS +
+honorários, rateados por cliente). A diferença — que já era gravada em
+`fiscal_allocations.adjustment` e **nunca lida por ninguém** — agora volta para o que
+o Victor recebe, em três etapas que leem a mesma base:
+
+| Etapa | Gatilho | Imposto real vem de |
+|-------|---------|---------------------|
+| 1 | fatura emitida | `invoices.tax_amount` (provisão) — é o baseline |
+| 2 | `?action=apurar` | rateio de `amount_estimated` |
+| 3 | `?action=corrigir-escritorio` | rateio de `amount_actual` (guia oficial) |
+
+Regras do motor:
+- **Cascata:** o lucro do Victor absorve primeiro, o serviço só depois; o que não couber
+  vira `nao_coberto` (sai do capital próprio, nunca vira payable negativo).
+- **Idempotente:** o delta é sempre medido contra o baseline da FATURA, nunca contra o
+  payable já ajustado — recalcular duas vezes não desconta duas vezes.
+- **Só Victor.** `fabricio_total` não é tocado: o percentual dele foi acordado na fatura,
+  e o DAS/INSS sai do CNPJ do Victor. Mudar isso é decisão de negócio, não de código.
+- **Prévia por padrão.** Nada financeiro é gravado sem `aplicar: true`; payable com
+  pagamento já registrado trava a aplicação (409) até ser estornado.
 
 ### `monthly_closings` / `payments`
 Tabelas do fechamento mensal (modelo antigo). Pouco/ não usadas pelas telas atuais.
@@ -268,7 +294,7 @@ em cada chamada.
 | `payables-fabricio.js` | GET/POST/PATCH/DELETE | Contas a pagar Fabrício. Valor no campo `amount`. Traz `payments[]`. |
 | `payables-victor.js` | GET/POST/PATCH/DELETE | Contas a pagar Victor. Valor em `total_amount` (`service_amount`+`profit_amount`). Traz `payments[]`. |
 | `payable-payments.js` | GET/POST/DELETE | Múltiplos pagamentos por payable; recalcula `status`/`paid_amount` do pai (pendente/parcial/pago). |
-| `fiscal-obligations.js` | GET/POST `?action=apurar`/PATCH `?action=lancar-guia` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. `PATCH ?action=lancar-guia` grava `amount_actual`/`due_date`/`doc_number` quando a guia oficial chega (só sobrescreve os campos enviados); `amount_actual: null` desfaz o lançamento. |
+| `fiscal-obligations.js` | GET/POST `?action=apurar\|recalcular`/PATCH `?action=lancar-guia\|corrigir-escritorio` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. `PATCH ?action=lancar-guia` grava `amount_actual`/`due_date`/`doc_number` quando a guia oficial chega (só sobrescreve os campos enviados); `amount_actual: null` desfaz o lançamento — e **refaz o rateio** com o valor real. `POST ?action=recalcular` é a **redistribuição**: compara a provisão de imposto da fatura (`invoices.tax_amount`) com o custo fiscal real rateado e devolve o antes/depois do que o Victor recebe; é **prévia por padrão** e só grava com `aplicar: true`. `PATCH ?action=corrigir-escritorio` = lançar guia + rerateio + prévia, numa chamada. |
 | `fiscal-payments.js` | GET/POST `?action=pagar`/DELETE | **Quitação da guia.** Múltiplos pagamentos por obrigação. `paid_amount`/`status` da obrigação são sempre **re-somados** de `fiscal_payments` (nunca incrementados), em transação com o INSERT/DELETE. Estornar tudo devolve a obrigação a `apurado` (se a guia oficial já chegou) ou `previsto`. Usa o `PAID_EPSILON` de `lib/payment-status.js`. |
 | `export-os.js` | GET | Gera Excel (ExcelJS) das horas do mês, opcionalmente filtrado por `client_id`. |
 | `admin.js` | POST `?action=` | Setup/migração: `setup-db`, `setup-clients`, `migrate-financial-rules`, `migrate-time-entries`, `migrate-etapa6`. |
@@ -449,6 +475,20 @@ Ambiente (Windows):
       abater dos payables está fechado pela API, e a tela `/fiscal`
       (`src/pages/FiscalObligations.jsx`) cobre o ciclo inteiro. O backend fiscal está
       completo.
+- [x] **Redistribuição do imposto real** — feito em 2026-07-26. `lib/fiscal-redistribution.js`
+      + `?action=recalcular` + `?action=corrigir-escritorio`; `lancar-guia` passou a refazer
+      o rateio. A tela `/fiscal` mostra as três etapas com antes/depois e um botão explícito
+      de aplicar. Validado contra o caso Bokada (765 a 7%): só DAS a 6% → Victor 711,45 →
+      719,10; com INSS e escritório → 685,98.
+- [x] 🐞 **Reapurar mês distribuído apagava o vínculo do abatimento** — o DELETE do rateio
+      em `?action=apurar` não filtrava `basis` e levava junto as linhas `consumo_payable`,
+      deixando `payable_payments` órfãos (o estorno passava a dizer "não foi distribuído")
+      e derrubando a guarda dos 409, o que liberava uma segunda distribuição sobre os mesmos
+      saldos. Agora o DELETE é restrito a `proporcional_nf` e reapurar mês distribuído
+      responde 409 pedindo o estorno antes.
+- [x] 🐞 **`?action=distribuir` ignorava o que já fora pago** — o pool usava `valorDevido()`
+      cheio em vez do saldo em aberto, então uma guia quitada no pix entrava inteira de novo
+      na distribuição e `paid_amount` passava do devido. Agora o pool é o saldo.
 - [x] **Honorários e piso do pró-labore hardcoded** — feito: viraram
       `company_settings.prolabore_percentual` / `prolabore_minimo` / `honorarios_mensal`,
       editáveis por `api/settings.js` (PATCH parcial). As constantes em

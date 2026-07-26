@@ -30,11 +30,33 @@ const pct = (v) => `${((Number(v) || 0) * 100).toFixed(2)}%`
 // Datas do Postgres chegam como ISO em UTC; sem timeZone:'UTC' o dia volta um.
 const dataBR = (d) => (d ? new Date(d).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—')
 
+// Um quadro das três etapas da redistribuição. `ativa` distingue a etapa já alcançada
+// da que ainda não aconteceu — a 3 só acende quando a guia do escritório chega.
+function Etapa({ n, titulo, ativa, linhas }) {
+  return (
+    <div className={`rounded-xl border p-3 ${ativa ? 'border-gray-700 bg-gray-800/40' : 'border-gray-800 bg-gray-900/40 opacity-50'}`}>
+      <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">Etapa {n}</p>
+      <p className="text-xs text-white font-medium mb-2">{titulo}</p>
+      <dl className="space-y-1 text-[11px]">
+        {linhas.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-2">
+            <dt className="text-gray-600">{k}</dt>
+            <dd className="text-gray-300">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
 export default function FiscalObligations() {
   const { activeCompany } = useOutletContext()
   const [year, setYear] = useState(new Date().getFullYear())
   const [month, setMonth] = useState(new Date().getMonth() + 1)
   const [obligations, setObligations] = useState([])
+  // Prévia da redistribuição (antes/depois do que o Victor recebe). Vem pronta do GET —
+  // o backend é quem sabe comparar a provisão da fatura com o imposto real apurado.
+  const [redistrib, setRedistrib] = useState(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState('')
@@ -49,7 +71,9 @@ export default function FiscalObligations() {
     setLoading(true); setMsg(''); setErro('')
     try {
       const res = await fetch(`/api/fiscal-obligations?company_id=${activeCompany.id}&year=${year}&month=${month}`)
-      setObligations(res.ok ? ((await res.json()).data || []) : [])
+      const data = res.ok ? await res.json() : {}
+      setObligations(data.data || [])
+      setRedistrib(data.redistribuicao || null)
     } catch (e) { console.error(e); setErro('Falha ao carregar a apuração.') }
     finally { setLoading(false) }
   }
@@ -84,28 +108,43 @@ export default function FiscalObligations() {
   const estornarDistribuicao = () => acao('estornar-dist', '/api/fiscal-obligations?action=estornar-distribuicao',
     { company_id: activeCompany.id, month, year }, 'Distribuição estornada; os saldos do Victor voltaram.')
 
+  // Grava a redistribuição: o imposto real substitui a provisão da fatura no que o
+  // Victor tem a receber. A prévia já está na tela — este botão só a torna efetiva.
+  const aplicarRedistribuicao = () => acao('recalcular', '/api/fiscal-obligations?action=recalcular',
+    { company_id: activeCompany.id, month, year, aplicar: true },
+    (d) => `Redistribuído: ${d.payables_atualizados.length} lançamento(s) do Victor atualizado(s) ` +
+           `(${d.mudancas.total_victor.diferenca >= 0 ? '+' : ''}${fmt(d.mudancas.total_victor.diferenca)}).`)
+
   async function salvarGuia(e) {
     e.preventDefault()
     const f = guiaModal
     if (busy) return
     setBusy('guia'); setMsg(''); setErro('')
     try {
-      const res = await fetch('/api/fiscal-obligations?action=lancar-guia', {
+      // corrigir-escritorio = lançar a guia + refazer o rateio por cliente com o valor
+      // real + devolver o antes/depois do que o Victor recebe, numa chamada só.
+      const res = await fetch('/api/fiscal-obligations?action=corrigir-escritorio', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           obligation_id: f.id,
+          tipo: f.kind,
           // String vazia = remover o lançamento e voltar à estimativa.
-          amount_actual: f.amount_actual === '' ? null : parseFloat(f.amount_actual),
+          imposto_real: f.amount_actual === '' ? null : parseFloat(f.amount_actual),
           due_date: f.due_date || null,
           doc_number: f.doc_number || null,
         }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setErro(data.error || 'Não foi possível salvar a guia.'); return }
+      const mudouVictor = data.redistribuicao?.mudancas?.total_victor
       setMsg(f.amount_actual === ''
-        ? 'Lançamento removido; a obrigação voltou ao valor estimado.'
+        ? 'Lançamento removido; a obrigação voltou ao valor estimado e o rateio foi refeito.'
         : `Guia de ${KIND_LABEL[f.kind]} lançada: ${fmt(data.summary.total_amount)}` +
-          (data.summary.diferenca_vs_estimado ? ` (${data.summary.diferenca_vs_estimado > 0 ? '+' : ''}${fmt(data.summary.diferenca_vs_estimado)} vs. o estimado).` : '.'))
+          (data.summary.diferenca_vs_estimado ? ` (${data.summary.diferenca_vs_estimado > 0 ? '+' : ''}${fmt(data.summary.diferenca_vs_estimado)} vs. o estimado)` : '') +
+          '. Rateio por cliente refeito.' +
+          (mudouVictor && Math.abs(mudouVictor.diferenca) >= 0.01
+            ? ` Victor passa de ${fmt(mudouVictor.antes)} para ${fmt(mudouVictor.depois)} — confirme em "Redistribuição".`
+            : ''))
       setGuiaModal(null)
       await fetchObligations()
     } catch { setErro('Erro de conexão com o servidor.') }
@@ -177,6 +216,8 @@ export default function FiscalObligations() {
   const rateioLista = Object.entries(rateio).sort((a, b) => b[1].total - a[1].total)
   const totalDevido = obligations.reduce((s, o) => s + (o.amount_actual != null ? Number(o.amount_actual) : Number(o.amount_estimated) || 0), 0)
   const totalPago = obligations.reduce((s, o) => s + (Number(o.paid_amount) || 0), 0)
+  // Há payable do Victor cujo valor ainda reflete a provisão, não o imposto real.
+  const pendente = !!redistrib?.por_fatura?.some((r) => r.mudou && r.aplicavel)
   const temPrevisto = obligations.some((o) => o.status === 'previsto')
   const tudoQuitado = apurado && obligations.every((o) => o.status === 'pago')
 
@@ -279,6 +320,109 @@ export default function FiscalObligations() {
               )
             })}
           </div>
+
+          {redistrib?.mudancas && (
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-6">
+              <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
+                <h3 className="text-white font-semibold text-sm">Redistribuição — imposto real × provisão</h3>
+                {pendente && (
+                  <button onClick={aplicarRedistribuicao} disabled={!!busy}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-xs font-medium">
+                    {busy === 'recalcular' ? 'Aplicando...' : 'Aplicar redistribuição'}
+                  </button>
+                )}
+              </div>
+              <p className="text-gray-600 text-[11px] mb-4">
+                A fatura desconta uma provisão de imposto; a apuração diz o valor real.
+                A diferença volta para o Victor — do lucro primeiro, do serviço só depois.
+                O Fabrício não é afetado: o percentual dele foi acordado na fatura.
+              </p>
+
+              {redistrib.desatualizado && (
+                <p className="mb-4 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                  ⚠️ O faturamento do mês mudou depois da apuração
+                  ({fmt(redistrib.faturamento_apurado)} → {fmt(redistrib.faturamento_atual)}). Reapure antes de redistribuir.
+                </p>
+              )}
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <Etapa n={1} titulo="Fatura emitida" ativa
+                  linhas={[
+                    ['Imposto (provisão)', fmt(redistrib.mudancas.imposto.antes)],
+                    ['Victor recebe', fmt(redistrib.mudancas.baseline.total)],
+                  ]} />
+                <Etapa n={2} titulo="Mês apurado" ativa={redistrib.etapa >= 2}
+                  linhas={[
+                    ['Imposto (real)', fmt(redistrib.mudancas.imposto.depois)],
+                    ['Victor recebe', fmt(redistrib.mudancas.total_victor.depois)],
+                  ]} />
+                <Etapa n={3} titulo="Guia do escritório" ativa={redistrib.etapa >= 3}
+                  linhas={redistrib.etapa >= 3
+                    ? [
+                      ['Imposto (guia)', fmt(redistrib.mudancas.imposto.depois)],
+                      ['Victor recebe', fmt(redistrib.mudancas.total_victor.depois)],
+                    ]
+                    : [['Aguardando', 'a guia oficial']]} />
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-800 overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-gray-500 border-b border-gray-800">
+                      <th className="text-left font-medium py-2">Componente</th>
+                      <th className="text-right font-medium py-2">Antes</th>
+                      <th className="text-right font-medium py-2">Depois</th>
+                      <th className="text-right font-medium py-2">Diferença</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['Serviço Victor', redistrib.mudancas.servico_victor],
+                      ['Lucro Victor', redistrib.mudancas.lucro_victor],
+                      ['Imposto do mês', redistrib.mudancas.imposto],
+                    ].map(([label, v]) => (
+                      <tr key={label} className="border-b border-gray-800/60">
+                        <td className="py-2 text-gray-300">{label}</td>
+                        <td className="py-2 text-right text-gray-500">{fmt(v.antes)}</td>
+                        <td className="py-2 text-right text-gray-200">{fmt(v.depois)}</td>
+                        <td className={`py-2 text-right font-medium ${Math.abs(v.diferenca) < 0.01 ? 'text-gray-600' : v.diferenca > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {v.diferenca > 0 ? '+' : ''}{fmt(v.diferenca)}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td className="py-2 text-white font-medium">Total do Victor</td>
+                      <td className="py-2 text-right text-gray-500">{fmt(redistrib.mudancas.total_victor.antes)}</td>
+                      <td className="py-2 text-right text-white font-bold">{fmt(redistrib.mudancas.total_victor.depois)}</td>
+                      <td className={`py-2 text-right font-bold ${Math.abs(redistrib.mudancas.total_victor.diferenca) < 0.01 ? 'text-gray-600' : redistrib.mudancas.total_victor.diferenca > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {redistrib.mudancas.total_victor.diferenca > 0 ? '+' : ''}{fmt(redistrib.mudancas.total_victor.diferenca)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-[11px] mt-3">
+                {pendente ? (
+                  <span className="text-amber-400">
+                    Pendente: os lançamentos do Victor ainda estão com o valor da provisão.
+                  </span>
+                ) : redistrib.pendentes_de_recebimento?.length ? (
+                  <span className="text-gray-500">
+                    {redistrib.pendentes_de_recebimento.length} fatura(s) ainda não recebida(s) — o valor
+                    já sai corrigido quando o recebimento for marcado.
+                  </span>
+                ) : (
+                  <span className="text-green-400">✓ Redistribuição aplicada; os lançamentos do Victor já estão com o imposto real.</span>
+                )}
+                {redistrib.mudancas.nao_coberto > 0 && (
+                  <span className="text-red-400 block mt-1">
+                    {fmt(redistrib.mudancas.nao_coberto)} de imposto não cabe no que o Victor tem a receber — sai do capital próprio.
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-5">

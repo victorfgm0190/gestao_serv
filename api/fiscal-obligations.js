@@ -3,6 +3,7 @@ import { requireAuth } from '../lib/auth.js'
 import { calcularImpostos, parametrosFiscais, proLaboreDoMes } from '../lib/taxCalc.js'
 import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
 import { ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
+import { recalcularInvoice, consolidar } from '../lib/fiscal-redistribution.js'
 
 // Data de hoje em ISO. Isolado para o fuso: new Date() no servidor da Vercel é UTC.
 const todayISO = () => new Date().toISOString().slice(0, 10)
@@ -17,6 +18,8 @@ const todayISO = () => new Date().toISOString().slice(0, 10)
 //
 // POST  ?action=apurar                 { company_id, month, year }  → calcula e grava (idempotente)
 // PATCH ?action=lancar-guia            { obligation_id, amount_actual, due_date, doc_number }
+// PATCH ?action=corrigir-escritorio    { obligation_id, imposto_real }  → guia + re-rateio + prévia
+// POST  ?action=recalcular             { company_id, month, year, aplicar }  → redistribuição
 // POST  ?action=distribuir             { company_id, month, year }  → abate dos payables do Victor
 // POST  ?action=estornar-distribuicao  { company_id, month, year }  → desfaz o abatimento
 // GET   ?company_id&month&year                                      → lê o que já foi apurado
@@ -24,6 +27,10 @@ const todayISO = () => new Date().toISOString().slice(0, 10)
 const round2 = (v) => Math.round(((Number(v) || 0) + Number.EPSILON) * 100) / 100
 // numeric do Postgres chega como string no driver — sem isso, `a + b` concatena.
 const num = (v) => parseFloat(v) || 0
+
+// Saldo em aberto de uma obrigação: o devido menos o que já foi quitado.
+// É o que pode ser distribuído; o valor cheio já embute pagamentos anteriores.
+const saldoObrigacao = (o) => Math.max(round2(valorDevido(o) - num(o.paid_amount)), 0)
 
 // Os parâmetros da apuração (percentual, piso, honorários) e a fórmula do pró-labore
 // vêm de lib/taxCalc.js — `parametrosFiscais` e `proLaboreDoMes`. Ficam lá porque a
@@ -106,6 +113,21 @@ async function apurar(sql, req, res) {
   }
   const m = Number(month)
   const y = Number(year)
+
+  // Mês já distribuído não pode ser reapurado em silêncio: o rateio novo sairia
+  // com valores diferentes dos que foram efetivamente abatidos dos payables, e o
+  // registro do abatimento passaria a apontar para uma base que não existe mais.
+  // Estornar a distribuição primeiro é o caminho normal.
+  const distribuido = (await sql`
+    SELECT count(*)::int n FROM fiscal_allocations a
+    JOIN fiscal_obligations o ON o.id = a.obligation_id
+    WHERE o.company_id = ${company_id} AND o.month = ${m} AND o.year = ${y}
+      AND a.payable_victor_id IS NOT NULL`)[0].n
+  if (distribuido > 0) {
+    return res.status(409).json({
+      error: 'Este mês já foi distribuído nos lançamentos do Victor. Estorne a distribuição (?action=estornar-distribuicao) antes de reapurar.',
+    })
+  }
 
   const settings = (await sql`
     SELECT * FROM company_settings WHERE company_id = ${company_id} LIMIT 1`)[0] || {}
@@ -208,8 +230,18 @@ async function apurar(sql, req, res) {
 
   // Rateio. Reapurar substitui o rateio anterior — sem isso rodar duas vezes
   // duplicaria tudo (fiscal_allocations não tem UNIQUE que segure).
+  //
+  // O filtro por `basis` é essencial: as linhas 'consumo_payable' guardam
+  // `payable_victor_id`/`payable_payment_id`, os únicos ponteiros para o abatimento já
+  // feito nos payables do Victor. Apagá-las junto deixava os `payable_payments`
+  // órfãos (estornar-distribuicao passava a dizer "não foi distribuído") e derrubava
+  // a guarda dos 409 do distribuir, liberando uma segunda distribuição sobre os
+  // mesmos saldos. A guarda no topo desta função já impede chegar aqui distribuído,
+  // mas o DELETE fica restrito ao rateio de qualquer forma — defesa em profundidade.
   const ids = obligations.map((o) => o.id)
-  await sql`DELETE FROM fiscal_allocations WHERE obligation_id = ANY(${ids})`
+  await sql`
+    DELETE FROM fiscal_allocations
+    WHERE obligation_id = ANY(${ids}) AND basis = 'proporcional_nf'`
 
   const writes = []
   let alocadas = 0
@@ -285,6 +317,14 @@ async function lancarGuia(sql, req, res) {
   ])
 
   const ob = atualizado[0]
+
+  // Rateio refeito com o valor da guia. Antes disto o `fiscal_allocations.amount`
+  // ficava congelado na estimativa e a tabela "Custo por cliente" seguia mostrando
+  // número velho depois que a guia oficial chegava.
+  const doMes = await faturasDoMes(sql, ob.company_id, ob.month, ob.year)
+  const faturamento = round2(doMes.reduce((s, i) => s + num(i.invoice_value), 0))
+  if (faturamento > 0) await rerateiarObrigacao(sql, ob, doMes, faturamento)
+
   const total = valorDevido(ob)
   const pago = num(ob.paid_amount)
   return res.status(200).json({
@@ -339,11 +379,20 @@ async function distribuir(sql, req, res) {
   // Por padrão só entram obrigações com valor real — guia lançada (`apurado`) ou já
   // com pagamento. `incluir_previsto` opta por usar a estimativa, para quem quer
   // reservar antes da guia chegar.
+  // O pool é o SALDO EM ABERTO, não o valor cheio da obrigação. Usar valorDevido()
+  // direto fazia o DAS já quitado no pix entrar inteiro na distribuição: consumia
+  // saldo do Victor a mais e gravava fiscal_payments até paid_amount passar do devido.
   const elegivel = (o) => (incluir_previsto ? true : o.status !== 'previsto')
-  const usadas = obrigacoes.filter((o) => elegivel(o) && valorDevido(o) > 0)
+  const usadas = obrigacoes.filter((o) => elegivel(o) && saldoObrigacao(o) > 0)
   const ignoradas = obrigacoes
     .filter((o) => !usadas.includes(o))
-    .map((o) => ({ kind: o.kind, status: o.status, motivo: valorDevido(o) <= 0 ? 'valor zero' : 'ainda previsto' }))
+    .map((o) => ({
+      kind: o.kind,
+      status: o.status,
+      motivo: o.status !== 'previsto' || incluir_previsto
+        ? (num(o.paid_amount) > 0 ? 'já quitada' : 'valor zero')
+        : 'ainda previsto',
+    }))
   if (!usadas.length) {
     return res.status(400).json({
       error: 'Nenhuma obrigação elegível. Lance a guia oficial (?action=lancar-guia) ou envie incluir_previsto: true.',
@@ -356,7 +405,7 @@ async function distribuir(sql, req, res) {
   const despesas = {}
   let pool = 0
   for (const o of usadas) {
-    const v = round2(valorDevido(o))
+    const v = saldoObrigacao(o)
     despesas[o.kind] = (despesas[o.kind] || 0) + v
     pool = round2(pool + v)
   }
@@ -386,7 +435,7 @@ async function distribuir(sql, req, res) {
   const consumidoTotal = round2(applied.reduce((s, a) => s + a.consumed, 0))
   const ligacoes = []
   for (const o of usadas) {
-    const peso = round2(valorDevido(o)) / pool
+    const peso = saldoObrigacao(o) / pool
     for (const a of applied) {
       ligacoes.push(sql`
         INSERT INTO fiscal_allocations
@@ -405,7 +454,7 @@ async function distribuir(sql, req, res) {
   // Cada obrigação recebe a fatia do que foi efetivamente consumido (proporcional ao
   // peso dela no pool); com `nao_coberto > 0` isso vira pagamento parcial. O resíduo
   // do arredondamento vai para a maior fatia, para a soma fechar no centavo.
-  const cobertura = usadas.map((o) => ({ o, valor: round2(consumidoTotal * (round2(valorDevido(o)) / pool)) }))
+  const cobertura = usadas.map((o) => ({ o, valor: round2(consumidoTotal * (saldoObrigacao(o) / pool)) }))
   const somaCob = round2(cobertura.reduce((s, c) => s + c.valor, 0))
   if (Math.abs(consumidoTotal - somaCob) >= 0.01 && cobertura.length) {
     cobertura.reduce((a, b) => (b.valor > a.valor ? b : a)).valor += round2(consumidoTotal - somaCob)
@@ -431,7 +480,9 @@ async function distribuir(sql, req, res) {
       notes,
       paid_at: when,
     },
-    obrigacoes_usadas: usadas.map((o) => ({ id: o.id, kind: o.kind, valor: round2(valorDevido(o)), status: o.status })),
+    obrigacoes_usadas: usadas.map((o) => ({
+      id: o.id, kind: o.kind, valor: saldoObrigacao(o), devido: round2(valorDevido(o)), status: o.status,
+    })),
     obrigacoes_ignoradas: ignoradas,
     payables_afetados: applied,
   })
@@ -485,6 +536,242 @@ async function estornarDistribuicao(sql, req, res) {
   return res.status(200).json({ estornados: payableIds.length, payable_ids: payableIds })
 }
 
+// Faturas de uma competência. Mesma resolução de mês do apurar (emissão, com fallback
+// no par year/month da própria fatura) — duas regras diferentes jogariam a mesma NF em
+// meses distintos conforme a rota.
+async function faturasDoMes(sql, company_id, m, y) {
+  return sql`
+    SELECT * FROM (
+      SELECT i.*,
+             EXTRACT(YEAR  FROM COALESCE(i.emission_date, make_date(i.year, i.month, 1)))::int AS comp_year,
+             EXTRACT(MONTH FROM COALESCE(i.emission_date, make_date(i.year, i.month, 1)))::int AS comp_month
+      FROM invoices i WHERE i.company_id = ${company_id}
+    ) x WHERE x.comp_year = ${y} AND x.comp_month = ${m}
+    ORDER BY x.id`
+}
+
+// Refaz o rateio por cliente de UMA obrigação a partir do valor devido corrente.
+// É o elo que faltava entre `lancar-guia` e `fiscal_allocations`: sem isto o custo por
+// cliente continuava exibindo a estimativa depois que a guia oficial chegava.
+// Devolve o rateio anterior para a resposta poder mostrar antes/depois.
+async function rerateiarObrigacao(sql, ob, doMes, faturamento) {
+  const anteriores = await sql`
+    SELECT * FROM fiscal_allocations
+    WHERE obligation_id = ${ob.id} AND basis = 'proporcional_nf'`
+
+  await sql`
+    DELETE FROM fiscal_allocations
+    WHERE obligation_id = ${ob.id} AND basis = 'proporcional_nf'`
+
+  const writes = []
+  for (const p of ratear(round2(valorDevido(ob)), doMes, faturamento)) {
+    const provisioned = ob.kind === 'das' ? round2(num(p.inv.tax_amount)) : 0
+    writes.push(sql`
+      INSERT INTO fiscal_allocations
+        (obligation_id, client_id, invoice_id, amount, provisioned, adjustment, basis)
+      VALUES
+        (${ob.id}, ${p.inv.client_id}, ${p.inv.id}, ${p.amount}, ${provisioned},
+         ${round2(p.amount - provisioned)}, 'proporcional_nf')`)
+  }
+  if (writes.length) await sql.transaction(writes)
+  return anteriores
+}
+
+// Carrega tudo que a redistribuição de um mês precisa, numa leitura só por tabela.
+async function contextoRedistribuicao(sql, company_id, m, y) {
+  const doMes = await faturasDoMes(sql, company_id, m, y)
+  if (!doMes.length) return { doMes: [], alocacoes: [], payables: new Map() }
+
+  const invIds = doMes.map((i) => i.id)
+  const alocacoes = await sql`
+    SELECT a.*, o.kind FROM fiscal_allocations a
+    JOIN fiscal_obligations o ON o.id = a.obligation_id
+    WHERE a.invoice_id = ANY(${invIds})`
+  const pv = await sql`
+    SELECT * FROM payables_victor WHERE invoice_id = ANY(${invIds})`
+
+  const payables = new Map()
+  for (const p of pv) payables.set(Number(p.invoice_id), p)
+  return { doMes, alocacoes, payables }
+}
+
+// POST ?action=recalcular — redistribui o resultado do Victor com o imposto REAL.
+//
+// A fatura embute uma PROVISÃO de imposto (7% do contrato). A apuração produz o custo
+// fiscal real (DAS na alíquota efetiva do Simples + INSS + honorários) rateado por
+// cliente. Aqui a diferença entre os dois é jogada de volta no que o Victor recebe:
+// o lucro absorve primeiro, o serviço só depois (cascata em lib/fiscal-redistribution.js).
+//
+// Por padrão é PRÉVIA (`aplicar: false`): devolve antes/depois sem tocar em nada.
+// Nada financeiro é gravado sem o flag explícito.
+// `raw` faz a função devolver { status, payload } em vez de responder — é assim que o
+// corrigir-escritorio embute a prévia na resposta dele sem duplicar a lógica.
+async function recalcular(sql, req, res, raw = false) {
+  const responder = (status, payload) => (raw ? { status, payload } : res.status(status).json(payload))
+  const body = req.body || {}
+  let { company_id, month, year } = body
+  const { invoice_id, aplicar = false, novo_imposto_pct = null } = body
+
+  // Chamada por fatura (assinatura do spec): a competência sai da própria nota.
+  if (invoice_id && (!company_id || !month || !year)) {
+    const rows = await sql`
+      SELECT company_id,
+             EXTRACT(YEAR  FROM COALESCE(emission_date, make_date(year, month, 1)))::int AS comp_year,
+             EXTRACT(MONTH FROM COALESCE(emission_date, make_date(year, month, 1)))::int AS comp_month
+      FROM invoices WHERE id = ${invoice_id} LIMIT 1`
+    if (!rows.length) return responder(404, { error: 'Fatura não encontrada' })
+    company_id = rows[0].company_id
+    year = rows[0].comp_year
+    month = rows[0].comp_month
+  }
+  if (!company_id || !month || !year) {
+    return responder(400, { error: 'invoice_id, ou company_id + month + year, são obrigatórios' })
+  }
+  const m = Number(month)
+  const y = Number(year)
+
+  const { doMes, alocacoes, payables } = await contextoRedistribuicao(sql, company_id, m, y)
+  const alvo = invoice_id ? doMes.filter((i) => Number(i.id) === Number(invoice_id)) : doMes
+  if (!alvo.length) return responder(404, { error: 'Nenhuma fatura nesta competência' })
+
+  // Sem apuração não há imposto real: recalcular aqui zeraria o custo fiscal e
+  // devolveria ao Victor a provisão inteira — o oposto do que se quer.
+  const temRateio = alocacoes.some((a) => a.basis === 'proporcional_nf')
+  const simulando = novo_imposto_pct !== null && novo_imposto_pct !== undefined && novo_imposto_pct !== ''
+  if (!temRateio && !simulando) {
+    return responder(400, {
+      error: 'Mês ainda não apurado. Rode ?action=apurar antes de recalcular (ou envie novo_imposto_pct para simular).',
+    })
+  }
+
+  const resultados = alvo.map((invoice) => recalcularInvoice({
+    invoice,
+    alocacoes,
+    payable: payables.get(Number(invoice.id)) || null,
+    overridePct: novo_imposto_pct,
+  }))
+
+  const aplicaveis = resultados.filter((r) => r.aplicavel && r.mudou)
+  let aplicados = []
+  if (aplicar) {
+    if (simulando) {
+      return responder(400, { error: 'Simulação (novo_imposto_pct) não pode ser aplicada. Lance a guia oficial e recalcule.' })
+    }
+    // Payable já pago (inclusive por abatimento da distribuição) tem pagamentos
+    // apontando para ele; mexer no total_amount por baixo faria o status e o saldo
+    // divergirem dos payable_payments. Estornar primeiro é o caminho.
+    const travados = aplicaveis.filter((r) => num(payables.get(Number(r.invoice_id))?.paid_amount) > 0)
+    if (travados.length) {
+      return responder(409, {
+        error: 'Há lançamentos do Victor já pagos/abatidos nesta competência. Estorne os pagamentos (ou a distribuição) antes de redistribuir.',
+        payables_travados: travados.map((r) => r.payable_id),
+      })
+    }
+
+    const writes = []
+    for (const r of aplicaveis) {
+      const s = r.mudancas.servico_victor.depois
+      const p = r.mudancas.lucro_victor.depois
+      writes.push(sql`
+        UPDATE payables_victor SET
+          service_amount = ${s}, profit_amount = ${p}, total_amount = ${round2(s + p)}
+        WHERE id = ${r.payable_id}`)
+      // Registra em cada linha do rateio de onde o imposto daquele cliente saiu.
+      // `from_service`/`from_profit` já existiam no schema e nunca haviam sido gravados.
+      const totalReal = r.real
+      for (const a of alocacoes) {
+        if (a.basis !== 'proporcional_nf' || Number(a.invoice_id) !== Number(r.invoice_id)) continue
+        const peso = totalReal > 0 ? num(a.amount) / totalReal : 0
+        writes.push(sql`
+          UPDATE fiscal_allocations SET
+            from_service = ${round2(r.from_service * peso)},
+            from_profit  = ${round2(r.from_profit * peso)}
+          WHERE id = ${a.id}`)
+      }
+      aplicados.push(r.payable_id)
+    }
+    if (writes.length) await sql.transaction(writes)
+  }
+
+  return responder(200, {
+    success: true,
+    competencia: { month: m, year: y },
+    aplicado: aplicar,
+    simulado: simulando,
+    mudancas: consolidar(resultados),
+    por_fatura: resultados,
+    payables_atualizados: aplicados,
+    // Faturas que mudaram mas ainda não têm payable: a nota não foi recebida, então
+    // não há o que gravar — o novo valor entra sozinho quando o Victor marcar "recebi".
+    pendentes_de_recebimento: resultados.filter((r) => r.mudou && !r.aplicavel).map((r) => r.invoice_id),
+  })
+}
+
+// PATCH ?action=corrigir-escritorio — o escritório mandou o valor real de um imposto.
+//
+// É `lancar-guia` + as duas coisas que faltavam depois dele: refazer o rateio por
+// cliente com o valor novo e devolver o antes/depois do que o Victor recebe.
+async function corrigirEscritorio(sql, req, res) {
+  const { obligation_id, imposto_real, tipo, due_date, doc_number, notes, aplicar = false } = req.body || {}
+  if (!obligation_id || imposto_real === undefined) {
+    return res.status(400).json({ error: 'obligation_id e imposto_real são obrigatórios' })
+  }
+  const valor = imposto_real === null || imposto_real === '' ? null : round2(imposto_real)
+  if (valor !== null && valor < 0) {
+    return res.status(400).json({ error: 'imposto_real não pode ser negativo' })
+  }
+
+  const rows = await sql`SELECT * FROM fiscal_obligations WHERE id = ${obligation_id} LIMIT 1`
+  if (!rows.length) return res.status(404).json({ error: 'Obrigação não encontrada' })
+  const antesOb = rows[0]
+  if (tipo && tipo !== antesOb.kind) {
+    return res.status(400).json({ error: `A obrigação ${obligation_id} é do tipo '${antesOb.kind}', não '${tipo}'.` })
+  }
+
+  const [, atualizado] = await sql.transaction([
+    sql`
+      UPDATE fiscal_obligations SET
+        amount_actual = ${valor}::numeric,
+        due_date      = COALESCE(${due_date ?? null}::date, due_date),
+        doc_number    = COALESCE(${doc_number ?? null}::varchar, doc_number),
+        notes         = COALESCE(${notes ?? null}::text, notes),
+        updated_at    = now()
+      WHERE id = ${obligation_id}`,
+    recalcularObrigacao(sql, obligation_id),
+  ])
+  const ob = atualizado[0]
+
+  // Rateio refeito com o valor da guia. Sem faturamento no mês não há como ratear —
+  // a obrigação fica gravada e o rateio, vazio.
+  const doMes = await faturasDoMes(sql, ob.company_id, ob.month, ob.year)
+  const faturamento = round2(doMes.reduce((s, i) => s + num(i.invoice_value), 0))
+  if (faturamento > 0) await rerateiarObrigacao(sql, ob, doMes, faturamento)
+
+  // Antes/depois do resultado do Victor com o rateio novo já valendo. Em `raw`: a guia
+  // já está gravada, e um mês sem NF (nada a redistribuir) não pode virar erro da rota.
+  req.body = { company_id: ob.company_id, month: ob.month, year: ob.year, aplicar }
+  const previa = await recalcular(sql, req, res, true)
+  const devido = round2(valorDevido(ob))
+
+  return res.status(200).json({
+    obligation: ob,
+    summary: {
+      total_amount: devido,
+      amount_estimated: num(ob.amount_estimated),
+      diferenca_vs_estimado: valor === null ? null : round2(devido - num(ob.amount_estimated)),
+      // O que a guia do escritório mudou em relação ao valor que valia até agora —
+      // é este o número do "MUDOU de X para Y".
+      valor_anterior: round2(valorDevido(antesOb)),
+      diferenca_vs_anterior: round2(devido - valorDevido(antesOb)),
+      paid_amount: num(ob.paid_amount),
+      remaining: Math.max(round2(devido - num(ob.paid_amount)), 0),
+      status: ob.status,
+    },
+    redistribuicao: previa.status === 200 ? previa.payload : null,
+    aviso: previa.status === 200 ? null : previa.payload.error,
+  })
+}
+
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -519,19 +806,46 @@ export default async function handler(req, res) {
       const byOb = {}
       for (const a of allocations) (byOb[a.obligation_id] ||= []).push(a)
       for (const o of obligations) o.allocations = byOb[o.id] || []
-      return res.status(200).json({ data: obligations })
+
+      // Prévia da redistribuição do mês (nunca grava). É o que alimenta o painel de
+      // etapas da tela: a fatura é a ETAPA 1, o rateio corrente é a 2 ou a 3.
+      let redistribuicao = null
+      if (month && obligations.length) {
+        const m = Number(month)
+        const y = Number(year)
+        const { doMes, alocacoes, payables } = await contextoRedistribuicao(sql, company_id, m, y)
+        const resultados = doMes.map((invoice) => recalcularInvoice({
+          invoice, alocacoes, payable: payables.get(Number(invoice.id)) || null,
+        }))
+        // Faturamento apurado × faturamento de hoje: se uma NF foi emitida, editada ou
+        // excluída depois da apuração, o mês está defasado e precisa ser reapurado.
+        const faturamentoAtual = round2(doMes.reduce((s, i) => s + num(i.invoice_value), 0))
+        const faturamentoApurado = round2(num(obligations[0]?.calc_snapshot?.faturamento_mes))
+        redistribuicao = {
+          mudancas: resultados.length ? consolidar(resultados) : null,
+          por_fatura: resultados,
+          // A guia oficial já chegou para pelo menos uma obrigação → ETAPA 3.
+          etapa: obligations.some((o) => o.amount_actual !== null) ? 3 : 2,
+          faturamento_atual: faturamentoAtual,
+          faturamento_apurado: faturamentoApurado,
+          desatualizado: Math.abs(faturamentoAtual - faturamentoApurado) >= 0.01,
+        }
+      }
+      return res.status(200).json({ data: obligations, redistribuicao })
     }
 
     if (req.method === 'POST') {
       if (req.query.action === 'apurar') return apurar(sql, req, res)
+      if (req.query.action === 'recalcular') return recalcular(sql, req, res)
       if (req.query.action === 'distribuir') return distribuir(sql, req, res)
       if (req.query.action === 'estornar-distribuicao') return estornarDistribuicao(sql, req, res)
-      return res.status(400).json({ error: 'action inválida. Use apurar, distribuir ou estornar-distribuicao' })
+      return res.status(400).json({ error: 'action inválida. Use apurar, recalcular, distribuir ou estornar-distribuicao' })
     }
 
     if (req.method === 'PATCH') {
       if (req.query.action === 'lancar-guia') return lancarGuia(sql, req, res)
-      return res.status(400).json({ error: 'action inválida. Use ?action=lancar-guia' })
+      if (req.query.action === 'corrigir-escritorio') return corrigirEscritorio(sql, req, res)
+      return res.status(400).json({ error: 'action inválida. Use lancar-guia ou corrigir-escritorio' })
     }
 
     return res.status(405).json({ error: 'Method not allowed' })
