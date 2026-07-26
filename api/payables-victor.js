@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
+import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 import { statusFor } from '../lib/payment-status.js'
 import { CLIENT_PHARMA, CATS, r2, ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
 
@@ -197,10 +198,24 @@ export default async function handler(req, res) {
     if (req.query.action === 'estornar') {
       const id = req.query.id || req.body?.id
       if (!id) return res.status(400).json({ error: 'id obrigatório' })
+
+      // ANTES de apagar os pagamentos: se este saldo foi consumido por uma distribuição
+      // fiscal, desfazer o abatimento inteiro daquele mês. Sem isto a obrigação continuava
+      // marcada como paga (os fiscal_payments de abatimento sobreviviam) enquanto o
+      // dinheiro voltava para o Victor — o mesmo valor contado duas vezes.
+      const fiscal = await desfazerAbatimentoFiscal(sql, [id], { ignorarPayables: [id] })
+
       await sql`DELETE FROM payable_payments WHERE payable_type = 'victor' AND payable_id = ${id}`
-      const result = await sql`UPDATE payables_victor SET status='pendente', paid_amount=0, paid_at=NULL WHERE id=${id} RETURNING *`
+      const motivo = req.body?.motivo || null
+      const result = await sql`
+        UPDATE payables_victor SET
+          status = 'pendente', paid_amount = 0, paid_at = NULL,
+          notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
+                  to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
+                  COALESCE(' (' || ${motivo}::text || ')', '')
+        WHERE id = ${id} RETURNING *`
       if (!result.length) return res.status(404).json({ error: 'Registro não encontrado' })
-      return res.status(200).json({ data: result[0], action: 'estornar' })
+      return res.status(200).json({ data: result[0], action: 'estornar', fiscal })
     }
     const { id, paid_amount, paid_at, status, notes } = req.body
     const result = await sql`UPDATE payables_victor SET paid_amount=${paid_amount}, paid_at=${paid_at||null}, status=${status}, notes=${notes||null} WHERE id=${id} RETURNING *`

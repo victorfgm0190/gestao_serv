@@ -54,8 +54,18 @@ export default async function handler(req, res) {
     if (req.query.action === 'estornar') {
       const id = req.query.id || req.body?.id
       if (!id) return res.status(400).json({ error: 'id obrigatório' })
+      // Sem desamarrar nada de fiscal aqui: a distribuição de impostos consome só
+      // payables do Victor (candidatosDisponiveis lê payables_victor, e
+      // fiscal_allocations só tem payable_victor_id). Fabrício não participa.
       await sql`DELETE FROM payable_payments WHERE payable_type = 'fabricio' AND payable_id = ${id}`
-      const result = await sql`UPDATE payables_fabricio SET status='pendente', paid_amount=0, paid_at=NULL WHERE id=${id} RETURNING *`
+      const motivo = req.body?.motivo || null
+      const result = await sql`
+        UPDATE payables_fabricio SET
+          status = 'pendente', paid_amount = 0, paid_at = NULL,
+          notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
+                  to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
+                  COALESCE(' (' || ${motivo}::text || ')', '')
+        WHERE id = ${id} RETURNING *`
       if (!result.length) return res.status(404).json({ error: 'Registro não encontrado' })
       return res.status(200).json({ data: result[0], action: 'estornar' })
     }

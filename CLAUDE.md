@@ -440,6 +440,31 @@ Ambiente (Windows):
 
 ---
 
+### Estorno e o abatimento fiscal (`lib/fiscal-unlink.js`) — 2026-07-26
+
+`?action=distribuir` quita obrigações consumindo saldo dos payables do Victor, deixando
+três registros amarrados: `payable_payments` (o dinheiro saindo), `fiscal_allocations`
+(`basis='consumo_payable'`, o elo) e `fiscal_payments` (`method='abatimento'`, a quitação).
+
+Os estornos do lado do faturamento apagavam só o primeiro. A FK
+`fiscal_allocations.payable_payment_id ON DELETE CASCADE` levava o segundo junto, mas o
+**terceiro sobrevivia** e ninguém recalculava a obrigação: o DAS seguia marcado como pago
+enquanto o dinheiro voltava para o Victor — o mesmo valor contado duas vezes. E sem
+alocação com `payable_victor_id`, o "Estornar abatimento" da tela `/fiscal` passava a
+dizer "não foi distribuído", deixando o estado sem conserto pela interface.
+
+`desfazerAbatimentoFiscal(sql, payableIds)` é chamado por `payables-victor.js`,
+`receivables.js` e `invoices.js` **antes** de apagarem qualquer coisa. A unidade de
+reversão é o **mês**, não o payable: a distribuição é um pool rateado entre vários
+payables e o `?action=distribuir` já trata o mês como atômico.
+`payables-fabricio.js` não chama — Fabrício não participa da distribuição fiscal
+(`candidatosDisponiveis` só lê `payables_victor`).
+
+Junto foi corrigido em `invoices.js`: o estorno apagava os payables **sem** apagar antes
+os `payable_payments`, e `payable_payments.payable_id` não tem FK — os pagamentos ficavam
+órfãos. A trava existente só recusa payable com status `pago`, então um payable
+parcialmente consumido pela distribuição passava direto.
+
 ### ⚠️ Não existe status `estornado`
 Os vocabulários reais são: `invoices` pendente|recebido · `receivables` pendente|pago ·
 `payables_*` pendente|parcial|pago · `fiscal_obligations` previsto|apurado|parcial|pago.
@@ -447,7 +472,21 @@ Gravar um status fora dessa lista não arquiva o registro — ele sai dos filtro
 as telas, escapa do CASE de `recalcularObrigacao()` e do `status IN ('pendente','parcial')`
 de `candidatosDisponiveis()`, e a cascata de consumo passa a ignorá-lo em silêncio.
 Estorno é reversão de verdade (apagar o que a fatura gerou e voltar a `pendente`), não
-marcação. Ver `api/admin.js` e os PATCH `estorno` de `invoices.js`/`receivables.js`.
+marcação — e é semanticamente correto: estornar um payable não o mata, devolve-o a
+`pendente`, porque o valor continua devido; estornar uma fatura a devolve a `pendente`
+justamente para poder ser refaturada.
+
+A **auditoria** que se quer de um "estornado" vive em `notes`, preservando o conteúdo
+anterior em vez de sobrescrevê-lo:
+```sql
+notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
+        to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
+        COALESCE(' (' || ${motivo}::text || ')', '')
+```
+Fica repetido em cada rota porque o driver do Neon não compõe fragmentos: uma tagged
+template aninhada viraria parâmetro, não SQL. As rotas aceitam `motivo` opcional no body.
+Ver `api/admin.js`, `lib/fiscal-unlink.js` e os PATCH `estorno`/`estornar` de
+`invoices.js`, `receivables.js`, `payables-victor.js` e `payables-fabricio.js`.
 
 ## 9. APIs legadas / mortas
 

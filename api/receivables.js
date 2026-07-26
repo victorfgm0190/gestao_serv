@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
+import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 
 // Deriva mês/ano de caixa da data de recebimento; sem data, cai na competência.
 function paymentPeriod(payment_date, fbMonth, fbYear) {
@@ -55,6 +56,11 @@ export default async function handler(req, res) {
         // Remove pagamentos parciais órfãos antes de apagar os payables
         const fabIds = await sql`SELECT id FROM payables_fabricio WHERE invoice_id = ${inv.id}`
         const vicIds = await sql`SELECT id FROM payables_victor WHERE invoice_id = ${inv.id}`
+        // Antes de tudo: se algum saldo do Victor foi consumido por uma distribuição
+        // fiscal, desfazer o abatimento do mês. Estes payables vão ser APAGADOS logo
+        // abaixo, então não há saldo deles para recompor — mas os payables de outros
+        // meses que entraram no mesmo rateio precisam voltar.
+        await desfazerAbatimentoFiscal(sql, vicIds.map(r=>r.id), { ignorarPayables: vicIds.map(r=>r.id) })
         if (fabIds.length) await sql`DELETE FROM payable_payments WHERE payable_type='fabricio' AND payable_id = ANY(${fabIds.map(r=>r.id)})`
         if (vicIds.length) await sql`DELETE FROM payable_payments WHERE payable_type='victor' AND payable_id = ANY(${vicIds.map(r=>r.id)})`
         await sql`DELETE FROM payables_fabricio WHERE invoice_id = ${inv.id}`
@@ -62,7 +68,14 @@ export default async function handler(req, res) {
         await sql`UPDATE invoices SET status = 'pendente' WHERE id = ${inv.id}`
       }
 
-      const result = await sql`UPDATE receivables SET status='pendente', paid_at=NULL, paid_amount=NULL WHERE id=${id} RETURNING *`
+      const motivo = req.body?.motivo || null
+      const result = await sql`
+        UPDATE receivables SET
+          status = 'pendente', paid_at = NULL, paid_amount = NULL,
+          notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
+                  to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
+                  COALESCE(' (' || ${motivo}::text || ')', '')
+        WHERE id = ${id} RETURNING *`
       return res.status(200).json({ data: result[0], action: 'estorno' })
     }
 

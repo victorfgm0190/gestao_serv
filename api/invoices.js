@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
+import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 
 const round = (n) => parseFloat((Number(n) || 0).toFixed(2))
 
@@ -265,13 +266,28 @@ export default async function handler(req, res) {
         if (inv.receivable_id) {
           await sql`UPDATE receivables SET status='pendente', paid_at=NULL, paid_amount=NULL WHERE id=${inv.receivable_id}`
         }
+        // Desfaz o abatimento fiscal antes de apagar os payables. A trava acima só
+        // recusa payable com status 'pago'; um payable PARCIALMENTE consumido pela
+        // distribuição passava direto e a obrigação ficava quitada sem lastro.
+        const vicIds = await sql`SELECT id FROM payables_victor WHERE invoice_id = ${id}`
+        const fabIds = await sql`SELECT id FROM payables_fabricio WHERE invoice_id = ${id}`
+        await desfazerAbatimentoFiscal(sql, vicIds.map(r=>r.id), { ignorarPayables: vicIds.map(r=>r.id) })
+        // Pagamentos primeiro: payable_payments.payable_id NÃO tem FK, então apagar o
+        // payable direto deixava os pagamentos órfãos, invisíveis e insomáveis.
+        if (vicIds.length) await sql`DELETE FROM payable_payments WHERE payable_type='victor' AND payable_id = ANY(${vicIds.map(r=>r.id)})`
+        if (fabIds.length) await sql`DELETE FROM payable_payments WHERE payable_type='fabricio' AND payable_id = ANY(${fabIds.map(r=>r.id)})`
         // Remover payables gerados por esta fatura
         await sql`DELETE FROM payables_fabricio WHERE invoice_id = ${id}`
         await sql`DELETE FROM payables_victor WHERE invoice_id = ${id}`
         // Liberar a parcela do projeto para ser faturada de novo
         await sql`UPDATE project_installments SET invoice_id = NULL, status = 'pendente' WHERE invoice_id = ${id}`
-        // Reverter status da fatura
-        await sql`UPDATE invoices SET status='pendente' WHERE id=${id}`
+        // Reverter status da fatura, com o rastro do estorno preservado em notes.
+        await sql`
+          UPDATE invoices SET
+            status = 'pendente',
+            notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
+                    to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI')
+          WHERE id = ${id}`
         return res.status(200).json({ success: true, action: 'estorno' })
       }
 
