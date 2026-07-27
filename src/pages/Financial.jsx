@@ -907,7 +907,11 @@ export default function Financial() {
             <span className="text-gray-300 font-medium">Total a reservar</span>
             <span className="text-orange-400 text-lg font-bold">{fmt(taxPreview.total)}</span>
           </div>
-          <p className="text-gray-600 text-[11px] mt-3">⚠️ Previsão estimada. Consulte seu contador.</p>
+          <p className="text-gray-600 text-[11px] mt-3">
+            ⚠️ Previsão estimada. Consulte seu contador. Esta reserva usa a RBT12 <em>estimada</em>
+            {' '}(faturamento médio mensal × 12, em Configurações); a apuração de <strong>/fiscal</strong> usa a
+            {' '}RBT12 real dos 12 meses e traz a memória de cálculo passo a passo — os dois números podem divergir.
+          </p>
         </div>
       )}
 

@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1785000987.1692798,
-    "ast_hash": "a99c14787f2ba5767a5e9e031994628a",
+    "mtime": 1785167121.7795334,
+    "ast_hash": "9f4e0843a625d058848b8c28be910150",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -25,8 +25,8 @@
     "semantic_hash": ""
   },
   "api/contracts.js": {
-    "mtime": 1784510267.3387861,
-    "ast_hash": "cc5534ca5d9a939409c9482bd700da3e",
+    "mtime": 1785166807.6425853,
+    "ast_hash": "528a4520bf51755c1e653fb490ae638c",
     "semantic_hash": ""
   },
   "api/cron-sync.js": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "api/invoices.js": {
-    "mtime": 1784571540.937943,
-    "ast_hash": "bab2cfc03751829a80a69ca600a599a5",
+    "mtime": 1785166859.142787,
+    "ast_hash": "1709a99f855e0cb607d7d0369b672ba7",
     "semantic_hash": ""
   },
   "api/payable-payments.js": {
@@ -70,18 +70,18 @@
     "semantic_hash": ""
   },
   "api/payables-fabricio.js": {
-    "mtime": 1784510269.054855,
-    "ast_hash": "35743eae81655de5ea25736f7e87d141",
+    "mtime": 1785096565.7358315,
+    "ast_hash": "04913fba652f183af8eaa56602de548a",
     "semantic_hash": ""
   },
   "api/payables-victor.js": {
-    "mtime": 1784996060.5557785,
-    "ast_hash": "799776727e26f9e7d42b45bdbdf55412",
+    "mtime": 1785096598.3928344,
+    "ast_hash": "6ed3abb05164895a82d3d33386174c6e",
     "semantic_hash": ""
   },
   "api/receivables.js": {
-    "mtime": 1784511527.871703,
-    "ast_hash": "2da805c1780203e29618740d3436bfc7",
+    "mtime": 1785096598.5315156,
+    "ast_hash": "21e9b85584370b94ef85c047aeb3df3d",
     "semantic_hash": ""
   },
   "api/reclassify-demands.js": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
-    "mtime": 1784995452.7326393,
-    "ast_hash": "425d2ab140949b5194677426c644997f",
+    "mtime": 1785166988.2996616,
+    "ast_hash": "e0cab55041a84d515177084090d4f26f",
     "semantic_hash": ""
   },
   "src/pages/Clientes.jsx": {
@@ -140,8 +140,8 @@
     "semantic_hash": "5cae627af56a531bca8bb7745eeae5ac"
   },
   "src/pages/Contracts.jsx": {
-    "mtime": 1784506745.5224097,
-    "ast_hash": "402a58bd6f60022c6d3909beb6b5d35d",
+    "mtime": 1785166966.0818865,
+    "ast_hash": "19c064871e25be2bdc9909f81c3f9615",
     "semantic_hash": ""
   },
   "src/pages/Dashboard.jsx": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1785000418.3231218,
-    "ast_hash": "911c1a8625c907ea9a4ec0f1c74b76a0",
+    "mtime": 1785166973.5999405,
+    "ast_hash": "71ed1f69ea1760f33c2d7b39d4c8c1c9",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785000993.7454953,
-    "ast_hash": "a1bf6dc21868bb67bfa1ee5b17951e07",
+    "mtime": 1785167177.9613316,
+    "ast_hash": "61f78a0fd7c8a3d04ed36e32cccc8d4d",
     "semantic_hash": ""
   },
   "README.md": {
@@ -365,8 +365,8 @@
     "semantic_hash": ""
   },
   "api/fiscal-obligations.js": {
-    "mtime": 1785000782.1204774,
-    "ast_hash": "64327ee2857e680410d59cf8ce533331",
+    "mtime": 1785166937.254295,
+    "ast_hash": "9a9c1c166b13c01033ac9331bee45830",
     "semantic_hash": ""
   },
   "lib/taxCalc.js": {
@@ -390,8 +390,23 @@
     "semantic_hash": ""
   },
   "src/pages/FiscalObligations.jsx": {
-    "mtime": 1785000350.530462,
-    "ast_hash": "c34ad1145c110557975b91076b627d08",
+    "mtime": 1785167024.3548725,
+    "ast_hash": "4d701ea516c2ca1b52815d53f7853837",
+    "semantic_hash": ""
+  },
+  "api/admin.js": {
+    "mtime": 1785095427.9727118,
+    "ast_hash": "32aacaadc62d00ffa1f5449834051ca6",
+    "semantic_hash": ""
+  },
+  "lib/fiscal-redistribution.js": {
+    "mtime": 1785093074.5963035,
+    "ast_hash": "26668781f1fe950d1d67fe1c87de47ce",
+    "semantic_hash": ""
+  },
+  "lib/fiscal-unlink.js": {
+    "mtime": 1785096547.2041001,
+    "ast_hash": "f44dca14f94e2ff2dff25cc93462ccc9",
     "semantic_hash": ""
   }
 }

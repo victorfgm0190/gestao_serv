@@ -1,6 +1,9 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
-import { calcularImpostos, parametrosFiscais, proLaboreDoMes } from '../lib/taxCalc.js'
+import {
+  calcularImpostos, parametrosFiscais, proLaboreDoMes,
+  faixaFor, tabelaDoAnexo, FATOR_R_MIN, INSS_RATE, INSS_TETO,
+} from '../lib/taxCalc.js'
 import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
 import { ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
 import { recalcularInvoice, consolidar } from '../lib/fiscal-redistribution.js'
@@ -23,6 +26,8 @@ const todayISO = () => new Date().toISOString().slice(0, 10)
 // POST  ?action=distribuir             { company_id, month, year }  → abate dos payables do Victor
 // POST  ?action=estornar-distribuicao  { company_id, month, year }  → desfaz o abatimento
 // GET   ?company_id&month&year                                      → lê o que já foi apurado
+//       com `calculo`: a memória de cálculo do mês (faturamento → RBT12 → Fator R →
+//       anexo → DAS/INSS/escritório), pelo mesmo caminho do ?action=apurar
 
 const round2 = (v) => Math.round(((Number(v) || 0) + Number.EPSILON) * 100) / 100
 // numeric do Postgres chega como string no driver — sem isso, `a + b` concatena.
@@ -111,29 +116,14 @@ function ratear(total, invoices, totalFaturamento) {
   return partes
 }
 
-async function apurar(sql, req, res) {
-  const { company_id, month, year } = req.body
-  if (!company_id || !month || !year) {
-    return res.status(400).json({ error: 'company_id, month e year são obrigatórios' })
-  }
-  const m = Number(month)
-  const y = Number(year)
-
-  // Mês já distribuído não pode ser reapurado em silêncio: o rateio novo sairia
-  // com valores diferentes dos que foram efetivamente abatidos dos payables, e o
-  // registro do abatimento passaria a apontar para uma base que não existe mais.
-  // Estornar a distribuição primeiro é o caminho normal.
-  const distribuido = (await sql`
-    SELECT count(*)::int n FROM fiscal_allocations a
-    JOIN fiscal_obligations o ON o.id = a.obligation_id
-    WHERE o.company_id = ${company_id} AND o.month = ${m} AND o.year = ${y}
-      AND a.payable_victor_id IS NOT NULL`)[0].n
-  if (distribuido > 0) {
-    return res.status(409).json({
-      error: 'Este mês já foi distribuído nos lançamentos do Victor. Estorne a distribuição (?action=estornar-distribuicao) antes de reapurar.',
-    })
-  }
-
+// NÚCLEO DA APURAÇÃO — lê e calcula, não escreve nada.
+//
+// Existe separado por um motivo específico: a memória de cálculo da tela /fiscal precisa
+// mostrar de onde saiu cada número, e o único jeito de ela não mentir é sair do MESMO
+// caminho que grava a obrigação. Duplicar as fórmulas do outro lado repetiria a história
+// do pró-labore (três lugares recalculando de formas diferentes, três números).
+// Quem escreve é `apurar`; quem só lê é a memória no GET.
+async function calcularApuracao(sql, company_id, m, y) {
   const settings = (await sql`
     SELECT * FROM company_settings WHERE company_id = ${company_id} LIMIT 1`)[0] || {}
   const salariosMensais = num(settings.salarios_mensal)
@@ -160,13 +150,7 @@ async function apurar(sql, req, res) {
     return k.y === y && k.m === m
   })
   const faturamento = round2(doMes.reduce((s, inv) => s + num(inv.invoice_value), 0))
-  if (faturamento <= 0) {
-    return res.status(404).json({
-      error: semNfDoMes.length
-        ? 'Nenhum faturamento tributável neste mês (só há faturas de contrato sem NF).'
-        : 'Nenhum faturamento neste mês',
-    })
-  }
+  const faturamentoSemNf = round2(semNfDoMes.reduce((s, inv) => s + num(inv.invoice_value), 0))
 
   const { rbt12, folha12, meses, proporcionalizado } = acumular12(tributaveis, m, y, salariosMensais, params)
   const prolabore = proLaboreDoMes(faturamento, params)
@@ -208,6 +192,182 @@ async function apurar(sql, req, res) {
     // e entender com que regras ela foi feita.
     params,
     apurado_em: new Date().toISOString(),
+  }
+
+  return {
+    settings, params, salariosMensais,
+    doMes, semNfDoMes, faturamento, faturamentoSemNf,
+    rbt12, folha12, meses, proporcionalizado,
+    prolabore, impostos, das, inss, honorarios, snapshot,
+  }
+}
+
+// Formatação para as fórmulas da memória. Feita à mão, sem Intl: a string sai do
+// servidor e precisa ser idêntica em qualquer runtime, inclusive num Node sem ICU
+// completo, onde toLocaleString('pt-BR') cai silenciosamente para o formato inglês.
+const brl = (v) => {
+  const n = Number(v) || 0
+  const [i, d] = Math.abs(n).toFixed(2).split('.')
+  return `${n < 0 ? '-' : ''}R$ ${i.replace(/\B(?=(\d{3})+$)/g, '.')},${d}`
+}
+const pctStr = (v, casas = 2) => `${((Number(v) || 0) * 100).toFixed(casas).replace('.', ',')}%`
+
+// MEMÓRIA DE CÁLCULO — responde "de onde veio esse número?".
+//
+// Puro: recebe o resultado de `calcularApuracao` e só o traduz em fórmulas legíveis.
+// Não recalcula nada — se recalculasse, a explicação poderia divergir do valor
+// explicado, que é exatamente o defeito que ela existe para eliminar.
+//
+// `gravado` × `valor`: o valor é o recálculo de AGORA, o gravado é o que está na
+// obrigação. Divergência entre os dois não é erro — significa que o mês mudou depois
+// da apuração (NF emitida, editada ou excluída) e precisa ser reapurado.
+function memoriaDeCalculo(a, obligations = [], semNfDetalhado = []) {
+  const {
+    params, faturamento, faturamentoSemNf, semNfDoMes, doMes,
+    rbt12, folha12, meses, proporcionalizado, prolabore, impostos, das, inss, honorarios,
+  } = a
+
+  const gravadoDe = (kind, calculado) => {
+    const ob = obligations.find((o) => o.kind === kind)
+    if (!ob) return null
+    const estimado = num(ob.amount_estimated)
+    return {
+      id: ob.id,
+      estimado,
+      guia: ob.amount_actual === null || ob.amount_actual === undefined ? null : num(ob.amount_actual),
+      devido: round2(valorDevido(ob)),
+      status: ob.status,
+      divergente: Math.abs(round2(estimado - calculado)) >= 0.01,
+    }
+  }
+
+  const simples = impostos.regime !== 'lucro_presumido'
+  const faixa = simples ? faixaFor(tabelaDoAnexo(impostos.anexo), rbt12) : null
+  const aliq = impostos.aliquotaEfetiva ?? 0
+  const noTeto = prolabore > INSS_TETO
+  const noPiso = prolabore === params.prolabore_minimo
+
+  return {
+    // Sem faturamento tributável o ?action=apurar responde 404 e não grava nada. A
+    // memória continua sendo montada (as fórmulas explicam por que deu zero), mas a
+    // tela precisa saber que isto é uma conta hipotética — o pró-labore no piso faria
+    // aparecer um INSS de R$ 178,31 num mês em que nada foi faturado.
+    apuravel: faturamento > 0,
+    faturamento_total_mes: round2(faturamento + faturamentoSemNf),
+    faturamento_tributavel: faturamento,
+    faturas: { tributaveis: doMes.length, total: doMes.length + semNfDoMes.length },
+    // Destaque da tela: é a diferença entre o que o mês faturou e o que ele tributou.
+    faturas_sem_nf: {
+      quantidade: semNfDoMes.length,
+      valor: faturamentoSemNf,
+      faturas: semNfDetalhado,
+      formula: semNfDoMes.length
+        ? `${brl(faturamento + faturamentoSemNf)} faturado − ${brl(faturamentoSemNf)} sem NF = ${brl(faturamento)} tributável`
+        : null,
+    },
+    rbt12: {
+      valor: rbt12,
+      meses,
+      proporcionalizado,
+      formula: proporcionalizado
+        ? `soma de ${meses} mês(es) de NF × 12/${meses} (proporcionalizada, LC 123 art. 18 §2) = ${brl(rbt12)}`
+        : `soma das NF dos últimos 12 meses = ${brl(rbt12)}`,
+    },
+    fator_r: simples ? {
+      valor: impostos.fatorR,
+      folha12,
+      minimo: FATOR_R_MIN,
+      atende: impostos.anexo === 'III',
+      formula: `folha 12m ${brl(folha12)} ÷ receita 12m ${brl(rbt12)} = ${pctStr(impostos.fatorR)} ` +
+               `(${impostos.anexo === 'III' ? '≥' : '<'} ${pctStr(FATOR_R_MIN, 0)} → Anexo ${impostos.anexo})`,
+    } : null,
+    anexo_simples: simples ? {
+      anexo: impostos.anexo,
+      faixa: { ate: faixa.max, aliquota_nominal: faixa.rate, deducao: faixa.deduct },
+      aliquota_efetiva: aliq,
+      formula: `faixa até ${brl(faixa.max)}: (${brl(rbt12)} × ${pctStr(faixa.rate)} − ${brl(faixa.deduct)}) ` +
+               `÷ ${brl(rbt12)} = ${pctStr(aliq)}`,
+    } : null,
+    das: simples ? {
+      taxa: pctStr(aliq),
+      base: faturamento,
+      formula: `${brl(faturamento)} × ${pctStr(aliq)} = ${brl(das)}`,
+      valor: das,
+      gravado: gravadoDe('das', das),
+    } : null,
+    prolabore: {
+      percentual: params.prolabore_percentual,
+      piso: params.prolabore_minimo,
+      no_piso: noPiso,
+      valor: prolabore,
+      formula: `máx(${brl(faturamento)} × ${pctStr(params.prolabore_percentual, 0)} = ` +
+               `${brl(round2(faturamento * params.prolabore_percentual))}; piso ${brl(params.prolabore_minimo)}) = ${brl(prolabore)}`,
+    },
+    inss: {
+      taxa: pctStr(INSS_RATE, 0),
+      base: Math.min(prolabore, INSS_TETO),
+      formula: `${brl(Math.min(prolabore, INSS_TETO))} × ${pctStr(INSS_RATE, 0)} = ${brl(inss)}` +
+               (noTeto ? ` (pró-labore ${brl(prolabore)} limitado ao teto ${brl(INSS_TETO)})` : ''),
+      valor: inss,
+      gravado: gravadoDe('inss', inss),
+    },
+    escritorio: {
+      formula: `valor fixo mensal de honorários contábeis (Configurações) = ${brl(honorarios)}`,
+      valor: honorarios,
+      gravado: gravadoDe('honorarios', honorarios),
+    },
+    // Lucro presumido não tem DAS nem anexo; os tributos vêm prontos do taxCalc.
+    itens_lucro_presumido: simples ? null : impostos.itens,
+    // pro_labore e escritorio vieram da migração de victor_reserves: são digitados e a
+    // apuração não os recalcula. Aparecem à parte para o total da memória fechar com
+    // os cards da tela, sem fingir que saíram de uma fórmula.
+    lancados_a_mao: obligations
+      .filter((o) => !KINDS.includes(o.kind))
+      .map((o) => ({ id: o.id, kind: o.kind, valor: round2(valorDevido(o)), status: o.status })),
+    total: {
+      calculado: round2(das + inss + honorarios),
+      formula: `DAS ${brl(das)} + INSS ${brl(inss)} + escritório ${brl(honorarios)} = ${brl(round2(das + inss + honorarios))}`,
+      gravado: obligations.length
+        ? round2(obligations.reduce((s, o) => s + valorDevido(o), 0))
+        : null,
+    },
+  }
+}
+
+async function apurar(sql, req, res) {
+  const { company_id, month, year } = req.body
+  if (!company_id || !month || !year) {
+    return res.status(400).json({ error: 'company_id, month e year são obrigatórios' })
+  }
+  const m = Number(month)
+  const y = Number(year)
+
+  // Mês já distribuído não pode ser reapurado em silêncio: o rateio novo sairia
+  // com valores diferentes dos que foram efetivamente abatidos dos payables, e o
+  // registro do abatimento passaria a apontar para uma base que não existe mais.
+  // Estornar a distribuição primeiro é o caminho normal.
+  const distribuido = (await sql`
+    SELECT count(*)::int n FROM fiscal_allocations a
+    JOIN fiscal_obligations o ON o.id = a.obligation_id
+    WHERE o.company_id = ${company_id} AND o.month = ${m} AND o.year = ${y}
+      AND a.payable_victor_id IS NOT NULL`)[0].n
+  if (distribuido > 0) {
+    return res.status(409).json({
+      error: 'Este mês já foi distribuído nos lançamentos do Victor. Estorne a distribuição (?action=estornar-distribuicao) antes de reapurar.',
+    })
+  }
+
+  const {
+    doMes, semNfDoMes, faturamento, impostos, prolabore, das, inss, honorarios, snapshot,
+    rbt12, folha12, meses, proporcionalizado,
+  } = await calcularApuracao(sql, company_id, m, y)
+
+  if (faturamento <= 0) {
+    return res.status(404).json({
+      error: semNfDoMes.length
+        ? 'Nenhum faturamento tributável neste mês (só há faturas de contrato sem NF).'
+        : 'Nenhum faturamento neste mês',
+    })
   }
 
   // Uma obrigação por tipo. base_amount/rate_used diferem por tipo: o DAS incide
@@ -870,6 +1030,16 @@ export default async function handler(req, res) {
         }
       }
 
+      // Memória de cálculo do mês: passo a passo do faturamento até DAS/INSS/escritório.
+      // Roda o MESMO `calcularApuracao` do ?action=apurar, então o que ela explica é
+      // literalmente o que a apuração gravaria agora. Existe mesmo sem mês apurado —
+      // aí ela é a previsão, e é justamente quando mais se quer conferir a conta.
+      let calculo = null
+      if (month) {
+        const a = await calcularApuracao(sql, company_id, Number(month), Number(year))
+        calculo = memoriaDeCalculo(a, obligations, semNf)
+      }
+
       // Prévia da redistribuição do mês (nunca grava). É o que alimenta o painel de
       // etapas da tela: a fatura é a ETAPA 1, o rateio corrente é a 2 ou a 3.
       let redistribuicao = null
@@ -894,7 +1064,7 @@ export default async function handler(req, res) {
           desatualizado: Math.abs(faturamentoAtual - faturamentoApurado) >= 0.01,
         }
       }
-      return res.status(200).json({ data: obligations, redistribuicao, sem_nf: semNf })
+      return res.status(200).json({ data: obligations, redistribuicao, sem_nf: semNf, calculo })
     }
 
     if (req.method === 'POST') {

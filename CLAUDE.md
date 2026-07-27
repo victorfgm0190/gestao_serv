@@ -331,6 +331,36 @@ Hook: `src/hooks/useNotifications` (notificações; usado no Layout).
 
 ## 6. Regras de negócio financeiro
 
+### Memória de cálculo da apuração — 2026-07-27
+
+O GET de `/api/fiscal-obligations` devolve `calculo`: o passo a passo de faturamento →
+base tributável → RBT12 → Fator R → anexo/alíquota efetiva → DAS, INSS e escritório, cada
+passo com a fórmula em texto e o valor. A tela `/fiscal` abre no botão **💡 Como chegamos
+aqui?**.
+
+O ponto do desenho: o núcleo da apuração foi extraído para `calcularApuracao()` e o
+`?action=apurar` e a memória chamam **a mesma função** — a memória não recalcula nada, só
+traduz. Reimplementar as fórmulas do lado da explicação repetiria a história do pró-labore
+(três donos, três números), com o agravante de a explicação poder divergir do valor que ela
+explica. `faixaFor`/`tabelaDoAnexo` passaram a ser exportadas de `lib/taxCalc.js` pelo mesmo
+motivo: a faixa do Simples é mostrada, não redigitada.
+
+Detalhes que a memória expõe de propósito:
+- `gravado.divergente` — o recálculo de agora não bate com `amount_estimated`. Não é erro:
+  é o mês ter mudado (NF emitida/editada/excluída) depois da apuração. Pede reapuração.
+- `apuravel: false` — sem faturamento tributável o `apurar` responde 404 e nada é gravado;
+  a conta continua sendo exibida, mas marcada como hipotética (o piso do pró-labore faria
+  aparecer um INSS de R$ 178,31 num mês sem faturamento nenhum).
+- `lancados_a_mao` — `pro_labore` e `escritorio` não saem de fórmula; ficam à parte para o
+  total da memória fechar com os cards sem fingir que foram calculados.
+- ⚠️ O card "Previsão de Impostos" do `/financial` **não** usa esta base: ele calcula com a
+  RBT12 estimada (`faturamento_medio_mensal × 12`), enquanto `/fiscal` usa a RBT12 real dos
+  12 meses. Os dois divergem (hoje 7,96% × 6% de alíquota efetiva) — é a pendência "RBT12
+  estimada" ainda em aberto. O card avisa disso em texto.
+
+As strings de fórmula são formatadas por `brl`/`pctStr` locais, sem `Intl`: num runtime sem
+ICU completo, `toLocaleString('pt-BR')` cai em silêncio para o formato inglês.
+
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 
 Cliente que não pede nota (hoje só a **Minas Distribuicao**, contrato 4) fatura, recebe e
@@ -573,9 +603,14 @@ Ver `api/admin.js`, `lib/fiscal-unlink.js` e os PATCH `estorno`/`estornar` de
       de sincronização — não há mais valor para ficar defasado. `Settings.jsx` passou
       a editar os parâmetros (percentual, piso, honorários) em vez do valor final.
       Previsão e apuração agora dão exatamente o mesmo INSS (jul/2026: 178,31).
-- [ ] **RBT12 estimada** — `taxCalc.js:56` usa `faturamento_medio_mensal × 12`, e
-      `Billing.jsx:203` sobrescreve esse campo com o faturamento de **um** mês.
-      A RBT12 real (soma de 12 meses de `invoices.invoice_value`) já está no banco.
+- [ ] **RBT12 estimada** — `taxCalc.js` usa `faturamento_medio_mensal × 12`, e o
+      `autoUpdateFiscalSettings` do `Billing.jsx` sobrescreve esse campo com o faturamento
+      de **um** mês. A RBT12 real (soma de 12 meses de `invoices.invoice_value`) já está no
+      banco e **a apuração de `/fiscal` já a usa** (via `acumular12`) — quem ainda vive da
+      estimativa é só o card "Previsão de Impostos" do `/financial`, que por isso mostra
+      alíquota efetiva de 7,96% onde a apuração mostra 6%. A memória de cálculo tornou a
+      divergência visível; unificar é passar a alimentar o card pelo GET de
+      `/api/fiscal-obligations` em vez de recalcular no browser.
 - [ ] **Lumen IMAP** (`victor@lumendev.com.br`) — ingestão de e-mail só cobre Imperium hoje.
 - [ ] **Migrations faltantes** para popular `time_entries.contract_id` e
       `contracts.financial_rule_id` em registros antigos (colunas já existem no schema).
