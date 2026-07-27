@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { todayBR } from '../lib/dateUtils'
 import CopyButton from '../components/CopyButton'
+import MemoriaCalculo from '../components/MemoriaCalculo'
 import { calcularImpostos } from '../../lib/taxCalc.js'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -124,6 +125,13 @@ export default function Financial() {
   // Previsão de impostos (só Lumen / company_id=1) — reserva de caixa na aba Pagar Victor.
   const [companySettings, setCompanySettings] = useState(null)
   const [monthFaturamento, setMonthFaturamento] = useState(0)
+  // Memória de cálculo do card de previsão. Vem pronta do GET de fiscal-obligations —
+  // é a MESMA da tela /fiscal, e é de propósito: a explicação tem de sair de quem
+  // calcula de verdade, não de uma segunda conta feita no browser.
+  const [calculoMemoria, setCalculoMemoria] = useState(null)
+  const [showMemoria, setShowMemoria] = useState(false)
+  const [loadingMemoria, setLoadingMemoria] = useState(false)
+  const [erroMemoria, setErroMemoria] = useState('')
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear, mode])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
@@ -141,7 +149,9 @@ export default function Financial() {
     setEditSession(null)
     setModalPayments([])
     setPendingVictor([])
-    setErroModal(''); setErroPay(''); setErroPayments(''); setErroReceive('')
+    setShowMemoria(false)
+    setCalculoMemoria(null)
+    setErroModal(''); setErroPay(''); setErroPayments(''); setErroReceive(''); setErroMemoria('')
   }, [activeCompany])
   // Reservas do Victor exibidas no card da aba (mês/ano/empresa do filtro ativo).
   useEffect(() => { if (tab === 'victor') fetchReserves() }, [tab, filterMonth, filterYear, activeCompany])
@@ -320,8 +330,12 @@ export default function Financial() {
     const { rm, ry } = reserveRefPeriod()
     try {
       const res = await fetch(`/api/fiscal-obligations?company_id=${activeCompany.id}&year=${ry}&month=${rm}`)
-      if (!res.ok) { setReserves({}); return }
-      const obrigacoes = (await res.json()).data || []
+      if (!res.ok) { setReserves({}); setCalculoMemoria(null); return }
+      const body = await res.json()
+      const obrigacoes = body.data || []
+      // A memória vem de carona: este GET já a traz, e uma segunda chamada ao clicar
+      // no botão pediria ao servidor a mesma coisa duas vezes.
+      setCalculoMemoria(body.calculo || null)
       const emAberto = {}
       for (const o of obrigacoes) {
         const devido = o.amount_actual != null ? parseFloat(o.amount_actual) : (parseFloat(o.amount_estimated) || 0)
@@ -329,7 +343,26 @@ export default function Financial() {
         if (falta > 0.005) emAberto[o.kind] = (emAberto[o.kind] || 0) + falta
       }
       setReserves(emAberto)
-    } catch (e) { console.error(e); setReserves({}) }
+    } catch (e) { console.error(e); setReserves({}); setCalculoMemoria(null) }
+  }
+
+  // Abre a memória de cálculo do card de previsão. Normalmente ela já está em mãos
+  // (veio no fetchReserves); o fetch aqui é o caminho de exceção — aba aberta antes de
+  // a lista carregar, ou a chamada anterior ter falhado.
+  async function toggleMemoria() {
+    if (showMemoria) { setShowMemoria(false); return }
+    setErroMemoria('')
+    if (calculoMemoria) { setShowMemoria(true); return }
+    const { rm, ry } = reserveRefPeriod()
+    setLoadingMemoria(true)
+    try {
+      const res = await fetch(`/api/fiscal-obligations?company_id=${activeCompany.id}&year=${ry}&month=${rm}`)
+      const body = res.ok ? await res.json() : {}
+      if (!body.calculo) { setErroMemoria('Não foi possível montar a memória de cálculo deste mês.'); return }
+      setCalculoMemoria(body.calculo)
+      setShowMemoria(true)
+    } catch { setErroMemoria('Erro de conexão com o servidor.') }
+    finally { setLoadingMemoria(false) }
   }
 
   // Flow A — Pagar Geral (não vinculado a um registro específico)
@@ -880,8 +913,17 @@ export default function Financial() {
         <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
             <h3 className="text-white font-semibold">📊 Previsão de Impostos — {months[refMonth-1]}/{refYear}</h3>
-            <span className="text-xs text-gray-400">{taxPreview.regimeLabel}</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-400">{taxPreview.regimeLabel}</span>
+              <button onClick={toggleMemoria} disabled={loadingMemoria}
+                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-200 rounded-lg text-xs font-medium">
+                💡 {loadingMemoria ? 'Carregando...' : showMemoria ? 'Ocultar memória' : 'Como chegamos aqui?'}
+              </button>
+            </div>
           </div>
+          {erroMemoria && (
+            <p className="mb-3 text-red-300 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">⚠️ {erroMemoria}</p>
+          )}
           {mode === 'caixa' && (
             <p className="text-amber-300/90 text-xs mb-3">💸 Impostos previstos para pagamento em {months[nextMonth-1]}/{nextYear}</p>
           )}
@@ -912,6 +954,24 @@ export default function Financial() {
             {' '}(faturamento médio mensal × 12, em Configurações); a apuração de <strong>/fiscal</strong> usa a
             {' '}RBT12 real dos 12 meses e traz a memória de cálculo passo a passo — os dois números podem divergir.
           </p>
+
+          {/* Memória de cálculo: o MESMO componente e os MESMOS números da tela /fiscal.
+              Como este card calcula por outra base, o aviso compara os dois totais em vez
+              de deixar o usuário descobrir a diferença sozinho. */}
+          {showMemoria && calculoMemoria && (
+            <div className="mt-4">
+              <MemoriaCalculo
+                calculo={calculoMemoria}
+                competencia={`${months[refMonth-1]}/${refYear}`}
+                aviso={Math.abs(calculoMemoria.total.calculado - taxPreview.total) >= 0.01 && (
+                  <p className="mb-4 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                    ⚠️ O card acima ({fmt(taxPreview.total)}) e esta memória ({fmt(calculoMemoria.total.calculado)})
+                    {' '}não batem: o card estima a RBT12 como <em>faturamento médio mensal × 12</em>, enquanto a
+                    {' '}apuração soma os 12 meses reais. Vale a apuração — é dela que saem as guias.
+                  </p>
+                )} />
+            </div>
+          )}
         </div>
       )}
 

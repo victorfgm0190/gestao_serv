@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1785167121.7795334,
-    "ast_hash": "9f4e0843a625d058848b8c28be910150",
+    "mtime": 1785169238.4970424,
+    "ast_hash": "78f3c7aa71598193b5f662321423d6ed",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1785166973.5999405,
-    "ast_hash": "71ed1f69ea1760f33c2d7b39d4c8c1c9",
+    "mtime": 1785169277.327818,
+    "ast_hash": "7d033a560aee00a2025ef6df3b03d8da",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785167177.9613316,
-    "ast_hash": "61f78a0fd7c8a3d04ed36e32cccc8d4d",
+    "mtime": 1785169325.7684848,
+    "ast_hash": "423df8ac7880ce0a63cc5f6e17053000",
     "semantic_hash": ""
   },
   "README.md": {
@@ -365,13 +365,13 @@
     "semantic_hash": ""
   },
   "api/fiscal-obligations.js": {
-    "mtime": 1785166937.254295,
-    "ast_hash": "9a9c1c166b13c01033ac9331bee45830",
+    "mtime": 1785169260.9597528,
+    "ast_hash": "b8e4ff6e47e44e644695f1be209998ba",
     "semantic_hash": ""
   },
   "lib/taxCalc.js": {
-    "mtime": 1784995292.3417003,
-    "ast_hash": "5604f8ac983e7ca20c0c54088e5fed87",
+    "mtime": 1785167824.6370773,
+    "ast_hash": "0270b346b08aef40867c61bff62eafe3",
     "semantic_hash": ""
   },
   "api/fiscal-payments.js": {
@@ -390,8 +390,8 @@
     "semantic_hash": ""
   },
   "src/pages/FiscalObligations.jsx": {
-    "mtime": 1785167024.3548725,
-    "ast_hash": "4d701ea516c2ca1b52815d53f7853837",
+    "mtime": 1785168287.0249934,
+    "ast_hash": "e2f857a24ea4ad18f8718a3eb96421f9",
     "semantic_hash": ""
   },
   "api/admin.js": {

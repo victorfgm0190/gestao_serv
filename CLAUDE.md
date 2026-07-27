@@ -338,6 +338,13 @@ base tributável → RBT12 → Fator R → anexo/alíquota efetiva → DAS, INSS
 passo com a fórmula em texto e o valor. A tela `/fiscal` abre no botão **💡 Como chegamos
 aqui?**.
 
+O mesmo painel abre no card **📊 Previsão de Impostos** da aba Pagar Victor
+(`/financial`): é o componente `src/components/MemoriaCalculo.jsx`, compartilhado pelas duas
+telas, alimentado pelo mesmo `calculo`. Lá a memória chega de carona no `fetchReserves`, que
+já consulta esse endpoint — o botão só alterna, e o fetch próprio é o caminho de exceção.
+Como o card calcula por outra base (RBT12 estimada), o painel abre com um aviso comparando os
+dois totais quando eles divergem, em vez de deixar a diferença para o usuário descobrir.
+
 O ponto do desenho: o núcleo da apuração foi extraído para `calcularApuracao()` e o
 `?action=apurar` e a memória chamam **a mesma função** — a memória não recalcula nada, só
 traduz. Reimplementar as fórmulas do lado da explicação repetiria a história do pró-labore
