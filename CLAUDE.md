@@ -360,10 +360,9 @@ Detalhes que a memória expõe de propósito:
   aparecer um INSS de R$ 178,31 num mês sem faturamento nenhum).
 - `lancados_a_mao` — `pro_labore` e `escritorio` não saem de fórmula; ficam à parte para o
   total da memória fechar com os cards sem fingir que foram calculados.
-- ⚠️ O card "Previsão de Impostos" do `/financial` **não** usa esta base: ele calcula com a
-  RBT12 estimada (`faturamento_medio_mensal × 12`), enquanto `/fiscal` usa a RBT12 real dos
-  12 meses. Os dois divergem (hoje 7,96% × 6% de alíquota efetiva) — é a pendência "RBT12
-  estimada" ainda em aberto. O card avisa disso em texto.
+- ⚠️ O card "Previsão de Impostos" do `/financial` ainda calcula por conta própria (ver
+  abaixo) e pode divergir. O aviso do painel diz **qual** das duas causas está em jogo:
+  base diferente (mês de referência × data de emissão) ou RBT12 diferente.
 
 As strings de fórmula são formatadas por `brl`/`pctStr` locais, sem `Intl`: num runtime sem
 ICU completo, `toLocaleString('pt-BR')` cai em silêncio para o formato inglês.
@@ -610,14 +609,21 @@ Ver `api/admin.js`, `lib/fiscal-unlink.js` e os PATCH `estorno`/`estornar` de
       de sincronização — não há mais valor para ficar defasado. `Settings.jsx` passou
       a editar os parâmetros (percentual, piso, honorários) em vez do valor final.
       Previsão e apuração agora dão exatamente o mesmo INSS (jul/2026: 178,31).
-- [ ] **RBT12 estimada** — `taxCalc.js` usa `faturamento_medio_mensal × 12`, e o
-      `autoUpdateFiscalSettings` do `Billing.jsx` sobrescreve esse campo com o faturamento
-      de **um** mês. A RBT12 real (soma de 12 meses de `invoices.invoice_value`) já está no
-      banco e **a apuração de `/fiscal` já a usa** (via `acumular12`) — quem ainda vive da
-      estimativa é só o card "Previsão de Impostos" do `/financial`, que por isso mostra
-      alíquota efetiva de 7,96% onde a apuração mostra 6%. A memória de cálculo tornou a
-      divergência visível; unificar é passar a alimentar o card pelo GET de
-      `/api/fiscal-obligations` em vez de recalcular no browser.
+- [ ] **RBT12 estimada — parcialmente resolvido (2026-07-27).** O card "Previsão de
+      Impostos" do `/financial` deixou de ler `company_settings.faturamento_medio_mensal`:
+      a RBT12 dele passou a ser o **faturamento real do mês** (NFs com `require_nf`,
+      somadas em `fetchTaxPreview`) × 12. Aquele campo é escrito pelo `Billing.jsx` com o
+      total de **um** mês e envelhece — em Jan/2026 ele valia 24.100 (de fevereiro)
+      enquanto o mês faturava 10.540, o que jogava a empresa na 2ª faixa e previa R$
+      1.163,98 onde cabiam R$ 957,03 (alíquota 7,96% × 6%).
+      **O que falta:** o card ainda anualiza um mês (× 12) em vez de somar os 12 meses
+      reais como o `acumular12` da apuração, e ainda agrupa a NF pelo campo `month` da
+      fatura, enquanto a apuração agrupa pela **data de emissão** — uma NF de dezembro
+      emitida em janeiro cai em meses diferentes nas duas telas. Fechar isso é alimentar o
+      card pelo `calculo` do GET de `/api/fiscal-obligations` em vez de recalcular no
+      browser; muda o mês em que cada NF aparece no card, então é decisão do Victor.
+      `faturamento_medio_mensal` continua existindo e sendo escrito pelo Billing — hoje
+      só a tela de Configurações o usa.
 - [ ] **Lumen IMAP** (`victor@lumendev.com.br`) — ingestão de e-mail só cobre Imperium hoje.
 - [ ] **Migrations faltantes** para popular `time_entries.contract_id` e
       `contracts.financial_rule_id` em registros antigos (colunas já existem no schema).

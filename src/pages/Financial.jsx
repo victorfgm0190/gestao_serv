@@ -581,8 +581,19 @@ export default function Financial() {
   const refYear = Number(filterYear) || new Date().getFullYear()
   const REF_KEY = refYear * 100 + refMonth
   // Previsão de impostos (só Lumen, aba Victor, config fiscal preenchida).
+  //
+  // A RBT12 sai do faturamento REAL do mês (NFs com require_nf, somadas em
+  // fetchTaxPreview) anualizado, não mais de `company_settings.faturamento_medio_mensal`.
+  // Aquele campo é escrito pelo Billing com o total de UM mês e envelhece: em Jan/2026
+  // ele valia 24.100 (de fevereiro) enquanto o mês faturava 10.540, o que jogava a
+  // empresa na 2ª faixa do Simples e previa 7,96% de alíquota onde cabiam 6%.
+  //
+  // Continua sendo uma estimativa — um mês × 12, não os 12 meses reais. Quem tem a RBT12
+  // de verdade é a apuração (/fiscal, via acumular12); o botão da memória de cálculo
+  // mostra as duas e explica a diferença.
   const taxPreview = (tab === 'victor' && activeCompany.id === 1 && companySettings && companySettings.regime)
-    ? calcularImpostos(companySettings, monthFaturamento) : null
+    ? calcularImpostos({ ...companySettings, faturamento_medio_mensal: monthFaturamento }, monthFaturamento)
+    : null
   // No caixa, NF emitida no mês M é paga no mês M+1.
   const nextMonth = refMonth === 12 ? 1 : refMonth + 1
   const nextYear = refMonth === 12 ? refYear + 1 : refYear
@@ -932,11 +943,18 @@ export default function Financial() {
               <span className="text-gray-400">Faturamento do mês (NF)</span>
               <span className="text-white font-medium">{fmt(taxPreview.faturamentoMes)}</span>
             </div>
-            {taxPreview.fatorR != null && (
+            {/* Sem faturamento não há Fator R: a razão folha/receita é uma divisão por zero
+                que o taxCalc devolve como 0, e o "Anexo V" resultante seria uma etiqueta
+                inventada num mês em que não há DAS nenhum a pagar. */}
+            {taxPreview.fatorR != null && taxPreview.faturamentoMes > 0 ? (
               <div className="flex justify-between col-span-2 text-xs">
                 <span className="text-gray-500">Fator R</span>
                 <span className="text-gray-300">{(taxPreview.fatorR * 100).toFixed(1)}% → Anexo {taxPreview.anexo}</span>
               </div>
+            ) : taxPreview.faturamentoMes <= 0 && (
+              <p className="col-span-2 text-xs text-gray-500">
+                Nenhuma NF neste mês — sem DAS. Sobra o INSS sobre o pró-labore no piso.
+              </p>
             )}
             {taxPreview.itens.map((it) => (
               <div key={it.label} className="flex justify-between col-span-2 sm:col-span-1">
@@ -950,28 +968,45 @@ export default function Financial() {
             <span className="text-orange-400 text-lg font-bold">{fmt(taxPreview.total)}</span>
           </div>
           <p className="text-gray-600 text-[11px] mt-3">
-            ⚠️ Previsão estimada. Consulte seu contador. Esta reserva usa a RBT12 <em>estimada</em>
-            {' '}(faturamento médio mensal × 12, em Configurações); a apuração de <strong>/fiscal</strong> usa a
-            {' '}RBT12 real dos 12 meses e traz a memória de cálculo passo a passo — os dois números podem divergir.
+            ⚠️ Previsão estimada. Consulte seu contador. A base é o faturamento real deste mês
+            {' '}(só NFs de contrato que emite nota), e a RBT12 é esse mês × 12. A apuração de
+            {' '}<strong>/fiscal</strong> usa a RBT12 dos 12 meses reais e agrupa a NF pela data de emissão —
+            {' '}por isso os dois podem divergir. Abra a memória de cálculo para ver a conta.
           </p>
 
           {/* Memória de cálculo: o MESMO componente e os MESMOS números da tela /fiscal.
-              Como este card calcula por outra base, o aviso compara os dois totais em vez
-              de deixar o usuário descobrir a diferença sozinho. */}
-          {showMemoria && calculoMemoria && (
-            <div className="mt-4">
-              <MemoriaCalculo
-                calculo={calculoMemoria}
-                competencia={`${months[refMonth-1]}/${refYear}`}
-                aviso={Math.abs(calculoMemoria.total.calculado - taxPreview.total) >= 0.01 && (
-                  <p className="mb-4 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
-                    ⚠️ O card acima ({fmt(taxPreview.total)}) e esta memória ({fmt(calculoMemoria.total.calculado)})
-                    {' '}não batem: o card estima a RBT12 como <em>faturamento médio mensal × 12</em>, enquanto a
-                    {' '}apuração soma os 12 meses reais. Vale a apuração — é dela que saem as guias.
-                  </p>
-                )} />
-            </div>
-          )}
+              Duas coisas podem separar o card da apuração, e o aviso diz qual delas é:
+                base   — o card agrupa a NF pelo mês de referência da fatura (`month`), a
+                         apuração pela data de EMISSÃO. Uma NF de dezembro emitida em
+                         janeiro cai em meses diferentes nas duas telas.
+                RBT12  — o card anualiza o mês; a apuração soma os 12 meses reais.
+              Sem isto o usuário vê "R$ 10.540" no card e "sem faturamento nesta
+              competência" logo abaixo, e conclui que um dos dois está quebrado. */}
+          {showMemoria && calculoMemoria && (() => {
+            const baseDif = Math.abs(calculoMemoria.faturamento_tributavel - taxPreview.faturamentoMes) >= 0.01
+            const totalDif = Math.abs(calculoMemoria.total.calculado - taxPreview.total) >= 0.01
+            return (
+              <div className="mt-4">
+                <MemoriaCalculo
+                  calculo={calculoMemoria}
+                  competencia={`${months[refMonth-1]}/${refYear}`}
+                  aviso={(baseDif || totalDif) && (
+                    <p className="mb-4 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                      ⚠️ O card acima ({fmt(taxPreview.total)}) e esta memória ({fmt(calculoMemoria.total.calculado)}) não batem.
+                      {baseDif && <>
+                        {' '}A base é outra: o card soma {fmt(taxPreview.faturamentoMes)} pelo mês de referência da
+                        {' '}fatura, a apuração soma {fmt(calculoMemoria.faturamento_tributavel)} pela
+                        {' '}<strong>data de emissão</strong> da NF.
+                      </>}
+                      {!baseDif && totalDif && <>
+                        {' '}O card anualiza este mês para estimar a RBT12; a apuração soma os 12 meses reais.
+                      </>}
+                      {' '}Vale a apuração — é dela que saem as guias.
+                    </p>
+                  )} />
+              </div>
+            )
+          })()}
         </div>
       )}
 
