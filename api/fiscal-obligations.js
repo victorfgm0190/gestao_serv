@@ -46,6 +46,11 @@ const KINDS = ['das', 'inss', 'honorarios']
 // `String(date)` não é ISO — o parse caía no fallback e jogava NF de julho em junho.
 const chaveCompetencia = (inv) => ({ y: Number(inv.comp_year), m: Number(inv.comp_month) })
 
+// Fatura tributável = a que gera nota. `require_nf = false` é o contrato de cliente que
+// não pede NF (Minas): fatura, recebe e paga normalmente, mas não existe para o fisco.
+// Só `false` exclui — coluna nula (fatura anterior à migração) continua tributável.
+const temNf = (inv) => inv.require_nf !== false
+
 
 // Janela de 12 meses terminando no mês apurado (inclusive).
 function janela12(month, year) {
@@ -136,21 +141,34 @@ async function apurar(sql, req, res) {
 
   // Uma leitura só: alimenta faturamento do mês, RBT12 e rateio.
   const invoices = await sql`
-    SELECT id, client_id, invoice_value, tax_amount,
+    SELECT id, client_id, invoice_value, tax_amount, require_nf,
            EXTRACT(YEAR  FROM COALESCE(emission_date, make_date(year, month, 1)))::int AS comp_year,
            EXTRACT(MONTH FROM COALESCE(emission_date, make_date(year, month, 1)))::int AS comp_month
     FROM invoices WHERE company_id = ${company_id}`
 
-  const doMes = invoices.filter((inv) => {
+  // Contrato sem NF (cliente que não pede nota) não gera tributo: fica fora do
+  // faturamento do mês, da RBT12, do Fator R e do rateio por cliente. Continua
+  // faturado e a receber — o que sai é só o lado fiscal.
+  const tributaveis = invoices.filter(temNf)
+  const doMes = tributaveis.filter((inv) => {
+    const k = chaveCompetencia(inv)
+    return k.y === y && k.m === m
+  })
+  const semNfDoMes = invoices.filter((inv) => {
+    if (temNf(inv)) return false
     const k = chaveCompetencia(inv)
     return k.y === y && k.m === m
   })
   const faturamento = round2(doMes.reduce((s, inv) => s + num(inv.invoice_value), 0))
   if (faturamento <= 0) {
-    return res.status(404).json({ error: 'Nenhum faturamento neste mês' })
+    return res.status(404).json({
+      error: semNfDoMes.length
+        ? 'Nenhum faturamento tributável neste mês (só há faturas de contrato sem NF).'
+        : 'Nenhum faturamento neste mês',
+    })
   }
 
-  const { rbt12, folha12, meses, proporcionalizado } = acumular12(invoices, m, y, salariosMensais, params)
+  const { rbt12, folha12, meses, proporcionalizado } = acumular12(tributaveis, m, y, salariosMensais, params)
   const prolabore = proLaboreDoMes(faturamento, params)
 
   // taxCalc calcula internamente rbt12 = faturamento_medio_mensal × 12 e
@@ -275,6 +293,12 @@ async function apurar(sql, req, res) {
       base_amount: num(o.base_amount), status: o.status,
     })),
     allocations: alocadas,
+    // O que ficou de fora, explícito: um faturamento menor que o esperado tem de ter
+    // uma explicação visível, senão parece erro de apuração.
+    sem_nf: {
+      faturas: semNfDoMes.length,
+      valor: round2(semNfDoMes.reduce((s, inv) => s + num(inv.invoice_value), 0)),
+    },
   })
 }
 
@@ -539,14 +563,21 @@ async function estornarDistribuicao(sql, req, res) {
 // Faturas de uma competência. Mesma resolução de mês do apurar (emissão, com fallback
 // no par year/month da própria fatura) — duas regras diferentes jogariam a mesma NF em
 // meses distintos conforme a rota.
-async function faturasDoMes(sql, company_id, m, y) {
+//
+// `comNf` mantém o mesmo recorte do apurar: por padrão só as faturas tributáveis, para
+// que o rerateio e a redistribuição enxerguem exatamente a base que gerou a obrigação.
+// `comNf: false` inverte o filtro e devolve as excluídas — é como a tela lista o que
+// ficou de fora. `COALESCE` porque fatura anterior à migração tem a coluna nula.
+async function faturasDoMes(sql, company_id, m, y, { comNf = true } = {}) {
   return sql`
     SELECT * FROM (
       SELECT i.*,
              EXTRACT(YEAR  FROM COALESCE(i.emission_date, make_date(i.year, i.month, 1)))::int AS comp_year,
              EXTRACT(MONTH FROM COALESCE(i.emission_date, make_date(i.year, i.month, 1)))::int AS comp_month
       FROM invoices i WHERE i.company_id = ${company_id}
-    ) x WHERE x.comp_year = ${y} AND x.comp_month = ${m}
+    ) x
+    WHERE x.comp_year = ${y} AND x.comp_month = ${m}
+      AND COALESCE(x.require_nf, true) = ${comNf}
     ORDER BY x.id`
 }
 
@@ -632,7 +663,20 @@ async function recalcular(sql, req, res, raw = false) {
 
   const { doMes, alocacoes, payables } = await contextoRedistribuicao(sql, company_id, m, y)
   const alvo = invoice_id ? doMes.filter((i) => Number(i.id) === Number(invoice_id)) : doMes
-  if (!alvo.length) return responder(404, { error: 'Nenhuma fatura nesta competência' })
+  if (!alvo.length) {
+    // Fatura existe, mas é de contrato sem NF: não tem imposto real para reconciliar.
+    // Sem esta mensagem o erro sairia como "não existe fatura", que é falso.
+    if (invoice_id) {
+      const fora = await sql`
+        SELECT id FROM invoices WHERE id = ${invoice_id} AND require_nf = false LIMIT 1`
+      if (fora.length) {
+        return responder(400, {
+          error: 'Fatura de contrato sem NF: fica fora da apuração fiscal, então não há imposto real a redistribuir.',
+        })
+      }
+    }
+    return responder(404, { error: 'Nenhuma fatura nesta competência' })
+  }
 
   // Sem apuração não há imposto real: recalcular aqui zeraria o custo fiscal e
   // devolveria ao Victor a provisão inteira — o oposto do que se quer.
@@ -807,6 +851,25 @@ export default async function handler(req, res) {
       for (const a of allocations) (byOb[a.obligation_id] ||= []).push(a)
       for (const o of obligations) o.allocations = byOb[o.id] || []
 
+      // Faturas de contrato sem NF na competência. Vão para a tela como nota de rodapé
+      // da apuração: elas explicam a distância entre o que o mês faturou e o que o mês
+      // tributou. Independem de já ter havido apuração.
+      let semNf = []
+      if (month) {
+        const fora = await faturasDoMes(sql, company_id, Number(month), Number(year), { comNf: false })
+        if (fora.length) {
+          const nomes = await sql`
+            SELECT id, name FROM clients WHERE id = ANY(${[...new Set(fora.map((i) => i.client_id))]})`
+          const porId = new Map(nomes.map((c) => [Number(c.id), c.name]))
+          semNf = fora.map((i) => ({
+            invoice_id: i.id,
+            client_id: i.client_id,
+            client_name: porId.get(Number(i.client_id)) || 'Cliente',
+            invoice_value: num(i.invoice_value),
+          }))
+        }
+      }
+
       // Prévia da redistribuição do mês (nunca grava). É o que alimenta o painel de
       // etapas da tela: a fatura é a ETAPA 1, o rateio corrente é a 2 ou a 3.
       let redistribuicao = null
@@ -831,7 +894,7 @@ export default async function handler(req, res) {
           desatualizado: Math.abs(faturamentoAtual - faturamentoApurado) >= 0.01,
         }
       }
-      return res.status(200).json({ data: obligations, redistribuicao })
+      return res.status(200).json({ data: obligations, redistribuicao, sem_nf: semNf })
     }
 
     if (req.method === 'POST') {

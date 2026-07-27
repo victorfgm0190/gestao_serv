@@ -57,6 +57,9 @@ export default function FiscalObligations() {
   // Prévia da redistribuição (antes/depois do que o Victor recebe). Vem pronta do GET —
   // o backend é quem sabe comparar a provisão da fatura com o imposto real apurado.
   const [redistrib, setRedistrib] = useState(null)
+  // Faturas de contrato sem NF na competência: faturaram, mas não geram tributo.
+  // Ficam à vista porque explicam a diferença entre o que o mês faturou e o que tributou.
+  const [semNf, setSemNf] = useState([])
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState('')
@@ -74,6 +77,7 @@ export default function FiscalObligations() {
       const data = res.ok ? await res.json() : {}
       setObligations(data.data || [])
       setRedistrib(data.redistribuicao || null)
+      setSemNf(data.sem_nf || [])
     } catch (e) { console.error(e); setErro('Falha ao carregar a apuração.') }
     finally { setLoading(false) }
   }
@@ -98,7 +102,8 @@ export default function FiscalObligations() {
   const apurar = () => acao('apurar', '/api/fiscal-obligations?action=apurar',
     { company_id: activeCompany.id, month, year },
     (d) => `Apurado: DAS ${fmt(d.apuracao.das)} · INSS ${fmt(d.apuracao.inss)} · Honorários ${fmt(d.apuracao.honorarios)}. ` +
-           `Anexo ${d.apuracao.anexo} (Fator R ${pct(d.apuracao.fatorR)}), ${d.allocations} rateios por cliente.`)
+           `Anexo ${d.apuracao.anexo} (Fator R ${pct(d.apuracao.fatorR)}), ${d.allocations} rateios por cliente.` +
+           (d.sem_nf?.faturas ? ` ${d.sem_nf.faturas} fatura(s) de contrato sem NF (${fmt(d.sem_nf.valor)}) ficaram fora.` : ''))
 
   const distribuir = (incluir_previsto) => acao('distribuir', '/api/fiscal-obligations?action=distribuir',
     { company_id: activeCompany.id, month, year, incluir_previsto },
@@ -249,6 +254,21 @@ export default function FiscalObligations() {
 
       {msg && <p className="mb-4 text-green-300 text-sm bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">✅ {msg}</p>}
       {erro && <p className="mb-4 text-red-300 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">⚠️ {erro}</p>}
+
+      {/* Faturado mas não tributado. Sem isto à vista, um DAS menor do que o faturamento
+          sugere pareceria erro de apuração em vez da regra do contrato sem NF. */}
+      {semNf.length > 0 && (
+        <div className="mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+          <p className="text-amber-300 text-xs font-medium">
+            Fora da apuração — contrato sem NF: {fmt(semNf.reduce((s, i) => s + i.invoice_value, 0))}
+            {' '}em {semNf.length} fatura(s)
+          </p>
+          <p className="text-amber-200/60 text-[11px] mt-1">
+            {semNf.map((i) => `${i.client_name} ${fmt(i.invoice_value)}`).join(' · ')} — não entram no DAS,
+            no INSS, no Fator R nem no rateio por cliente. Continuam em A Receber normalmente.
+          </p>
+        </div>
+      )}
 
       {loading ? (
         <p className="text-gray-500 text-sm">Carregando...</p>

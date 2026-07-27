@@ -7,6 +7,9 @@ const EMPTY_FORM = {
   client_id: '', name: '', cnpj: '', billing_type: 'mensal', contract_value: '', victor_fixed: '',
   remainder_victor_pct: '50', remainder_fabricio_pct: '50',
   has_tax: false, tax_percentage: '', tax_client_percent: '', tax_client_nf: '', notes: '',
+  // Emite NF? Desmarcado tira o contrato da apuração fiscal (DAS/INSS/Fator R e rateio);
+  // o faturamento e o "A Receber" seguem iguais. Padrão marcado.
+  require_nf: true,
   deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', displacement_hours: '', financial_rule_id: '',
   projeto_split_mode: 'direct_split', projeto_victor_pct: '', projeto_victor_fixed: '', projeto_expenses: '',
 }
@@ -189,7 +192,7 @@ export default function Contracts() {
     const base = parseFloat(c.contract_value) || 0
     const pct = parseFloat(c.tax_client_percent) || 0
     const nf = base > 0 && pct > 0 && pct < 100 ? (base / (1 - pct / 100)).toFixed(2) : ''
-    setForm({ client_id: c.client_id, name: c.name, cnpj: c.cnpj || '', billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', tax_client_percent: c.tax_client_percent || '', tax_client_nf: nf, notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', displacement_hours: c.displacement_hours || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '', projeto_split_mode: c.projeto_split_mode || 'direct_split', projeto_victor_pct: c.projeto_victor_pct || '', projeto_victor_fixed: c.projeto_victor_fixed || '', projeto_expenses: c.projeto_expenses || '' })
+    setForm({ client_id: c.client_id, name: c.name, cnpj: c.cnpj || '', billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, require_nf: c.require_nf !== false, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', tax_client_percent: c.tax_client_percent || '', tax_client_nf: nf, notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', displacement_hours: c.displacement_hours || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '', projeto_split_mode: c.projeto_split_mode || 'direct_split', projeto_victor_pct: c.projeto_victor_pct || '', projeto_victor_fixed: c.projeto_victor_fixed || '', projeto_expenses: c.projeto_expenses || '' })
     loadRulesForClient(c.client_id)
     setDeletedInstallments([])
     if ((c.billing_type || 'mensal') === 'por_projeto') loadInstallments(c.id)
@@ -278,6 +281,7 @@ export default function Contracts() {
                     : <span>Victor fixo: <span className="text-blue-400">{fmt(c.victor_fixed)}</span></span>}
                   <span>Restante: <span className="text-green-400">{c.remainder_victor_pct}% V / {c.remainder_fabricio_pct}% F</span></span>
                   {c.has_tax && <span>Imposto: <span className="text-red-400">{c.tax_percentage}%</span></span>}
+                  {c.require_nf === false && <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">Sem NF — fora da apuração</span>}
                   <span>Deslocamento: <span className="text-gray-300">{DESLOC_LABEL[c.deslocamento_tipo] || DESLOC_LABEL.nao_cobrado}{(c.deslocamento_tipo === 'hora' || c.deslocamento_tipo === 'hora_despesas') && parseFloat(c.deslocamento_valor_hora) > 0 ? ` (${fmt(c.deslocamento_valor_hora)}/h)` : ''}</span></span>
                 </div>
                 {parseFloat(c.tax_client_percent) > 0 && (() => {
@@ -518,6 +522,17 @@ export default function Contracts() {
                   <label className="text-xs text-gray-400 font-medium">% Fabrício</label>
                   <input placeholder="% Fabrício restante" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
                 </div>
+              </div>
+              <div className="bg-gray-800/50 rounded-xl p-3">
+                <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+                  <input type="checkbox" checked={form.require_nf} onChange={e=>setForm(f=>({...f,require_nf:e.target.checked}))} className="rounded"/>
+                  Requer NF?
+                </label>
+                <p className="text-gray-500 text-[11px] mt-1">
+                  {form.require_nf
+                    ? 'O faturamento deste contrato entra na apuração fiscal (DAS, INSS, Fator R e rateio por cliente).'
+                    : 'Sem NF: fica FORA da apuração fiscal — não entra no DAS, no INSS, no Fator R nem no rateio. Continua faturando e aparecendo em A Receber.'}
+                </p>
               </div>
               <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.has_tax} onChange={e=>setForm(f=>({...f,has_tax:e.target.checked}))} className="rounded"/>

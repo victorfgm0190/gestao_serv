@@ -161,6 +161,19 @@ export function calcProjeto(contract, installment, opts = {}) {
   }
 }
 
+// A fatura emite nota? Herdado do contrato no momento da emissão e CONGELADO na
+// fatura: `require_nf` é dado de competência, e desligar a NF de um contrato hoje não
+// pode reescrever notas já emitidas (o mês delas já foi apurado com elas dentro).
+// Fatura sem contrato (modelo legado) segue exigindo NF — o default seguro.
+// Quem lê isto é api/fiscal-obligations.js: fatura com `false` fica fora de DAS, INSS,
+// Fator R, RBT12 e rateio, mas continua em "A Receber" e nos payables normalmente.
+async function requireNfDoContrato(sql, contract, contract_id) {
+  if (contract) return contract.require_nf !== false
+  if (!contract_id) return true
+  const rows = await sql`SELECT require_nf FROM contracts WHERE id = ${contract_id} LIMIT 1`
+  return rows[0]?.require_nf !== false
+}
+
 // Carrega contrato + parcela para uma fatura por projeto. Retorna { error } se algo falhar.
 async function loadProjeto(sql, contract_id, installment_id) {
   if (!installment_id) return { error: 'Selecione a parcela a faturar.' }
@@ -187,16 +200,19 @@ export default async function handler(req, res) {
     const { company_id, client_id, contract_id, month, year, invoice_number, billing_type, time_entry_ids, installment_id, notes, tax_percentage_used, tax_client_percent_used, payment_date, emission_date } = req.body
     try {
       let calc
+      let contrato = null
       if (billing_type === 'projeto') {
         const loaded = await loadProjeto(sql, contract_id, installment_id)
         if (loaded.error) return res.status(400).json({ error: loaded.error })
         if (loaded.installment.invoice_id) {
           return res.status(400).json({ error: 'Esta parcela já foi faturada.' })
         }
+        contrato = loaded.contract
         calc = calcProjeto(loaded.contract, loaded.installment, { tax_percentage_used, tax_client_percent_used })
       } else if (billing_type === 'contract') {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
+        contrato = contracts[0]
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
         const entries = await sql`SELECT * FROM time_entries WHERE id = ANY(${time_entry_ids}::int[])`
@@ -205,6 +221,7 @@ export default async function handler(req, res) {
         calc = calcAgenda(entries, rules[0], { tax_percentage_used, tax_client_percent_used })
       }
 
+      const require_nf = await requireNfDoContrato(sql, contrato, contract_id)
       const { pmonth, pyear } = paymentPeriod(payment_date, month, year)
 
       // Os ids são reservados antes das escritas. Motivo: a fatura precisa do
@@ -222,8 +239,8 @@ export default async function handler(req, res) {
 
       const writes = [
         sql`
-          INSERT INTO invoices (id, company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date, emission_date, receivable_id)
-          VALUES (${invId}, ${company_id}, ${client_id}, ${contract_id||null}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null}, ${emission_date||null}, ${recId})
+          INSERT INTO invoices (id, company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date, emission_date, receivable_id, require_nf)
+          VALUES (${invId}, ${company_id}, ${client_id}, ${contract_id||null}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null}, ${emission_date||null}, ${recId}, ${require_nf})
           RETURNING *
         `,
         sql`
@@ -325,6 +342,7 @@ export default async function handler(req, res) {
       }
 
       let calc
+      let contrato = null
       if (billing_type === 'projeto') {
         // Sem installment_id no body, recalcula em cima da parcela já vinculada à fatura.
         let instId = installment_id
@@ -334,10 +352,12 @@ export default async function handler(req, res) {
         }
         const loaded = await loadProjeto(sql, contract_id || inv.contract_id, instId)
         if (loaded.error) return res.status(400).json({ error: loaded.error })
+        contrato = loaded.contract
         calc = calcProjeto(loaded.contract, loaded.installment, { tax_percentage_used, tax_client_percent_used })
       } else if (billing_type === 'contract') {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id || inv.contract_id} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
+        contrato = contracts[0]
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
         const ids = time_entry_ids || inv.time_entry_ids
@@ -352,10 +372,14 @@ export default async function handler(req, res) {
       // emission_date: mesma regra — só sobrescreve se a chave veio no body.
       const newEmissionDate = emission_date !== undefined ? (emission_date || null) : inv.emission_date
       const { pmonth, pyear } = paymentPeriod(newPaymentDate, inv.month, inv.year)
+      // A fatura só é editável enquanto pendente, então reler o contrato aqui é a
+      // última chance de a nota pegar a regra de NF vigente antes de virar histórico.
+      const require_nf = await requireNfDoContrato(sql, contrato, contract_id || inv.contract_id)
 
       const updated = await sql`
         UPDATE invoices SET
           invoice_number = ${invoice_number || null},
+          require_nf = ${require_nf},
           invoice_value = ${calc.invoice_value},
           contract_value = ${calc.contract_value},
           tax_amount = ${calc.tax_amount},

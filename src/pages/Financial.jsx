@@ -160,8 +160,10 @@ export default function Financial() {
       ])
       setCompanySettings((await setRes.json()).data || null)
       const invoices = (await invRes.json()).invoices || []
+      // Fatura de contrato sem NF não gera tributo — mesmo recorte da apuração em
+      // api/fiscal-obligations.js. Somá-la aqui inflaria a previsão de DAS.
       const total = invoices
-        .filter(i => Number(i.month) === Number(rm))
+        .filter(i => Number(i.month) === Number(rm) && i.require_nf !== false)
         .reduce((s, i) => s + (parseFloat(i.invoice_value) || 0), 0)
       setMonthFaturamento(total)
     } catch (e) { console.error(e) }

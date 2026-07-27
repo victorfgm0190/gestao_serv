@@ -120,7 +120,7 @@ ORDER BY table_name, ordinal_position;
 `victor_fixed` numeric · `remainder_victor_pct` numeric · `remainder_fabricio_pct` numeric ·
 `has_tax` bool · `tax_percentage` numeric · `is_active` bool · `notes` text · `created_at` timestamp ·
 `deslocamento_tipo` varchar (`nao_cobrado`|`hora`|`hora_despesas`) · `deslocamento_valor_hora` numeric ·
-`financial_rule_id` int · `tax_client_percent` numeric
+`financial_rule_id` int · `tax_client_percent` numeric · `require_nf` bool NOT NULL default true
 
 ### `contract_months`
 `id` int · `contract_id` int · `company_id` int · `client_id` int · `month` int · `year` int ·
@@ -141,7 +141,8 @@ ORDER BY table_name, ordinal_position;
 `tax_amount` numeric (imposto real) · `victor_service` numeric · `victor_profit` numeric ·
 `victor_tax_diff` numeric (diff NF → Victor) · `victor_total` numeric · `fabricio_total` numeric ·
 `billing_type` varchar (`contract`|`agenda`) · `time_entry_ids` int[] · `receivable_id` int ·
-`status` varchar (`pendente`|`recebido`) · `notes` text · `created_at` timestamp
+`status` varchar (`pendente`|`recebido`) · `notes` text · `created_at` timestamp ·
+`require_nf` bool NOT NULL default true
 
 ### `receivables`
 `id` int · `company_id` int · `client_id` int · `month` int · `year` int · `description` varchar ·
@@ -329,6 +330,27 @@ Hook: `src/hooks/useNotifications` (notificações; usado no Layout).
 ---
 
 ## 6. Regras de negócio financeiro
+
+### Contrato sem NF (`require_nf = false`) — 2026-07-27
+
+Cliente que não pede nota (hoje só a **Minas Distribuicao**, contrato 4) fatura, recebe e
+gera payables como qualquer outro — mas **não existe para o fisco**. A fatura herda
+`require_nf` do contrato **na emissão** e o congela: é dado de competência, e desligar a NF
+de um contrato hoje não pode reescrever notas já emitidas e apuradas.
+
+Fica de fora de tudo que é fiscal, sempre pelo mesmo predicado (`temNf`, só `false` exclui —
+coluna nula é tributável):
+- `apurar` — faturamento do mês, RBT12, folha do Fator R e rateio por cliente;
+- `faturasDoMes({ comNf })` — a base do rerateio (`lancar-guia`, `corrigir-escritorio`) e da
+  redistribuição, para que o rateio enxergue exatamente a base que gerou a obrigação;
+- previsão de impostos (`Financial.jsx`) e `faturamento_medio_mensal` (`Billing.jsx`).
+
+`?action=distribuir` **não** foi filtrado de propósito: ele consome saldo dos payables do
+Victor para quitar a guia, o que é origem de caixa, não incidência de tributo — o payable da
+Minas continua elegível. Mudar isso é decisão de negócio.
+
+A tela `/fiscal` mostra o que ficou de fora (`sem_nf` no GET), para que um DAS menor que o
+faturamento do mês não pareça erro de apuração.
 
 ### Dois tipos de imposto (distintos!)
 1. **`tax_percentage`** — imposto **real** pago por Victor (ex.: 7%).

@@ -214,7 +214,11 @@ export default function Billing() {
     try {
       const res = await fetch(`/api/invoices?company_id=1&year=${y}`)
       const list = (await res.json()).invoices || []
+      // Só faturas com NF: `faturamento_medio_mensal` é a base da RBT12 e da previsão
+      // de imposto, e contrato sem NF não é receita tributável. Mesmo recorte da
+      // apuração em api/fiscal-obligations.js.
       const faturamento_mes = list.reduce((s, inv) => {
+        if (inv.require_nf === false) return s
         const ym = invEmissionYM(inv)
         return ym.y === y && ym.m === m ? s + (parseFloat(inv.invoice_value) || 0) : s
       }, 0)
@@ -514,6 +518,11 @@ export default function Billing() {
                     {inv.invoice_number && <span className="text-gray-500 text-xs">NF: {inv.invoice_number}</span>}
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[inv.status]||'bg-gray-700 text-gray-400'}`}>{inv.status}</span>
                     <span className="text-gray-600 text-xs">{inv.billing_type==='contract'?'📄 Contrato':inv.billing_type==='projeto'?'📦 Projeto':'📅 Agenda'}</span>
+                    {inv.require_nf === false && (
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/15 text-amber-300 border border-amber-500/30" title="Contrato sem NF: não entra no DAS, INSS, Fator R nem no rateio por cliente.">
+                        Sem NF — fora da apuração
+                      </span>
+                    )}
                   </div>
                   {inv.contract_name && <p className="text-gray-400 text-sm mb-2">{inv.contract_name}</p>}
                   <div className="bg-gray-800 rounded-lg p-3 space-y-1 text-xs">

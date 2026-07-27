@@ -8,6 +8,11 @@ function splitPct(value, fallback) {
   return isNaN(n) ? fallback : n
 }
 
+// Emite nota? Só `false` explícito desliga — cliente antigo que não manda a chave
+// (ou manda '' de um form) continua exigindo NF, que é o comportamento seguro:
+// contrato sem NF sai inteiro da apuração fiscal.
+const requerNf = (v) => !(v === false || v === 'false' || v === 0 || v === '0')
+
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -35,11 +40,11 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id, projeto_split_mode, projeto_victor_pct, projeto_victor_fixed, projeto_expenses } = req.body
+    const { company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id, projeto_split_mode, projeto_victor_pct, projeto_victor_fixed, projeto_expenses, require_nf } = req.body
     try {
       const result = await sql`
-        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id, projeto_split_mode, projeto_victor_pct, projeto_victor_fixed, projeto_expenses)
-        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value || 0}, ${victor_fixed || 0}, ${splitPct(remainder_victor_pct, 50)}, ${splitPct(remainder_fabricio_pct, 50)}, ${has_tax || false}, ${tax_percentage || null}, ${tax_client_percent || 0}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0}, ${displacement_hours || 0}, ${cnpj || null}, ${financial_rule_id || null}, ${projeto_split_mode || 'direct_split'}, ${projeto_victor_pct || 0}, ${projeto_victor_fixed || 0}, ${projeto_expenses || 0})
+        INSERT INTO contracts (company_id, client_id, name, billing_type, contract_value, victor_fixed, remainder_victor_pct, remainder_fabricio_pct, has_tax, tax_percentage, tax_client_percent, notes, deslocamento_tipo, deslocamento_valor_hora, displacement_hours, cnpj, financial_rule_id, projeto_split_mode, projeto_victor_pct, projeto_victor_fixed, projeto_expenses, require_nf)
+        VALUES (${company_id}, ${client_id}, ${name}, ${billing_type || 'contract'}, ${contract_value || 0}, ${victor_fixed || 0}, ${splitPct(remainder_victor_pct, 50)}, ${splitPct(remainder_fabricio_pct, 50)}, ${has_tax || false}, ${tax_percentage || null}, ${tax_client_percent || 0}, ${notes || null}, ${deslocamento_tipo || 'nao_cobrado'}, ${deslocamento_valor_hora || 0}, ${displacement_hours || 0}, ${cnpj || null}, ${financial_rule_id || null}, ${projeto_split_mode || 'direct_split'}, ${projeto_victor_pct || 0}, ${projeto_victor_fixed || 0}, ${projeto_expenses || 0}, ${requerNf(require_nf)})
         RETURNING *
       `
       return res.status(201).json({ contract: result[0] })
@@ -72,6 +77,9 @@ export default async function handler(req, res) {
           projeto_victor_pct = ${fields.projeto_victor_pct || 0},
           projeto_victor_fixed = ${fields.projeto_victor_fixed || 0},
           projeto_expenses = ${fields.projeto_expenses || 0},
+          -- COALESCE preserva o valor atual quando a chave não veio no corpo: um PATCH
+          -- de outra tela (ou de um cliente antigo) não pode religar a NF em silêncio.
+          require_nf = COALESCE(${fields.require_nf === undefined ? null : requerNf(fields.require_nf)}::boolean, require_nf),
           notes = ${fields.notes}
         WHERE id = ${id}
         RETURNING *
