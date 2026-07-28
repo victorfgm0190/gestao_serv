@@ -1,6 +1,18 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
+import { apurarCompetencia } from './fiscal-obligations.js'
+
+// Competência fiscal de uma fatura: a data de EMISSÃO da nota, não o mês de referência.
+// Mesmo critério de chaveCompetencia() em api/fiscal-obligations.js — uma NF de dezembro
+// emitida em janeiro é tributada em janeiro.
+function competenciaDaFatura(inv) {
+  if (inv.emission_date) {
+    const d = new Date(inv.emission_date)
+    return { m: d.getUTCMonth() + 1, y: d.getUTCFullYear() }
+  }
+  return { m: Number(inv.month), y: Number(inv.year) }
+}
 
 const round = (n) => parseFloat((Number(n) || 0).toFixed(2))
 
@@ -256,7 +268,31 @@ export default async function handler(req, res) {
 
       const results = await sql.transaction(writes)
 
-      return res.status(201).json({ invoice: results[0][0], receivable: results[1][0], breakdown: calc })
+      // A NF entrou: a competência dela precisa ser reapurada com as tabelas reais
+      // (DAS pela alíquota efetiva do Simples, INSS sobre o pró-labore, honorários),
+      // e as linhas fiscais da aba Pagar Victor, ressincronizadas.
+      //
+      // A apuração é do MÊS INTEIRO, não desta nota. É a única forma correta: o DAS
+      // depende do faturamento do mês e da RBT12, o INSS tem piso mensal e os honorários
+      // são um valor fechado por mês. Calcular por NF faria duas notas no mesmo mês
+      // gerarem dois pisos de INSS e dois honorários, e deixaria o DAS da primeira
+      // desatualizado assim que a segunda fosse emitida.
+      //
+      // Best-effort de propósito: faturar não pode falhar porque a apuração recusou.
+      // O caso normal de recusa é 409 (mês já distribuído nos payables do Victor), que
+      // exige estorno consciente — a fatura fica gravada e o aviso volta na resposta.
+      const comp = competenciaDaFatura(results[0][0])
+      let apuracao = null
+      try {
+        const r = await apurarCompetencia(sql, company_id, comp.m, comp.y)
+        apuracao = r.status === 200
+          ? { ok: true, competencia: comp, ...r.payload.apuracao, linhas_fiscais: r.payload.linhas_fiscais }
+          : { ok: false, competencia: comp, error: r.payload?.error || 'Não foi possível reapurar a competência.' }
+      } catch (e) {
+        apuracao = { ok: false, competencia: comp, error: e.message }
+      }
+
+      return res.status(201).json({ invoice: results[0][0], receivable: results[1][0], breakdown: calc, apuracao })
     } catch (error) {
       return res.status(500).json({ error: error.message })
     }

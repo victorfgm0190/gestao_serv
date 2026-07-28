@@ -161,6 +161,13 @@ async function estornarPeriodo(sql, req, res) {
     await sql`DELETE FROM payable_payments WHERE payable_type = 'victor' AND payable_id = ANY(${pvIds})`
     await sql`DELETE FROM payables_victor WHERE id = ANY(${pvIds})`
   }
+  // Linhas fiscais são derivadas de fiscal_obligations, que a etapa 1 acabou de apagar.
+  // Não são lançamento manual do Victor (esses têm origin NULL/'manual' e são preservados):
+  // sem isto sobrariam linhas de DAS/INSS na aba apontando para uma apuração que não existe mais.
+  await sql`
+    DELETE FROM payables_victor
+    WHERE company_id = ${cid} AND year = ${y} AND month BETWEEN ${mf} AND ${mt}
+      AND origin = 'fiscal'`
   if (pfIds.length) {
     await sql`DELETE FROM payable_payments WHERE payable_type = 'fabricio' AND payable_id = ANY(${pfIds})`
     await sql`DELETE FROM payables_fabricio WHERE id = ANY(${pfIds})`

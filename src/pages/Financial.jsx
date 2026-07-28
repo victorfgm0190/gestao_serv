@@ -4,6 +4,7 @@ import { todayBR } from '../lib/dateUtils'
 import CopyButton from '../components/CopyButton'
 import MemoriaCalculo from '../components/MemoriaCalculo'
 import { calcularImpostos } from '../../lib/taxCalc.js'
+import { ORDEM_KIND as KIND_ORDEM } from '../../lib/fiscal-lines.js'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const STATUS_COLORS = {
@@ -684,10 +685,16 @@ export default function Financial() {
   const currentData = filterStatus === 'all'
     ? nonZeroFiltered
     : nonZeroFiltered.filter(r => filterStatus === 'pendente_parcial' ? (r.status === 'pendente' || r.status === 'parcial') : r.status === filterStatus)
+  // Linhas fiscais (origin='fiscal') são o espelho de fiscal_obligations: o que o Victor
+  // DEVE, não o que tem a receber. Saem da lista de pagamento e dos totais da aba —
+  // mesmo recorte do candidatosDisponiveis() no backend — e ganham bloco próprio.
+  const isFiscalLine = (r) => r.origin === 'fiscal'
+  const fiscalData = tab === 'victor' ? currentData.filter(isFiscalLine) : []
+  const payData = currentData.filter(r => !isFiscalLine(r))
   // Disponível = manual (sem recebível) ou recebível do cliente já pago/parcial. Pendente = aguardando.
   const isAvailable = (r) => !r.receivable_status || r.receivable_status === 'pago' || r.receivable_status === 'parcial'
-  const availableData = isPayTab ? currentData.filter(isAvailable) : currentData
-  const waitingData = isPayTab ? currentData.filter(r => !isAvailable(r)) : []
+  const availableData = isPayTab ? payData.filter(isAvailable) : payData
+  const waitingData = isPayTab ? payData.filter(r => !isAvailable(r)) : []
   const previewTotal = previewData.reduce((s, r) => s + (parseFloat(r.amount || r.total_amount) || 0), 0)
   const victorCatTotal = victorCategoryTotal(victorCats)
   const receiveTotal = receiveCategoryTotal(receiveCats)
@@ -727,7 +734,10 @@ export default function Financial() {
   // Fonte da distribuição: só payables disponíveis (recebível do cliente pago/parcial ou manual).
   // No modo edição, restaura os saldos consumidos pela sessão que será estornada.
   const distSource = (() => {
-    const availablePending = pendingVictor.filter(isAvailable)
+    // O `!isFiscalLine` espelha o filtro do candidatosDisponiveis(): sem ele a prévia da
+    // distribuição mostraria a linha do DAS como saldo consumível e não bateria com o
+    // que o backend faz de verdade.
+    const availablePending = pendingVictor.filter(r => isAvailable(r) && !isFiscalLine(r))
     if (!editSession || !editSession.affected.length) return availablePending
     const map = new Map()
     for (const r of availablePending) map.set(r.id, { ...r })
@@ -1199,6 +1209,47 @@ export default function Financial() {
         <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">📂</p><p>Nenhum registro encontrado.</p></div>
       ) : (
         <div className="space-y-6">
+          {/* Obrigações fiscais da competência — espelho de fiscal_obligations.
+              Ordem: mês DESC, depois pró-labore → DAS → INSS → escritório (KIND_ORDEM).
+              Não entram nos totais da aba nem na distribuição: são o que o Victor DEVE.
+              A quitação é em /fiscal, que é o único lugar que registra fiscal_payments —
+              dois canais de pagamento para a mesma guia fariam um dos dois mentir. */}
+          {fiscalData.length > 0 && (
+            <div className="space-y-2 bg-gray-900/40 border border-orange-500/20 rounded-xl p-3">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <p className="text-xs font-medium uppercase tracking-wider text-orange-400/80">🏛️ Obrigações fiscais</p>
+                <span className="text-xs text-gray-500">
+                  Em aberto: <span className="text-orange-400 font-medium">
+                    {fmt(fiscalData.reduce((s, r) => s + Math.max(saldoOf(r), 0), 0))}
+                  </span>
+                </span>
+              </div>
+              <p className="text-gray-600 text-[11px] -mt-1">
+                O que a empresa deve na competência. Fora dos totais desta aba — quitação em <strong>/fiscal</strong>.
+              </p>
+              {[...fiscalData]
+                .sort((a, b) => {
+                  const ka = a.year * 100 + a.month, kb = b.year * 100 + b.month
+                  if (ka !== kb) return kb - ka                                    // mês DESC
+                  return KIND_ORDEM.indexOf(a.kind) - KIND_ORDEM.indexOf(b.kind)   // kind ASC
+                })
+                .map(item => (
+                  <div key={item.id} className="flex items-center justify-between gap-3 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2">
+                    <div className="flex items-center gap-2 flex-wrap min-w-0">
+                      <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
+                      <span className="text-white text-sm truncate">{item.description}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status] || 'bg-gray-700 text-gray-400'}`}>{item.status}</span>
+                    </div>
+                    <div className="flex items-baseline gap-3 shrink-0 text-xs">
+                      {parseFloat(item.paid_amount) > 0 && (
+                        <span className="text-gray-500">Pago: <span className="text-green-400">{fmt(item.paid_amount)}</span></span>
+                      )}
+                      <span className="text-gray-200 font-mono text-sm">{fmt(item.total_amount)}</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          )}
           {availableData.length > 0 && (
             <div className="space-y-3">
               {isPayTab && (waitingData.length > 0 || previewData.length > 0) && (

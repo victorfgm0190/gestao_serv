@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { PAID_EPSILON, remainingBalance } from '../lib/payment-status.js'
 import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
+import { sincronizarLinhasFiscais } from '../lib/fiscal-lines.js'
 
 // QUITAÇÃO DE OBRIGAÇÕES FISCAIS — pagamentos da guia (DAS/INSS/honorários).
 //
@@ -53,6 +54,10 @@ async function pagar(sql, req, res) {
   ])
 
   const obAtualizada = atualizado[0]
+  // O espelho da obrigação na aba Pagar Victor acompanha o pagamento. Fora da
+  // transação de propósito: é derivado, e falhar aqui não pode desfazer a quitação.
+  await sincronizarLinhasFiscais(sql, obAtualizada.company_id, obAtualizada.month, obAtualizada.year)
+
   return res.status(200).json({
     obligation: obAtualizada,
     payment: inserido[0],
@@ -82,6 +87,8 @@ async function estornar(sql, req, res) {
   ])
 
   const ob = atualizado[0]
+  await sincronizarLinhasFiscais(sql, ob.company_id, ob.month, ob.year)
+
   const total = valorDevido(ob)
   return res.status(200).json({
     obligation: ob,

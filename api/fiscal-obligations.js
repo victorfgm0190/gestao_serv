@@ -5,6 +5,7 @@ import {
   faixaFor, tabelaDoAnexo, FATOR_R_MIN, INSS_RATE, INSS_TETO,
 } from '../lib/taxCalc.js'
 import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
+import { sincronizarLinhasFiscais } from '../lib/fiscal-lines.js'
 import { ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
 import { recalcularInvoice, consolidar } from '../lib/fiscal-redistribution.js'
 
@@ -362,24 +363,30 @@ async function apurar(sql, req, res) {
     rbt12, folha12, meses, proporcionalizado,
   } = await calcularApuracao(sql, company_id, m, y)
 
-  if (faturamento <= 0) {
-    return res.status(404).json({
-      error: semNfDoMes.length
-        ? 'Nenhum faturamento tributável neste mês (só há faturas de contrato sem NF).'
-        : 'Nenhum faturamento neste mês',
-    })
-  }
+  // Mês sem faturamento tributável NÃO é mês sem obrigação. O DAS some (incide sobre
+  // receita que não houve), mas o INSS continua devido: o pró-labore cai no piso e o
+  // `proLaboreDoMes` já o devolve, então há 11% sobre o piso a recolher. O escritório
+  // cobra os honorários do mesmo jeito.
+  //
+  // Até 2026-07-28 esta função respondia 404 aqui e não gravava nada — um mês seco
+  // simplesmente não existia para o sistema, escondendo dinheiro realmente devido
+  // (com o piso de R$ 1.621: INSS R$ 178,31 + honorários R$ 150 = R$ 328,31/mês).
+  const semFaturamento = faturamento <= 0
 
   // Uma obrigação por tipo. base_amount/rate_used diferem por tipo: o DAS incide
   // sobre o faturamento, o INSS sobre o pró-labore, honorários são valor fechado.
   const valores = {
     das: { amount: das, base: faturamento, rate: impostos.aliquotaEfetiva ?? null },
-    inss: { amount: inss, base: prolabore, rate: 0.11 },
+    inss: { amount: inss, base: prolabore, rate: INSS_RATE },
     honorarios: { amount: honorarios, base: null, rate: null },
   }
+  // Sem faturamento o DAS não é gravado como R$ 0,00 — ele não existe. Uma obrigação
+  // zerada nasceria com status 'pago' (ver statusObrigacao) e poluiria a tela com uma
+  // guia que nunca houve.
+  const kindsDoMes = semFaturamento ? KINDS.filter((k) => k !== 'das') : KINDS
 
   const upserts = []
-  for (const kind of KINDS) {
+  for (const kind of kindsDoMes) {
     const v = valores[kind]
     const row = (await sql`
       INSERT INTO fiscal_obligations
@@ -395,6 +402,20 @@ async function apurar(sql, req, res) {
         updated_at       = now()
       RETURNING *`)[0]
     upserts.push(row)
+  }
+
+  // O mês passou a não ter faturamento (a única NF foi excluída ou editada para outra
+  // competência): o DAS apurado antes tem de sair, senão fica cobrando imposto sobre
+  // receita que já não existe. Só se ninguém mexeu nele — guia lançada ou pagamento
+  // registrado é decisão humana e não se apaga por reapuração.
+  let dasRemovido = false
+  if (semFaturamento) {
+    const apagados = await sql`
+      DELETE FROM fiscal_obligations
+      WHERE company_id = ${company_id} AND month = ${m} AND year = ${y} AND kind = 'das'
+        AND amount_actual IS NULL AND COALESCE(paid_amount, 0) = 0
+      RETURNING id`
+    dasRemovido = apagados.length > 0
   }
 
   // O status nunca é decidido aqui. O UPSERT grava 'previsto' só na criação e não
@@ -440,7 +461,13 @@ async function apurar(sql, req, res) {
   }
   if (writes.length) await sql.transaction(writes)
 
+  // Espelha as obrigações como linhas na aba Pagar Victor.
+  const linhas = await sincronizarLinhasFiscais(sql, company_id, m, y)
+
   return res.status(200).json({
+    linhas_fiscais: linhas,
+    sem_faturamento: semFaturamento,
+    das_removido: dasRemovido,
     apuracao: {
       faturamento, rbt12, folha12, meses_rbt12: meses, proporcionalizado,
       fatorR: impostos.fatorR, anexo: impostos.anexo,
@@ -508,6 +535,7 @@ async function lancarGuia(sql, req, res) {
   const doMes = await faturasDoMes(sql, ob.company_id, ob.month, ob.year)
   const faturamento = round2(doMes.reduce((s, i) => s + num(i.invoice_value), 0))
   if (faturamento > 0) await rerateiarObrigacao(sql, ob, doMes, faturamento)
+  await sincronizarLinhasFiscais(sql, ob.company_id, ob.month, ob.year)
 
   const total = valorDevido(ob)
   const pago = num(ob.paid_amount)
@@ -950,6 +978,7 @@ async function corrigirEscritorio(sql, req, res) {
   const doMes = await faturasDoMes(sql, ob.company_id, ob.month, ob.year)
   const faturamento = round2(doMes.reduce((s, i) => s + num(i.invoice_value), 0))
   if (faturamento > 0) await rerateiarObrigacao(sql, ob, doMes, faturamento)
+  await sincronizarLinhasFiscais(sql, ob.company_id, ob.month, ob.year)
 
   // Antes/depois do resultado do Victor com o rateio novo já valendo. Em `raw`: a guia
   // já está gravada, e um mês sem NF (nada a redistribuir) não pode virar erro da rota.
@@ -974,6 +1003,24 @@ async function corrigirEscritorio(sql, req, res) {
     redistribuicao: previa.status === 200 ? previa.payload : null,
     aviso: previa.status === 200 ? null : previa.payload.error,
   })
+}
+
+// Apuração chamada de dentro do servidor, sem HTTP. Usada por api/invoices.js para
+// recalcular a competência assim que uma NF é emitida.
+//
+// Reaproveita `apurar` inteiro em vez de reimplementar o miolo: as guardas que importam
+// (mês já distribuído responde 409, reapuração substitui só o rateio 'proporcional_nf')
+// são justamente o que não pode divergir entre os dois caminhos. Mesmo padrão do `raw`
+// de `recalcular`, que já devolve { status, payload } para o corrigir-escritorio.
+export async function apurarCompetencia(sql, company_id, month, year) {
+  let status = 200
+  let payload = null
+  const captura = {
+    status(s) { status = s; return this },
+    json(p) { payload = p; return this },
+  }
+  await apurar(sql, { body: { company_id, month, year } }, captura)
+  return { status, payload }
 }
 
 export default async function handler(req, res) {

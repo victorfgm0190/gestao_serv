@@ -3,10 +3,8 @@ import { requireAuth } from '../lib/auth.js'
 import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 import { statusFor } from '../lib/payment-status.js'
 import { CLIENT_PHARMA, CATS, r2, ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
-
-// Ordem de exibição das obrigações na composição fiscal do payable. A lista já sai
-// ordenada daqui para o frontend não ter de conhecer o vocabulário fiscal.
-const ORDEM_KIND = ['das', 'inss', 'honorarios', 'pro_labore', 'escritorio']
+// Ordem canônica dos kinds — a mesma que a aba usa para exibir. Uma cópia só.
+import { ORDEM_KIND } from '../lib/fiscal-lines.js'
 
 // Recalcula o pai de um payable_victor após alterar seus pagamentos.
 async function recalcVictorParent(sql, payable_id) {

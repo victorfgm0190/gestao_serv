@@ -370,6 +370,58 @@ Detalhes que a memória expõe de propósito:
 As strings de fórmula são formatadas por `brl`/`pctStr` locais, sem `Intl`: num runtime sem
 ICU completo, `toLocaleString('pt-BR')` cai em silêncio para o formato inglês.
 
+### Linhas fiscais materializadas (`lib/fiscal-lines.js`) — 2026-07-28
+
+`sincronizarLinhasFiscais(sql, company_id, month, year)` espelha `fiscal_obligations` como
+linhas em `payables_victor`: uma por (empresa, mês, ano, `kind`), com `origin='fiscal'`,
+`client_id` NULL e `payment_month/year` no vencimento (ou no mês seguinte). Idempotente —
+UPDATE quando já existe, DELETE quando a obrigação some (reapuração que deixou de gerar DAS).
+
+Chamada por `?action=apurar`, `lancar-guia`, `corrigir-escritorio` e pelos dois caminhos de
+`api/fiscal-payments.js`. `paid_amount`/`status` são **copiados** da obrigação, nunca
+calculados — mesmo princípio de `lib/fiscal-status.js`, um dono só por registro.
+
+**São marcadores de leitura, não contas a pagar ao Victor.** A tabela guarda o que a empresa
+**deve a ele**; imposto tem o sinal oposto. Por isso ficam fora de:
+- `candidatosDisponiveis()` (`origin IS DISTINCT FROM 'fiscal'`) — sem isso a distribuição
+  consumiria a linha do DAS para pagar o próprio DAS;
+- `distSource` no `Financial.jsx` — a prévia tem de bater com o backend;
+- os totais da aba (`availableData` sai de `payData`) e do `Dashboard.jsx`;
+- `api/admin.js ?action=estornar-periodo`, que agora as apaga junto com a apuração — são
+  derivadas, ao contrário dos lançamentos manuais (`origin` NULL/`manual`), que sobrevivem.
+
+Não têm botão de pagar: a quitação continua sendo em `/fiscal`, via `fiscal_payments`. Dois
+canais de pagamento para a mesma guia é como o `paid_amount` de um dos dois passa a mentir.
+
+### Mês sem faturamento agora é apurado — 2026-07-28
+
+`?action=apurar` respondia **404 e não gravava nada** quando o mês não tinha NF. Mas mês seco
+não é mês sem obrigação: o pró-labore cai no piso (`proLaboreDoMes`) e há 11% sobre ele a
+recolher, mais os honorários do escritório — **R$ 328,31/mês** (INSS R$ 178,31 + R$ 150) que
+o sistema simplesmente escondia.
+
+Agora o DAS é o único que some (`kindsDoMes` filtra), e não como R$ 0,00: uma obrigação zerada
+nasceria `'pago'` (ver `statusObrigacao`) e poluiria a tela com uma guia que nunca existiu. Se
+o mês **passou** a não ter faturamento (a NF foi excluída), o DAS apurado antes é apagado —
+mas só se ninguém o tocou (`amount_actual IS NULL AND paid_amount = 0`): guia lançada ou
+pagamento registrado é decisão humana e não se desfaz por reapuração.
+
+### Reapuração ao emitir a NF — 2026-07-28
+
+`POST /api/invoices` chama `apurarCompetencia(sql, company_id, m, y)` — exportada de
+`api/fiscal-obligations.js`, que captura `{status, payload}` de `apurar` sem HTTP (mesmo
+padrão do `raw` de `recalcular`). A competência é a **data de emissão**, não o mês de
+referência.
+
+A apuração é do **mês inteiro**, nunca da nota. É a única forma correta: o DAS depende do
+faturamento do mês e da RBT12, o INSS tem piso mensal e os honorários são valor fechado.
+Calcular por NF faria duas notas no mesmo mês gerarem dois pisos de INSS e dois honorários, e
+deixaria o DAS da primeira desatualizado assim que a segunda saísse.
+
+**Best-effort de propósito:** faturar não pode falhar porque a apuração recusou. O caso normal
+de recusa é 409 (mês já distribuído nos payables do Victor), que exige estorno consciente — a
+fatura fica gravada e o aviso volta em `apuracao.error` na resposta do POST.
+
 ### Composição fiscal na aba Pagar Victor — 2026-07-28
 
 Cada payable de faturamento mostra agora **quanto do imposto real do mês coube àquela NF**,

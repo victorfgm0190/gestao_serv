@@ -44,7 +44,10 @@ export default function Dashboard() {
           demands: (await dem.json()).demands || [],
           receivables: (await rec.json()).data || [],
           fabricio: (await fab.json()).data || [],
-          victor: (await vic.json()).data || [],
+          // Linhas fiscais (origin='fiscal') são o espelho de fiscal_obligations na aba
+          // Pagar Victor — o que a empresa DEVE, não o que tem a pagar ao Victor.
+          // Somá-las aqui inflaria "a pagar" do painel com o próprio DAS.
+          victor: ((await vic.json()).data || []).filter(r => r.origin !== 'fiscal'),
           entries: (await te.json()).entries || [],
         }
       }))
