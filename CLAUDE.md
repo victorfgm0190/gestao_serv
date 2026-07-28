@@ -320,7 +320,7 @@ Rotas definidas em `src/main.jsx` dentro de `<Layout>` (sidebar). `App.jsx` é v
 | `/time-entries` | `TimeEntries.jsx` | Apontamento de horas (por horário + intervalo + deslocamento). Filtros pill mês/ano/cliente. Export Excel. | time-entries, clients, financial-rules, contracts, export-os |
 | `/financial-rules` | `FinancialRules.jsx` | CRUD de regras financeiras por cliente; também cadastra clientes. | financial-rules, clients |
 | `/contracts` | `Contracts.jsx` | CRUD de contratos (vinculados a uma regra financeira). Cálculo bidirecional de imposto do cliente (NF ↔ %). Lançamentos mensais. | contracts, clients, contract-months, financial-rules |
-| `/financial` | `Financial.jsx` | 4 abas: A Receber, Pagar Fab, Pagar Victor, Histórico. Filtro pill de mês + status. Múltiplos pagamentos, estorno, "Receber" (distribui entre payables do Victor). Oculta registros R$ 0,00 nas abas de Pagar. | receivables, payables-*, payable-payments, clients |
+| `/financial` | `Financial.jsx` | 4 abas: A Receber, Pagar Fab, Pagar Victor, Histórico. Filtro pill de mês + status. Múltiplos pagamentos, estorno, "Receber" (distribui entre payables do Victor). Oculta registros R$ 0,00 nas abas de Pagar. No card de Previsão de Impostos: memória de cálculo e **✏️ Editar valores** (lança as guias reais da competência e redistribui). | receivables, payables-*, payable-payments, clients, fiscal-obligations |
 | `/fiscal` | `FiscalObligations.jsx` | **Apuração fiscal.** Cards de DAS/INSS/Honorários (estimado × guia × pago), lançamento da guia oficial, múltiplos pagamentos com estorno, tabela de custo por cliente, painel do `calc_snapshot` (RBT12, Fator R, anexo, pró-labore) e abatimento nos payables do Victor. | fiscal-obligations, fiscal-payments |
 | `/billing` | `Billing.jsx` | Geração de fatura por Contrato ou por Agenda (horas). Seção "Impostos" editável (imposto real + imposto do cliente, NF bidirecional) e demonstrativo. Filtros pill mês/cliente. | invoices, contracts, clients, time-entries, financial-rules |
 
@@ -366,6 +366,34 @@ Detalhes que a memória expõe de propósito:
 
 As strings de fórmula são formatadas por `brl`/`pctStr` locais, sem `Intl`: num runtime sem
 ICU completo, `toLocaleString('pt-BR')` cai em silêncio para o formato inglês.
+
+### Lançar as guias do contador pelo `/financial` — 2026-07-28
+
+O card **📊 Previsão de Impostos** (aba Pagar Victor) ganhou **✏️ Editar valores**: um modal
+que lança de uma vez os valores reais de todas as obrigações da competência, sem precisar ir
+ao `/fiscal` card a card. Campo em branco = remover o lançamento e voltar a valer o apurado.
+
+Ordem das chamadas, que é o ponto do desenho:
+1. um `PATCH ?action=corrigir-escritorio` **por obrigação alterada**, com `aplicar: false` —
+   grava `amount_actual` e refaz o rateio por cliente;
+2. **um** `POST ?action=recalcular` com `aplicar: true`, ao final — é ele que reescreve os
+   payables do Victor.
+
+Aplicar a cada guia também daria o número certo (o motor mede sempre contra o baseline da
+FATURA, não contra o payable já ajustado), mas reescreveria os payables N vezes e o
+"antes/depois" exibido seria o da última guia, não o da correção inteira. O checkbox
+"Atualizar os lançamentos do Victor" vem marcado; desmarcá-lo grava só as guias e deixa a
+prévia para o `/fiscal`.
+
+O botão fica desabilitado sem apuração no mês: a guia é lançada **sobre** uma obrigação
+existente, e é ela que carrega o `obligation_id`. Não há endpoint para criar obrigação à mão
+— `pro_labore` e `escritorio` só existem porque vieram da migração de `victor_reserves`, e
+não existe `kind` de "despesas".
+
+O card em si continua sendo **previsão** — ele estima a partir do faturamento do mês e não
+muda quando a guia chega. Por isso o bloco **📄 Guias oficiais lançadas** aparece embaixo
+quando há `amount_actual`: sem ele a leitura é de que salvar não fez efeito. O que muda de
+verdade é o card de Reservas, a memória de cálculo e a lista de Pagar Victor.
 
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 

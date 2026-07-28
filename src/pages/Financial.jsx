@@ -132,6 +132,13 @@ export default function Financial() {
   const [showMemoria, setShowMemoria] = useState(false)
   const [loadingMemoria, setLoadingMemoria] = useState(false)
   const [erroMemoria, setErroMemoria] = useState('')
+  // Obrigações da competência de referência, cruas. `reserves` guarda só o saldo em
+  // aberto por kind; para lançar a guia do contador é preciso o `id` de cada obrigação.
+  const [obligacoesMes, setObligacoesMes] = useState([])
+  const [editImpostos, setEditImpostos] = useState(null) // { month, year, aplicar, rows[] }
+  const [savingImpostos, setSavingImpostos] = useState(false)
+  const [erroImpostos, setErroImpostos] = useState('')
+  const [msgImpostos, setMsgImpostos] = useState('')
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear, mode])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
@@ -151,7 +158,10 @@ export default function Financial() {
     setPendingVictor([])
     setShowMemoria(false)
     setCalculoMemoria(null)
-    setErroModal(''); setErroPay(''); setErroPayments(''); setErroReceive(''); setErroMemoria('')
+    setEditImpostos(null)
+    setObligacoesMes([])
+    setMsgImpostos('')
+    setErroModal(''); setErroPay(''); setErroPayments(''); setErroReceive(''); setErroMemoria(''); setErroImpostos('')
   }, [activeCompany])
   // Reservas do Victor exibidas no card da aba (mês/ano/empresa do filtro ativo).
   useEffect(() => { if (tab === 'victor') fetchReserves() }, [tab, filterMonth, filterYear, activeCompany])
@@ -330,12 +340,15 @@ export default function Financial() {
     const { rm, ry } = reserveRefPeriod()
     try {
       const res = await fetch(`/api/fiscal-obligations?company_id=${activeCompany.id}&year=${ry}&month=${rm}`)
-      if (!res.ok) { setReserves({}); setCalculoMemoria(null); return }
+      if (!res.ok) { setReserves({}); setCalculoMemoria(null); setObligacoesMes([]); return }
       const body = await res.json()
       const obrigacoes = body.data || []
       // A memória vem de carona: este GET já a traz, e uma segunda chamada ao clicar
       // no botão pediria ao servidor a mesma coisa duas vezes.
       setCalculoMemoria(body.calculo || null)
+      // Idem para as obrigações: o modal de guias precisa do id/kind/amount_actual de
+      // cada uma, e são as mesmas linhas de que sai o saldo em aberto abaixo.
+      setObligacoesMes(obrigacoes)
       const emAberto = {}
       for (const o of obrigacoes) {
         const devido = o.amount_actual != null ? parseFloat(o.amount_actual) : (parseFloat(o.amount_estimated) || 0)
@@ -343,7 +356,111 @@ export default function Financial() {
         if (falta > 0.005) emAberto[o.kind] = (emAberto[o.kind] || 0) + falta
       }
       setReserves(emAberto)
-    } catch (e) { console.error(e); setReserves({}); setCalculoMemoria(null) }
+    } catch (e) { console.error(e); setReserves({}); setCalculoMemoria(null); setObligacoesMes([]) }
+  }
+
+  // ── Guias oficiais: o contador confirmou os valores reais ────────────────────
+  //
+  // Nada é calculado aqui. Cada valor digitado vai para o ?action=corrigir-escritorio
+  // (= lançar a guia + refazer o rateio por cliente), e só DEPOIS de todas gravadas é
+  // que a redistribuição é aplicada, uma vez, pelo ?action=recalcular. Aplicar a cada
+  // guia funcionaria — o motor é idempotente, mede sempre contra o baseline da fatura —
+  // mas reescreveria os payables N vezes e o "antes/depois" mostrado ao final seria o
+  // da última guia, não o da correção inteira.
+
+  const ORDEM_KIND = ['das', 'inss', 'honorarios', 'pro_labore', 'escritorio']
+  // Valor da guia como string comparável: null/'' = sem guia lançada (vale o apurado).
+  const guiaStr = (v) => (v == null || v === '' ? '' : String(Math.round(parseFloat(v) * 100) / 100))
+
+  function abrirEditImpostos() {
+    const { rm, ry } = reserveRefPeriod()
+    setErroImpostos(''); setMsgImpostos('')
+    const rows = [...obligacoesMes]
+      .sort((a, b) => ORDEM_KIND.indexOf(a.kind) - ORDEM_KIND.indexOf(b.kind))
+      .map((o) => ({
+        id: o.id,
+        kind: o.kind,
+        estimado: parseFloat(o.amount_estimated) || 0,
+        pago: parseFloat(o.paid_amount) || 0,
+        original: guiaStr(o.amount_actual),
+        valor: guiaStr(o.amount_actual),
+      }))
+    setEditImpostos({ month: rm, year: ry, aplicar: true, rows })
+  }
+
+  const setLinhaImposto = (id, valor) =>
+    setEditImpostos((e) => ({ ...e, rows: e.rows.map((r) => (r.id === id ? { ...r, valor } : r)) }))
+
+  async function salvarImpostosReais() {
+    if (savingImpostos || !editImpostos) return
+    const { rows, aplicar, month: rm, year: ry } = editImpostos
+
+    for (const r of rows) {
+      if (r.valor === '') continue
+      const v = parseFloat(String(r.valor).replace(',', '.'))
+      if (isNaN(v) || v < 0) {
+        setErroImpostos(`Valor inválido em ${RESERVA_LABEL[r.kind] || r.kind} — não pode ser negativo.`)
+        return
+      }
+    }
+    const alterados = rows.filter((r) => guiaStr(r.valor) !== r.original)
+    if (!alterados.length) { setErroImpostos('Nenhum valor foi alterado.'); return }
+
+    setSavingImpostos(true); setErroImpostos('')
+    try {
+      for (const r of alterados) {
+        const res = await fetch('/api/fiscal-obligations?action=corrigir-escritorio', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            obligation_id: r.id,
+            tipo: r.kind,
+            // Campo em branco = remover o lançamento e voltar a valer o valor apurado.
+            imposto_real: r.valor === '' ? null : parseFloat(String(r.valor).replace(',', '.')),
+            aplicar: false,
+          }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          // As guias anteriores desta rodada já foram gravadas — recarrega para o modal
+          // reabrir com o estado real, senão o usuário reenviaria o que já passou.
+          await refreshFiscal()
+          setErroImpostos(`${RESERVA_LABEL[r.kind] || r.kind}: ${data.error || 'não foi possível salvar a guia.'}`)
+          return
+        }
+      }
+
+      let resumo = ''
+      if (aplicar) {
+        const res = await fetch('/api/fiscal-obligations?action=recalcular', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ company_id: activeCompany.id, month: rm, year: ry, aplicar: true }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          await refreshFiscal()
+          setErroImpostos(`Guias salvas e rateio refeito, mas os lançamentos do Victor não foram atualizados: ${data.error || 'falha ao redistribuir.'}`)
+          return
+        }
+        const d = data.mudancas?.total_victor
+        resumo = d && Math.abs(d.diferenca) >= 0.01
+          ? ` Victor passa de ${fmt(d.antes)} para ${fmt(d.depois)} (${d.diferenca > 0 ? '+' : ''}${fmt(d.diferenca)}) em ${data.payables_atualizados.length} lançamento(s).`
+          : ' Nada mudou no que o Victor tem a receber.'
+      }
+
+      setEditImpostos(null)
+      setMsgImpostos(`${alterados.length} guia(s) atualizada(s) e rateio por cliente refeito.${resumo}`)
+      await refreshFiscal()
+    } catch {
+      setErroImpostos('Erro de conexão com o servidor.')
+    } finally {
+      setSavingImpostos(false)
+    }
+  }
+
+  // Recarrega tudo que a correção das guias mexe: apuração/reservas, previsão e os
+  // payables (é a aba Pagar Victor que muda de valor).
+  async function refreshFiscal() {
+    await Promise.all([fetchReserves(), fetchAll(), fetchTaxPreview()])
   }
 
   // Abre a memória de cálculo do card de previsão. Normalmente ela já está em mãos
@@ -930,10 +1047,23 @@ export default function Financial() {
                 className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-200 rounded-lg text-xs font-medium">
                 💡 {loadingMemoria ? 'Carregando...' : showMemoria ? 'Ocultar memória' : 'Como chegamos aqui?'}
               </button>
+              {/* Só faz sentido com o mês apurado: a guia é lançada SOBRE uma obrigação
+                  existente, e é ela que carrega o id. Sem apuração o caminho é /fiscal. */}
+              <button onClick={abrirEditImpostos} disabled={obligacoesMes.length === 0}
+                title={obligacoesMes.length === 0 ? 'Nada apurado nesta competência — apure em /fiscal antes de lançar as guias.' : ''}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium">
+                ✏️ Editar valores
+              </button>
             </div>
           </div>
           {erroMemoria && (
             <p className="mb-3 text-red-300 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">⚠️ {erroMemoria}</p>
+          )}
+          {msgImpostos && (
+            <p className="mb-3 text-green-300 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2 flex items-start gap-2">
+              <span className="flex-1">✅ {msgImpostos}</span>
+              <button onClick={() => setMsgImpostos('')} className="text-green-300/60 hover:text-green-200">✕</button>
+            </p>
           )}
           {mode === 'caixa' && (
             <p className="text-amber-300/90 text-xs mb-3">💸 Impostos previstos para pagamento em {months[nextMonth-1]}/{nextYear}</p>
@@ -967,6 +1097,28 @@ export default function Financial() {
             <span className="text-gray-300 font-medium">Total a reservar</span>
             <span className="text-orange-400 text-lg font-bold">{fmt(taxPreview.total)}</span>
           </div>
+
+          {/* O bloco acima é PREVISÃO e continua sendo: ele estima a partir do
+              faturamento do mês. Quando a guia oficial chega, o valor que passa a valer
+              é outro — e é este, que sai de fiscal_obligations.amount_actual. Mostrar os
+              dois lado a lado evita a leitura de que o card "não atualizou" depois de
+              salvar as guias. */}
+          {(() => {
+            const lancadas = obligacoesMes.filter((o) => o.amount_actual != null)
+            if (!lancadas.length) return null
+            const totalGuias = lancadas.reduce((s, o) => s + (parseFloat(o.amount_actual) || 0), 0)
+            return (
+              <div className="mt-3 pt-3 border-t border-gray-800">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-300 font-medium text-sm">📄 Guias oficiais lançadas</span>
+                  <span className="text-blue-300 font-bold">{fmt(totalGuias)}</span>
+                </div>
+                <p className="text-gray-500 text-[11px] mt-1 leading-tight">
+                  {lancadas.map((o) => `${RESERVA_LABEL[o.kind] || o.kind}: ${fmt(o.amount_actual)}`).join(' | ')}
+                </p>
+              </div>
+            )
+          })()}
           <p className="text-gray-600 text-[11px] mt-3">
             ⚠️ Previsão estimada. Consulte seu contador. A base é o faturamento real deste mês
             {' '}(só NFs de contrato que emite nota), e a RBT12 é esse mês × 12. A apuração de
@@ -1100,6 +1252,71 @@ export default function Financial() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal — valores reais das guias (o contador confirmou) */}
+      {editImpostos && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-white mb-1">
+              Valores reais dos impostos — {months[editImpostos.month - 1]}/{editImpostos.year}
+            </h3>
+            <p className="text-gray-500 text-xs mb-4">
+              O que o contador confirmou. Em branco = sem guia lançada, volta a valer o valor apurado.
+            </p>
+
+            {editImpostos.rows.length === 0 ? (
+              <p className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                Nada apurado nesta competência. Rode a apuração em <strong>/fiscal</strong> antes de lançar as guias.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {editImpostos.rows.map((r) => (
+                  <div key={r.id} className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white">{RESERVA_LABEL[r.kind] || r.kind}</p>
+                      <p className="text-[11px] text-gray-500">
+                        Apurado {fmt(r.estimado)}
+                        {r.pago > 0 && ` · ${fmt(r.pago)} já pago`}
+                      </p>
+                    </div>
+                    <input
+                      type="number" step="0.01" min="0" placeholder={r.estimado.toFixed(2)}
+                      value={r.valor} onChange={(e) => setLinhaImposto(r.id, e.target.value)}
+                      className="w-36 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm text-right placeholder-gray-600 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                ))}
+
+                <label className="flex items-start gap-2 pt-2 border-t border-gray-800 cursor-pointer">
+                  <input type="checkbox" checked={editImpostos.aplicar}
+                    onChange={(e) => setEditImpostos((s) => ({ ...s, aplicar: e.target.checked }))}
+                    className="mt-0.5 accent-blue-500" />
+                  <span className="text-xs text-gray-300">
+                    Atualizar os lançamentos do Victor
+                    <span className="block text-gray-500 text-[11px]">
+                      O imposto real substitui a provisão da fatura no que o Victor tem a receber.
+                      Desmarque para só registrar as guias e conferir a prévia em <strong>/fiscal</strong>.
+                    </span>
+                  </span>
+                </label>
+              </div>
+            )}
+
+            {erroImpostos && (
+              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroImpostos}</p>
+            )}
+
+            <div className="flex gap-3 mt-5">
+              <button onClick={() => { setEditImpostos(null); setErroImpostos('') }}
+                className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={salvarImpostosReais} disabled={savingImpostos || editImpostos.rows.length === 0}
+                className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">
+                {savingImpostos ? 'Salvando...' : 'Salvar e recalcular'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

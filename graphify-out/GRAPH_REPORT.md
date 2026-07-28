@@ -1,16 +1,16 @@
-# Graph Report - gestao_serv  (2026-07-27)
+# Graph Report - gestao_serv  (2026-07-28)
 
 ## Corpus Check
-- 78 files · ~79,374 words
+- 78 files · ~80,856 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 458 nodes · 827 edges · 31 communities (26 shown, 5 thin omitted)
+- 459 nodes · 828 edges · 31 communities (26 shown, 5 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `9ca803ca`
+- Built from commit: `c83e52ee`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -62,10 +62,10 @@
   api/email-rules.js → lib/auth.js
 - `handler()` --calls--> `requireAuth()`  [EXTRACTED]
   api/export-os.js → lib/auth.js
-- `acumular12()` --calls--> `proLaboreDoMes()`  [EXTRACTED]
+- `calcularApuracao()` --calls--> `parametrosFiscais()`  [EXTRACTED]
   api/fiscal-obligations.js → lib/taxCalc.js
-- `calcularApuracao()` --calls--> `calcularImpostos()`  [EXTRACTED]
-  api/fiscal-obligations.js → lib/taxCalc.js
+- `distribuir()` --calls--> `candidatosDisponiveis()`  [EXTRACTED]
+  api/fiscal-obligations.js → lib/victor-distribution.js
 
 ## Import Cycles
 - None detected.
@@ -73,8 +73,8 @@
 ## Communities (31 total, 5 thin omitted)
 
 ### Community 0 - "main.jsx"
-Cohesion: 0.08
-Nodes (36): react, companies, Layout(), useNotifications(), clearToken(), getToken(), getUser(), installFetchInterceptor() (+28 more)
+Cohesion: 0.07
+Nodes (39): react, companies, Layout(), useNotifications(), clearToken(), getToken(), getUser(), installFetchInterceptor() (+31 more)
 
 ### Community 1 - "dependencies"
 Cohesion: 0.11
@@ -85,12 +85,12 @@ Cohesion: 0.07
 Nodes (26): autoprefixer, oxlint, devDependencies, autoprefixer, oxlint, postcss, tailwindcss, @types/react (+18 more)
 
 ### Community 3 - "Financial.jsx"
-Cohesion: 0.08
-Nodes (36): aliquotaEfetiva(), calcINSS(), calcularImpostos(), faixaFor(), parametrosFiscais(), PARAMS_PADRAO, proLaboreDoMes(), r2() (+28 more)
+Cohesion: 0.07
+Nodes (36): parametrosFiscais(), CopyButton(), fmt(), MemoriaCalculo(), Passo(), todayBR(), KIND_LABEL, Billing() (+28 more)
 
 ### Community 4 - "6. Regras de negócio financeiro"
-Cohesion: 0.16
-Nodes (37): acumular12(), apurar(), brl(), calcularApuracao(), chaveCompetencia(), chaveOrdinal(), contextoRedistribuicao(), corrigirEscritorio() (+29 more)
+Cohesion: 0.15
+Nodes (38): acumular12(), apurar(), brl(), calcularApuracao(), chaveCompetencia(), chaveOrdinal(), contextoRedistribuicao(), corrigirEscritorio() (+30 more)
 
 ### Community 5 - "payables-victor.js"
 Cohesion: 0.24
@@ -101,8 +101,8 @@ Cohesion: 0.25
 Nodes (7): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema, oxc, warn
 
 ### Community 7 - "FiscalObligations.jsx"
-Cohesion: 0.18
-Nodes (12): fmt(), MemoriaCalculo(), Passo(), KIND_LABEL, dataBR(), FiscalObligations(), fmt(), KIND_ICON (+4 more)
+Cohesion: 0.56
+Nodes (8): agregado(), aplicarDelta(), consolidar(), linha(), num(), r2(), realPorKind(), recalcularInvoice()
 
 ### Community 8 - "invoices.js"
 Cohesion: 0.23
@@ -130,7 +130,7 @@ Nodes (7): estornar(), handler(), listar(), num(), pagar(), round2(), saldoAbert
 
 ### Community 39 - "CLAUDE.md — Contexto do Projeto gestao_serv"
 Cohesion: 0.06
-Nodes (32): 10. Pendências conhecidas, 1. Visão geral, 2. Empresas e clientes, 4. APIs ativas (`/api/`), 5. Telas (`/src/pages/`), 6. Regras de negócio financeiro, 7. Contratos existentes no banco, 8. Workflow de desenvolvimento (+24 more)
+Nodes (33): 10. Pendências conhecidas, 1. Visão geral, 2. Empresas e clientes, 4. APIs ativas (`/api/`), 5. Telas (`/src/pages/`), 6. Regras de negócio financeiro, 7. Contratos existentes no banco, 8. Workflow de desenvolvimento (+25 more)
 
 ### Community 41 - "What You Must Do When Invoked"
 Cohesion: 0.07
@@ -161,7 +161,7 @@ Cohesion: 0.50
 Nodes (3): Expanding the Oxlint configuration, React Compiler, React + Vite
 
 ## Knowledge Gaps
-- **150 isolated node(s):** `$schema`, `oxc`, `react/rules-of-hooks`, `warn`, `TABLES` (+145 more)
+- **151 isolated node(s):** `$schema`, `oxc`, `react/rules-of-hooks`, `warn`, `TABLES` (+146 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **5 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -169,15 +169,15 @@ Nodes (3): Expanding the Oxlint configuration, React Compiler, React + Vite
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `requireAuth()` connect `payable-payments.js` to `6. Regras de negócio financeiro`, `payables-victor.js`, `invoices.js`, `time-entries.js`, `cron-sync.js`, `fiscal-payments.js`?**
-  _High betweenness centrality (0.120) - this node is a cross-community bridge._
-- **Why does `react` connect `main.jsx` to `Financial.jsx`, `.oxlintrc.json`, `FiscalObligations.jsx`?**
+  _High betweenness centrality (0.119) - this node is a cross-community bridge._
+- **Why does `react` connect `main.jsx` to `Financial.jsx`, `.oxlintrc.json`?**
   _High betweenness centrality (0.057) - this node is a cross-community bridge._
-- **Why does `calcularImpostos()` connect `Financial.jsx` to `6. Regras de negócio financeiro`?**
+- **Why does `calcularImpostos()` connect `6. Regras de negócio financeiro` to `Financial.jsx`?**
   _High betweenness centrality (0.048) - this node is a cross-community bridge._
 - **What connects `$schema`, `oxc`, `react/rules-of-hooks` to the rest of the system?**
-  _150 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _151 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `main.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.07908163265306123 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07184325108853411 - nodes in this community are weakly interconnected._
 - **Should `dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**
