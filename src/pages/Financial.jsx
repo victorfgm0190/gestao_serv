@@ -871,6 +871,39 @@ export default function Financial() {
               {item.paid_at && <span className="text-gray-500">Em: <span className="text-gray-300">{new Date(item.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></span>}
               {item.is_compensation && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">Compensação</span>}
             </div>
+
+            {/* Composição fiscal da NF — DAS/INSS/Honorários que couberam a este cliente.
+                NÃO são valores a pagar: o imposto já saiu do que o Victor recebe, parte
+                pela provisão retida na fatura, o excedente pela cascata lucro→serviço.
+                Por isso ficam marcados como "coberto" e fora dos totais da aba. */}
+            {tab === 'victor' && item.fiscal && (
+              <div className="mt-3 pt-3 border-t border-gray-800/80">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-[11px] uppercase tracking-wide text-gray-500">Imposto real desta NF</span>
+                  <span className="text-xs text-gray-300 font-medium">{fmt(item.fiscal.total)}</span>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                  {item.fiscal.linhas.map((l) => (
+                    <span key={l.kind} className="text-gray-500">
+                      {RESERVA_LABEL[l.kind] || l.kind}: <span className="text-gray-300 font-mono">{fmt(l.amount)}</span>
+                    </span>
+                  ))}
+                </div>
+                {/* De onde saiu cada real: a soma fecha com o total acima. */}
+                <p className="text-gray-600 text-[11px] mt-1.5 leading-tight">
+                  Coberto por: provisão da NF {fmt(item.fiscal.provisionado)}
+                  {item.fiscal.do_lucro !== 0 && ` + lucro ${fmt(item.fiscal.do_lucro)}`}
+                  {item.fiscal.do_servico !== 0 && ` + serviço ${fmt(item.fiscal.do_servico)}`}
+                </p>
+                {Math.abs(item.fiscal.a_redistribuir) >= 0.01 && (
+                  <p className="mt-1.5 text-amber-300/90 text-[11px] bg-amber-500/10 border border-amber-500/30 rounded-lg px-2 py-1 leading-tight">
+                    ⚠️ {fmt(Math.abs(item.fiscal.a_redistribuir))} de imposto {item.fiscal.a_redistribuir > 0 ? 'a mais que' : 'a menos que'} a provisão
+                    {' '}ainda não foi redistribuído — os valores acima ainda são os da fatura.
+                    {' '}Aplique em <strong>/fiscal</strong>.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
           <div className="flex gap-2 shrink-0">
             {tab === 'receivables' ? (

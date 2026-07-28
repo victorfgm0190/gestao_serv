@@ -158,7 +158,10 @@ ORDER BY table_name, ordinal_position;
 ### `payables_victor`
 `id` int · `company_id` int · `client_id` int · `month` int · `year` int · `description` varchar ·
 `service_amount` numeric · `profit_amount` numeric · `total_amount` numeric · `paid_amount` numeric ·
-`paid_at` date · `status` varchar · `notes` text · `created_at` timestamp · `origin` varchar · `invoice_id` int
+`paid_at` date · `status` varchar · `notes` text · `created_at` timestamp · `origin` varchar · `invoice_id` int ·
+`payment_month` int · `payment_year` int (mês de caixa) ·
+`kind` varchar(20) NOT NULL default `'manual'` (classificação de lançamento manual — o
+imposto **não** vira linha aqui; ver "Composição fiscal na aba Pagar Victor")
 
 ### `payable_payments` (múltiplos pagamentos por payable)
 `id` int · `payable_type` varchar (`victor`|`fabricio`) · `payable_id` int · `amount` numeric ·
@@ -366,6 +369,38 @@ Detalhes que a memória expõe de propósito:
 
 As strings de fórmula são formatadas por `brl`/`pctStr` locais, sem `Intl`: num runtime sem
 ICU completo, `toLocaleString('pt-BR')` cai em silêncio para o formato inglês.
+
+### Composição fiscal na aba Pagar Victor — 2026-07-28
+
+Cada payable de faturamento mostra agora **quanto do imposto real do mês coube àquela NF**,
+quebrado em DAS / INSS / Honorários, com a linha "Coberto por: provisão da NF + lucro +
+serviço". A fonte é `fiscal_allocations` (`basis='proporcional_nf'`) — a MESMA da tabela
+"Custo por cliente" da tela `/fiscal`. Montado no GET de `api/payables-victor.js`; nenhum
+cálculo no browser.
+
+**O imposto não vira linha em `payables_victor`, e isso é decisão, não omissão.** Ele já está
+descontado do que o Victor recebe: a provisão de 7% é retida na fatura e o excedente desce
+pela cascata lucro→serviço de `lib/fiscal-redistribution.js`. Materializar DAS/INSS/honorários
+como registros descontaria o mesmo imposto duas vezes e — o pior — os colocaria em
+`candidatosDisponiveis()`, fazendo a distribuição consumir a linha do DAS como se fosse
+dinheiro a receber do Victor. A tabela guarda o que a empresa **deve ao Victor**; imposto tem
+o sinal oposto e mora em `fiscal_obligations`.
+
+Pelo mesmo motivo o imposto **não pode ser calculado por NF**: DAS depende do faturamento do
+mês inteiro e da RBT12, INSS tem piso mensal (duas NFs no mês gerariam dois pisos de R$ 1.621)
+e honorários são R$ 150 fechados por mês. A apuração é mensal e o rateio por cliente é o que
+traz o número de volta para a fatura.
+
+`a_redistribuir` é o excedente que a apuração já rateou mas o `?action=recalcular` ainda não
+aplicou — enquanto for ≠ 0, o valor exibido do payable ainda é o da fatura. Vira um aviso
+âmbar na linha, com o caminho (`/fiscal`) para aplicar. Caso real em Jan/2026: Pharmalog com
+imposto real de R$ 1.026,55 contra provisão de R$ 684,25 — R$ 342,30 pendentes.
+
+`payables_victor.kind` (`VARCHAR(20) NOT NULL DEFAULT 'manual'`, índice
+`(company_id, year, month, kind)`) existe desde 2026-07-28 para classificar lançamentos
+**manuais**. Nenhuma linha é criada com kind fiscal: serviço e lucro continuam sendo colunas
+(`service_amount`/`profit_amount`) de um registro único por fatura, e muita coisa depende
+disso (`fiscal-redistribution` indexa payable por `invoice_id`, o preview do GET, o estorno).
 
 ### Lançar as guias do contador pelo `/financial` — 2026-07-28
 

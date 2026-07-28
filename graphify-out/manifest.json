@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1785239995.589846,
-    "ast_hash": "f2afaf7e61966568677a79ec9f7edb0c",
+    "mtime": 1785245236.7460086,
+    "ast_hash": "79b42ecc19625a1a377c92442143e121",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "api/payables-victor.js": {
-    "mtime": 1785096598.3928344,
-    "ast_hash": "6ed3abb05164895a82d3d33386174c6e",
+    "mtime": 1785249101.0352206,
+    "ast_hash": "bafb55afb733a27aad8351b79a6a1664",
     "semantic_hash": ""
   },
   "api/receivables.js": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1785239671.4235933,
-    "ast_hash": "7a1fe98ffc548633a61ac62316e56c68",
+    "mtime": 1785249119.5982327,
+    "ast_hash": "3e1eb3690521a867d8d3a8d0b2b1dd16",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785239963.384976,
-    "ast_hash": "e9b7af27537823d0fc97b8607e90fdb8",
+    "mtime": 1785252983.3248656,
+    "ast_hash": "ca9b8be1770aac7c54e80089e89d2653",
     "semantic_hash": ""
   },
   "README.md": {

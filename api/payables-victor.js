@@ -4,6 +4,10 @@ import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 import { statusFor } from '../lib/payment-status.js'
 import { CLIENT_PHARMA, CATS, r2, ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
 
+// Ordem de exibição das obrigações na composição fiscal do payable. A lista já sai
+// ordenada daqui para o frontend não ter de conhecer o vocabulário fiscal.
+const ORDEM_KIND = ['das', 'inss', 'honorarios', 'pro_labore', 'escritorio']
+
 // Recalcula o pai de um payable_victor após alterar seus pagamentos.
 async function recalcVictorParent(sql, payable_id) {
   const agg = await sql`SELECT COALESCE(SUM(amount),0) AS s, MAX(paid_at) AS last FROM payable_payments WHERE payable_type='victor' AND payable_id=${payable_id}`
@@ -165,6 +169,63 @@ export default async function handler(req, res) {
     const byId = {}
     for (const p of payments) { (byId[p.payable_id] ||= []).push(p) }
     for (const r of rows) { r.payments = byId[r.id] || [] }
+
+    // Composição fiscal da fatura que gerou o payable: quanto do imposto real do mês
+    // coube a esta NF, por tipo, e de onde o dinheiro saiu.
+    //
+    // É LEITURA, não linha nova. O imposto nunca vira um payable: ele já está descontado
+    // do que o Victor recebe — parte pela provisão retida na fatura (invoices.tax_amount),
+    // o excedente pela cascata lucro→serviço de lib/fiscal-redistribution.js. Materializar
+    // DAS/INSS/honorários como registros em payables_victor descontaria o mesmo imposto
+    // duas vezes e, pior, os colocaria em `candidatosDisponiveis` — a distribuição passaria
+    // a consumir a linha do DAS como se fosse dinheiro a receber.
+    //
+    // A fonte é fiscal_allocations (basis='proporcional_nf'), a MESMA de que sai a tabela
+    // "Custo por cliente" da tela /fiscal. Rateio e from_service/from_profit já são
+    // gravados pelo ?action=apurar e pelo ?action=recalcular; aqui só se lê.
+    const invIds = [...new Set(rows.map((r) => r.invoice_id).filter(Boolean))]
+    if (invIds.length) {
+      const [taxes, allocs] = await Promise.all([
+        sql`SELECT id, tax_amount FROM invoices WHERE id = ANY(${invIds})`,
+        sql`
+          SELECT a.invoice_id, o.kind,
+                 SUM(a.amount)                      AS amount,
+                 SUM(COALESCE(a.from_service, 0))   AS from_service,
+                 SUM(COALESCE(a.from_profit, 0))    AS from_profit
+          FROM fiscal_allocations a
+          JOIN fiscal_obligations o ON o.id = a.obligation_id
+          WHERE a.basis = 'proporcional_nf' AND a.invoice_id = ANY(${invIds})
+          GROUP BY a.invoice_id, o.kind`,
+      ])
+      const provisao = new Map(taxes.map((t) => [Number(t.id), parseFloat(t.tax_amount) || 0]))
+      const porFatura = new Map()
+      for (const a of allocs) {
+        const k = Number(a.invoice_id)
+        if (!porFatura.has(k)) porFatura.set(k, [])
+        porFatura.get(k).push({
+          kind: a.kind,
+          amount: parseFloat(a.amount) || 0,
+          from_service: parseFloat(a.from_service) || 0,
+          from_profit: parseFloat(a.from_profit) || 0,
+        })
+      }
+      for (const r of rows) {
+        const linhas = porFatura.get(Number(r.invoice_id))
+        if (!linhas?.length) continue
+        linhas.sort((a, b) => ORDEM_KIND.indexOf(a.kind) - ORDEM_KIND.indexOf(b.kind))
+        const total = r2(linhas.reduce((s, l) => s + l.amount, 0))
+        const do_servico = r2(linhas.reduce((s, l) => s + l.from_service, 0))
+        const do_lucro = r2(linhas.reduce((s, l) => s + l.from_profit, 0))
+        const provisionado = provisao.get(Number(r.invoice_id)) ?? 0
+        r.fiscal = {
+          linhas, total, provisionado, do_servico, do_lucro,
+          // Excedente do imposto real sobre a provisão que ainda NÃO foi absorvido pelo
+          // payable. Diferente de zero = a apuração já rateou, mas o ?action=recalcular
+          // nunca foi aplicado — o Victor ainda está vendo o valor da provisão.
+          a_redistribuir: r2(total - provisionado - do_servico - do_lucro),
+        }
+      }
+    }
 
     // Previsão: recebíveis pendentes/parciais (cliente ainda não pagou) que ainda não geraram
     // payable. Retornados como entradas "previsto" (is_preview) usando invoices.victor_total.
