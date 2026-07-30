@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "api/payables-victor.js": {
-    "mtime": 1785254814.2725272,
-    "ast_hash": "5fb21294180031bb5fc3ce4dd9630042",
+    "mtime": 1785455619.7604027,
+    "ast_hash": "7e4e15ace24ce0a5ba146ab535754632",
     "semantic_hash": ""
   },
   "api/receivables.js": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1785254792.985888,
-    "ast_hash": "c0cb87d0c78d9f37ee79e611c8d5071c",
+    "mtime": 1785455626.5103896,
+    "ast_hash": "368bac06b436f81d3aee3efb031be0f4",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785256298.3326406,
-    "ast_hash": "597282e5fb578138068dc339bb9f8d66",
+    "mtime": 1785455675.289019,
+    "ast_hash": "2add98365a69f05efb25b7d1dc37808a",
     "semantic_hash": ""
   },
   "README.md": {
@@ -365,8 +365,8 @@
     "semantic_hash": ""
   },
   "api/fiscal-obligations.js": {
-    "mtime": 1785254715.0189147,
-    "ast_hash": "432029354af3dcea2ff475f4bd9d8748",
+    "mtime": 1785455482.271106,
+    "ast_hash": "e7cf0ee77346f80578f2e006ccb65c08",
     "semantic_hash": ""
   },
   "lib/taxCalc.js": {
@@ -400,8 +400,8 @@
     "semantic_hash": ""
   },
   "lib/fiscal-redistribution.js": {
-    "mtime": 1785093074.5963035,
-    "ast_hash": "26668781f1fe950d1d67fe1c87de47ce",
+    "mtime": 1785455464.9173775,
+    "ast_hash": "d1e01f705fb32d4d664b7b1d08c7a2d5",
     "semantic_hash": ""
   },
   "lib/fiscal-unlink.js": {

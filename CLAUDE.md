@@ -161,7 +161,10 @@ ORDER BY table_name, ordinal_position;
 `paid_at` date · `status` varchar · `notes` text · `created_at` timestamp · `origin` varchar · `invoice_id` int ·
 `payment_month` int · `payment_year` int (mês de caixa) ·
 `kind` varchar(20) NOT NULL default `'manual'` (classificação de lançamento manual — o
-imposto **não** vira linha aqui; ver "Composição fiscal na aba Pagar Victor")
+imposto **não** vira linha aqui; ver "Composição fiscal na aba Pagar Victor") ·
+`lucro_antes_escritorio` numeric · `lucro_antes_inss` numeric · `lucro_antes_das` numeric ·
+`capital_proprio` numeric (saldo corrente da cascata Escritório → INSS → DAS; o fim da
+cascata é o próprio `profit_amount` — ver "Cascata do lucro persistida")
 
 ### `payable_payments` (múltiplos pagamentos por payable)
 `id` int · `payable_type` varchar (`victor`|`fabricio`) · `payable_id` int · `amount` numeric ·
@@ -481,6 +484,45 @@ O card em si continua sendo **previsão** — ele estima a partir do faturamento
 muda quando a guia chega. Por isso o bloco **📄 Guias oficiais lançadas** aparece embaixo
 quando há `amount_actual`: sem ele a leitura é de que salvar não fez efeito. O que muda de
 verdade é o card de Reservas, a memória de cálculo e a lista de Pagar Victor.
+
+### Cascata do lucro persistida — 2026-07-30
+
+`payables_victor` ganhou quatro colunas de **saldo corrente** do waterfall
+Escritório → INSS → DAS: `lucro_antes_escritorio`, `lucro_antes_inss`, `lucro_antes_das`
+e `capital_proprio` (todas `NUMERIC(10,2) DEFAULT 0`). O fim da cascata é o
+`profit_amount` que já existia — não há coluna `lucro_final`.
+
+A fórmula é `cascataDoLucro()` em `lib/fiscal-redistribution.js`, e é **uma só**: grava
+pelo `?action=recalcular` (`api/fiscal-obligations.js`) e é recalculada para exibir no GET
+de `api/payables-victor.js`. A tela não lê as colunas — elas só são escritas quando a
+redistribuição é aplicada, então uma fatura recebida num mês ainda não redistribuído
+mostraria a cascata zerada. As colunas são o **histórico**; o display sai da função.
+
+⚠️ **A cascata parte de `victor_profit + victor_tax_diff + invoices.tax_amount`**, não do
+`victor_profit` puro. O lucro da fatura já vem líquido da provisão de 7%, que foi retida do
+bruto antes do split; partir dele e subtrair DAS/INSS/honorários cheios erraria pela
+provisão em toda linha. Com o gross-up a identidade fecha nos dois ramos de `aplicarDelta`:
+`lucro_antes_das − das = baseProfit + provisão − real = profit_depois`.
+
+`lucro_final` é aritmético e **pode ser negativo** — nos dois casos reais de Jan/2026 ele é
+(Pharmalog −46,92 e Bokada −26,79, o imposto real superando o lucro). O `profit_amount`
+gravado é clampado em zero por `aplicarDelta`, o serviço absorve a diferença e só o que
+sobrar vira `capital_proprio`. A tela mostra os dois lado a lado: é exatamente aí que o
+aporte fica visível.
+
+"Escritório" na cascata é o kind **`honorarios`** (`KINDS = ['das','inss','honorarios']` —
+os únicos rateados). O kind `escritorio` é legado da migração de `victor_reserves`, não
+gera `fiscal_allocations`, e entra na soma só por defesa.
+
+Junto vai a **conferência** (`r.conferencia`): `imposto real + serviço + lucro + Fabrício`
+tem de fechar com `invoices.invoice_value`. Fabrício sai da FATURA, não do payable — é a
+decomposição da nota que se confere, e ela existe antes de o recebimento gerar o payable
+dele. Tolerância de **R$ 0,05**: a soma atravessa ~6 arredondamentos e o `ratear` joga o
+resíduo na maior fatia (Pharmalog Jan/2026 fecha em 9.775,01 contra NF de 9.775,00).
+
+**Backfill não foi feito** — as colunas só se populam quando o mês for redistribuído. Como
+o display não depende delas, a tela já está correta; o que falta é o histórico dos meses
+antigos.
 
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 

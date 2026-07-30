@@ -905,6 +905,104 @@ export default function Financial() {
                   {item.fiscal.do_lucro !== 0 && ` + lucro ${fmt(item.fiscal.do_lucro)}`}
                   {item.fiscal.do_servico !== 0 && ` + serviço ${fmt(item.fiscal.do_servico)}`}
                 </p>
+                {/* CASCATA DO LUCRO — saldo corrente, Escritório → INSS → DAS.
+                    Parte do lucro BRUTO (lucro da fatura + a provisão de 7% que foi
+                    retida antes do split), senão a conta não fecha em lucro_final: a
+                    provisão já saiu do victor_profit e seria descontada duas vezes.
+                    Ver cascataDoLucro() em lib/fiscal-redistribution.js. */}
+                {item.cascata && (
+                  <div className="mt-3 p-3 bg-gray-900/60 rounded-lg border border-gray-700/70">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">💰 Cascata do lucro</p>
+
+                    <div className="space-y-1 text-xs font-mono">
+                      <div className="flex justify-between text-gray-400">
+                        <span className="font-sans">Lucro bruto (antes de imposto)</span>
+                        <span>{fmt(item.cascata.lucro_antes_escritorio)}</span>
+                      </div>
+
+                      <div className="flex justify-between text-gray-500">
+                        <span className="font-sans pl-3">− Escritório</span>
+                        <span>{fmt(item.cascata.escritorio)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-400 border-t border-gray-800 pt-1">
+                        <span className="font-sans">= após Escritório</span>
+                        <span>{fmt(item.cascata.lucro_antes_inss)}</span>
+                      </div>
+
+                      <div className="flex justify-between text-gray-500">
+                        <span className="font-sans pl-3">− INSS</span>
+                        <span>{fmt(item.cascata.inss)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-400 border-t border-gray-800 pt-1">
+                        <span className="font-sans">= após INSS</span>
+                        <span>{fmt(item.cascata.lucro_antes_das)}</span>
+                      </div>
+
+                      <div className="flex justify-between text-gray-500">
+                        <span className="font-sans pl-3">− DAS</span>
+                        <span>{fmt(item.cascata.das)}</span>
+                      </div>
+                      <div className={`flex justify-between border-t border-gray-700 pt-1 font-semibold ${item.cascata.lucro_final < 0 ? 'text-red-400' : 'text-white'}`}>
+                        <span className="font-sans">= Lucro final</span>
+                        <span>{fmt(item.cascata.lucro_final)}</span>
+                      </div>
+                    </div>
+
+                    {/* Cascata negativa: o lucro não cobriu o imposto. O que o payable
+                        registra é o clamp em zero — a diferença foi absorvida pelo
+                        serviço e, no que sobrou, pelo capital próprio do Victor. */}
+                    {item.cascata.lucro_final < 0 && (
+                      <p className="mt-2 text-[11px] text-gray-500 leading-tight">
+                        Lucro negativo: o payable registra {fmt(item.profit_amount)} e a diferença
+                        {item.fiscal.do_servico > 0 && <> saiu do serviço ({fmt(item.fiscal.do_servico)})</>}
+                        {item.cascata.capital_proprio > 0 && <> e do capital próprio</>}.
+                      </p>
+                    )}
+
+                    {item.cascata.capital_proprio > 0 && (
+                      <div className="mt-2 flex justify-between text-xs font-semibold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-2 py-1">
+                        <span>Capital próprio (injetar)</span>
+                        <span className="font-mono">{fmt(item.cascata.capital_proprio)}</span>
+                      </div>
+                    )}
+
+                    {/* Conferência da decomposição da NF: imposto + serviço + lucro +
+                        Fabrício tem de fechar com o valor da nota. */}
+                    {item.conferencia && (
+                      <div className="mt-2 pt-2 border-t border-gray-800 space-y-1 text-xs font-mono">
+                        <div className="flex justify-between text-gray-500">
+                          <span className="font-sans">Serviço Victor</span>
+                          <span>{fmt(item.service_amount)}</span>
+                        </div>
+                        <div className="flex justify-between text-gray-500">
+                          <span className="font-sans">Lucro Victor</span>
+                          <span>{fmt(item.profit_amount)}</span>
+                        </div>
+                        <div className="flex justify-between text-gray-500">
+                          <span className="font-sans">Fabrício</span>
+                          <span>{fmt(item.conferencia.fabricio)}</span>
+                        </div>
+                        <div className={`flex justify-between pt-1 border-t border-gray-800 ${item.conferencia.confere ? 'text-gray-400' : 'text-amber-400'}`}>
+                          <span className="font-sans">
+                            {item.conferencia.confere ? '✓' : '⚠️'} imposto + serviço + lucro + Fabrício
+                          </span>
+                          <span>{fmt(item.conferencia.soma)}</span>
+                        </div>
+                        <div className="flex justify-between text-gray-600">
+                          <span className="font-sans">NF</span>
+                          <span>{fmt(item.conferencia.nf)}</span>
+                        </div>
+                        {!item.conferencia.confere && (
+                          <p className="text-amber-300/90 text-[11px] font-sans leading-tight pt-1">
+                            Diferença de {fmt(Math.abs(item.conferencia.diferenca))} — esperado enquanto a
+                            redistribuição do mês não for aplicada.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {Math.abs(item.fiscal.a_redistribuir) >= 0.01 && (
                   <p className="mt-1.5 text-amber-300/90 text-[11px] bg-amber-500/10 border border-amber-500/30 rounded-lg px-2 py-1 leading-tight">
                     ⚠️ {fmt(Math.abs(item.fiscal.a_redistribuir))} de imposto {item.fiscal.a_redistribuir > 0 ? 'a mais que' : 'a menos que'} a provisão

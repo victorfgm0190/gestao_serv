@@ -5,6 +5,8 @@ import { statusFor } from '../lib/payment-status.js'
 import { CLIENT_PHARMA, CATS, r2, ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
 // Ordem canônica dos kinds — a mesma que a aba usa para exibir. Uma cópia só.
 import { ORDEM_KIND } from '../lib/fiscal-lines.js'
+// A cascata exibida sai das MESMAS funções que a gravam em ?action=recalcular.
+import { aplicarDelta, cascataDoLucro } from '../lib/fiscal-redistribution.js'
 
 // Recalcula o pai de um payable_victor após alterar seus pagamentos.
 async function recalcVictorParent(sql, payable_id) {
@@ -184,7 +186,10 @@ export default async function handler(req, res) {
     const invIds = [...new Set(rows.map((r) => r.invoice_id).filter(Boolean))]
     if (invIds.length) {
       const [taxes, allocs] = await Promise.all([
-        sql`SELECT id, tax_amount FROM invoices WHERE id = ANY(${invIds})`,
+        sql`
+          SELECT id, tax_amount, invoice_value, victor_service, victor_profit,
+                 victor_tax_diff, fabricio_total
+          FROM invoices WHERE id = ANY(${invIds})`,
         sql`
           SELECT a.invoice_id, o.kind,
                  SUM(a.amount)                      AS amount,
@@ -196,6 +201,7 @@ export default async function handler(req, res) {
           GROUP BY a.invoice_id, o.kind`,
       ])
       const provisao = new Map(taxes.map((t) => [Number(t.id), parseFloat(t.tax_amount) || 0]))
+      const faturas = new Map(taxes.map((t) => [Number(t.id), t]))
       const porFatura = new Map()
       for (const a of allocs) {
         const k = Number(a.invoice_id)
@@ -215,6 +221,40 @@ export default async function handler(req, res) {
         const do_servico = r2(linhas.reduce((s, l) => s + l.from_service, 0))
         const do_lucro = r2(linhas.reduce((s, l) => s + l.from_profit, 0))
         const provisionado = provisao.get(Number(r.invoice_id)) ?? 0
+
+        // Cascata do lucro (Escritório → INSS → DAS) para exibição.
+        //
+        // Calculada aqui, e não lida das colunas, porque as colunas só são escritas por
+        // `?action=recalcular` com `aplicar: true`: fatura recebida cujo mês ainda não foi
+        // redistribuído mostraria uma cascata toda zerada — pior que não mostrar nada.
+        // Como sai das mesmas duas funções exportadas que fazem a gravação, os dois
+        // caminhos não têm como divergir (as colunas continuam sendo o histórico).
+        const inv = faturas.get(Number(r.invoice_id))
+        if (inv) {
+          const porKind = {}
+          for (const l of linhas) porKind[l.kind] = r2((porKind[l.kind] || 0) + l.amount)
+          const baseService = r2(parseFloat(inv.victor_service) || 0)
+          const baseProfit = r2((parseFloat(inv.victor_profit) || 0) + (parseFloat(inv.victor_tax_diff) || 0))
+          const alvo = aplicarDelta(baseService, baseProfit, r2(total - provisionado))
+          r.cascata = cascataDoLucro({
+            baseProfit, provisionado, porKind, nao_coberto: alvo.nao_coberto,
+          })
+          // Dupla checagem da decomposição da NF. A identidade que tem de fechar:
+          //   NF = imposto real + serviço Victor + lucro Victor + Fabrício
+          // (o gross-up do imposto do cliente já está dentro de victor_tax_diff → lucro).
+          // Fabrício sai da FATURA, não do payable: é a decomposição da nota que se está
+          // conferindo, e ela existe mesmo antes de o recebimento gerar o payable dele.
+          const fabricio = r2(parseFloat(inv.fabricio_total) || 0)
+          const nf = r2(parseFloat(inv.invoice_value) || 0)
+          const soma = r2(total + (parseFloat(r.service_amount) || 0) + (parseFloat(r.profit_amount) || 0) + fabricio)
+          const diferenca = r2(soma - nf)
+          // Tolerância de centavo: a soma atravessa ~6 arredondamentos independentes (um
+          // por kind rateado, mais serviço, lucro e Fabrício), e o `ratear` ainda joga o
+          // resíduo na maior fatia. Caso real em Jan/2026: Pharmalog fecha em 9.775,01
+          // contra NF de 9.775,00. Abaixo de R$ 0,05 é arredondamento, não erro.
+          r.conferencia = { nf, fabricio, soma, diferenca, confere: Math.abs(diferenca) <= 0.05 }
+        }
+
         r.fiscal = {
           linhas, total, provisionado, do_servico, do_lucro,
           // Excedente do imposto real sobre a provisão que ainda NÃO foi absorvido pelo

@@ -904,10 +904,24 @@ async function recalcular(sql, req, res, raw = false) {
     for (const r of aplicaveis) {
       const s = r.mudancas.servico_victor.depois
       const p = r.mudancas.lucro_victor.depois
+      // A cascata é gravada junto: é o registro auditável de como o lucro foi consumido
+      // pelos impostos daquela NF (e de quanto saiu do capital próprio). A tela não
+      // depende dela para exibir — o GET de payables-victor recalcula pela MESMA função
+      // —, mas sem persistir não há histórico: reapurar o mês reescreveria o passado.
+      //
+      // `origin IS DISTINCT FROM 'fiscal'` é defesa em profundidade, mesmo idioma de
+      // `candidatosDisponiveis()`: linha fiscal é espelho de obrigação da empresa, tem
+      // `invoice_id` NULL e nunca chega aqui — mas se chegasse, gravaria uma cascata de
+      // lucro em cima de uma linha que não tem lucro nenhum.
+      const c = r.cascata
       writes.push(sql`
         UPDATE payables_victor SET
-          service_amount = ${s}, profit_amount = ${p}, total_amount = ${round2(s + p)}
-        WHERE id = ${r.payable_id}`)
+          service_amount = ${s}, profit_amount = ${p}, total_amount = ${round2(s + p)},
+          lucro_antes_escritorio = ${c.lucro_antes_escritorio},
+          lucro_antes_inss       = ${c.lucro_antes_inss},
+          lucro_antes_das        = ${c.lucro_antes_das},
+          capital_proprio        = ${c.capital_proprio}
+        WHERE id = ${r.payable_id} AND origin IS DISTINCT FROM 'fiscal'`)
       // Registra em cada linha do rateio de onde o imposto daquele cliente saiu.
       // `from_service`/`from_profit` já existiam no schema e nunca haviam sido gravados.
       const totalReal = r.real
