@@ -6,15 +6,18 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const { company_id, year, month, mode } = req.query
     const caixa = mode === 'caixa'  // caixa filtra por payment_month/payment_year
+    // Visão fiscal: agrupada pela emissão da NF no frontend. Aqui só se alarga a janela
+    // de anos, para que a NF de dezembro emitida em janeiro chegue na resposta.
+    const anos = mode === 'fiscal' ? [Number(year) - 1, Number(year)] : [Number(year)]
     let rows
     if (caixa) {
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
     } else {
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ${year} AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ANY(${anos}) AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_fabricio p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ANY(${anos}) ORDER BY p.month DESC, p.created_at DESC`
     }
     const ids = rows.map(r => r.id)
     let payments = []
@@ -29,13 +32,14 @@ export default async function handler(req, res) {
     if (req.query.include_preview === 'true') {
       const prev = caixa
         ? await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.fabricio_total FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.payment_year = ${year} AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
-        : await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.fabricio_total FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.year = ${year} AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
+        : await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.fabricio_total, i.emission_date FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.year = ANY(${anos}) AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
       for (const p of prev) {
         rows.push({
           id: 'preview_' + p.receivable_id,
           client_name: p.client_name,
           month: p.month, year: p.year,
           payment_month: p.payment_month, payment_year: p.payment_year,
+          emission_date: p.emission_date,
           amount: p.fabricio_total,
           status: 'previsto', origin: 'faturamento', is_preview: true,
           receivable_status: 'pendente', invoice_id: p.invoice_id, payments: [],

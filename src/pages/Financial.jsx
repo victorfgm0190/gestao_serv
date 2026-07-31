@@ -43,6 +43,18 @@ const EMPTY_RECEIVE_CATS = { honorarios: '', das: '', inss: '', pro_labore: '', 
 
 // Rótulos dos `kind` de fiscal_obligations no card de Reservas.
 const RESERVA_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Honorários', pro_labore: 'Pro Labore', escritorio: 'Escritório' }
+
+// As 3 visões de data. [chave, rótulo do botão, tooltip]
+const MODOS = [
+  ['competencia', 'Competência', 'Mês em que o serviço foi prestado'],
+  ['fiscal', 'Fiscal', 'Mês de emissão da nota fiscal'],
+  ['caixa', 'Caixa', 'Mês em que o dinheiro entrou'],
+]
+const MODO_LABEL = {
+  competencia: 'competência (mês do serviço)',
+  fiscal: 'fiscal (mês da emissão da NF)',
+  caixa: 'caixa (mês do recebimento)',
+}
 const receiveCategoryTotal = (cats) => RECEIVE_VICTOR_CATEGORIES.reduce((s, [k]) => s + (parseFloat(cats[k]) || 0), 0)
 const RECEIVE_LABEL_TO_KEY = Object.fromEntries(RECEIVE_VICTOR_CATEGORIES.map(([k, label]) => [label, k]))
 // Reconstrói as categorias a partir da string de notes gravada pelo pagarDistribuido
@@ -102,7 +114,12 @@ export default function Financial() {
   const [estornoConfirm, setEstornoConfirm] = useState(null)
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1)
   const [filterStatus, setFilterStatus] = useState('all')
-  const [mode, setMode] = useState('competencia') // 'competencia' (mês do faturamento) | 'caixa' (mês do recebimento)
+  // Três datas distintas por lançamento, e elas divergem de verdade:
+  //   competencia → mês do serviço prestado      (payables.month/year)
+  //   fiscal      → mês de EMISSÃO da NF         (invoices.emission_date)
+  //   caixa       → mês do recebimento           (payables.payment_month/year)
+  // Ex. real: Pharmalog Jan/2026 → fiscal 02/02/2026 → caixa 07/2026, três meses diferentes.
+  const [mode, setMode] = useState('competencia')
   const [victorCats, setVictorCats] = useState(EMPTY_VICTOR_CATS)
   const [showReceiveModal, setShowReceiveModal] = useState(false)
   const [receiveCats, setReceiveCats] = useState(EMPTY_RECEIVE_CATS)
@@ -666,14 +683,40 @@ export default function Financial() {
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
   // Mês/ano efetivos conforme a visão: caixa usa payment_month/year; competência usa month/year.
-  const effMonth = (r) => mode === 'caixa' ? (r.payment_month ?? r.month) : r.month
-  const effYear = (r) => mode === 'caixa' ? (r.payment_year ?? r.year) : r.year
+  // Data fiscal = emissão da NF. Sem NF (lançamento manual, linha fiscal) cai na
+  // competência — mesmo COALESCE de `faturasDoMes` em api/fiscal-obligations.js, para as
+  // duas telas agruparem igual. `slice` em vez de `new Date()`: a coluna é DATE e o parse
+  // com fuso jogaria dia 01 para o mês anterior.
+  // Aceita tanto a string ISO que o JSON entrega ("2026-02-02T00:00:00.000Z") quanto um
+  // Date — `String(date)` daria "Mon Feb 02 2026", o slice sairia sem hífens e a linha
+  // cairia no fallback de competência SEM erro nenhum, fazendo a visão fiscal parecer
+  // idêntica à de competência. Foi exatamente o que aconteceu no primeiro teste.
+  const fiscalParts = (r) => {
+    if (!r.emission_date) return null
+    const s = typeof r.emission_date === 'string'
+      ? r.emission_date
+      : new Date(r.emission_date).toISOString()
+    const [y, m] = s.slice(0, 10).split('-').map(Number)
+    return y && m ? { y, m } : null
+  }
+  const effMonth = (r) => mode === 'caixa' ? (r.payment_month ?? r.month)
+    : mode === 'fiscal' ? (fiscalParts(r)?.m ?? r.month)
+    : r.month
+  const effYear = (r) => mode === 'caixa' ? (r.payment_year ?? r.year)
+    : mode === 'fiscal' ? (fiscalParts(r)?.y ?? r.year)
+    : r.year
   const isPreview = (r) => r.is_preview === true
   const isPayTab = tab === 'victor' || tab === 'fabricio'
   const baseData = tab === 'receivables' ? receivables : tab === 'fabricio' ? payablesFab : payablesVictor
+  // Na visão fiscal a API devolve um superconjunto de dois anos de competência (a NF de
+  // dezembro emitida em janeiro), então o ano tem de ser refiltrado pela data efetiva.
+  // Nas outras visões a própria query já veio recortada — refiltrar seria redundante.
+  const yearFiltered = mode === 'fiscal'
+    ? baseData.filter(r => Number(effYear(r)) === Number(filterYear))
+    : baseData
   const monthFiltered = filterMonth === ''
-    ? baseData
-    : baseData.filter(r => Number(effMonth(r)) === Number(filterMonth))
+    ? yearFiltered
+    : yearFiltered.filter(r => Number(effMonth(r)) === Number(filterMonth))
   // Entradas "previsto" (recebível pendente, ainda sem payable) ficam à parte da lista real.
   const previewData = isPayTab && filterStatus !== 'pago' ? monthFiltered.filter(isPreview) : []
   const realMonthFiltered = monthFiltered.filter(r => !isPreview(r))
@@ -725,9 +768,21 @@ export default function Financial() {
   const payKey = (r) => (Number(r.payment_year) || r.year) * 100 + (Number(r.payment_month) || r.month)
   // Na edição, a referência precisa cobrir o mês de CAIXA mais recente entre os payables da sessão
   // (senão algum registro restaurado ficaria fora da redistribuição).
-  const effectiveRefKey = editSession && editSession.affected.length
-    ? Math.max(REF_KEY, ...editSession.affected.map(a => payKey(a)))
-    : REF_KEY
+  //
+  // O teto principal é o mês de CAIXA da data do pagamento — espelho exato do `curKey` em
+  // pagarDistribuido(). Antes saía só do REF_KEY (filtro de competência da tela), e como o
+  // caixa de um payable é sempre posterior à sua competência, a prévia aparecia vazia e o
+  // backend gravava zero. Os dois lados têm de calcular o mesmo teto, senão a prévia mente.
+  const paidAtKey = (() => {
+    if (!receivePaidAt) return 0
+    const [y, m] = String(receivePaidAt).slice(0, 10).split('-').map(Number)
+    return y && m ? y * 100 + m : 0
+  })()
+  const effectiveRefKey = Math.max(
+    paidAtKey,
+    REF_KEY,
+    ...(editSession && editSession.affected.length ? editSession.affected.map(a => payKey(a)) : []),
+  )
   const effRefMonth = effectiveRefKey % 100
   const effRefYear = Math.floor(effectiveRefKey / 100)
   const saldoOf = (r) => Math.round(((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)) * 100) / 100
@@ -912,7 +967,12 @@ export default function Financial() {
                     Ver cascataDoLucro() em lib/fiscal-redistribution.js. */}
                 {item.cascata && (
                   <div className="mt-3 p-3 bg-gray-900/60 rounded-lg border border-gray-700/70">
-                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">💰 Cascata do lucro</p>
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">
+                      💰 Cascata do lucro
+                      <span className="ml-2 normal-case tracking-normal text-gray-600">
+                        · agrupado por {mode === 'competencia' ? 'competência' : mode === 'fiscal' ? 'data fiscal' : 'caixa'}
+                      </span>
+                    </p>
 
                     <div className="space-y-1 text-xs font-mono">
                       <div className="flex justify-between text-gray-400">
@@ -1091,12 +1151,16 @@ export default function Financial() {
         </div>
       </div>
 
-      {/* Toggle Competência x Caixa */}
+      {/* Toggle das 3 visões de data */}
       <div className="flex gap-2 mb-4 items-center">
         <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Visão:</span>
         <div className="flex gap-1 bg-gray-900 p-1 rounded-xl w-fit">
-          <button onClick={() => setMode('competencia')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === 'competencia' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Competência</button>
-          <button onClick={() => setMode('caixa')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === 'caixa' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Caixa</button>
+          {MODOS.map(([key, label, hint]) => (
+            <button key={key} onClick={() => setMode(key)} title={hint}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === key ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -1161,7 +1225,8 @@ export default function Financial() {
       })()}
 
       <p className="text-gray-500 text-xs mb-4 -mt-2">
-        {mode === 'caixa' ? 'Visualizando por caixa (mês do recebimento)' : 'Visualizando por competência (mês do faturamento)'}
+        Visualizando por {MODO_LABEL[mode]}
+        {mode === 'fiscal' && ' — lançamentos sem NF (manuais e linhas fiscais) caem na competência'}
       </p>
 
       {(tab === 'victor' || tab === 'fabricio') && (

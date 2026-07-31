@@ -485,6 +485,54 @@ muda quando a guia chega. Por isso o bloco **📄 Guias oficiais lançadas** apa
 quando há `amount_actual`: sem ele a leitura é de que salvar não fez efeito. O que muda de
 verdade é o card de Reservas, a memória de cálculo e a lista de Pagar Victor.
 
+### Três visões de data (competência / fiscal / caixa) — 2026-07-30
+
+O toggle do `/financial` tinha duas visões e passou a ter três, porque são três datas
+mesmo — e elas divergem de verdade. O payable 28 (Pharmalog, Lumen) é o caso didático:
+
+| visão | fonte | valor no id 28 |
+|-------|-------|----------------|
+| **competência** | `payables_victor.month/year` | 01/2026 (serviço prestado) |
+| **fiscal** | `invoices.emission_date` | 02/2026 (NF emitida) |
+| **caixa** | `payables_victor.payment_month/year` | 07/2026 (dinheiro entrou) |
+
+**Nenhuma coluna nova foi criada** — `invoices.emission_date` já existia (22 de 24 faturas
+preenchidas) e é a mesma data que `faturasDoMes()` usa para agrupar a apuração. O que
+faltava era expor: `emission_date` entrou no SELECT de `payables-victor`, `payables-fabricio`
+e `receivables` (as três abas precisam concordar na visão ativa).
+
+O agrupamento é client-side, em `effMonth`/`effYear` (`Financial.jsx`). Sem NF — lançamento
+manual, linha `origin='fiscal'` — cai na competência, mesmo `COALESCE` de `faturasDoMes`.
+
+⚠️ **`emission_date` chega como string ISO pelo JSON, mas como `Date` em qualquer consumo
+direto do driver.** `String(date)` dá `"Mon Feb 02 2026"`, o `slice(0,10).split('-')` sai sem
+hífen e a linha cai no fallback de competência **sem erro nenhum** — a visão fiscal fica
+idêntica à de competência e parece que a feature não funciona. `fiscalParts()` normaliza os
+dois formatos. Foi exatamente o que aconteceu no primeiro teste desta implementação.
+
+Na visão fiscal o GET devolve **dois anos** de competência (`p.year = ANY([year-1, year])`)
+e o ano exato é refiltrado no browser: a NF de dezembro emitida em janeiro tem competência
+12/AAAA-1 e data fiscal 01/AAAA, e sem alargar a janela sumiria da tela.
+
+### 🐞 "Receber" gravava zero em silêncio — corrigido 2026-07-30
+
+`?action=pagar-distribuido` comparava dois relógios: o teto (`curKey`) saía do filtro de
+**competência** da tela e era comparado, em `candidatosDisponiveis()`, contra o mês de
+**caixa** do payable. Como um payable de janeiro é pago em fevereiro POR CONSTRUÇÃO, o caixa
+é quase sempre posterior à competência — a regra descartava justamente os payables do mês
+que se estava olhando. Caso real: Jan/2026 da Lumen tinha R$ 10.501,35 em aberto e o
+"Receber" de R$ 209,16 gravava **zero**, com 200 OK e sem aviso nenhum.
+
+Agora `curKey = max(mês de caixa do paid_at, reference_*)`. É `max` e não só o `paid_at`
+porque a **edição de sessão** manda em `reference_*` a competência mais recente já consumida,
+e baixar o teto abaixo dela deixaria payables de fora da redistribuição.
+
+O mesmo teto foi espelhado em `effectiveRefKey` (`Financial.jsx`) — os dois lados calculam
+igual, senão a prévia da distribuição volta a mentir.
+
+E o pool vazio deixou de responder 200: agora é **422** com a razão. O 200 com `applied: []`
+fechava o modal como se tivesse gravado, e o usuário só descobria olhando a lista depois.
+
 ### Cascata do lucro persistida — 2026-07-30
 
 `payables_victor` ganhou quatro colunas de **saldo corrente** do waterfall

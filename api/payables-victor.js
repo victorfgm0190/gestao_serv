@@ -49,11 +49,29 @@ async function pagarDistribuido(sql, req, res) {
     await estornarSessao(sql, company_id, edit_session.paid_at, edit_session.notes)
   }
 
-  // Mês de referência = filtro ativo da tela (fallback: mês do calendário).
+  // Teto do que pode ser consumido = mês de CAIXA da data do pagamento.
+  //
+  // Saía do filtro de competência da tela (`reference_month/year`) e era comparado, em
+  // candidatosDisponiveis(), contra o mês de caixa do payable — dois relógios diferentes.
+  // Como um payable de janeiro é pago em fevereiro POR CONSTRUÇÃO, o caixa é quase sempre
+  // posterior à competência, e a regra "caixa <= competência do filtro" descartava
+  // justamente os payables do mês que se estava olhando. Caso real: Jan/2026 da Lumen
+  // tinha R$ 10.501,35 em aberto e o "Receber" gravava zero, com 200 OK e sem aviso.
+  //
+  // A regra que se quer é "não consumir caixa que ainda não entrou", e quem define isso é
+  // a data do pagamento — a mesma que o `consumir()` já usa para gravar payment_month/year.
+  // `reference_month/year` continua aceito como fallback (compatibilidade com chamadas
+  // antigas) e é o que a edição de sessão envia quando cobre competências mais recentes.
+  //
+  // É o MAIOR entre os dois, não o do pagamento puro: ao editar uma sessão, o frontend
+  // manda em `reference_*` a competência mais recente que a sessão já havia consumido, e
+  // baixar o teto abaixo dela deixaria de fora payables que precisam ser redistribuídos.
   const now = new Date()
-  const refMonth = reference_month ? Number(reference_month) : (now.getMonth() + 1)
+  const [payY, payM] = String(when).slice(0, 10).split('-').map(Number)
+  const keyPagamento = payM ? payY * 100 + payM : 0
+  const refMonth = reference_month ? Number(reference_month) : now.getMonth() + 1
   const refYear = reference_year ? Number(reference_year) : now.getFullYear()
-  const curKey = refYear * 100 + refMonth
+  const curKey = Math.max(keyPagamento, refYear * 100 + refMonth)
 
   const candidatos = await candidatosDisponiveis(sql, company_id, curKey)
 
@@ -61,7 +79,18 @@ async function pagarDistribuido(sql, req, res) {
   if (mode === 'geral') {
     const lista = ordenar(candidatos)
     const { writes, applied, restante } = consumir(sql, total, lista, when, notes)
-    if (writes.length) await sql.transaction(writes)
+    // Pool vazio não é sucesso. Antes daqui saía 200 com applied:[] e o modal fechava
+    // como se tivesse gravado — o usuário só descobria olhando a lista depois.
+    if (!writes.length) {
+      return res.status(422).json({
+        error: lista.length === 0
+          ? `Nenhum lançamento disponível para consumir em ${String(refMonth).padStart(2, '0')}/${refYear}. Só entram os que já foram recebidos do cliente e cujo mês de caixa não é posterior à data do pagamento.`
+          : 'Os lançamentos disponíveis já estão quitados — não há saldo a consumir.',
+        candidatos: lista.length,
+        leftover: restante,
+      })
+    }
+    await sql.transaction(writes)
     return res.status(200).json({ mode: 'geral', applied, leftover: restante })
   }
 
@@ -141,25 +170,33 @@ export default async function handler(req, res) {
     }
     const { company_id, year, month, status, mode } = req.query
     const caixa = mode === 'caixa'  // caixa filtra por payment_month/payment_year
+    // Visão fiscal: agrupa pela data de EMISSÃO da NF (invoices.emission_date), que é a
+    // competência que o fisco enxerga — a mesma de `faturasDoMes` em fiscal-obligations.
+    // O agrupamento em si é do frontend (effMonth/effYear); aqui só se garante que a
+    // linha venha na resposta: uma NF de dezembro emitida em janeiro tem competência
+    // 12/AAAA-1 e data fiscal 01/AAAA, e sem alargar a janela ela sumiria da visão.
+    // A filtragem exata por ano fiscal é client-side, sobre este superconjunto.
+    const fiscal = mode === 'fiscal'
+    const anos = fiscal ? [Number(year) - 1, Number(year)] : [Number(year)]
     const statusList = status ? status.split(',').map(s => s.trim()).filter(Boolean) : []
     let rows
     if (statusList.length && caixa) {
       // Caixa: pendentes/parciais até o mês de caixa do filtro (inclusive), acumulando meses anteriores.
       // Ordem SEMPRE por competência (year/month asc) — distribuição segue mês mais antigo primeiro.
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND (p.payment_year < ${year} OR (p.payment_year = ${year} AND p.payment_month <= ${month})) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND p.payment_year = ${year} ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND (p.payment_year < ${year} OR (p.payment_year = ${year} AND p.payment_month <= ${month})) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) AND p.payment_year = ${year} ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
     } else if (statusList.length) {
       // Competência (padrão): todos os pendentes/parciais, mês mais antigo primeiro (year/month asc).
-      rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
+      rows = await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.status = ANY(${statusList}) ORDER BY p.year ASC, p.month ASC, p.created_at ASC`
     } else if (caixa) {
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
     } else {
       rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ${year} AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
-        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ${year} ORDER BY p.month DESC, p.created_at DESC`
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ANY(${anos}) AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
+        : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ANY(${anos}) ORDER BY p.month DESC, p.created_at DESC`
     }
     const ids = rows.map(r => r.id)
     let payments = []
@@ -270,13 +307,14 @@ export default async function handler(req, res) {
     if (req.query.include_preview === 'true') {
       const prev = caixa
         ? await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.victor_total FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.payment_year = ${year} AND NOT EXISTS (SELECT 1 FROM payables_victor pv WHERE pv.invoice_id = i.id)`
-        : await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.victor_total FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.year = ${year} AND NOT EXISTS (SELECT 1 FROM payables_victor pv WHERE pv.invoice_id = i.id)`
+        : await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.victor_total, i.emission_date FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.year = ANY(${anos}) AND NOT EXISTS (SELECT 1 FROM payables_victor pv WHERE pv.invoice_id = i.id)`
       for (const p of prev) {
         rows.push({
           id: 'preview_' + p.receivable_id,
           client_name: p.client_name,
           month: p.month, year: p.year,
           payment_month: p.payment_month, payment_year: p.payment_year,
+          emission_date: p.emission_date,
           total_amount: p.victor_total,
           status: 'previsto', origin: 'faturamento', is_preview: true,
           receivable_status: 'pendente', invoice_id: p.invoice_id, payments: [],

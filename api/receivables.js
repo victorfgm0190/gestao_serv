@@ -19,15 +19,18 @@ export default async function handler(req, res) {
     // mode=caixa filtra por payment_month/payment_year (mês do recebimento);
     // competência (padrão) filtra por month/year (mês do faturamento).
     const caixa = mode === 'caixa'
+    // mode=fiscal agrupa pela emissão da NF (feito no frontend); aqui a janela de anos é
+    // alargada para a NF de dezembro emitida em janeiro não sumir da visão.
+    const anos = mode === 'fiscal' ? [Number(year) - 1, Number(year)] : [Number(year)]
     let rows
     if (caixa) {
       rows = month
-        ? await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.payment_year = ${year} AND r.payment_month = ${month} ORDER BY r.created_at DESC`
-        : await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.payment_year = ${year} ORDER BY r.payment_month DESC, r.created_at DESC`
+        ? await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj, i.emission_date FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.payment_year = ${year} AND r.payment_month = ${month} ORDER BY r.created_at DESC`
+        : await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj, i.emission_date FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.payment_year = ${year} ORDER BY r.payment_month DESC, r.created_at DESC`
     } else {
       rows = month
-        ? await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ${year} AND r.month = ${month} ORDER BY r.created_at DESC`
-        : await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ${year} ORDER BY r.month DESC, r.created_at DESC`
+        ? await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj, i.emission_date FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ANY(${anos}) AND r.month = ${month} ORDER BY r.created_at DESC`
+        : await sql`SELECT r.*, c.name as client_name, ct.cnpj as contract_cnpj, i.emission_date FROM receivables r LEFT JOIN clients c ON c.id = r.client_id LEFT JOIN invoices i ON i.receivable_id = r.id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE r.company_id = ${company_id} AND r.year = ANY(${anos}) ORDER BY r.month DESC, r.created_at DESC`
     }
     return res.status(200).json({ data: rows })
   }
