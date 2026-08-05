@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1785932841.109583,
-    "ast_hash": "00a95a29c6ece20d3ddb48dd5c073609",
+    "mtime": 1785935574.1712382,
+    "ast_hash": "81cf0a67c454e3adb02d6c73bab629db",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785934594.17709,
-    "ast_hash": "0044f857446955f9d342d6e92c598dbd",
+    "mtime": 1785935689.5412698,
+    "ast_hash": "65ec87100a2914b38fbf7a38cf459ccc",
     "semantic_hash": ""
   },
   "README.md": {
@@ -425,8 +425,8 @@
     "semantic_hash": ""
   },
   "api/export-payables-fabricio.js": {
-    "mtime": 1785934166.0787165,
-    "ast_hash": "b022bc5bb0669d9e3b4899a1aedf1f01",
+    "mtime": 1785935537.2102773,
+    "ast_hash": "bbac4dbe4dc33758abe4676376206c91",
     "semantic_hash": ""
   },
   "lib/fabricio-breakdown.js": {

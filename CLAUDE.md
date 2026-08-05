@@ -629,6 +629,13 @@ junto faria a planilha afirmar um valor a pagar que ainda não é devido.
 `realMonthFiltered`, que já excluiu as previsões. E some quando o status pedido é `pago`,
 espelhando `previewData` em `Financial.jsx`.
 
+O checkbox **"Incluir linhas previstas"** (ao lado do botão de export) manda
+`include_preview`; o default é **true**, e só o `'false'` explícito recorta — chamada sem
+o parâmetro continua trazendo a planilha completa. Fica desabilitado com o filtro `pago`,
+onde marcar não teria efeito (previsão é, por definição, fatura ainda não paga). A escolha
+vai para o subtítulo da planilha: sem isso, um arquivo sem previstas é indistinguível de
+um mês que simplesmente não tinha nenhuma.
+
 **O export tem de espelhar TODO o recorte da tela, não só o filtro explícito.** A primeira
 versão aplicava visão de data, mês, cliente e status — e ainda assim trazia 22 linhas onde
 a tela mostrava 8, porque faltava a regra implícita: as abas de Pagar **ocultam os

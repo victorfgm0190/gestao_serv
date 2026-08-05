@@ -39,6 +39,10 @@ export default async function handler(req, res) {
   const { company_id, month, year, client_id } = src
   const mode = src.mode || 'competencia'
   const status = src.status || 'todos'
+  // Default true: quem chamar sem o parâmetro continua recebendo a planilha completa.
+  // Só o 'false' explícito recorta — o param vem do checkbox da tela e, em POST, pode
+  // chegar como booleano em vez de string.
+  const incluirPrevisao = String(src.include_preview ?? 'true') !== 'false'
   if (!company_id || !year) return res.status(400).json({ error: 'company_id e year são obrigatórios' })
 
   const sql = neon(process.env.DATABASE_URL)
@@ -123,7 +127,8 @@ export default async function handler(req, res) {
   // demais casos elas aparecem em bloco próprio, fora dos totais da aba. E NÃO passam
   // pelo corte de R$ 0,00: lá o filtro de zerados roda sobre `realMonthFiltered`, que
   // já excluiu as previsões.
-  const querPrevisao = status !== 'pago' && (semStatus || status === 'pendente_parcial' || status === 'previsto')
+  const querPrevisao = incluirPrevisao
+    && status !== 'pago' && (semStatus || status === 'pendente_parcial' || status === 'previsto')
   const previstas = querPrevisao
     ? (await fetchPreviews(sql, { company_id, year, anos, caixa: mode === 'caixa' })).filter(noPeriodo)
     : []
@@ -175,7 +180,10 @@ export default async function handler(req, res) {
   ws.mergeCells(2, 1, 2, COLS.length)
   const sub = ws.getCell('A2')
   const geradoEm = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-  sub.value = `Visão: ${VISAO[mode] || mode} · Status: ${STATUS_LABEL[status] || status} · Gerado em ${geradoEm}`
+  // O recorte fica escrito na planilha: sem isso, um arquivo sem previstas é
+  // indistinguível de um mês que simplesmente não tinha nenhuma.
+  sub.value = `Visão: ${VISAO[mode] || mode} · Status: ${STATUS_LABEL[status] || status}`
+    + ` · ${incluirPrevisao ? 'Com' : 'Sem'} linhas previstas · Gerado em ${geradoEm}`
   sub.font = { size: 9, color: { argb: 'FF808080' } }
 
   // Cabeçalho

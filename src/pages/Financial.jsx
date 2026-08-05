@@ -105,6 +105,9 @@ export default function Financial() {
   const [showModal, setShowModal] = useState(false)
   const [showPayModal, setShowPayModal] = useState(null)
   const [exporting, setExporting] = useState(false)
+  // Previstas entram no Excel por padrão, como na tela. Desmarcar exporta só o que já
+  // virou payable — útil para conferir contra o que é efetivamente devido hoje.
+  const [includePrevistas, setIncludePrevistas] = useState(true)
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [histType, setHistType] = useState('receivables')
   const [histClient, setHistClient] = useState('')
@@ -1224,6 +1227,7 @@ export default function Financial() {
         year: filterYear,
         mode,
         status: filterStatus,
+        include_preview: includePrevistas ? 'true' : 'false',
       })
       if (filterMonth !== '') params.set('month', filterMonth)
       const res = await fetch(`/api/export-payables-fabricio?${params.toString()}`)
@@ -1370,14 +1374,33 @@ export default function Financial() {
         <div className="flex gap-2 items-center mb-4 flex-wrap">
           {statusFilter}
           {tab === 'fabricio' && (
-            <button
-              onClick={exportFabricio}
-              disabled={exporting}
-              title="Baixa em Excel o demonstrativo das linhas visíveis (mesmo mês, visão e status)"
-              className="ml-auto px-4 py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium"
-            >
-              {exporting ? 'Gerando...' : '📥 Exportar Excel'}
-            </button>
+            <div className="ml-auto flex items-center gap-3">
+              {/* Com o filtro "Pago" não existe previsão nenhuma (a fatura prevista é, por
+                  definição, a que o cliente ainda não pagou), então marcar não faria efeito. */}
+              <label
+                title={filterStatus === 'pago'
+                  ? 'Sem efeito no filtro "Pago": previsão é fatura que o cliente ainda não pagou'
+                  : 'Inclui as faturas cujo cliente ainda não pagou, fora do total efetivado'}
+                className={`flex items-center gap-2 text-xs ${filterStatus === 'pago' ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 cursor-pointer hover:text-gray-300'}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={includePrevistas && filterStatus !== 'pago'}
+                  disabled={filterStatus === 'pago'}
+                  onChange={e => setIncludePrevistas(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-emerald-600 disabled:cursor-not-allowed"
+                />
+                Incluir linhas previstas
+              </label>
+              <button
+                onClick={exportFabricio}
+                disabled={exporting}
+                title="Baixa em Excel o demonstrativo das linhas visíveis (mesmo mês, visão e status)"
+                className="px-4 py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium"
+              >
+                {exporting ? 'Gerando...' : '📥 Exportar Excel'}
+              </button>
+            </div>
           )}
           {tab === 'victor' && (
             <button onClick={openReceive} className="ml-auto px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">Receber</button>
