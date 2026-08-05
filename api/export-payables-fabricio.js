@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import ExcelJS from 'exceljs'
 import { breakdownFabricio } from '../lib/fabricio-breakdown.js'
+import { fetchPreviews } from './payables-fabricio.js'
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const num = (v) => parseFloat(v) || 0
@@ -89,11 +90,19 @@ export default async function handler(req, res) {
         WHERE p.company_id = ${company_id} AND p.year = ANY(${anos})
         ORDER BY cl.name, p.year, p.month`
 
-  const filtradas = rows.filter(r => {
+  const semStatus = status === 'todos' || status === 'all'
+
+  // Recorte de data e cliente — comum às linhas efetivadas e às previstas.
+  const noPeriodo = (r) => {
     const { m, y } = periodo(r, mode)
     if (Number(y) !== Number(year)) return false
     if (month !== undefined && month !== '' && month !== null && Number(m) !== Number(month)) return false
     if (client_id && String(r.client_id) !== String(client_id)) return false
+    return true
+  }
+
+  const efetivadas = rows.filter(r => {
+    if (!noPeriodo(r)) return false
 
     // Lançamentos zerados são ocultados nas abas de Pagar (Financial.jsx: nonZeroFiltered)
     // e ficam fora dos totais. São os clientes com split 100/0 — Bokada, Enpla, Minas,
@@ -104,10 +113,23 @@ export default async function handler(req, res) {
 
     // Vocabulário da tela ('all'/'pendente_parcial') e o dos status reais, para o Excel
     // poder ser pedido com o filtro que estava selecionado.
-    if (status === 'todos' || status === 'all') return true
+    if (semStatus) return true
     if (status === 'pendente_parcial') return r.status === 'pendente' || r.status === 'parcial'
     return r.status === status
   })
+
+  // Previstas: fatura emitida, cliente ainda não pagou, payable ainda não existe.
+  // A tela as esconde só quando o filtro é 'pago' (Financial.jsx: previewData) — nos
+  // demais casos elas aparecem em bloco próprio, fora dos totais da aba. E NÃO passam
+  // pelo corte de R$ 0,00: lá o filtro de zerados roda sobre `realMonthFiltered`, que
+  // já excluiu as previsões.
+  const querPrevisao = status !== 'pago' && (semStatus || status === 'pendente_parcial' || status === 'previsto')
+  const previstas = querPrevisao
+    ? (await fetchPreviews(sql, { company_id, year, anos, caixa: mode === 'caixa' })).filter(noPeriodo)
+    : []
+
+  // Previstas vão depois das efetivadas, na mesma ordem visual da tela.
+  const filtradas = status === 'previsto' ? previstas : [...efetivadas, ...previstas]
 
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Gestão Serv'
@@ -171,7 +193,9 @@ export default async function handler(req, res) {
 
   let naoConferem = 0
   filtradas.forEach((r, idx) => {
-    const b = breakdownFabricio(r)
+    // Efetivadas trazem as colunas cruas da fatura (o SELECT acima) e são decompostas
+    // aqui; previstas já vêm com o demonstrativo pronto de fetchPreviews.
+    const b = r.breakdown || breakdownFabricio(r)
     if (b && !b.confere) naoConferem++
     const { m, y } = periodo(r, mode)
     const total = num(r.amount)
@@ -196,10 +220,15 @@ export default async function handler(req, res) {
     ]
 
     const row = ws.getRow(HEAD_ROW + 1 + idx)
+    // Previsão em itálico cinza: é dinheiro que ainda não existe, e a planilha circula
+    // fora da tela onde o bloco "🔮 Previsto" deixava isso óbvio.
+    const fonte = r.is_preview
+      ? { size: 10, italic: true, color: { argb: 'FF808080' } }
+      : { size: 10 }
     values.forEach((v, i) => {
       const cell = row.getCell(i + 1)
       cell.value = v
-      cell.font = { size: 10 }
+      cell.font = fonte
       cell.border = BORDER
       if (COLS[i].money) {
         cell.numFmt = MONEY
@@ -214,30 +243,58 @@ export default async function handler(req, res) {
     }
   })
 
-  // Totais
+  // Totais. A previsão NÃO entra no total efetivado — na tela ela fica fora dos
+  // totalizadores da aba, num card próprio ("🔮 Previsto cliente"). Somar tudo junto
+  // faria a planilha afirmar um valor a pagar que ainda não é devido.
+  //
+  // Por isso SUMIF sobre a coluna Status, e não SUM: a tabela continua contígua (o
+  // autofiltro e qualquer tabela dinâmica seguem funcionando) e as três somas
+  // permanecem fórmulas vivas se o Victor editar uma linha.
+  const PRIM = HEAD_ROW + 1
+  const ULT = HEAD_ROW + filtradas.length
+  const COL_STATUS = String.fromCharCode(65 + 12)   // coluna "Status"
+  const nPrev = previstas.length
+  const nEfet = filtradas.length - nPrev
+
+  const TOTAIS = [
+    { label: `TOTAL EFETIVADO (${nEfet} lançamento${nEfet === 1 ? '' : 's'})`, criterio: '"<>previsto"', destaque: true },
+    ...(nPrev ? [{ label: `🔮 PREVISTO (${nPrev} — cliente ainda não pagou)`, criterio: '"previsto"', italico: true }] : []),
+    ...(nPrev ? [{ label: 'TOTAL GERAL', criterio: null }] : []),
+  ]
+
   const TOT_ROW = HEAD_ROW + 1 + filtradas.length
-  const tot = ws.getRow(TOT_ROW)
-  COLS.forEach((c, i) => {
-    const cell = tot.getCell(i + 1)
-    if (i === 0) cell.value = `TOTAL (${filtradas.length} lançamento${filtradas.length === 1 ? '' : 's'})`
-    else if (c.total && filtradas.length) {
-      const col = String.fromCharCode(65 + i)
-      cell.value = { formula: `SUM(${col}${HEAD_ROW + 1}:${col}${TOT_ROW - 1})` }
-      cell.numFmt = MONEY
-    }
-    cell.font = { bold: true, size: 10 }
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEDEDED' } }
-    cell.alignment = { horizontal: c.money ? 'right' : i === 0 ? 'left' : 'center' }
-    cell.border = { ...BORDER, top: { style: 'medium', color: { argb: 'FF4472C4' } } }
+  TOTAIS.forEach((t, k) => {
+    const linhaN = TOT_ROW + k
+    const linha = ws.getRow(linhaN)
+    COLS.forEach((c, i) => {
+      const cell = linha.getCell(i + 1)
+      if (i === 0) cell.value = t.label
+      else if (c.total && filtradas.length) {
+        const col = String.fromCharCode(65 + i)
+        cell.value = {
+          formula: t.criterio
+            ? `SUMIF($${COL_STATUS}$${PRIM}:$${COL_STATUS}$${ULT},${t.criterio},${col}${PRIM}:${col}${ULT})`
+            : `SUM(${col}${PRIM}:${col}${ULT})`,
+        }
+        cell.numFmt = MONEY
+      }
+      cell.font = { bold: true, size: 10, italic: !!t.italico, color: { argb: t.italico ? 'FF808080' : 'FF000000' } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: t.destaque ? 'FFEDEDED' : 'FFF7F7F7' } }
+      cell.alignment = { horizontal: c.money ? 'right' : i === 0 ? 'left' : 'center' }
+      cell.border = k === 0
+        ? { ...BORDER, top: { style: 'medium', color: { argb: 'FF4472C4' } } }
+        : BORDER
+    })
   })
 
   // Nota de rodapé: o que a cascata significa, para a planilha se explicar fora da tela.
-  const notaRow = TOT_ROW + 2
+  const notaRow = TOT_ROW + TOTAIS.length + 1
   ws.mergeCells(notaRow, 1, notaRow, COLS.length)
   const nota = ws.getCell(notaRow, 1)
   nota.value = 'Por hora (agenda): Bruto − Imposto − Serviço Victor − Deslocamento = Lucro a Dividir. '
     + 'Contrato fixo: Bruto − Serviço Victor = Lucro a Dividir (o imposto sai da parte do Victor, não do split). '
     + 'Deslocamento é 100% Victor e fica fora da divisão.'
+    + (nPrev ? ' As linhas "previsto" (em itálico) são faturas cujo cliente ainda não pagou: o lançamento do Fabrício será criado no recebimento, e por isso elas ficam fora do total efetivado.' : '')
   nota.font = { size: 9, italic: true, color: { argb: 'FF808080' } }
   nota.alignment = { wrapText: true, vertical: 'top' }
   ws.getRow(notaRow).height = 28
@@ -251,7 +308,7 @@ export default async function handler(req, res) {
   }
 
   ws.views = [{ state: 'frozen', ySplit: HEAD_ROW }]
-  ws.autoFilter = { from: { row: HEAD_ROW, column: 1 }, to: { row: TOT_ROW - 1, column: COLS.length } }
+  ws.autoFilter = { from: { row: HEAD_ROW, column: 1 }, to: { row: ULT, column: COLS.length } }
 
   const monthsShort = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
   const fileName = `pagar_fabricio_${month ? monthsShort[Number(month) - 1] + '_' : ''}${year}.xlsx`

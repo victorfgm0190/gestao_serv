@@ -93,7 +93,10 @@ ORDER BY table_name, ordinal_position;
 `id` int · `name` varchar · `color` varchar · `created_at` timestamp
 
 ### `clients`
-`id` int · `company_id` int · `name` varchar · `email_domain` varchar · `created_at` timestamp
+`id` int · `name` varchar · `email_domain` varchar · `created_at` timestamp
+> ⚠️ **Não há `company_id` aqui** (conferido no banco em 2026-08-05; esta doc afirmava que
+> havia). Os JOINs são sempre `clients c ON c.id = <tabela>.client_id`, e o recorte por
+> empresa vem da tabela dona da linha (`invoices.company_id`, `payables_*.company_id`…).
 
 ### `projects`
 `id` int · `company_id` int · `client_id` int · `name` varchar · `created_at` timestamp
@@ -608,6 +611,23 @@ Duas derivações merecem atenção:
 Cada linha carrega `confere`/`desvio` (tolerância de R$ 0,05, a mesma da conferência de
 `fiscal-redistribution`): as 24 faturas do banco fecham, e o que não fechar aparece em
 vermelho no Excel e com aviso no painel, em vez de passar silenciosamente.
+
+**Linhas previstas no Excel (2026-08-05).** A definição de "previsto" — fatura emitida
+cujo recebível ainda não foi pago, logo sem payable (`NOT EXISTS`) — virou
+`fetchPreviews()`, exportada de `api/payables-fabricio.js` e usada pela tela **e** pelo
+export. Duplicar a query faria o `NOT EXISTS` e o filtro de status do recebível divergirem,
+e a divergência só apareceria como uma linha a mais (ou a menos) num arquivo baixado.
+
+Na planilha elas vão **depois** das efetivadas, em itálico cinza, e ficam **fora do total
+efetivado** — na tela também não entram nos totalizadores da aba, têm card próprio
+("🔮 Previsto cliente"). Por isso os totais usam `SUMIF` sobre a coluna Status
+(`"<>previsto"` / `"previsto"`) e não `SUM`: a tabela continua contígua (autofiltro e
+tabela dinâmica seguem funcionando) e as três somas permanecem fórmulas vivas. Somar tudo
+junto faria a planilha afirmar um valor a pagar que ainda não é devido.
+
+⚠️ Previsão **não** passa pelo corte de R$ 0,00 — na tela o filtro de zerados roda sobre
+`realMonthFiltered`, que já excluiu as previsões. E some quando o status pedido é `pago`,
+espelhando `previewData` em `Financial.jsx`.
 
 **O export tem de espelhar TODO o recorte da tela, não só o filtro explícito.** A primeira
 versão aplicava visão de data, mês, cliente e status — e ainda assim trazia 22 linhas onde

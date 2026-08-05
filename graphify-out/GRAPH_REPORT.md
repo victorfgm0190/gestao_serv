@@ -1,16 +1,16 @@
 # Graph Report - gestao_serv  (2026-08-05)
 
 ## Corpus Check
-- 81 files · ~91,485 words
+- 81 files · ~92,267 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 493 nodes · 910 edges · 31 communities (26 shown, 5 thin omitted)
+- 494 nodes · 916 edges · 31 communities (26 shown, 5 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `38a000c0`
+- Built from commit: `8aef2fff`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -125,8 +125,8 @@ Cohesion: 0.44
 Nodes (7): handler(), handler(), classify(), fetchEmailsFromAccount(), imperiumAccounts(), ingestAccounts(), makeImapConfig()
 
 ### Community 13 - "export-payables-fabricio.js"
-Cohesion: 0.24
-Nodes (12): fiscalParts(), handler(), MESES, num(), periodo(), fetchBreakdowns(), handler(), BREAKDOWN_LABELS (+4 more)
+Cohesion: 0.26
+Nodes (13): fiscalParts(), handler(), MESES, num(), periodo(), fetchBreakdowns(), fetchPreviews(), handler() (+5 more)
 
 ### Community 39 - "CLAUDE.md — Contexto do Projeto gestao_serv"
 Cohesion: 0.05
@@ -169,7 +169,7 @@ Nodes (3): Expanding the Oxlint configuration, React Compiler, React + Vite
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `requireAuth()` connect `payable-payments.js` to `Financial.jsx`, `6. Regras de negócio financeiro`, `payables-victor.js`, `invoices.js`, `time-entries.js`, `cron-sync.js`, `export-payables-fabricio.js`?**
-  _High betweenness centrality (0.116) - this node is a cross-community bridge._
+  _High betweenness centrality (0.117) - this node is a cross-community bridge._
 - **Why does `react` connect `main.jsx` to `.oxlintrc.json`, `Financial.jsx`?**
   _High betweenness centrality (0.056) - this node is a cross-community bridge._
 - **Why does `proLaboreDoMes()` connect `6. Regras de negócio financeiro` to `main.jsx`, `Financial.jsx`?**

@@ -39,6 +39,35 @@ export async function fetchBreakdowns(sql, invoiceIds) {
   return by
 }
 
+// Linhas "previstas": fatura emitida cujo recebível ainda não foi pago, então o payable
+// do Fabrício não existe. O valor sai de invoices.fabricio_total — é o mesmo número que
+// o INSERT de receivables.js vai gravar quando o cliente pagar.
+//
+// Exportada porque o export em Excel precisa da MESMA definição. Duplicar a query faria
+// o `NOT EXISTS` e o filtro de status do recebível divergirem entre tela e planilha, e a
+// divergência só apareceria como uma linha a mais (ou a menos) num arquivo baixado.
+export async function fetchPreviews(sql, { company_id, year, anos, caixa }) {
+  const prev = caixa
+    ? await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, r.client_id, c.name AS client_name, i.id AS invoice_id, i.fabricio_total, i.emission_date FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.payment_year = ${year} AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
+    : await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, r.client_id, c.name AS client_name, i.id AS invoice_id, i.fabricio_total, i.emission_date FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.year = ANY(${anos}) AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
+  // Saem da própria fatura, então têm o mesmo demonstrativo das efetivadas — a única
+  // diferença é que o payable ainda não existe.
+  const prevBreak = await fetchBreakdowns(sql, prev.map(p => p.invoice_id))
+  return prev.map(p => ({
+    id: 'preview_' + p.receivable_id,
+    client_id: p.client_id,
+    client_name: p.client_name,
+    month: p.month, year: p.year,
+    payment_month: p.payment_month, payment_year: p.payment_year,
+    emission_date: p.emission_date,
+    amount: p.fabricio_total,
+    paid_amount: 0,
+    status: 'previsto', origin: 'faturamento', is_preview: true,
+    receivable_status: 'pendente', invoice_id: p.invoice_id, payments: [],
+    ...(prevBreak[p.invoice_id] || {}),
+  }))
+}
+
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -73,25 +102,7 @@ export default async function handler(req, res) {
 
     // Previsão: recebíveis pendentes/parciais sem payable ainda, usando invoices.fabricio_total.
     if (req.query.include_preview === 'true') {
-      const prev = caixa
-        ? await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.fabricio_total FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.payment_year = ${year} AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
-        : await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.fabricio_total, i.emission_date FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.year = ANY(${anos}) AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
-      // As linhas de previsão saem da própria fatura, então têm o mesmo demonstrativo
-      // das efetivadas — a única diferença é que o payable ainda não existe.
-      const prevBreak = await fetchBreakdowns(sql, prev.map(p => p.invoice_id))
-      for (const p of prev) {
-        rows.push({
-          id: 'preview_' + p.receivable_id,
-          client_name: p.client_name,
-          month: p.month, year: p.year,
-          payment_month: p.payment_month, payment_year: p.payment_year,
-          emission_date: p.emission_date,
-          amount: p.fabricio_total,
-          status: 'previsto', origin: 'faturamento', is_preview: true,
-          receivable_status: 'pendente', invoice_id: p.invoice_id, payments: [],
-          ...(prevBreak[p.invoice_id] || {}),
-        })
-      }
+      rows.push(...await fetchPreviews(sql, { company_id, year, anos, caixa }))
     }
     return res.status(200).json({ data: rows })
   }
