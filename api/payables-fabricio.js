@@ -1,5 +1,44 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
+import { breakdownFabricio } from '../lib/fabricio-breakdown.js'
+
+// Colunas da fatura que explicam o valor do Fabrício, buscadas em UMA query pelos
+// invoice_id já filtrados — em vez de engordar os quatro SELECTs de payables acima
+// (o driver do Neon não compõe fragmentos, então cada coluna nova seria escrita 4x).
+// Mesmo padrão do merge de `payments` logo abaixo.
+export async function fetchBreakdowns(sql, invoiceIds) {
+  const ids = [...new Set(invoiceIds.filter(Boolean))]
+  if (!ids.length) return {}
+  const rows = await sql`
+    SELECT i.id, i.billing_type, i.contract_value, i.invoice_value, i.tax_amount,
+           i.victor_service, i.victor_profit, i.victor_tax_diff, i.fabricio_total,
+           i.emission_date, i.invoice_number,
+           COALESCE(c.remainder_fabricio_pct, fr.remainder_fabricio_pct) AS fab_pct,
+           COALESCE(c.remainder_victor_pct,   fr.remainder_victor_pct)   AS victor_pct
+    FROM invoices i
+    LEFT JOIN contracts c ON c.id = i.contract_id
+    LEFT JOIN LATERAL (
+      SELECT remainder_fabricio_pct, remainder_victor_pct
+      FROM financial_rules WHERE client_id = i.client_id ORDER BY id LIMIT 1
+    ) fr ON true
+    WHERE i.id = ANY(${ids})`
+  const by = {}
+  for (const r of rows) {
+    by[r.id] = {
+      invoice_number: r.invoice_number,
+      // Nomes que a tela e o Excel consomem. As colunas reais são contract_value
+      // (bruto), victor_service e emission_date — não existem `gross_amount`,
+      // `victor_servico` nem `invoice_date` na tabela.
+      gross_amount: r.contract_value,
+      victor_servico: r.victor_service,
+      tax_amount: r.tax_amount,
+      fabricio_total: r.fabricio_total,
+      breakdown: breakdownFabricio(r),
+    }
+  }
+  return by
+}
+
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -28,11 +67,18 @@ export default async function handler(req, res) {
     for (const p of payments) { (byId[p.payable_id] ||= []).push(p) }
     for (const r of rows) { r.payments = byId[r.id] || [] }
 
+    // Demonstrativo por linha: como a fatura chegou ao valor do Fabrício.
+    const breakdowns = await fetchBreakdowns(sql, rows.map(r => r.invoice_id))
+    for (const r of rows) { Object.assign(r, breakdowns[r.invoice_id] || {}) }
+
     // Previsão: recebíveis pendentes/parciais sem payable ainda, usando invoices.fabricio_total.
     if (req.query.include_preview === 'true') {
       const prev = caixa
         ? await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.fabricio_total FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.payment_year = ${year} AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
         : await sql`SELECT r.id AS receivable_id, r.month, r.year, r.payment_month, r.payment_year, c.name AS client_name, i.id AS invoice_id, i.fabricio_total, i.emission_date FROM receivables r JOIN invoices i ON i.receivable_id = r.id LEFT JOIN clients c ON c.id = r.client_id WHERE r.company_id = ${company_id} AND r.status IN ('pendente','parcial') AND r.year = ANY(${anos}) AND NOT EXISTS (SELECT 1 FROM payables_fabricio pf WHERE pf.invoice_id = i.id)`
+      // As linhas de previsão saem da própria fatura, então têm o mesmo demonstrativo
+      // das efetivadas — a única diferença é que o payable ainda não existe.
+      const prevBreak = await fetchBreakdowns(sql, prev.map(p => p.invoice_id))
       for (const p of prev) {
         rows.push({
           id: 'preview_' + p.receivable_id,
@@ -43,6 +89,7 @@ export default async function handler(req, res) {
           amount: p.fabricio_total,
           status: 'previsto', origin: 'faturamento', is_preview: true,
           receivable_status: 'pendente', invoice_id: p.invoice_id, payments: [],
+          ...(prevBreak[p.invoice_id] || {}),
         })
       }
     }

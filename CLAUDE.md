@@ -304,6 +304,7 @@ em cada chamada.
 | `fiscal-obligations.js` | GET/POST `?action=apurar\|recalcular`/PATCH `?action=lancar-guia\|corrigir-escritorio` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. `PATCH ?action=lancar-guia` grava `amount_actual`/`due_date`/`doc_number` quando a guia oficial chega (só sobrescreve os campos enviados); `amount_actual: null` desfaz o lançamento — e **refaz o rateio** com o valor real. `POST ?action=recalcular` é a **redistribuição**: compara a provisão de imposto da fatura (`invoices.tax_amount`) com o custo fiscal real rateado e devolve o antes/depois do que o Victor recebe; é **prévia por padrão** e só grava com `aplicar: true`. `PATCH ?action=corrigir-escritorio` = lançar guia + rerateio + prévia, numa chamada. |
 | `fiscal-payments.js` | GET/POST `?action=pagar`/DELETE | **Quitação da guia.** Múltiplos pagamentos por obrigação. `paid_amount`/`status` da obrigação são sempre **re-somados** de `fiscal_payments` (nunca incrementados), em transação com o INSERT/DELETE. Estornar tudo devolve a obrigação a `apurado` (se a guia oficial já chegou) ou `previsto`. Usa o `PAID_EPSILON` de `lib/payment-status.js`. |
 | `export-os.js` | GET | Gera Excel (ExcelJS) das horas do mês, opcionalmente filtrado por `client_id`. |
+| `export-payables-fabricio.js` | GET/POST | Excel do demonstrativo da aba Pagar Fab. Aceita `month`/`year`/`client_id`/`status`/`mode` e reaplica em JS **a mesma** lógica de visão da tela, para a planilha trazer exatamente as linhas que estavam à vista. Totais por coluna, congelamento do cabeçalho, autofiltro e nota de rodapé com as duas cascatas. |
 | `admin.js` | POST `?action=estornar-periodo` | **Operações em massa** (`requireAdmin`, Bearer `$ADMIN_SECRET`). Estorna uma competência inteira na ordem inversa da criação: apaga a apuração fiscal (CASCADE leva pagamentos e alocações), apaga os payables com `origin='faturamento'` e seus pagamentos, recompõe o saldo de payables de outros meses que a distribuição havia consumido, e devolve recebíveis e faturas a `pendente` — prontos para refaturar. **`dry_run: true` é o padrão**; sem `company_id`+`year`+`month_from`+`month_to` explícitos responde 400 (operação destrutiva não tem valor padrão). Payables lançados à mão (`origin IS NULL`) são preservados. |
 
 ### Endpoints de setup/migração one-off (standalone)
@@ -326,7 +327,7 @@ Rotas definidas em `src/main.jsx` dentro de `<Layout>` (sidebar). `App.jsx` é v
 | `/time-entries` | `TimeEntries.jsx` | Apontamento de horas (por horário + intervalo + deslocamento). Filtros pill mês/ano/cliente. Export Excel. | time-entries, clients, financial-rules, contracts, export-os |
 | `/financial-rules` | `FinancialRules.jsx` | CRUD de regras financeiras por cliente; também cadastra clientes. | financial-rules, clients |
 | `/contracts` | `Contracts.jsx` | CRUD de contratos (vinculados a uma regra financeira). Cálculo bidirecional de imposto do cliente (NF ↔ %). Lançamentos mensais. | contracts, clients, contract-months, financial-rules |
-| `/financial` | `Financial.jsx` | 4 abas: A Receber, Pagar Fab, Pagar Victor, Histórico. Filtro pill de mês + status. Múltiplos pagamentos, estorno, "Receber" (distribui entre payables do Victor). Oculta registros R$ 0,00 nas abas de Pagar. No card de Previsão de Impostos: memória de cálculo e **✏️ Editar valores** (lança as guias reais da competência e redistribui). | receivables, payables-*, payable-payments, clients, fiscal-obligations |
+| `/financial` | `Financial.jsx` | 4 abas: A Receber, Pagar Fab, Pagar Victor, Histórico. Filtro pill de mês + status. Múltiplos pagamentos, estorno, "Receber" (distribui entre payables do Victor). Oculta registros R$ 0,00 nas abas de Pagar. No card de Previsão de Impostos: memória de cálculo e **✏️ Editar valores** (lança as guias reais da competência e redistribui). Em Pagar Fab: demonstrativo em cascata no modal e export Excel. | receivables, payables-*, payable-payments, clients, fiscal-obligations, export-payables-fabricio |
 | `/fiscal` | `FiscalObligations.jsx` | **Apuração fiscal.** Cards de DAS/INSS/Honorários (estimado × guia × pago), lançamento da guia oficial, múltiplos pagamentos com estorno, tabela de custo por cliente, painel do `calc_snapshot` (RBT12, Fator R, anexo, pró-labore) e abatimento nos payables do Victor. | fiscal-obligations, fiscal-payments |
 | `/billing` | `Billing.jsx` | Geração de fatura por Contrato ou por Agenda (horas). Seção "Impostos" editável (imposto real + imposto do cliente, NF bidirecional) e demonstrativo. Filtros pill mês/cliente. | invoices, contracts, clients, time-entries, financial-rules |
 
@@ -571,6 +572,49 @@ resíduo na maior fatia (Pharmalog Jan/2026 fecha em 9.775,01 contra NF de 9.775
 **Backfill não foi feito** — as colunas só se populam quando o mês for redistribuído. Como
 o display não depende delas, a tela já está correta; o que falta é o histórico dos meses
 antigos.
+
+### Demonstrativo do Fabrício (`lib/fabricio-breakdown.js`) — 2026-08-05
+
+A aba Pagar Fab passou a explicar **como** a fatura chegou ao valor do Fabrício: um
+painel em cascata no modal (botão **🧮 Ver cálculo**, presente inclusive nas linhas que
+aguardam o cliente e nas de previsão) e um **📥 Exportar Excel** na barra de controles.
+
+`breakdownFabricio(inv)` não recalcula nada — lê as colunas já gravadas em `invoices`
+e as remonta na ordem em que o cálculo aconteceu. Roda **só no backend** (GET de
+`payables-fabricio.js` e o export), pelo mesmo motivo da memória de cálculo fiscal:
+reimplementar a fórmula do lado da explicação a deixaria divergir do valor que ela explica.
+
+⚠️ **A conta intuitiva `(bruto − serviço − imposto) ÷ 2` está errada fora do caso mais
+comum.** Ela só fecha em contrato por hora, sem deslocamento e com split 50/50. Os três
+desvios, todos presentes no banco:
+
+| Caso | Conta ingênua | Real | Por quê |
+|------|---------------|------|---------|
+| SteelDek 06/2026 (contrato fixo) | 338,33 | **400,00** | `calcContrato` divide `base − victor_fixed`; o imposto **não** sai antes do split, sai da parte do Victor |
+| Eurofral 06/2026 (deslocamento) | 252,86 | **180,32** | deslocamento é 100% Victor e fica fora do split, mas `calcAgenda` o soma dentro de `victor_profit` (invoices.js:118) |
+| ALEX 04/2026 (split 100/0) | −210,00 | **0,00** | dividir por 2 inventa valor para quem não tem participação |
+
+Por isso a cascata é ramificada por `billing_type` e o percentual do split é **lido**
+(`contracts.remainder_fabricio_pct`, com fallback em `financial_rules`), nunca presumido.
+
+Duas derivações merecem atenção:
+- **Base do split:** quando Fabrício tem participação ela é exata (`fabricio_total ÷ %`);
+  sem participação (100/0) não é recuperável a partir dele, e o que resta é o que sobrou
+  para o Victor.
+- **Deslocamento é o resíduo** de `victor_profit − victor_lucro` — a única parte do lucro
+  do Victor que não veio do split. Com split 100/0 ele é indistinguível do lucro e cai
+  zerado; inofensivo, porque nesses clientes o Fabrício recebe 0 de qualquer forma.
+
+Cada linha carrega `confere`/`desvio` (tolerância de R$ 0,05, a mesma da conferência de
+`fiscal-redistribution`): as 24 faturas do banco fecham, e o que não fechar aparece em
+vermelho no Excel e com aviso no painel, em vez de passar silenciosamente.
+
+**Nomes de coluna:** não existem `gross_amount`, `victor_servico` nem `invoice_date` em
+`invoices` — são `contract_value`, `victor_service` e `emission_date`. O GET expõe os dois
+primeiros com os nomes de consumo e mantém `emission_date` (já usado pela visão fiscal).
+O merge do breakdown é uma query separada por `invoice_id`, e não colunas novas nos quatro
+SELECTs de payables: o driver do Neon não compõe fragmentos, então cada coluna seria
+escrita 4×. Mesmo padrão do merge de `payments`.
 
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 

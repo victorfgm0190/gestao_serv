@@ -104,6 +104,7 @@ export default function Financial() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showPayModal, setShowPayModal] = useState(null)
+  const [exporting, setExporting] = useState(false)
   const [filterYear, setFilterYear] = useState(new Date().getFullYear())
   const [histType, setHistType] = useState('receivables')
   const [histClient, setHistClient] = useState('')
@@ -288,6 +289,9 @@ export default function Financial() {
   }
 
   async function loadPayments(item) {
+    // Linha de previsão: o payable ainda não existe (id é 'preview_N'), então não há
+    // pagamentos para buscar — só o demonstrativo da fatura.
+    if (item.is_preview) { setModalPayments([]); return }
     const res = await fetch(`/api/payable-payments?payable_type=${tab}&payable_id=${item.id}`)
     setModalPayments((await res.json()).data || [])
   }
@@ -1096,6 +1100,11 @@ export default function Financial() {
                 {(item.status === 'pago' || item.status === 'parcial') && (
                   <button onClick={() => estornarPayable(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
                 )}
+                {/* Sempre disponível, inclusive nas linhas que aguardam o cliente pagar
+                    (essas não têm botão de Pagar e ficariam sem acesso ao demonstrativo). */}
+                {tab === 'fabricio' && item.breakdown && (
+                  <button onClick={() => openPayments(item)} className="px-3 py-1 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg text-xs">🧮 Ver cálculo</button>
+                )}
               </>
             )}
             {(!item.origin || item.origin !== 'faturamento') && (
@@ -1108,6 +1117,134 @@ export default function Financial() {
         </div>
       </div>
     )
+  }
+
+  // Demonstrativo do Fabrício: a cascata que a fatura percorreu até o valor dele.
+  // Os números vêm prontos de `item.breakdown` (lib/fabricio-breakdown.js, no backend) —
+  // aqui não se calcula nada, senão a explicação poderia divergir do valor que ela explica.
+  // A cascata é ramificada porque o imposto sai antes do split em contrato por hora e
+  // NÃO sai em contrato fixo (onde ele é descontado da parte do Victor).
+  function fabricioBreakdownPanel(item) {
+    const b = item?.breakdown
+    if (!b) {
+      return (
+        <div className="mb-5 p-3 bg-gray-800/40 border border-gray-700/60 rounded-xl">
+          <p className="text-gray-500 text-xs">
+            Lançamento manual — sem fatura por trás, não há demonstrativo de cálculo.
+          </p>
+        </div>
+      )
+    }
+    const linha = (label, valor, opts = {}) => (
+      <div className={`flex justify-between ${opts.className || 'text-gray-400'}`}>
+        <span className="font-sans">{label}</span>
+        <span>{fmt(valor)}</span>
+      </div>
+    )
+    return (
+      <div className="mb-5 p-3 bg-gray-900/60 rounded-xl border border-gray-700/70">
+        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+          <p className="text-[11px] uppercase tracking-wide text-gray-500">🧮 Demonstrativo de cálculo</p>
+          <span className="text-[11px] text-gray-500">{b.tipo_label}</span>
+        </div>
+
+        <div className="space-y-1 text-xs font-mono">
+          {linha('Faturamento bruto', b.bruto, { className: 'text-gray-300' })}
+
+          {/* Por hora: o imposto sai do bruto antes de qualquer divisão. */}
+          {b.imposto_antes_do_split && (
+            <>
+              {linha(`− Imposto (${b.imposto_pct}%)`, b.imposto, { className: 'text-gray-500 pl-3' })}
+              <div className="flex justify-between text-gray-400 border-t border-gray-800 pt-1">
+                <span className="font-sans">= Líquido</span>
+                <span>{fmt(b.liquido)}</span>
+              </div>
+            </>
+          )}
+
+          {linha('− Serviço Victor', b.victor_servico, { className: 'text-gray-500 pl-3' })}
+
+          {/* Deslocamento é 100% Victor e fica FORA do split — por isso aparece como
+              dedução, não como parte da divisão. */}
+          {b.deslocamento !== 0 && (
+            linha('− Deslocamento (100% Victor)', b.deslocamento, { className: 'text-gray-500 pl-3' })
+          )}
+
+          <div className="flex justify-between text-white font-semibold border-t border-gray-700 pt-1">
+            <span className="font-sans">= Lucro a dividir</span>
+            <span>{fmt(b.lucro_a_dividir)}</span>
+          </div>
+
+          <div className="pt-2 space-y-1">
+            {linha(`Victor (${b.victor_pct}%)`, b.victor_lucro, { className: 'text-gray-400 pl-3' })}
+            <div className="flex justify-between text-green-400 font-semibold pl-3">
+              <span className="font-sans">Fabrício ({b.fabricio_pct}%)</span>
+              <span>{fmt(b.fabricio)} {b.confere && '✓'}</span>
+            </div>
+          </div>
+
+          {/* Contrato fixo: o imposto existe, mas não entra no split. Mostrado à parte
+              para não parecer que foi esquecido. */}
+          {!b.imposto_antes_do_split && b.imposto > 0 && (
+            <div className="flex justify-between text-gray-600 border-t border-gray-800 pt-1 mt-1">
+              <span className="font-sans">Imposto ({b.imposto_pct}% da NF)</span>
+              <span>{fmt(b.imposto)}</span>
+            </div>
+          )}
+
+          {/* Gross-up do imposto do cliente: majora a NF e vai 100% para o Victor. */}
+          {b.diff_nf > 0 && (
+            <div className="flex justify-between text-gray-600">
+              <span className="font-sans">Gross-up da NF (100% Victor)</span>
+              <span>{fmt(b.diff_nf)}</span>
+            </div>
+          )}
+        </div>
+
+        {!b.imposto_antes_do_split && (
+          <p className="text-gray-600 text-[11px] mt-2 leading-tight">
+            Em contrato fixo o imposto não é descontado antes da divisão — ele sai da parte do Victor.
+          </p>
+        )}
+        {!b.confere && (
+          <p className="text-red-400 text-[11px] mt-2 leading-tight">
+            ⚠️ A decomposição não fecha com o faturamento (diferença de {fmt(b.desvio)}).
+          </p>
+        )}
+      </div>
+    )
+  }
+
+  async function exportFabricio() {
+    if (exporting) return
+    setExporting(true)
+    try {
+      const params = new URLSearchParams({
+        company_id: activeCompany.id,
+        year: filterYear,
+        mode,
+        status: filterStatus,
+      })
+      if (filterMonth !== '') params.set('month', filterMonth)
+      const res = await fetch(`/api/export-payables-fabricio?${params.toString()}`)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert('Erro ao gerar Excel: ' + (data.error || res.status))
+        return
+      }
+      const blob = await res.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const monthsShort = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']
+      a.href = objectUrl
+      a.download = `pagar_fabricio_${filterMonth !== '' ? monthsShort[filterMonth-1] + '_' : ''}${filterYear}.xlsx`
+      a.click()
+      URL.revokeObjectURL(objectUrl)
+    } catch (e) {
+      alert('Erro ao exportar: ' + e.message)
+    } finally {
+      setExporting(false)
+    }
   }
 
   const statusFilter = (
@@ -1232,6 +1369,16 @@ export default function Financial() {
       {(tab === 'victor' || tab === 'fabricio') && (
         <div className="flex gap-2 items-center mb-4 flex-wrap">
           {statusFilter}
+          {tab === 'fabricio' && (
+            <button
+              onClick={exportFabricio}
+              disabled={exporting}
+              title="Baixa em Excel o demonstrativo das linhas visíveis (mesmo mês, visão e status)"
+              className="ml-auto px-4 py-1.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium"
+            >
+              {exporting ? 'Gerando...' : '📥 Exportar Excel'}
+            </button>
+          )}
           {tab === 'victor' && (
             <button onClick={openReceive} className="ml-auto px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">Receber</button>
           )}
@@ -1440,8 +1587,11 @@ export default function Financial() {
                     <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-400">previsto</span>
                   </div>
-                  <div className="flex gap-4 mt-1 text-xs">
+                  <div className="flex gap-4 mt-1 text-xs items-center">
                     <span className="text-gray-500">Total: <span className="text-white font-medium">{fmt(item.amount || item.total_amount)}</span></span>
+                    {tab === 'fabricio' && item.breakdown && (
+                      <button onClick={() => openPayments(item)} className="ml-auto px-3 py-1 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg text-xs">🧮 Ver cálculo</button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1665,6 +1815,10 @@ export default function Financial() {
               <span className="text-gray-500"> · Total: </span>
               <span className="text-white">{fmt(showPayModal.total_amount || showPayModal.amount)}</span>
             </p>
+
+            {/* Demonstrativo — como a fatura chegou ao valor do Fabrício. Vem antes da
+                lista de pagamentos porque explica o total exibido logo acima. */}
+            {tab === 'fabricio' && fabricioBreakdownPanel(showPayModal)}
 
             {/* Lista de pagamentos */}
             <div className="space-y-2 mb-5">
