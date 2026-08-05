@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785933023.3181913,
-    "ast_hash": "2705cda4200983e3caf10a1356e1fb18",
+    "mtime": 1785933928.4147983,
+    "ast_hash": "1beddd3579f71c44d8b99a67d0261a71",
     "semantic_hash": ""
   },
   "README.md": {
@@ -425,8 +425,8 @@
     "semantic_hash": ""
   },
   "api/export-payables-fabricio.js": {
-    "mtime": 1785932717.7165537,
-    "ast_hash": "1bc9e3a8650556fe1b7612b32294e3ba",
+    "mtime": 1785933872.8525505,
+    "ast_hash": "1fcbf496554181e9933439525cea2d43",
     "semantic_hash": ""
   },
   "lib/fabricio-breakdown.js": {

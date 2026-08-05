@@ -94,11 +94,19 @@ export default async function handler(req, res) {
     if (Number(y) !== Number(year)) return false
     if (month !== undefined && month !== '' && month !== null && Number(m) !== Number(month)) return false
     if (client_id && String(r.client_id) !== String(client_id)) return false
-    // Aceita o vocabulário da tela ('all'/'pendente_parcial') e o dos status reais,
-    // para o Excel poder ser pedido com o filtro que estava selecionado.
+
+    // Lançamentos zerados são ocultados nas abas de Pagar (Financial.jsx: nonZeroFiltered)
+    // e ficam fora dos totais. São os clientes com split 100/0 — Bokada, Enpla, Minas,
+    // ALEX —, cuja fatura não gera nada para o Fabrício. Sem este recorte o Excel trazia
+    // 22 linhas onde a tela mostrava 8, e as 14 de R$ 0,00 faziam parecer que nenhum
+    // filtro havia sido aplicado.
+    if (!num(r.amount)) return false
+
+    // Vocabulário da tela ('all'/'pendente_parcial') e o dos status reais, para o Excel
+    // poder ser pedido com o filtro que estava selecionado.
+    if (status === 'todos' || status === 'all') return true
     if (status === 'pendente_parcial') return r.status === 'pendente' || r.status === 'parcial'
-    if (status !== 'todos' && status !== 'all' && r.status !== status) return false
-    return true
+    return r.status === status
   })
 
   const wb = new ExcelJS.Workbook()

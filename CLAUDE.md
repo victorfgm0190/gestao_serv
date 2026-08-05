@@ -304,7 +304,7 @@ em cada chamada.
 | `fiscal-obligations.js` | GET/POST `?action=apurar\|recalcular`/PATCH `?action=lancar-guia\|corrigir-escritorio` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. `PATCH ?action=lancar-guia` grava `amount_actual`/`due_date`/`doc_number` quando a guia oficial chega (só sobrescreve os campos enviados); `amount_actual: null` desfaz o lançamento — e **refaz o rateio** com o valor real. `POST ?action=recalcular` é a **redistribuição**: compara a provisão de imposto da fatura (`invoices.tax_amount`) com o custo fiscal real rateado e devolve o antes/depois do que o Victor recebe; é **prévia por padrão** e só grava com `aplicar: true`. `PATCH ?action=corrigir-escritorio` = lançar guia + rerateio + prévia, numa chamada. |
 | `fiscal-payments.js` | GET/POST `?action=pagar`/DELETE | **Quitação da guia.** Múltiplos pagamentos por obrigação. `paid_amount`/`status` da obrigação são sempre **re-somados** de `fiscal_payments` (nunca incrementados), em transação com o INSERT/DELETE. Estornar tudo devolve a obrigação a `apurado` (se a guia oficial já chegou) ou `previsto`. Usa o `PAID_EPSILON` de `lib/payment-status.js`. |
 | `export-os.js` | GET | Gera Excel (ExcelJS) das horas do mês, opcionalmente filtrado por `client_id`. |
-| `export-payables-fabricio.js` | GET/POST | Excel do demonstrativo da aba Pagar Fab. Aceita `month`/`year`/`client_id`/`status`/`mode` e reaplica em JS **a mesma** lógica de visão da tela, para a planilha trazer exatamente as linhas que estavam à vista. Totais por coluna, congelamento do cabeçalho, autofiltro e nota de rodapé com as duas cascatas. |
+| `export-payables-fabricio.js` | GET/POST | Excel do demonstrativo da aba Pagar Fab. Aceita `month`/`year`/`client_id`/`status`/`mode` e reaplica em JS **a mesma** lógica de recorte da tela — visão de data, status (vocabulário `all`/`pendente_parcial`) **e a ocultação dos R$ 0,00**. Totais por coluna, congelamento do cabeçalho, autofiltro e nota de rodapé com as duas cascatas. |
 | `admin.js` | POST `?action=estornar-periodo` | **Operações em massa** (`requireAdmin`, Bearer `$ADMIN_SECRET`). Estorna uma competência inteira na ordem inversa da criação: apaga a apuração fiscal (CASCADE leva pagamentos e alocações), apaga os payables com `origin='faturamento'` e seus pagamentos, recompõe o saldo de payables de outros meses que a distribuição havia consumido, e devolve recebíveis e faturas a `pendente` — prontos para refaturar. **`dry_run: true` é o padrão**; sem `company_id`+`year`+`month_from`+`month_to` explícitos responde 400 (operação destrutiva não tem valor padrão). Payables lançados à mão (`origin IS NULL`) são preservados. |
 
 ### Endpoints de setup/migração one-off (standalone)
@@ -608,6 +608,15 @@ Duas derivações merecem atenção:
 Cada linha carrega `confere`/`desvio` (tolerância de R$ 0,05, a mesma da conferência de
 `fiscal-redistribution`): as 24 faturas do banco fecham, e o que não fechar aparece em
 vermelho no Excel e com aviso no painel, em vez de passar silenciosamente.
+
+**O export tem de espelhar TODO o recorte da tela, não só o filtro explícito.** A primeira
+versão aplicava visão de data, mês, cliente e status — e ainda assim trazia 22 linhas onde
+a tela mostrava 8, porque faltava a regra implícita: as abas de Pagar **ocultam os
+lançamentos de R$ 0,00** (`nonZeroFiltered` em `Financial.jsx`). As 14 linhas excedentes
+eram os clientes de split 100/0 (Bokada, Enpla, Minas, ALEX), cuja fatura não gera nada
+para o Fabrício. O sintoma enganava: uma planilha cheia de R$ 0,00 lê-se como "nenhum
+filtro foi aplicado", e o suspeito óbvio vira o filtro de status — que estava correto.
+Ao mexer no export, conferir contra `currentData`/`payData`, não contra os query params.
 
 **Nomes de coluna:** não existem `gross_amount`, `victor_servico` nem `invoice_date` em
 `invoices` — são `contract_value`, `victor_service` e `emission_date`. O GET expõe os dois
