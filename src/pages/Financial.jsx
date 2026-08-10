@@ -57,6 +57,9 @@ const MODO_LABEL = {
 }
 const receiveCategoryTotal = (cats) => RECEIVE_VICTOR_CATEGORIES.reduce((s, [k]) => s + (parseFloat(cats[k]) || 0), 0)
 const RECEIVE_LABEL_TO_KEY = Object.fromEntries(RECEIVE_VICTOR_CATEGORIES.map(([k, label]) => [label, k]))
+// Rótulo por chave — usado pelo painel do rateio, que recebe do backend as chaves
+// (`honorarios`, `inss`, ...) e não os rótulos.
+const CAT_LABEL = Object.fromEntries(RECEIVE_VICTOR_CATEGORIES)
 // Reconstrói as categorias a partir da string de notes gravada pelo pagarDistribuido
 // (ex.: "Honorários: R$100 | DAS: R$50,5").
 function parseNotesToReceiveCats(notes) {
@@ -133,6 +136,13 @@ export default function Financial() {
   const [reserves, setReserves] = useState({})
   const [breakdownView, setBreakdownView] = useState('geral') // 'geral' | 'cliente' — detalhamento de categorias
   const [receiving, setReceiving] = useState(false)
+  // Pagamento roteado pelo rateio da apuração (?action=pagar-com-rateio). Quando ligado,
+  // cada categoria é consumida dos payables que fiscal_allocations aponta como donos
+  // daquele imposto; o modo antigo (pool único, mês mais antigo primeiro) continua no
+  // ?action=pagar-distribuido e é o que o Flow B/edição de sessão usam.
+  const [useRateio, setUseRateio] = useState(false)
+  const [rateioPlano, setRateioPlano] = useState(null)
+  const [rateioLoading, setRateioLoading] = useState(false)
   const [pendingVictor, setPendingVictor] = useState([])
   const [receiveTarget, setReceiveTarget] = useState(null) // item quando Flow B (específico), null = Flow A (geral)
   const [overflowInfo, setOverflowInfo] = useState(null)   // { overflow, targetSaldo, target_id } quando há sobra
@@ -187,6 +197,40 @@ export default function Financial() {
   }, [activeCompany])
   // Reservas do Victor exibidas no card da aba (mês/ano/empresa do filtro ativo).
   useEffect(() => { if (tab === 'victor') fetchReserves() }, [tab, filterMonth, filterYear, activeCompany])
+
+  // Prévia do pagamento com rateio. Roda no backend (?action=pagar-com-rateio com
+  // `aplicar: false`) em vez de reproduzir a cascata no browser: qualquer diferença entre
+  // a prévia e o que é gravado é exatamente o bug que o "Receber" já teve uma vez, quando
+  // o teto de caixa da tela e o do backend eram calculados por regras diferentes.
+  // Debounce de 400ms porque o gatilho é a digitação dos valores.
+  useEffect(() => {
+    if (!showReceiveModal || !useRateio) { setRateioPlano(null); return }
+    const pagamentos = RECEIVE_VICTOR_CATEGORIES
+      .map(([k]) => ({ categoria: k, valor: parseFloat(receiveCats[k]) || 0 }))
+      .filter((p) => p.valor > 0)
+    if (!pagamentos.length || !receivePaidAt) { setRateioPlano(null); return }
+    let cancelado = false
+    const t = setTimeout(async () => {
+      setRateioLoading(true)
+      try {
+        const res = await fetch('/api/payables-victor?action=pagar-com-rateio', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rateioBody(false)),
+        })
+        const data = await res.json()
+        if (cancelado) return
+        setRateioPlano(res.ok ? data : null)
+        if (!res.ok) setErroReceive(data.error || 'Falha ao calcular a prévia do rateio')
+        else setErroReceive('')
+      } catch {
+        if (!cancelado) setErroReceive('Erro de conexão ao calcular a prévia.')
+      } finally {
+        if (!cancelado) setRateioLoading(false)
+      }
+    }, 400)
+    return () => { cancelado = true; clearTimeout(t) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showReceiveModal, useRateio, receiveCats, receivePaidAt, filterMonth, filterYear, activeCompany])
   // Previsão de impostos: só Lumen. Busca config fiscal + total de NF do mês do filtro.
   useEffect(() => {
     if (tab === 'victor' && activeCompany.id === 1) fetchTaxPreview()
@@ -569,9 +613,49 @@ export default function Financial() {
     setShowMesAnterior(false)
     setEditSession(null)
     setErroReceive('')
+    setUseRateio(false)
+    setRateioPlano(null)
+  }
+
+  // Corpo do ?action=pagar-com-rateio. `pagamentos` é a lista de categorias com valor —
+  // o backend roteia cada uma pelo rateio da apuração da competência.
+  function rateioBody(aplicar) {
+    const { rm, ry } = reserveRefPeriod()
+    return {
+      company_id: activeCompany.id,
+      competencia_mes: rm,
+      competencia_ano: ry,
+      data_pagamento: receivePaidAt,
+      aplicar,
+      pagamentos: RECEIVE_VICTOR_CATEGORIES
+        .map(([k]) => ({ categoria: k, valor: parseFloat(receiveCats[k]) || 0 }))
+        .filter((p) => p.valor > 0),
+    }
+  }
+
+  async function confirmReceiveRateio() {
+    setReceiving(true)
+    setErroReceive('')
+    try {
+      const res = await fetch('/api/payables-victor?action=pagar-com-rateio', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rateioBody(true)),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setErroReceive(data.error || 'Falha ao pagar com rateio')
+        if (data.resumo) setRateioPlano(data)
+        return
+      }
+      closeReceive()
+      await fetchAll()
+    } finally {
+      setReceiving(false)
+    }
   }
 
   async function confirmReceive() {
+    if (useRateio) return confirmReceiveRateio()
     const total = Math.round(receiveCategoryTotal(receiveCats) * 100) / 100
     if (total <= 0) return
     if (!receivePaidAt) return
@@ -822,6 +906,20 @@ export default function Financial() {
       if (b.client_id === 7 && a.client_id !== 7) return 1
       return saldoOf(b) - saldoOf(a)         // restante por saldo desc
     })
+  // Candidatos cortados pelo teto de caixa: têm saldo e estão disponíveis, mas o mês de
+  // caixa deles é posterior à data deste pagamento. O backend aplica exatamente o mesmo
+  // corte (candidatosDisponiveis), então a lista está certa — o que faltava era dizer
+  // POR QUE eles não aparecem. Sumiam sem aviso, e foi assim que o payable 28 (Pharmalog),
+  // com o mês de caixa deixado em 07/2026 por um estorno, ficou meses invisível sem que
+  // nada indicasse a causa.
+  const foraDoTeto = distSource
+    .filter(r => saldoOf(r) > 0 && payKey(r) > effectiveRefKey)
+    .map(r => ({
+      id: r.id, client_name: r.client_name, month: r.month, year: r.year,
+      pm: Number(r.payment_month) || r.month, py: Number(r.payment_year) || r.year,
+      saldo: saldoOf(r),
+    }))
+    .sort((a, b) => (a.py * 100 + a.pm) - (b.py * 100 + b.pm))
   // Flow B: no específico o alvo é consumido primeiro
   const orderedPending = receiveTarget
     ? [...sortedPending.filter(r => r.id === receiveTarget.id), ...sortedPending.filter(r => r.id !== receiveTarget.id)]
@@ -1968,7 +2066,107 @@ export default function Financial() {
                 <input type="date" value={receivePaidAt} onChange={e=>setReceivePaidAt(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
               </div>
 
-              {/* Distribuição do saldo — painel visual em tempo real */}
+              {/* Rateio por cliente — só no Flow A. O Flow B (alvo específico) e a edição
+                  de sessão continuam no ?action=pagar-distribuido: lá o usuário já escolheu
+                  o destino à mão, e o rateio existe justamente para escolher por ele. */}
+              {!receiveTarget && !editSession && (
+                <label className="flex items-start gap-2 bg-blue-500/5 border border-blue-500/30 rounded-xl p-3 cursor-pointer">
+                  <input type="checkbox" checked={useRateio} onChange={e=>setUseRateio(e.target.checked)} className="mt-0.5 accent-blue-500"/>
+                  <span className="text-xs">
+                    <span className="text-blue-300 font-medium">Pagar pelo rateio da apuração</span>
+                    <span className="block text-gray-500 mt-0.5">
+                      Cada categoria sai primeiro do cliente que a apuração de {(() => { const {rm,ry} = reserveRefPeriod(); return `${months[rm-1]}/${ry}` })()} apontou como dono do imposto.
+                      O que sobrar vai para o Pharmalog e depois para os demais. Quita a guia em Apuração Fiscal.
+                    </span>
+                  </span>
+                </label>
+              )}
+
+              {useRateio ? (
+              <div className="bg-gray-950/60 border border-blue-500/30 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-blue-300 text-xs font-medium uppercase tracking-wider">Distribuição pelo rateio</p>
+                  {rateioLoading && <span className="text-gray-500 text-[11px]">calculando...</span>}
+                </div>
+                {!rateioPlano ? (
+                  <p className="text-gray-600 text-xs text-center py-2">Informe os valores para ver a prévia</p>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Uma linha por categoria: quanto veio do rateio e quanto do fallback */}
+                    <div className="space-y-1">
+                      {rateioPlano.resumo.por_categoria.map(c => (
+                        <div key={c.categoria} className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="text-gray-300">{CAT_LABEL[c.categoria] || c.categoria}</span>
+                          <span className="font-mono text-right whitespace-nowrap">
+                            <span className="text-blue-400">rateio {fmt(c.de_rateio)}</span>
+                            <span className="text-gray-600"> + </span>
+                            <span className="text-amber-400">fallback {fmt(c.de_fallback)}</span>
+                            {c.restante > 0.005 && <span className="text-red-400"> · falta {fmt(c.restante)}</span>}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* A cascata na ordem em que o consumo acontece */}
+                    <div className="border-t border-gray-800 pt-2 space-y-1">
+                      {rateioPlano.alocacoes.map(a => (
+                        <div key={a.ordem} className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="truncate text-gray-300">
+                            <span className="text-gray-600 font-mono">{a.ordem}.</span>{' '}
+                            <span className={a.tipo === 'rateio' ? 'text-blue-400' : 'text-amber-400'}>
+                              {a.tipo === 'rateio' ? 'rateio' : a.tipo === 'fallback_pharma' ? 'fallback Pharmalog' : 'fallback outros'}
+                            </span>{' '}
+                            <span className="text-gray-500">{CAT_LABEL[a.categoria] || a.categoria}</span>{' '}
+                            {a.cliente_nome} <span className="text-gray-600">· {months[a.competencia.mes-1]}/{a.competencia.ano}</span>
+                          </span>
+                          <span className="shrink-0 font-mono text-green-400">{fmt(a.valor)}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Rateio que não pôde ser consumido: o valor foi para o fallback e é
+                        preciso dizer por quê, senão o INSS do Pharmalog saindo do Bokada
+                        parece erro de cálculo. */}
+                    {rateioPlano.resumo.por_categoria.some(c => c.rateios_sem_saldo.length > 0) && (
+                      <div className="border-t border-gray-800 pt-2 space-y-1">
+                        {rateioPlano.resumo.por_categoria.flatMap(c => c.rateios_sem_saldo).map((s, i) => (
+                          <p key={i} className="text-amber-400/80 text-[11px]">
+                            ⚠️ {fmt(s.valor)} de {CAT_LABEL[s.categoria] || s.categoria} (NF {s.invoice_id}) não coube no cliente do rateio: {s.motivo}. Foi para o fallback.
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
+                    {rateioPlano.resumo.sem_obrigacao.length > 0 && (
+                      <p className="text-amber-400/80 text-[11px] border-t border-gray-800 pt-2">
+                        ⚠️ Sem apuração em {months[rateioPlano.resumo.competencia.mes-1]}/{rateioPlano.resumo.competencia.ano} para: {rateioPlano.resumo.sem_obrigacao.map(k => CAT_LABEL[k] || k).join(', ')}. Vai tudo para o fallback e nenhuma guia é quitada.
+                      </p>
+                    )}
+                    {rateioPlano.resumo.ja_quitadas.length > 0 && (
+                      <p className="text-red-400 text-[11px] border-t border-gray-800 pt-2">
+                        ⛔ Já quitado nesta competência: {rateioPlano.resumo.ja_quitadas.map(q => CAT_LABEL[q.categoria] || q.categoria).join(', ')}. Estorne o abatimento em Apuração Fiscal antes de pagar de novo.
+                      </p>
+                    )}
+
+                    {rateioPlano.resumo.quitacoes.length > 0 && (
+                      <div className="border-t border-gray-800 pt-2">
+                        <p className="text-gray-500 text-[11px] mb-1">Guias que serão quitadas:</p>
+                        {rateioPlano.resumo.quitacoes.map(q => (
+                          <div key={q.obligation_id} className="flex justify-between text-[11px]">
+                            <span className="text-gray-400">{CAT_LABEL[q.kind] || q.kind}</span>
+                            <span className="font-mono text-orange-400">
+                              {fmt(q.valor)}
+                              {q.excedente > 0.005 && <span className="text-gray-600"> (+{fmt(q.excedente)} acima da guia)</span>}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              ) : (
+              /* Distribuição do saldo — painel visual em tempo real */
               <div className="bg-gray-950/60 border border-gray-800 rounded-xl p-3">
                 <p className="text-gray-300 text-xs font-medium uppercase tracking-wider mb-2">Distribuição do saldo</p>
                 {distRows.length === 0 ? (
@@ -1996,7 +2194,21 @@ export default function Financial() {
                 {distOverflow > 0 && (
                   <p className="text-red-400 text-xs mt-2">⚠️ Valor excede o saldo disponível em {fmt(distOverflow)}</p>
                 )}
+                {foraDoTeto.length > 0 && (
+                  <div className="mt-3 pt-2 border-t border-gray-800">
+                    <p className="text-gray-500 text-[11px] mb-1">
+                      {foraDoTeto.length === 1 ? '1 lançamento ficou' : `${foraDoTeto.length} lançamentos ficaram`} de fora: o caixa deles é posterior a {months[effRefMonth-1]}/{effRefYear} (data deste pagamento). Ajuste a data para alcançá-los.
+                    </p>
+                    {foraDoTeto.map(r => (
+                      <div key={r.id} className="flex items-center justify-between gap-2 text-[11px] text-gray-600">
+                        <span className="truncate">{months[r.month-1]}/{r.year} {r.client_name} <span className="text-gray-700">· caixa {months[r.pm-1]}/{r.py}</span></span>
+                        <span className="shrink-0 font-mono">{fmt(r.saldo)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+              )}
 
               {/* Detalhamento por categoria (Por cliente / Geral) — só na edição de sessão */}
               {editSession && breakdownPanel(editEntries)}

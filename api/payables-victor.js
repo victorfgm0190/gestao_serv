@@ -3,6 +3,16 @@ import { requireAuth } from '../lib/auth.js'
 import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 import { statusFor } from '../lib/payment-status.js'
 import { CLIENT_PHARMA, CATS, r2, ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
+// Pagamento roteado pelo rateio da apuração (?action=pagar-com-rateio).
+import {
+  CATEGORIA_KIND, buscarRateios, planejar, agruparPorPayable, quitacoesPorObrigacao, LIMIAR_FIM,
+} from '../lib/victor-rateio.js'
+// Quitar a obrigação é parte do pagamento: sem isso a guia continua devida no card de
+// Reservas enquanto o dinheiro já saiu do payable — o mesmo valor descontado duas vezes.
+import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
+// Estornar tem de devolver o mês de CAIXA junto com o saldo — senão o payable fica
+// encalhado no mês do pagamento desfeito. Ver lib/cash-month.js.
+import { mesDeCaixaOriginal } from '../lib/cash-month.js'
 // Ordem canônica dos kinds — a mesma que a aba usa para exibir. Uma cópia só.
 import { ORDEM_KIND } from '../lib/fiscal-lines.js'
 // A cascata exibida sai das MESMAS funções que a gravam em ?action=recalcular.
@@ -16,7 +26,16 @@ async function recalcVictorParent(sql, payable_id) {
   const pr = await sql`SELECT total_amount FROM payables_victor WHERE id=${payable_id}`
   const tot = parseFloat(pr[0]?.total_amount) || 0
   const st = statusFor(s, tot)
-  await sql`UPDATE payables_victor SET paid_amount=${s.toFixed(2)}, status=${st}, paid_at=${last} WHERE id=${payable_id}`
+  if (last) {
+    await sql`UPDATE payables_victor SET paid_amount=${s.toFixed(2)}, status=${st}, paid_at=${last} WHERE id=${payable_id}`
+    return
+  }
+  // Zerou os pagamentos: o mês de caixa volta ao do recebimento do cliente. `consumir()`
+  // o havia sobrescrito com a data da distribuição, e mantê-lo aqui esconderia o payable
+  // de qualquer distribuição anterior àquela data.
+  const cx = await mesDeCaixaOriginal(sql, 'victor', payable_id)
+  if (cx) await sql`UPDATE payables_victor SET paid_amount=${s.toFixed(2)}, status=${st}, paid_at=NULL, payment_month=${cx.pmonth}, payment_year=${cx.pyear} WHERE id=${payable_id}`
+  else await sql`UPDATE payables_victor SET paid_amount=${s.toFixed(2)}, status=${st}, paid_at=NULL WHERE id=${payable_id}`
 }
 
 // Estorna uma sessão de recebimento (todos os payable_payments com mesmo paid_at + notes)
@@ -29,6 +48,12 @@ async function estornarSessao(sql, company_id, sess_paid_at, sess_notes) {
       AND pp.paid_at=${sess_paid_at} AND pp.notes=${sess_notes}`
   const ids = sess.map(s => s.payable_id)
   if (!ids.length) return []
+  // ANTES de apagar: se esta sessão quitou obrigações fiscais (o que ?action=pagar-com-rateio
+  // faz), desfazer o abatimento inteiro. O DELETE abaixo levaria as fiscal_allocations junto
+  // pelo CASCADE, mas os fiscal_payments de 'abatimento' sobreviveriam e ninguém recalcularia
+  // a obrigação — o DAS seguiria marcado como pago com o dinheiro de volta no saldo do Victor.
+  // É o mesmo cuidado que o PATCH ?action=estornar já tomava; a edição de sessão não tomava.
+  await desfazerAbatimentoFiscal(sql, ids)
   await sql`DELETE FROM payable_payments WHERE payable_type='victor' AND payable_id = ANY(${ids}) AND paid_at=${sess_paid_at} AND notes=${sess_notes}`
   for (const id of ids) await recalcVictorParent(sql, id)
   return ids
@@ -143,6 +168,221 @@ async function pagarDistribuido(sql, req, res) {
   }
   await sql.transaction(writes)
   return res.status(200).json({ mode: 'especifico', done: true, applied, leftover })
+}
+
+// Saldo em aberto de uma obrigação. Cópia deliberada da de api/fiscal-obligations.js:
+// é uma linha derivada de `valorDevido`, e exportá-la de lá criaria uma dependência
+// circular (fiscal-obligations já importa deste módulo o motor de distribuição).
+const saldoObrigacao = (o) => Math.max(r2(valorDevido(o) - (parseFloat(o.paid_amount) || 0)), 0)
+
+// POST ?action=pagar-com-rateio — pagamento roteado pelo rateio da apuração.
+//
+// Diferença para o ?action=pagar-distribuido, que continua existindo: lá as categorias
+// viram um pool único consumido do mês mais antigo ao mais novo, e nada liga o INSS do
+// Pharmalog ao payable do Pharmalog. Aqui cada categoria é consumida PRIMEIRO dos
+// payables que `fiscal_allocations` aponta como donos daquele imposto (ancorados pela NF,
+// não pelo mês — ver lib/victor-rateio.js), e o que sobrar cai no Pharmalog e depois nos
+// demais.
+//
+// Grava exatamente os TRÊS registros do ?action=distribuir — payable_payments,
+// fiscal_allocations (basis='consumo_payable') e fiscal_payments (method='abatimento') —
+// de propósito: é essa tripla que lib/fiscal-unlink.js e o "Estornar abatimento" da tela
+// /fiscal sabem desfazer. Uma tabela nova para o mesmo elo deixaria o estorno cego.
+//
+// Prévia por padrão, como o ?action=recalcular: só grava com `aplicar: true`.
+async function pagarComRateio(sql, req, res) {
+  const {
+    company_id, competencia_mes, competencia_ano,
+    pagamentos = [], data_pagamento, paid_at, aplicar = false,
+  } = req.body || {}
+
+  if (!company_id || !competencia_mes || !competencia_ano) {
+    return res.status(400).json({ error: 'company_id, competencia_mes e competencia_ano são obrigatórios' })
+  }
+  const mes = Number(competencia_mes)
+  const ano = Number(competencia_ano)
+  const when = String(data_pagamento || paid_at || new Date().toISOString().slice(0, 10)).slice(0, 10)
+
+  // Normaliza as categorias recebidas. Categoria desconhecida é erro, não silêncio: um
+  // typo viraria um pagamento sem rateio e sem quitação, indistinguível de "não tem rateio".
+  const itens = []
+  const despesas = {}
+  for (const pg of (Array.isArray(pagamentos) ? pagamentos : [])) {
+    const categoria = String(pg?.categoria || '').trim()
+    if (!(categoria in CATEGORIA_KIND)) {
+      return res.status(400).json({ error: `Categoria inválida: "${categoria}". Use uma de: ${Object.keys(CATEGORIA_KIND).join(', ')}` })
+    }
+    const valor = r2(parseFloat(pg?.valor) || 0)
+    if (valor <= 0) continue
+    itens.push({ categoria, kind: CATEGORIA_KIND[categoria], valor })
+    despesas[categoria] = r2((despesas[categoria] || 0) + valor)
+  }
+  if (!itens.length) return res.status(400).json({ error: 'Informe ao menos uma categoria com valor maior que zero' })
+  const total = r2(itens.reduce((s, i) => s + i.valor, 0))
+
+  // Teto de caixa: o MAIOR entre o mês do pagamento e a competência pedida — mesma regra
+  // do pagarDistribuido. Nunca se consome caixa que ainda não entrou, e a competência
+  // entra no máximo porque o rateio de um mês pode apontar para payables cujo caixa é
+  // posterior à data digitada.
+  const [payY, payM] = when.split('-').map(Number)
+  const curKey = Math.max(payM ? payY * 100 + payM : 0, ano * 100 + mes)
+
+  const [candidatos, rateios, obrigacoes] = await Promise.all([
+    candidatosDisponiveis(sql, company_id, curKey),
+    buscarRateios(sql, company_id, mes, ano),
+    sql`SELECT * FROM fiscal_obligations WHERE company_id = ${company_id} AND month = ${mes} AND year = ${ano}`,
+  ])
+  const obPorKind = new Map(obrigacoes.map((o) => [o.kind, o]))
+
+  const plano = planejar({ pagamentos: itens, rateios, candidatos })
+
+  // Nomes dos clientes para a resposta (candidatosDisponiveis traz só payables_victor.*).
+  const clientIds = [...new Set(plano.alocacoes.map((a) => a.client_id).filter(Boolean))]
+  const nomes = new Map()
+  if (clientIds.length) {
+    for (const c of await sql`SELECT id, name FROM clients WHERE id = ANY(${clientIds})`) nomes.set(Number(c.id), c.name)
+  }
+
+  // Três situações que a tela precisa distinguir e que antes se pareciam:
+  const faltando = plano.por_categoria.filter((c) => c.restante > LIMIAR_FIM)
+    .map((c) => ({ categoria: c.categoria, valor: c.valor, restante: c.restante }))
+  // Categoria fiscal cuja obrigação não existe no mês: competência não apurada. Não é
+  // erro — o pagamento vira fallback puro —, mas sem avisar parece que o rateio falhou.
+  const sem_obrigacao = itens.filter((i) => i.kind && !obPorKind.has(i.kind)).map((i) => i.categoria)
+  // Obrigação já quitada: pagar de novo debitaria o payable e superquitaria a guia.
+  const ja_quitadas = itens
+    .filter((i) => i.kind && obPorKind.has(i.kind) && saldoObrigacao(obPorKind.get(i.kind)) <= LIMIAR_FIM)
+    .map((i) => ({ categoria: i.categoria, kind: i.kind, obligation_id: obPorKind.get(i.kind).id }))
+
+  const quitacoes = quitacoesPorObrigacao(plano.por_categoria, obPorKind, saldoObrigacao)
+
+  const alocacoesOut = plano.alocacoes.map((a) => ({
+    ordem: a.ordem,
+    categoria: a.categoria,
+    tipo: a.tipo,
+    cliente_id: a.client_id,
+    cliente_nome: nomes.get(Number(a.client_id)) || null,
+    valor: a.valor,
+    competencia: { mes: a.month, ano: a.year },
+    payable_id: a.payable_id,
+    invoice_id: a.invoice_id,
+    de_lucro: a.de_lucro,
+    de_servico: a.de_servico,
+    fonte: a.tipo === 'rateio'
+      ? `fiscal_allocations.id:${a.alocacao_id}`
+      : `payables_victor.id:${a.payable_id}`,
+  }))
+
+  const resumo = {
+    total,
+    consumido: r2(plano.alocacoes.reduce((s, a) => s + a.valor, 0)),
+    nao_coberto: r2(faltando.reduce((s, f) => s + f.restante, 0)),
+    por_categoria: plano.por_categoria.map((c) => ({
+      categoria: c.categoria, kind: c.kind, valor: c.valor, restante: c.restante,
+      de_rateio: r2(c.alocacoes.filter((a) => a.tipo === 'rateio').reduce((s, a) => s + a.valor, 0)),
+      de_fallback: r2(c.alocacoes.filter((a) => a.tipo !== 'rateio').reduce((s, a) => s + a.valor, 0)),
+      rateios_sem_saldo: c.rateios_sem_saldo,
+    })),
+    quitacoes,
+    sem_obrigacao,
+    ja_quitadas,
+    competencia: { mes, ano },
+    paid_at: when,
+  }
+
+  // ── PRÉVIA ────────────────────────────────────────────────────────────────────────
+  if (aplicar !== true) {
+    return res.status(200).json({ preview: true, alocacoes: alocacoesOut, resumo })
+  }
+
+  // ── APLICAR ───────────────────────────────────────────────────────────────────────
+  // Recusas só valem na gravação: na prévia o problema é mostrado, não bloqueado.
+  if (ja_quitadas.length) {
+    return res.status(422).json({
+      error: `Já quitado nesta competência: ${ja_quitadas.map((q) => q.categoria).join(', ')}. Estorne o abatimento em /fiscal antes de pagar de novo.`,
+      alocacoes: alocacoesOut, resumo,
+    })
+  }
+  if (faltando.length) {
+    const f = faltando[0]
+    return res.status(422).json({
+      error: `Faltam ${f.restante.toFixed(2)} para ${f.categoria}: os lançamentos disponíveis não cobrem o valor. Ajuste o valor ou a data do pagamento.`,
+      alocacoes: alocacoesOut, resumo,
+    })
+  }
+  if (!plano.alocacoes.length) {
+    return res.status(422).json({
+      error: `Nenhum lançamento disponível para consumir em ${String(mes).padStart(2, '0')}/${ano}. Só entram os que já foram recebidos do cliente e cujo mês de caixa não é posterior à data do pagamento.`,
+      resumo,
+    })
+  }
+
+  // Uma string de notes para a sessão inteira (não uma por categoria): é o par
+  // (paid_at, notes) que identifica a sessão para a edição e o estorno, e é o formato que
+  // parseNotesToReceiveCats() lê na tela. A quebra por categoria vive nas alocações.
+  const notes = montarNotes(despesas)
+  const porPayable = agruparPorPayable(plano.alocacoes)
+  const porId = new Map(candidatos.map((c) => [c.id, c]))
+
+  const writes = []
+  for (const p of porPayable) {
+    const rec = porId.get(p.payable_id)
+    const totalRec = r2(parseFloat(rec.total_amount) || 0)
+    const newPaid = r2((parseFloat(rec.paid_amount) || 0) + p.valor)
+    writes.push(sql`
+      INSERT INTO payable_payments (payable_type, payable_id, amount, paid_at, notes, payment_month, payment_year)
+      VALUES ('victor', ${p.payable_id}, ${p.valor}, ${when}, ${notes}, ${payM || null}, ${payY || null})`)
+    writes.push(sql`
+      UPDATE payables_victor SET paid_amount = ${newPaid}, status = ${statusFor(newPaid, totalRec)},
+        paid_at = ${when}, payment_month = ${payM || null}, payment_year = ${payY || null}
+      WHERE id = ${p.payable_id}`)
+  }
+
+  // O elo obrigação ↔ payable ↔ pagamento. `payable_payment_id` sai de um SELECT porque
+  // o driver do Neon não devolve RETURNING de dentro de uma transação em lote — o INSERT
+  // do pagamento está antes nesta mesma lista, então já é visível.
+  //
+  // `ORDER BY pp.id DESC LIMIT 1` é a diferença para o ?action=distribuir, que faz o
+  // mesmo SELECT sem limite: se o payable já tivesse um pagamento com o MESMO
+  // (paid_at, notes) de uma sessão anterior, aquele INSERT ... SELECT casaria duas linhas
+  // e gravaria a alocação em dobro. Com o LIMIT, a linha mais nova é sempre a nossa.
+  //
+  // Fallback também gera alocação: o dinheiro saiu de um cliente que a apuração não
+  // vinculou a esta despesa, mas a obrigação quitada é a mesma — sem a linha, o estorno
+  // não teria como devolver esse pedaço.
+  const ligacoes = []
+  for (const a of plano.alocacoes) {
+    const ob = a.kind ? obPorKind.get(a.kind) : null
+    if (!ob) continue  // 'demais'/'lucros' não são obrigação: viram só payable_payments
+    ligacoes.push(sql`
+      INSERT INTO fiscal_allocations
+        (obligation_id, client_id, invoice_id, payable_victor_id, payable_payment_id,
+         amount, from_service, from_profit, basis)
+      SELECT ${ob.id}, ${a.client_id}, ${a.invoice_id || null}, ${a.payable_id}, pp.id,
+             ${a.valor}, ${a.de_servico}, ${a.de_lucro}, 'consumo_payable'
+      FROM payable_payments pp
+      WHERE pp.payable_type = 'victor' AND pp.payable_id = ${a.payable_id}
+        AND pp.paid_at = ${when} AND pp.notes = ${notes}
+      ORDER BY pp.id DESC LIMIT 1`)
+  }
+
+  const quitacoesSql = quitacoes.map((q) => sql`
+    INSERT INTO fiscal_payments (obligation_id, amount, paid_at, method, notes)
+    VALUES (${q.obligation_id}, ${q.valor}, ${when}, 'abatimento', 'Pago com rateio por cliente (aba Pagar Victor)')`)
+
+  await sql.transaction([...writes, ...ligacoes, ...quitacoesSql])
+  // Fora da transação: recalcularObrigacao re-soma fiscal_payments, que só existe depois
+  // do commit. Nunca `paid_amount + valor` — a soma real corrige divergências em vez de
+  // acumulá-las.
+  for (const q of quitacoes) await recalcularObrigacao(sql, q.obligation_id)
+
+  return res.status(200).json({
+    status: 'sucesso',
+    alocacoes: alocacoesOut,
+    resumo,
+    payables_afetados: porPayable,
+    notes,
+  })
 }
 
 export default async function handler(req, res) {
@@ -325,6 +565,7 @@ export default async function handler(req, res) {
   }
   if (req.method === 'POST') {
     if (req.query.action === 'pagar-distribuido') return pagarDistribuido(sql, req, res)
+    if (req.query.action === 'pagar-com-rateio') return pagarComRateio(sql, req, res)
     const { company_id, client_id, month, year, description, service_amount, profit_amount, notes } = req.body
     const total = (parseFloat(service_amount)||0) + (parseFloat(profit_amount)||0)
     const result = await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, notes, payment_month, payment_year) VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${description}, ${service_amount||0}, ${profit_amount||0}, ${total.toFixed(2)}, ${notes||null}, ${month}, ${year}) RETURNING *`
@@ -344,9 +585,14 @@ export default async function handler(req, res) {
 
       await sql`DELETE FROM payable_payments WHERE payable_type = 'victor' AND payable_id = ${id}`
       const motivo = req.body?.motivo || null
+      // O mês de caixa também é estornado: sem isto o registro volta a `pendente` mas
+      // continua datado no mês em que a distribuição o consumiu, e some das listas.
+      const cx = await mesDeCaixaOriginal(sql, 'victor', id)
       const result = await sql`
         UPDATE payables_victor SET
           status = 'pendente', paid_amount = 0, paid_at = NULL,
+          payment_month = COALESCE(${cx?.pmonth ?? null}, payment_month),
+          payment_year  = COALESCE(${cx?.pyear ?? null}, payment_year),
           notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
                   to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
                   COALESCE(' (' || ${motivo}::text || ')', '')

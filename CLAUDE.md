@@ -302,7 +302,7 @@ em cada chamada.
 | `invoices.js` | GET/POST/PATCH/PUT/DELETE | **Coração do faturamento.** Gera fatura (contrato ou agenda), cria `receivable`, e ao receber propaga `payables`. Calculador unificado (seção 6). |
 | `receivables.js` | GET/POST/PATCH/DELETE | Contas a receber. PATCH `pago` gera payables da fatura; PATCH `estorno` reverte. Protege `origin='faturamento'`. |
 | `payables-fabricio.js` | GET/POST/PATCH/DELETE | Contas a pagar Fabrício. Valor no campo `amount`. Traz `payments[]`. |
-| `payables-victor.js` | GET/POST/PATCH/DELETE | Contas a pagar Victor. Valor em `total_amount` (`service_amount`+`profit_amount`). Traz `payments[]`. |
+| `payables-victor.js` | GET/POST `?action=pagar-distribuido\|pagar-com-rateio`/PATCH/DELETE | Contas a pagar Victor. Valor em `total_amount` (`service_amount`+`profit_amount`). Traz `payments[]`. `?action=pagar-com-rateio` paga cada categoria pelos payables que `fiscal_allocations` aponta como donos daquele imposto, com fallback no Pharmalog (ver seção 6); prévia por padrão, grava só com `aplicar: true`. |
 | `payable-payments.js` | GET/POST/DELETE | Múltiplos pagamentos por payable; recalcula `status`/`paid_amount` do pai (pendente/parcial/pago). |
 | `fiscal-obligations.js` | GET/POST `?action=apurar\|recalcular`/PATCH `?action=lancar-guia\|corrigir-escritorio` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. `PATCH ?action=lancar-guia` grava `amount_actual`/`due_date`/`doc_number` quando a guia oficial chega (só sobrescreve os campos enviados); `amount_actual: null` desfaz o lançamento — e **refaz o rateio** com o valor real. `POST ?action=recalcular` é a **redistribuição**: compara a provisão de imposto da fatura (`invoices.tax_amount`) com o custo fiscal real rateado e devolve o antes/depois do que o Victor recebe; é **prévia por padrão** e só grava com `aplicar: true`. `PATCH ?action=corrigir-escritorio` = lançar guia + rerateio + prévia, numa chamada. |
 | `fiscal-payments.js` | GET/POST `?action=pagar`/DELETE | **Quitação da guia.** Múltiplos pagamentos por obrigação. `paid_amount`/`status` da obrigação são sempre **re-somados** de `fiscal_payments` (nunca incrementados), em transação com o INSERT/DELETE. Estornar tudo devolve a obrigação a `apurado` (se a guia oficial já chegou) ou `previsto`. Usa o `PAID_EPSILON` de `lib/payment-status.js`. |
@@ -651,6 +651,83 @@ primeiros com os nomes de consumo e mantém `emission_date` (já usado pela vis�
 O merge do breakdown é uma query separada por `invoice_id`, e não colunas novas nos quatro
 SELECTs de payables: o driver do Neon não compõe fragmentos, então cada coluna seria
 escrita 4×. Mesmo padrão do merge de `payments`.
+
+### Pagamento com rateio (`lib/victor-rateio.js`) — 2026-08-10
+
+`?action=pagar-distribuido` soma todas as categorias num **pool único** e o consome do mês
+mais antigo ao mais novo. Isso paga o valor certo e no cliente errado: nada liga o INSS do
+Pharmalog ao payable do Pharmalog — as categorias sobrevivem só como texto em
+`payable_payments.notes`. `?action=pagar-com-rateio` é a alternativa: cada categoria é
+consumida **primeiro dos payables que `fiscal_allocations` aponta como donos daquele
+imposto**, e só o excedente cai no fallback (Pharmalog inteiro, depois os demais).
+
+O rateio é a fonte da verdade sobre "de quem é este imposto" — é ele que a `/fiscal` exibe
+em "Custo por cliente" e que `lib/fiscal-redistribution.js` usa para devolver o excedente ao
+Victor. Pagar por outro critério faz o dinheiro sair de um cliente e o custo continuar
+registrado em outro.
+
+⚠️ **A âncora é a NOTA, não o mês.** `fiscal_allocations.invoice_id` →
+`payables_victor.invoice_id`. Buscar o payable por `month/year = competência da apuração`
+parece equivalente e não é, porque a apuração agrupa pela **data de emissão**: a competência
+02/2026 rateia as invoices 6 e 11, cujos payables (28 e 42) têm `month = 1`; os payables com
+`month = 2` (45, 44, 43) são das invoices 7, 12 e 21, rateadas em **03/2026**. Pelo mês, o
+INSS de uma nota seria descontado de outra — sem erro, sem aviso.
+
+Três decisões que fazem o resto encaixar:
+
+- **Grava a MESMA tripla do `?action=distribuir`** — `payable_payments` +
+  `fiscal_allocations` (`basis='consumo_payable'`) + `fiscal_payments`
+  (`method='abatimento'`). Não há tabela nova: é essa tripla que `lib/fiscal-unlink.js`, o
+  `?action=estornar-distribuicao` e o "Estornar abatimento" da `/fiscal` sabem desfazer, e
+  a FK `payable_payment_id ON DELETE CASCADE` é o que permite estornar só esta sessão. Um
+  registro paralelo deixaria os três estornos cegos.
+- **Ordem das categorias é fixa** (`ORDEM_CATEGORIA`: das → inss → honorarios → escritorio →
+  pro_labore → lucros → demais), não a ordem digitada. As com rateio têm alvo definido; uma
+  categoria de fallback puro processada antes esvaziaria o payable do Pharmalog que o INSS
+  dele precisa logo em seguida. Caso real conferido: `demais 8.400 + inss 324,63` mantém o
+  rateio do INSS intacto e joga a despesa no que sobrou.
+- **Fallback também quita a guia.** Se o INSS do Pharmalog saiu do saldo do Bokada (payable
+  indisponível), a guia foi paga do mesmo jeito. Por isso a quitação é por CATEGORIA, não
+  pela soma das linhas `tipo:'rateio'`. O teto é `saldoObrigacao` — pagar R$ 500 de uma guia
+  de R$ 324,63 debita o payable, mas grava R$ 324,63 na obrigação e devolve o `excedente`.
+
+Diferenças deliberadas em relação ao `?action=distribuir`:
+
+| | `distribuir` | `pagar-com-rateio` |
+|---|---|---|
+| origem dos valores | apuração | digitados no modal |
+| ordem de consumo | competência ASC, Pharmalog desempata | rateio primeiro; fallback = Pharmalog inteiro, depois os demais |
+| trava contra duplicar | 409 por MÊS (qualquer elo) | 422 por CATEGORIA (obrigação já quitada) |
+| `payable_payment_id` | `SELECT` sem limite | `ORDER BY pp.id DESC LIMIT 1` |
+
+A trava por categoria substitui a do mês porque aqui pagar honorários em fevereiro e INSS em
+março é uso normal — bloquear o mês inteiro impediria o segundo. O `LIMIT 1` corrige um bug
+latente do `distribuir`: com um pagamento anterior de mesmo `(paid_at, notes)`, o
+`INSERT … SELECT` casa duas linhas e grava a alocação em dobro.
+
+**`ordenarFallback` é intencionalmente diferente de `ordenar()`** (`victor-distribution.js`),
+onde a competência manda e o Pharmalog só desempata dentro do mês. Aqui a regra é "sem rateio
+→ Pharmalog", e ele vem antes mesmo que outro cliente tenha competência mais antiga.
+
+`de_lucro`/`de_servico` (gravados em `from_profit`/`from_service`) são **informativos**:
+`payables_victor` tem um `paid_amount` único, não há duas colunas de pago para debitar. O
+split segue a cascata de `aplicarDelta` — o lucro absorve primeiro —, inclusive na hipótese
+sobre pagamentos anteriores.
+
+Rateio que não pôde ser consumido (recebível pendente, caixa futuro, payable sem saldo) vira
+`rateios_sem_saldo` com o motivo, e o valor **desce para o fallback** em vez de sumir. Sem
+esse registro, o INSS do Pharmalog saindo do Bokada parece erro de cálculo.
+
+O modal do "Receber" ganhou o checkbox **"Pagar pelo rateio da apuração"**, só no Flow A — o
+Flow B (alvo específico) e a edição de sessão continuam no `pagar-distribuido`, porque lá o
+usuário já escolheu o destino à mão. A prévia sai do **backend** (`aplicar: false`), não de
+uma cópia da cascata no browser: prévia e gravação divergindo é exatamente o bug do teto de
+caixa que o "Receber" já teve.
+
+Junto foi corrigido em `estornarSessao` (edição de sessão): ele apagava os `payable_payments`
+sem chamar `desfazerAbatimentoFiscal`, então os `fiscal_payments` de abatimento sobreviveriam
+a uma sessão criada por esta rota — a obrigação seguiria paga com o dinheiro de volta no
+saldo do Victor. Mesma correção que o `PATCH ?action=estornar` já tinha.
 
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 
