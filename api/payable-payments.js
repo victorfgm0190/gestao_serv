@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { statusFor, remainingBalance } from '../lib/payment-status.js'
+import { mesDeCaixaOriginal } from '../lib/cash-month.js'
 
 // Tabela pai e coluna de total por tipo
 const TABLES = {
@@ -40,9 +41,16 @@ async function recalcParent(sql, payable_type, payable_id) {
   const paidAt = status === 'pendente' ? null : lastPaid
   const paidAmount = sum.toFixed(2)
 
-  // Mês de caixa do pai = data do último pagamento. Sem pagamentos (paidAt null),
-  // preserva o payment_month/year atual (competência/recebimento original).
-  const { pmonth, pyear } = periodFromDate(paidAt)
+  // Mês de caixa do pai = data do último pagamento.
+  //
+  // Sem pagamentos (paidAt null) NÃO se preserva o valor atual, como se fazia antes: o valor
+  // atual é justamente o mês do pagamento que acabou de ser apagado. Preservá-lo deixava o
+  // payable encalhado num mês de caixa futuro, fora do teto de candidatosDisponiveis() e da
+  // visão de caixa da aba — silenciosamente. Volta para o mês do recebimento do cliente
+  // (ou a competência, se não houver fatura). Ver lib/cash-month.js.
+  const { pmonth, pyear } = paidAt
+    ? periodFromDate(paidAt)
+    : (await mesDeCaixaOriginal(sql, payable_type, payable_id)) || { pmonth: null, pyear: null }
 
   if (payable_type === 'victor') {
     if (pmonth) await sql`UPDATE payables_victor SET paid_amount=${paidAmount}, paid_at=${paidAt}, status=${status}, payment_month=${pmonth}, payment_year=${pyear} WHERE id=${payable_id}`

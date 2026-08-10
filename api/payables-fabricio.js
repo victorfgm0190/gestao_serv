@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { breakdownFabricio } from '../lib/fabricio-breakdown.js'
+import { mesDeCaixaOriginal } from '../lib/cash-month.js'
 
 // Colunas da fatura que explicam o valor do Fabrício, buscadas em UMA query pelos
 // invoice_id já filtrados — em vez de engordar os quatro SELECTs de payables acima
@@ -121,9 +122,14 @@ export default async function handler(req, res) {
       // fiscal_allocations só tem payable_victor_id). Fabrício não participa.
       await sql`DELETE FROM payable_payments WHERE payable_type = 'fabricio' AND payable_id = ${id}`
       const motivo = req.body?.motivo || null
+      // Mesmo estorno do mês de caixa feito no lado do Victor: `recalcParent()` grava
+      // payment_month a partir do pagamento, e ele tem de voltar junto com o saldo.
+      const cx = await mesDeCaixaOriginal(sql, 'fabricio', id)
       const result = await sql`
         UPDATE payables_fabricio SET
           status = 'pendente', paid_amount = 0, paid_at = NULL,
+          payment_month = COALESCE(${cx?.pmonth ?? null}, payment_month),
+          payment_year  = COALESCE(${cx?.pyear ?? null}, payment_year),
           notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
                   to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
                   COALESCE(' (' || ${motivo}::text || ')', '')
