@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
+import { contratoComRegra, contratoDosApontamentos } from '../lib/financial-rule.js'
 import { apurarCompetencia } from './fiscal-obligations.js'
 
 // Competência fiscal de uma fatura: a data de EMISSÃO da nota, não o mês de referência.
@@ -213,6 +214,11 @@ export default async function handler(req, res) {
     try {
       let calc
       let contrato = null
+      // Contrato efetivo da fatura. Na agenda pode não vir do modal (o seletor não é
+      // obrigatório) e ser derivado dos apontamentos — daí ser `let`. O valor final é
+      // o que vai para `invoices.contract_id`, o que impede novas faturas órfãs como
+      // as 11 antigas que ficaram sem nenhum contrato registrado.
+      let contratoId = contract_id || null
       if (billing_type === 'projeto') {
         const loaded = await loadProjeto(sql, contract_id, installment_id)
         if (loaded.error) return res.status(400).json({ error: loaded.error })
@@ -220,6 +226,7 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Esta parcela já foi faturada.' })
         }
         contrato = loaded.contract
+        contratoId = loaded.contract.id
         calc = calcProjeto(loaded.contract, loaded.installment, { tax_percentage_used, tax_client_percent_used })
       } else if (billing_type === 'contract') {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
@@ -227,13 +234,18 @@ export default async function handler(req, res) {
         contrato = contracts[0]
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
+        // A regra sai do contrato, nunca do cliente — ver lib/financial-rule.js.
         const entries = await sql`SELECT * FROM time_entries WHERE id = ANY(${time_entry_ids}::int[])`
-        const rules = await sql`SELECT * FROM financial_rules WHERE client_id = ${client_id} LIMIT 1`
-        if (!rules.length) return res.status(400).json({ error: 'Regra financeira não encontrada' })
-        calc = calcAgenda(entries, rules[0], { tax_percentage_used, tax_client_percent_used })
+        const alvo = contratoId ? { contract_id: contratoId } : contratoDosApontamentos(entries)
+        if (alvo.error) return res.status(422).json({ error: alvo.error })
+        const resolvido = await contratoComRegra(sql, alvo.contract_id, { company_id })
+        if (resolvido.error) return res.status(422).json({ error: resolvido.error })
+        contrato = resolvido.contrato
+        contratoId = resolvido.contrato.id
+        calc = calcAgenda(entries, resolvido.rule, { tax_percentage_used, tax_client_percent_used })
       }
 
-      const require_nf = await requireNfDoContrato(sql, contrato, contract_id)
+      const require_nf = await requireNfDoContrato(sql, contrato, contratoId)
       const { pmonth, pyear } = paymentPeriod(payment_date, month, year)
 
       // Os ids são reservados antes das escritas. Motivo: a fatura precisa do
@@ -252,7 +264,7 @@ export default async function handler(req, res) {
       const writes = [
         sql`
           INSERT INTO invoices (id, company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date, emission_date, receivable_id, require_nf)
-          VALUES (${invId}, ${company_id}, ${client_id}, ${contract_id||null}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null}, ${emission_date||null}, ${recId}, ${require_nf})
+          VALUES (${invId}, ${company_id}, ${client_id}, ${contratoId}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null}, ${emission_date||null}, ${recId}, ${require_nf})
           RETURNING *
         `,
         sql`
@@ -367,7 +379,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'PUT') {
-    const { id, invoice_number, notes, billing_type, time_entry_ids, installment_id, contract_id, client_id, tax_percentage_used, tax_client_percent_used, payment_date, emission_date } = req.body
+    // `client_id` saiu do destructure: só existia para buscar a regra pelo cliente.
+    // A fatura não pode trocar de cliente numa edição de qualquer forma.
+    const { id, invoice_number, notes, billing_type, time_entry_ids, installment_id, contract_id, tax_percentage_used, tax_client_percent_used, payment_date, emission_date } = req.body
     try {
       const invoices = await sql`SELECT * FROM invoices WHERE id = ${id} LIMIT 1`
       if (!invoices.length) return res.status(404).json({ error: 'Fatura não encontrada' })
@@ -379,28 +393,35 @@ export default async function handler(req, res) {
 
       let calc
       let contrato = null
+      let contratoId = contract_id || inv.contract_id || null
       if (billing_type === 'projeto') {
         // Sem installment_id no body, recalcula em cima da parcela já vinculada à fatura.
         let instId = installment_id
         if (!instId) {
-          const linked = await sql`SELECT id FROM project_installments WHERE invoice_id = ${id} LIMIT 1`
+          const linked = await sql`SELECT id FROM project_installments WHERE invoice_id = ${id} ORDER BY id ASC LIMIT 1`
           instId = linked[0]?.id
         }
-        const loaded = await loadProjeto(sql, contract_id || inv.contract_id, instId)
+        const loaded = await loadProjeto(sql, contratoId, instId)
         if (loaded.error) return res.status(400).json({ error: loaded.error })
         contrato = loaded.contract
+        contratoId = loaded.contract.id
         calc = calcProjeto(loaded.contract, loaded.installment, { tax_percentage_used, tax_client_percent_used })
       } else if (billing_type === 'contract') {
-        const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id || inv.contract_id} LIMIT 1`
+        const contracts = await sql`SELECT * FROM contracts WHERE id = ${contratoId} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
         contrato = contracts[0]
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
+        // Mesma resolução do POST: a regra sai do contrato, nunca do cliente.
         const ids = time_entry_ids || inv.time_entry_ids
         const entries = await sql`SELECT * FROM time_entries WHERE id = ANY(${ids}::int[])`
-        const rules = await sql`SELECT * FROM financial_rules WHERE client_id = ${client_id || inv.client_id} LIMIT 1`
-        if (!rules.length) return res.status(400).json({ error: 'Regra financeira não encontrada' })
-        calc = calcAgenda(entries, rules[0], { tax_percentage_used, tax_client_percent_used })
+        const alvo = contratoId ? { contract_id: contratoId } : contratoDosApontamentos(entries)
+        if (alvo.error) return res.status(422).json({ error: alvo.error })
+        const resolvido = await contratoComRegra(sql, alvo.contract_id, { company_id: inv.company_id })
+        if (resolvido.error) return res.status(422).json({ error: resolvido.error })
+        contrato = resolvido.contrato
+        contratoId = resolvido.contrato.id
+        calc = calcAgenda(entries, resolvido.rule, { tax_percentage_used, tax_client_percent_used })
       }
 
       // payment_date: usa o enviado; se a chave não veio no body, mantém o atual.
@@ -410,12 +431,15 @@ export default async function handler(req, res) {
       const { pmonth, pyear } = paymentPeriod(newPaymentDate, inv.month, inv.year)
       // A fatura só é editável enquanto pendente, então reler o contrato aqui é a
       // última chance de a nota pegar a regra de NF vigente antes de virar histórico.
-      const require_nf = await requireNfDoContrato(sql, contrato, contract_id || inv.contract_id)
+      const require_nf = await requireNfDoContrato(sql, contrato, contratoId)
 
       const updated = await sql`
         UPDATE invoices SET
           invoice_number = ${invoice_number || null},
           require_nf = ${require_nf},
+          -- Persiste o contrato resolvido: se ele veio dos apontamentos, deixar a
+          -- coluna nula faria a próxima edição derivá-lo de novo do zero.
+          contract_id = ${contratoId},
           invoice_value = ${calc.invoice_value},
           contract_value = ${calc.contract_value},
           tax_amount = ${calc.tax_amount},

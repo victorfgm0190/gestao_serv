@@ -652,6 +652,43 @@ O merge do breakdown é uma query separada por `invoice_id`, e não colunas nova
 SELECTs de payables: o driver do Neon não compõe fragmentos, então cada coluna seria
 escrita 4×. Mesmo padrão do merge de `payments`.
 
+### 🐞 A regra financeira vinha do cliente, sorteada pela heap — corrigido 2026-08-10
+
+Os cinco pontos de cálculo (`invoices` POST/PUT, `time-entries` POST/PUT e
+`recalc-time-entries`) buscavam a regra com `financial_rules WHERE client_id = X LIMIT 1`
+— **sem `ORDER BY`**. Com mais de uma regra por cliente, quem decidia era a ordem física
+da heap.
+
+O Bokada (`client_id` 13) tem duas: **#8** (hora, R$ 85/h, split 100/0) e **#12**
+(por_projeto, R$ 1.500/h, split 50/50). Reproduzido em produção: um
+`UPDATE financial_rules SET hourly_rate = hourly_rate WHERE id = 8` — que **não muda
+valor nenhum**, só reescreve a tupla no fim da heap — fez a query virar de #8 para #12.
+Num apontamento de 9h isso é bruto de R$ 765 → **R$ 13.500** e Fabrício de R$ 0 →
+**R$ 2.677,50**. Sem erro, sem aviso: os dois números são plausíveis.
+
+A regra agora sai do **contrato** (`contracts.financial_rule_id`), via
+`contratoComRegra()` em `lib/financial-rule.js` — dono único, para os cinco pontos não
+voltarem a divergir. O vínculo já existia (FK, preenchido em 10/10 contratos); só não
+era lido. Nenhuma migração foi necessária.
+
+Decisões que acompanham:
+- **Fallback recusado, não substituído.** Sem contrato → **422** com a razão. Cair na
+  regra do cliente é o próprio bug com outra roupa. `time-entries` perdeu junto o
+  fallback "contrato ativo mais recente do cliente" — eram dois sorteios encadeados, e
+  a tela já exige o contrato (63/63 lançamentos têm `contract_id`).
+- **Na agenda o contrato pode vir dos apontamentos** (`contratoDosApontamentos`): o
+  seletor do modal não é obrigatório, e as 11 faturas antigas sem `contract_id` provam
+  que a chamada sem ele acontece. Apontamentos de contratos diferentes são **recusados**,
+  não arbitrados — aplicar a regra de um ao valor do outro é a mesma classe de erro.
+- **O contrato resolvido é gravado** em `invoices.contract_id` (POST e PUT). Sem isso a
+  próxima edição o derivaria do zero, e novas faturas nasceriam órfãs como as 11 antigas.
+- **Faturas antigas não foram tocadas.** As 11 sem contrato estão todas `recebido`, e o
+  PUT já recusa fatura recebida — o caminho é inalcançável para elas.
+
+`payables-fabricio.js` e `export-payables-fabricio.js` ainda leem a regra por cliente,
+mas com `ORDER BY id` e só como *fallback* de exibição do split quando a fatura não tem
+contrato. Não entram em cálculo gravado.
+
 ### Pagamento com rateio (`lib/victor-rateio.js`) — 2026-08-10
 
 `?action=pagar-distribuido` soma todas as categorias num **pool único** e o consome do mês

@@ -48,7 +48,9 @@ export default async function handler(req, res) {
       if (!recs.length) return res.status(404).json({ error: 'Registro não encontrado' })
 
       // Linkagem real: invoices.receivable_id -> receivables.id
-      const invs = await sql`SELECT * FROM invoices WHERE receivable_id = ${id} LIMIT 1`
+      // ORDER BY: `receivable_id` é 1:1 por construção, não por constraint — sem ele
+      // o desempate seria a ordem física da heap.
+      const invs = await sql`SELECT * FROM invoices WHERE receivable_id = ${id} ORDER BY id ASC LIMIT 1`
       if (invs.length) {
         const inv = invs[0]
         const fabPago = await sql`SELECT id FROM payables_fabricio WHERE invoice_id = ${inv.id} AND status = 'pago' LIMIT 1`
@@ -95,7 +97,7 @@ export default async function handler(req, res) {
     ]
 
     if (status === 'pago') {
-      const invs = await sql`SELECT * FROM invoices WHERE receivable_id = ${id} LIMIT 1`
+      const invs = await sql`SELECT * FROM invoices WHERE receivable_id = ${id} ORDER BY id ASC LIMIT 1`
       if (invs.length) {
         const inv = invs[0]
         const jaExiste = await sql`SELECT id FROM payables_fabricio WHERE invoice_id = ${inv.id} LIMIT 1`

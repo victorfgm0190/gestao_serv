@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
+import { contratoComRegra } from '../lib/financial-rule.js'
 
 // Split cadastrado. Não usar `|| 50`: um split legítimo de 0% (cliente 100/0)
 // é falsy e viraria 50%, pagando Fabrício indevidamente.
@@ -127,14 +128,13 @@ export default async function handler(req, res) {
 
     const hours = calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final)
 
-    const regras = await sql`
-      SELECT * FROM financial_rules WHERE client_id = ${client_id} LIMIT 1
-    `
-    // Contrato: usa o selecionado explicitamente; senão cai no ativo mais recente do cliente
-    const contratos = contract_id
-      ? await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
-      : await sql`SELECT * FROM contracts WHERE client_id = ${client_id} ORDER BY is_active DESC, created_at DESC LIMIT 1`
-    const contrato = contratos[0] || null
+    // Contrato e regra saem juntos, do contrato escolhido na tela. O fallback antigo
+    // ("contrato ativo mais recente do cliente") foi removido junto com a busca da
+    // regra por client_id: eram dois sorteios encadeados, e a tela de horas já exige
+    // o contrato (63/63 lançamentos no banco têm contract_id).
+    const resolvido = await contratoComRegra(sql, contract_id, { company_id })
+    if (resolvido.error) return res.status(422).json({ error: resolvido.error })
+    const { contrato, rule: regra } = resolvido
 
     const horas_desloc = parseFloat(hours_fuel) || 0
     const despesas_desloc = parseFloat(despesas_deslocamento) || 0
@@ -144,11 +144,11 @@ export default async function handler(req, res) {
       victor_share: null, fabricio_share: null, fuel_cost: null, valor_deslocamento: 0
     }
 
-    if (regras.length > 0 && hours > 0) {
-      calc = calcular(hours, regras[0], horas_desloc, contrato, despesas_desloc)
+    if (hours > 0) {
+      calc = calcular(hours, regra, horas_desloc, contrato, despesas_desloc)
     }
 
-    const hourly_rate = regras[0]?.hourly_rate || null
+    const hourly_rate = regra.hourly_rate || null
 
     const result = await sql`
       INSERT INTO time_entries (
@@ -178,21 +178,21 @@ export default async function handler(req, res) {
     } = req.body
 
     const hours = calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final)
-    const regras = await sql`SELECT * FROM financial_rules WHERE client_id = ${client_id} LIMIT 1`
-    const contratos = contract_id
-      ? await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
-      : await sql`SELECT * FROM contracts WHERE client_id = ${client_id} ORDER BY is_active DESC, created_at DESC LIMIT 1`
-    const contrato = contratos[0] || null
+    // Mesma resolução do POST. Sem company_id aqui: o body do PUT não o traz, e o
+    // `id` do contrato já é chave — o filtro por empresa é defesa, não identificação.
+    const resolvido = await contratoComRegra(sql, contract_id)
+    if (resolvido.error) return res.status(422).json({ error: resolvido.error })
+    const { contrato, rule: regra } = resolvido
 
     const horas_desloc = parseFloat(hours_fuel) || 0
     const despesas_desloc = parseFloat(despesas_deslocamento) || 0
 
     let calc = { gross_value: null, tax_amount: null, net_value: null, victor_share: null, fabricio_share: null, fuel_cost: null, valor_deslocamento: 0 }
-    if (regras.length > 0 && hours > 0) {
-      calc = calcular(hours, regras[0], horas_desloc, contrato, despesas_desloc)
+    if (hours > 0) {
+      calc = calcular(hours, regra, horas_desloc, contrato, despesas_desloc)
     }
 
-    const hourly_rate = regras[0]?.hourly_rate || null
+    const hourly_rate = regra.hourly_rate || null
 
     const result = await sql`
       UPDATE time_entries SET

@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { calcular } from './time-entries.js'
 import { requireAdmin } from '../lib/admin-auth.js'
+import { contratoComRegra } from '../lib/financial-rule.js'
 
 // Reprocessa victor_share/fabricio_share de lançamentos já gravados usando a
 // regra financeira e o contrato atuais. Necessário porque os valores são
@@ -48,10 +49,9 @@ export default async function handler(req, res) {
       FROM invoices WHERE time_entry_ids IS NOT NULL`
     const invoicedIds = new Set(invoiced.map(r => Number(r.id)))
 
-    // Caches para não repetir a mesma consulta por lançamento.
-    const rulesByClient = new Map()
-    const contractById = new Map()
-    const contractByClient = new Map()
+    // Cache por CONTRATO — contrato e regra vêm do mesmo lugar agora, então um cache
+    // só basta (antes eram três, e o de regra era chaveado por cliente).
+    const porContrato = new Map()
 
     const changes = []
     const skipped = []
@@ -64,31 +64,23 @@ export default async function handler(req, res) {
         continue
       }
 
-      if (!rulesByClient.has(e.client_id)) {
-        const r = await sql`SELECT * FROM financial_rules WHERE client_id = ${e.client_id} LIMIT 1`
-        rulesByClient.set(e.client_id, r[0] || null)
-      }
-      const regra = rulesByClient.get(e.client_id)
-      if (!regra) {
-        skipped.push({ id: e.id, entry_date: e.entry_date, client_name: e.client_name, reason: 'sem_regra_financeira' })
+      // Mesma resolução do POST de time-entries: contrato e regra juntos, do contrato.
+      // Um lançamento sem contrato é pulado em vez de recalculado pela regra do
+      // cliente — recalcular com a regra errada reescreveria o split gravado, que é
+      // pior do que não recalcular.
+      if (!e.contract_id) {
+        skipped.push({ id: e.id, entry_date: e.entry_date, client_name: e.client_name, reason: 'sem_contrato' })
         continue
       }
-
-      // Mesma resolução de contrato do POST de time-entries.
-      let contrato = null
-      if (e.contract_id) {
-        if (!contractById.has(e.contract_id)) {
-          const c = await sql`SELECT * FROM contracts WHERE id = ${e.contract_id} LIMIT 1`
-          contractById.set(e.contract_id, c[0] || null)
-        }
-        contrato = contractById.get(e.contract_id)
-      } else {
-        if (!contractByClient.has(e.client_id)) {
-          const c = await sql`SELECT * FROM contracts WHERE client_id = ${e.client_id} ORDER BY is_active DESC, created_at DESC LIMIT 1`
-          contractByClient.set(e.client_id, c[0] || null)
-        }
-        contrato = contractByClient.get(e.client_id)
+      if (!porContrato.has(e.contract_id)) {
+        porContrato.set(e.contract_id, await contratoComRegra(sql, e.contract_id))
       }
+      const resolvido = porContrato.get(e.contract_id)
+      if (resolvido.error) {
+        skipped.push({ id: e.id, entry_date: e.entry_date, client_name: e.client_name, reason: 'sem_regra_financeira', detalhe: resolvido.error })
+        continue
+      }
+      const { contrato, rule: regra } = resolvido
 
       const hours = parseFloat(e.hours) || 0
       if (hours <= 0) {
