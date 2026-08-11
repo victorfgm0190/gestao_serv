@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1786415853.3090785,
-    "ast_hash": "34e517acefdaceced8555606f224732b",
+    "mtime": 1786416516.0072167,
+    "ast_hash": "d4c5fca5d8f09644536cbb04431f987f",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1786415895.5624864,
-    "ast_hash": "83f624bff5a90c539a134cb021df2791",
+    "mtime": 1786416576.619143,
+    "ast_hash": "225c603fd512d9ccc78e75936fcb6f57",
     "semantic_hash": ""
   },
   "README.md": {
@@ -455,8 +455,8 @@
     "semantic_hash": ""
   },
   "lib/victor-breakdown.js": {
-    "mtime": 1786414935.2907436,
-    "ast_hash": "5e32717d86d907d3bcc9cb985ab3a3ea",
+    "mtime": 1786416498.4250765,
+    "ast_hash": "25f6693e1333c28b1c2bdfe45121df3b",
     "semantic_hash": ""
   }
 }

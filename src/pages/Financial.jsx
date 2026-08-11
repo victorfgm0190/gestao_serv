@@ -1353,6 +1353,16 @@ export default function Financial() {
           <span className="flex items-center gap-2 min-w-0 flex-wrap">
             <span className="text-gray-500 text-xs">{aberto ? '▼' : '▶'}</span>
             <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{c.client_name}</span>
+            {/* Competências agregadas. Com o filtro num mês só é uma etiqueta redundante;
+                com "todos os meses" é o que impede a leitura de que o filtro falhou —
+                dois lançamentos certos e separados no banco viram um card só. */}
+            {(c.competencias || []).length > 0 && (
+              <span className={`text-[11px] ${c.competencias.length > 1 ? 'text-amber-400/80' : 'text-gray-600'}`}>
+                {c.competencias.length === 1
+                  ? `${months[c.competencias[0].mes - 1]}/${c.competencias[0].ano}`
+                  : `${c.competencias.length} competências: ${c.competencias.map(k => `${months[k.mes - 1]}/${k.ano}`).join(', ')}`}
+              </span>
+            )}
             {c.nf.total > 0 && <span className="text-gray-600 text-[11px]">NF {fmt(c.nf.total)}</span>}
             {/* Fabrício é informativo: sai da fatura e é pago na aba dele. */}
             {c.nf.fabricio > 0 && <span className="text-gray-600 text-[11px]">· Fab {fmt(c.nf.fabricio)}</span>}
@@ -2412,7 +2422,19 @@ export default function Financial() {
                   ser roteada por um checkbox. Este modal ficou sendo só o
                   ?action=pagar-distribuido (pool único) do Flow B e da edição de sessão. */}
               <div className="bg-gray-950/60 border border-gray-800 rounded-xl p-3">
-                <p className="text-gray-300 text-xs font-medium uppercase tracking-wider mb-2">Distribuição do saldo</p>
+                <p className="text-gray-300 text-xs font-medium uppercase tracking-wider">Distribuição do saldo</p>
+                {/* ⚠️ Este painel IGNORA o filtro de mês da tela, e tem de ignorar: o pool
+                    é consumido do mês mais antigo para o mais novo, e candidatosDisponiveis()
+                    no backend também não filtra por competência — só pelo teto de caixa.
+                    Recortar a prévia por mês a faria mostrar menos do que a gravação
+                    consome, que é a versão em espelho do bug do "Receber gravava zero".
+                    Sem esta frase, ver fev listado com o filtro em jan parece o filtro
+                    tendo falhado (foi a leitura do Bokada #42/#44). */}
+                <p className="text-gray-600 text-[10px] mb-2 leading-tight">
+                  Todas as competências em aberto até {months[effRefMonth-1]}/{effRefYear}, da mais
+                  antiga para a mais nova — não só o mês do filtro. É a ordem em que o pagamento
+                  consome os saldos.
+                </p>
                 {distRows.length === 0 ? (
                   <p className="text-gray-600 text-xs text-center py-2">Nenhum saldo pendente</p>
                 ) : (

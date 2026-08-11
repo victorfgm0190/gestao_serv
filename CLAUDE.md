@@ -914,6 +914,34 @@ Pharmalog aparece com 29,78% do DAS porque só a NF #8 está ali — a #7 mora n
 Antes exibia 94,39% (a fatia do cliente na guia) ao lado de um valor que era só o da NF #8:
 o número e o rótulo descreviam conjuntos diferentes.
 
+#### "Fev aparecendo em Jan" NÃO é o filtro — 2026-08-10
+
+Reportado como bug do filtro de mês (Bokada #42 comp 01 e #44 comp 02 aparecendo juntos).
+Investigado com o handler real: **o filtro está correto onde ele existe.**
+
+| rota | `month=1` | `month=2` |
+|------|-----------|-----------|
+| aba Pagar Victor (`?breakdown=true`) | só #42 | só #44 |
+| `?status=pendente,parcial` competência | **todos os meses** | **todos os meses** |
+| `?status=...` + `mode=caixa` | acumula até o mês | acumula até o mês |
+
+A segunda linha é a "Distribuição do saldo" do modal "Receber", e ela **ignora month/year de
+propósito**: o pool é consumido da competência mais antiga para a mais nova, e
+`candidatosDisponiveis()` no backend também não filtra por competência — só pelo teto de
+caixa. Recortar a prévia por mês a faria mostrar menos do que a gravação consome: a versão em
+espelho do 🐞 "Receber gravava zero em silêncio", em que tela e backend usavam relógios
+diferentes. **Não filtrar ali é o conserto, não o defeito.**
+
+O que faltava era dizer isso. Duas mudanças, ambas só de leitura:
+- o painel passou a declarar que lista **todas as competências em aberto até o mês de caixa**,
+  da mais antiga para a mais nova;
+- o card do breakdown mostra as **competências que agrega** — com o filtro num mês é uma
+  etiqueta discreta, com "todos os meses" fica em âmbar e lista as oito. Um card por cliente
+  somando jan+fev sem dizer que são dois meses é indistinguível de um filtro quebrado.
+
+Cobertura de regressão: jan..ago × todos os clientes, nenhum lançamento aparece sob
+competência que não é a sua.
+
 #### 🐞 `month` na visão fiscal trazia o conjunto errado
 
 Descoberto ao recortar o breakdown: as colunas do payable são de **competência**, e a query do

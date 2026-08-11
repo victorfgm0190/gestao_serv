@@ -747,8 +747,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_fiscal_payments",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "fiscal-payments.js"
     },
     {
@@ -758,8 +758,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "api_fiscal_payments_round2",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "round2()"
     },
     {
@@ -769,8 +769,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "api_fiscal_payments_num",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "num()"
     },
     {
@@ -780,8 +780,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "api_fiscal_payments_saldoaberto",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "saldoaberto()"
     },
     {
@@ -791,8 +791,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "api_fiscal_payments_pagar",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "pagar()"
     },
     {
@@ -802,8 +802,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "api_fiscal_payments_estornar",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "estornar()"
     },
     {
@@ -813,8 +813,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "api_fiscal_payments_listar",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "listar()"
     },
     {
@@ -824,8 +824,8 @@
       "source_location": "L135",
       "_origin": "ast",
       "id": "api_fiscal_payments_handler",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "handler()"
     },
     {
@@ -1792,8 +1792,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_fiscal_lines",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "fiscal-lines.js"
     },
     {
@@ -1803,8 +1803,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "lib_fiscal_lines_num",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "num()"
     },
     {
@@ -1814,8 +1814,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "lib_fiscal_lines_round2",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "round2()"
     },
     {
@@ -1836,8 +1836,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "lib_fiscal_lines_descricao_kind",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "descricao_kind"
     },
     {
@@ -1847,8 +1847,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "lib_fiscal_lines_statusdaobrigacao",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "statusdaobrigacao()"
     },
     {
@@ -1858,8 +1858,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "lib_fiscal_lines_periododecaixa",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "periododecaixa()"
     },
     {
@@ -1869,8 +1869,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "lib_fiscal_lines_sincronizarlinhasfiscais",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "sincronizarlinhasfiscais()"
     },
     {
@@ -1990,8 +1990,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_fiscal_status",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "fiscal-status.js"
     },
     {
@@ -2001,8 +2001,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "lib_fiscal_status_num",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "num()"
     },
     {
@@ -2012,8 +2012,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "lib_fiscal_status_valordevido",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "valordevido()"
     },
     {
@@ -2023,8 +2023,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "lib_fiscal_status_statusobrigacao",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "statusobrigacao()"
     },
     {
@@ -2089,8 +2089,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_payment_status",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "payment-status.js"
     },
     {
@@ -2111,8 +2111,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "lib_payment_status_remainingbalance",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 11,
+      "community_name": "taxCalc.js",
       "norm_label": "remainingbalance()"
     },
     {
@@ -2122,8 +2122,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_taxcalc",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "taxcalc.js"
     },
     {
@@ -2133,8 +2133,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "lib_taxcalc_simples_iii",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "simples_iii"
     },
     {
@@ -2144,8 +2144,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "lib_taxcalc_simples_v",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "simples_v"
     },
     {
@@ -2155,8 +2155,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "lib_taxcalc_r2",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "r2()"
     },
     {
@@ -2166,8 +2166,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "lib_taxcalc_params_padrao",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "params_padrao"
     },
     {
@@ -2177,8 +2177,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "lib_taxcalc_parametrosfiscais",
-      "community": 14,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "parametrosfiscais()"
     },
     {
@@ -2188,8 +2188,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "lib_taxcalc_prolaboredomes",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "prolaboredomes()"
     },
     {
@@ -2199,8 +2199,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "lib_taxcalc_faixafor",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "faixafor()"
     },
     {
@@ -2221,8 +2221,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "lib_taxcalc_calcinss",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "calcinss()"
     },
     {
@@ -2232,8 +2232,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "lib_taxcalc_aliquotaefetiva",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "aliquotaefetiva()"
     },
     {
@@ -2243,8 +2243,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "lib_taxcalc_calcularimpostos",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "calcularimpostos()"
     },
     {
@@ -3167,8 +3167,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_copybutton",
-      "community": 14,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "copybutton.jsx"
     },
     {
@@ -3178,8 +3178,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_copybutton_copybutton",
-      "community": 14,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "copybutton()"
     },
     {
@@ -3299,8 +3299,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_dateutils",
-      "community": 16,
-      "community_name": "todayBR",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "dateutils.js"
     },
     {
@@ -3310,8 +3310,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_lib_dateutils_todaybr",
-      "community": 16,
-      "community_name": "todayBR",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "todaybr()"
     },
     {
@@ -3464,8 +3464,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_billing",
-      "community": 14,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "billing.jsx"
     },
     {
@@ -3475,8 +3475,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_pages_billing_months",
-      "community": 14,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "months"
     },
     {
@@ -3486,8 +3486,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_pages_billing_splitpct",
-      "community": 14,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "splitpct()"
     },
     {
@@ -3497,8 +3497,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_pages_billing_fetchfiscalparams",
-      "community": 14,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "fetchfiscalparams()"
     },
     {
@@ -3508,8 +3508,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_pages_billing_split_mode_label",
-      "community": 14,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "split_mode_label"
     },
     {
@@ -3519,8 +3519,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_pages_billing_billing",
-      "community": 14,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "billing()"
     },
     {
@@ -4234,8 +4234,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_settings",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "settings.jsx"
     },
     {
@@ -4245,8 +4245,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_settings_regimes",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "regimes"
     },
     {
@@ -4256,8 +4256,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_pages_settings_empty",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "empty"
     },
     {
@@ -4267,8 +4267,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_pages_settings_settings",
-      "community": 11,
-      "community_name": "taxCalc.js",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "settings()"
     },
     {
@@ -4278,8 +4278,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_timeentries",
-      "community": 16,
-      "community_name": "todayBR",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "timeentries.jsx"
     },
     {
@@ -4289,8 +4289,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_pages_timeentries_splitpct",
-      "community": 16,
-      "community_name": "todayBR",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "splitpct()"
     },
     {
@@ -4300,8 +4300,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_pages_timeentries_decimaltohhmm",
-      "community": 16,
-      "community_name": "todayBR",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "decimaltohhmm()"
     },
     {
@@ -4311,8 +4311,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_pages_timeentries_timeentries",
-      "community": 16,
-      "community_name": "todayBR",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "timeentries()"
     },
     {
@@ -5680,10 +5680,21 @@
       "norm_label": "\"distribuicao do saldo\" em cascata \u2014 2026-08-10"
     },
     {
-      "label": "\ud83d\udc1e `month` na vis\u00e3o fiscal trazia o conjunto errado",
+      "label": "\"Fev aparecendo em Jan\" N\u00c3O \u00e9 o filtro \u2014 2026-08-10",
       "file_type": "document",
       "source_file": "CLAUDE.md",
       "source_location": "L917",
+      "_origin": "ast",
+      "id": "claude_fev_aparecendo_em_jan_n\u00e3o_\u00e9_o_filtro_2026_08_10",
+      "community": 3,
+      "community_name": "Financial.jsx",
+      "norm_label": "\"fev aparecendo em jan\" nao e o filtro \u2014 2026-08-10"
+    },
+    {
+      "label": "\ud83d\udc1e `month` na vis\u00e3o fiscal trazia o conjunto errado",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L945",
       "_origin": "ast",
       "id": "claude_month_na_vis\u00e3o_fiscal_trazia_o_conjunto_errado",
       "community": 3,
@@ -5694,7 +5705,7 @@
       "label": "O que saiu",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L928",
+      "source_location": "L956",
       "_origin": "ast",
       "id": "claude_o_que_saiu",
       "community": 3,
@@ -5705,7 +5716,7 @@
       "label": "Contrato sem NF (`require_nf = false`) \u2014 2026-07-27",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L954",
+      "source_location": "L982",
       "_origin": "ast",
       "id": "claude_contrato_sem_nf_require_nf_false_2026_07_27",
       "community": 3,
@@ -5716,7 +5727,7 @@
       "label": "Dois tipos de imposto (distintos!)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L975",
+      "source_location": "L1003",
       "_origin": "ast",
       "id": "claude_dois_tipos_de_imposto_distintos",
       "community": 3,
@@ -5727,7 +5738,7 @@
       "label": "Contrato fixo (`billing_type = 'contract'` ou `'mensal'`)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L981",
+      "source_location": "L1009",
       "_origin": "ast",
       "id": "claude_contrato_fixo_billing_type_contract_ou_mensal",
       "community": 3,
@@ -5738,7 +5749,7 @@
       "label": "Contrato por hora (`billing_type = 'hora'` / fatura `agenda`)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L991",
+      "source_location": "L1019",
       "_origin": "ast",
       "id": "claude_contrato_por_hora_billing_type_hora_fatura_agenda",
       "community": 3,
@@ -5749,7 +5760,7 @@
       "label": "Split Victor/Fabr\u00edcio",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1010",
+      "source_location": "L1038",
       "_origin": "ast",
       "id": "claude_split_victor_fabr\u00edcio",
       "community": 3,
@@ -5760,7 +5771,7 @@
       "label": "Deslocamento (por contrato)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1014",
+      "source_location": "L1042",
       "_origin": "ast",
       "id": "claude_deslocamento_por_contrato",
       "community": 3,
@@ -5771,7 +5782,7 @@
       "label": "Fluxo de faturamento",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1019",
+      "source_location": "L1047",
       "_origin": "ast",
       "id": "claude_fluxo_de_faturamento",
       "community": 3,
@@ -5782,7 +5793,7 @@
       "label": "M\u00faltiplos pagamentos",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1026",
+      "source_location": "L1054",
       "_origin": "ast",
       "id": "claude_m\u00faltiplos_pagamentos",
       "community": 3,
@@ -5793,7 +5804,7 @@
       "label": "7. Contratos existentes no banco",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1032",
+      "source_location": "L1060",
       "_origin": "ast",
       "id": "claude_7_contratos_existentes_no_banco",
       "community": 39,
@@ -5804,7 +5815,7 @@
       "label": "Regras financeiras vinculadas (`financial_rules`)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1049",
+      "source_location": "L1077",
       "_origin": "ast",
       "id": "claude_regras_financeiras_vinculadas_financial_rules",
       "community": 39,
@@ -5815,7 +5826,7 @@
       "label": "8. Workflow de desenvolvimento",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1064",
+      "source_location": "L1092",
       "_origin": "ast",
       "id": "claude_8_workflow_de_desenvolvimento",
       "community": 39,
@@ -5826,7 +5837,7 @@
       "label": "Estorno e o abatimento fiscal (`lib/fiscal-unlink.js`) \u2014 2026-07-26",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1085",
+      "source_location": "L1113",
       "_origin": "ast",
       "id": "claude_estorno_e_o_abatimento_fiscal_lib_fiscal_unlink_js_2026_07_26",
       "community": 39,
@@ -5837,7 +5848,7 @@
       "label": "\u26a0\ufe0f N\u00e3o existe status `estornado`",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1110",
+      "source_location": "L1138",
       "_origin": "ast",
       "id": "claude_n\u00e3o_existe_status_estornado",
       "community": 39,
@@ -5848,7 +5859,7 @@
       "label": "9. APIs legadas / mortas",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1133",
+      "source_location": "L1161",
       "_origin": "ast",
       "id": "claude_9_apis_legadas_mortas",
       "community": 39,
@@ -5859,7 +5870,7 @@
       "label": "10. Pend\u00eancias conhecidas",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1144",
+      "source_location": "L1172",
       "_origin": "ast",
       "id": "claude_10_pend\u00eancias_conhecidas",
       "community": 39,
@@ -5870,7 +5881,7 @@
       "label": "Observa\u00e7\u00f5es para Claude Code",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1227",
+      "source_location": "L1255",
       "_origin": "ast",
       "id": "claude_observa\u00e7\u00f5es_para_claude_code",
       "community": 39,
@@ -5881,7 +5892,7 @@
       "label": "graphify",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L1233",
+      "source_location": "L1261",
       "_origin": "ast",
       "id": "claude_graphify",
       "community": 39,
@@ -13657,7 +13668,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "lib/victor-breakdown.js",
-      "source_location": "L137",
+      "source_location": "L145",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_victor_breakdown_montarbreakdown",
@@ -13681,7 +13692,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "lib/victor-breakdown.js",
-      "source_location": "L140",
+      "source_location": "L148",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_victor_breakdown_montarbreakdown",
@@ -13705,7 +13716,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "lib/victor-breakdown.js",
-      "source_location": "L118",
+      "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_victor_breakdown_montarbreakdown",
@@ -13729,7 +13740,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "lib/victor-breakdown.js",
-      "source_location": "L204",
+      "source_location": "L212",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_victor_breakdown_montarbreakdown",
@@ -13742,7 +13753,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "lib/victor-breakdown.js",
-      "source_location": "L137",
+      "source_location": "L145",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_victor_breakdown_montarbreakdown",
@@ -15078,7 +15089,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/Financial.jsx",
-      "source_location": "L1677",
+      "source_location": "L1687",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_financial_financial",
@@ -17482,7 +17493,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1144",
+      "source_location": "L1172",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_claude_md_contexto_do_projeto_gestao_serv",
@@ -17559,7 +17570,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1032",
+      "source_location": "L1060",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_claude_md_contexto_do_projeto_gestao_serv",
@@ -17570,7 +17581,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1064",
+      "source_location": "L1092",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_claude_md_contexto_do_projeto_gestao_serv",
@@ -17581,7 +17592,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1133",
+      "source_location": "L1161",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_claude_md_contexto_do_projeto_gestao_serv",
@@ -17592,7 +17603,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1233",
+      "source_location": "L1261",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_claude_md_contexto_do_projeto_gestao_serv",
@@ -17603,7 +17614,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1227",
+      "source_location": "L1255",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_claude_md_contexto_do_projeto_gestao_serv",
@@ -17966,7 +17977,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L981",
+      "source_location": "L1009",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_6_regras_de_neg\u00f3cio_financeiro",
@@ -17977,7 +17988,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L991",
+      "source_location": "L1019",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_6_regras_de_neg\u00f3cio_financeiro",
@@ -17988,7 +17999,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L954",
+      "source_location": "L982",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_6_regras_de_neg\u00f3cio_financeiro",
@@ -18010,7 +18021,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1014",
+      "source_location": "L1042",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_6_regras_de_neg\u00f3cio_financeiro",
@@ -18021,7 +18032,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L975",
+      "source_location": "L1003",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_6_regras_de_neg\u00f3cio_financeiro",
@@ -18032,7 +18043,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1019",
+      "source_location": "L1047",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_6_regras_de_neg\u00f3cio_financeiro",
@@ -18087,7 +18098,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1026",
+      "source_location": "L1054",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_6_regras_de_neg\u00f3cio_financeiro",
@@ -18131,7 +18142,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1010",
+      "source_location": "L1038",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_6_regras_de_neg\u00f3cio_financeiro",
@@ -18168,6 +18179,17 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_breakdown_por_cliente_na_aba_pagar_victor_lib_victor_breakdown_js_2026_08_10",
+      "target": "claude_fev_aparecendo_em_jan_n\u00e3o_\u00e9_o_filtro_2026_08_10",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L945",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_breakdown_por_cliente_na_aba_pagar_victor_lib_victor_breakdown_js_2026_08_10",
       "target": "claude_month_na_vis\u00e3o_fiscal_trazia_o_conjunto_errado",
       "confidence_score": 1.0
     },
@@ -18175,7 +18197,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L928",
+      "source_location": "L956",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_breakdown_por_cliente_na_aba_pagar_victor_lib_victor_breakdown_js_2026_08_10",
@@ -18197,7 +18219,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1049",
+      "source_location": "L1077",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_7_contratos_existentes_no_banco",
@@ -18208,7 +18230,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1085",
+      "source_location": "L1113",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_8_workflow_de_desenvolvimento",
@@ -18219,7 +18241,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L1110",
+      "source_location": "L1138",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_8_workflow_de_desenvolvimento",
@@ -18591,5 +18613,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "2eb61aa8e9058cc1871162edd27d14bb4bec089a"
+  "built_at_commit": "55c2dd5c3dbfc617460bb600324a64af4f8ac371"
 }
