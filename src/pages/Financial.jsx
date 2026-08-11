@@ -1017,7 +1017,21 @@ export default function Financial() {
       id: r.id, month: r.month, year: r.year, client_name: r.client_name,
       saldo, liquido, state, consumed: cents(consumed),
       servico: servRest, lucro: lucroRest, impostos, impostoTotal,
-      subtotal: cents(liquido + impostoTotal),
+      // Bruto da parte do VICTOR, antes do imposto — não o total da NF: o que cabe ao
+      // Fabrício sai da nota à parte e nunca passa por aqui. Confere na NF #6 (Pharmalog,
+      // Jan/2026): 8.453,08 + 1.026,68 = 9.479,76, e 9.479,76 + 295,38 do Fabrício =
+      // 9.775,00 da nota (os 14 centavos são o resíduo de arredondamento de sempre).
+      //
+      // É derivado do que RESTA, então acompanha o valor digitado — o painel inteiro é
+      // sobre o saldo restante, e a linha "Saldo → Líquido" logo acima mostra o consumo.
+      // Sem nada digitado, restante = saldo, e o bloco explica exatamente o saldo.
+      bruto: cents(liquido + impostoTotal),
+      // Excedente do imposto real que a apuração já rateou mas o ?action=recalcular ainda
+      // não aplicou. Enquanto ≠ 0, o payable carrega o valor da PROVISÃO (7%) e o imposto
+      // exibido é o REAL — então o bruto derivado fica acima do que a NF reconstitui, pela
+      // diferença. Hoje isso vale para 13 das 14 notas do banco, então calar seria deixar o
+      // número mais visível do painel sem explicação.
+      aRedistribuir: cents(r.fiscal?.a_redistribuir || 0),
       // Cascata negativa = o imposto superou o lucro e o serviço absorveu a diferença.
       // O payable já foi gravado com o lucro zerado; isto explica por que ele é 0,00.
       cascadeAbsorvido: r.cascata && r.cascata.lucro_final < -0.005 ? cents(-r.cascata.lucro_final) : 0,
@@ -2422,11 +2436,39 @@ export default function Financial() {
                           </span>
                         </div>
 
+                        {/* De onde vem o líquido: bruto da parte do Victor, menos o
+                            imposto rateado daquela NF. A subtração é exibida porque o
+                            saldo do payable já chega líquido e não dizia de onde veio.
+                            Omitido quando não há imposto (contrato sem NF, como a Minas):
+                            "− R$ 0,00" só acrescentaria ruído. */}
+                        {d.impostoTotal > 0.005 && (
+                          <div className="mt-1.5 mb-1 px-2 py-1.5 bg-gray-900/70 rounded-lg space-y-0.5 font-mono text-[11px]">
+                            <div className="flex justify-between gap-2">
+                              <span className="text-gray-400 font-sans">Bruto (parte do Victor)</span>
+                              <span className="text-white">{fmt(d.bruto)}</span>
+                            </div>
+                            <div className="flex justify-between gap-2">
+                              <span className="text-gray-500 font-sans">Menos impostos</span>
+                              <span className="text-red-400">−{fmt(d.impostoTotal)}</span>
+                            </div>
+                            <div className="flex justify-between gap-2 border-t border-gray-700 pt-0.5 font-semibold">
+                              <span className="text-gray-400 font-sans">Líquido (p/ Victor)</span>
+                              <span className="text-green-400">{fmt(d.liquido)}</span>
+                            </div>
+                            {Math.abs(d.aRedistribuir) > 0.005 && (
+                              <p className="text-amber-400/80 text-[10px] font-sans leading-tight pt-0.5">
+                                ⚠️ O líquido ainda é o da provisão de 7%: {fmt(d.aRedistribuir)} de
+                                imposto real não foi redistribuído, então o bruto acima está
+                                alto nesse valor. Aplicar em /fiscal.
+                              </p>
+                            )}
+                          </div>
+                        )}
+
                         {/* Árvore: do que o líquido é composto, mais o imposto rateado
                             daquela NF. ⚠️ O imposto NÃO é consumido pelo pagamento — já
                             está descontado do que o Victor recebe (provisão retida na NF
-                            + cascata lucro→serviço). Entra aqui como leitura, e por isso
-                            o "Sai de caixa" é rotulado à parte do Líquido. */}
+                            + cascata lucro→serviço). Entra aqui como leitura. */}
                         <div className="mt-1 pl-2 space-y-0.5 font-mono text-[11px]">
                           <div className="flex justify-between gap-2">
                             <span className="text-gray-500 font-sans">├─ Serviço Victor</span>
@@ -2443,18 +2485,17 @@ export default function Financial() {
                               <span className="text-gray-400">{fmt(l.valor)}</span>
                             </div>
                           ))}
+                          {/* Fecha a árvore: o total já foi dito no bloco acima (o Bruto
+                              é o mesmo número), e repeti-lo aqui como "sai de caixa"
+                              contaria a mesma soma com outra história. */}
                           <div className="flex justify-between gap-2">
                             <span className={`font-sans ${d.cascadeAbsorvido > 0 ? 'text-orange-400' : 'text-gray-500'}`}>
-                              ├─ Lucro
+                              └─ Lucro
                               {d.cascadeAbsorvido > 0 && (
                                 <span className="text-orange-400/80"> · cascata absorveu {fmt(d.cascadeAbsorvido)} no serviço</span>
                               )}
                             </span>
                             <span className={d.cascadeAbsorvido > 0 ? 'text-orange-400' : 'text-gray-400'}>{fmt(d.lucro)}</span>
-                          </div>
-                          <div className="flex justify-between gap-2 border-t border-gray-800 pt-0.5 font-semibold">
-                            <span className="text-gray-400 font-sans">└─ Sai de caixa</span>
-                            <span className="text-white">{fmt(d.subtotal)}</span>
                           </div>
                         </div>
                       </div>

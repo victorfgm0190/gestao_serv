@@ -876,6 +876,25 @@ leitura, e o total é rotulado **"Sai de caixa"** — distinto de "Líquido" —
 some ao saldo consumível. `serviço + lucro = líquido` e `líquido + imposto = sai de caixa` são
 invariantes verificadas contra as 20 linhas do banco.
 
+**Bruto → menos impostos → Líquido** abre cada linha, antes da árvore. O saldo do payable
+chega líquido e não dizia de onde veio; a subtração mostra a origem. `bruto = líquido +
+imposto` (a mesma soma que antes se chamava "sai de caixa", agora contada na direção que se
+lê de cima para baixo), e o rodapé da árvore saiu para não repetir o número com outra
+história. Omitido quando não há imposto (contrato sem NF, como a Minas): "− R$ 0,00" é ruído.
+
+⚠️ **É o bruto da parte do VICTOR, não o total da NF** — o que cabe ao Fabrício sai da nota à
+parte e nunca passa por este painel. Confere na NF #6: 8.453,08 + 1.026,68 = 9.479,76, e
+9.479,76 + 295,38 do Fabrício = os 9.775,00 da nota.
+
+⚠️ **O bruto é derivado do que RESTA**, então acompanha o valor digitado. Sem nada digitado,
+restante = saldo, e o bloco explica exatamente o saldo — que é a pergunta que ele responde.
+
+⚠️ **Com o mês não redistribuído, o bruto fica alto.** O payable ainda carrega a provisão de
+7% enquanto o imposto exibido é o real, então a diferença (`fiscal.a_redistribuir`) infla o
+bruto — hoje em **13 das 14 notas** do banco, de R$ 0,14 (NF #6) a R$ 356,46 (NF #7). O bloco
+diz isso em âmbar, com o caminho para `/fiscal`; sem o aviso, o número mais visível do painel
+não reconciliaria com a nota e pareceria erro de cálculo.
+
 **O percentual do rateio agora vem do backend**, em `r.fiscal.linhas[].percentual`, com o
 denominador (`obrigacao_total`) trazido por CTE na mesma query — uma ida ao banco a menos, e a
 query separada de `pesos` foi eliminada. Calculá-lo no browser como *fatia ÷ soma-dos-visíveis*
