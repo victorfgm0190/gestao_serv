@@ -17,6 +17,8 @@ import { mesDeCaixaOriginal } from '../lib/cash-month.js'
 import { ORDEM_KIND } from '../lib/fiscal-lines.js'
 // A cascata exibida sai das MESMAS funções que a gravam em ?action=recalcular.
 import { aplicarDelta, cascataDoLucro } from '../lib/fiscal-redistribution.js'
+// Breakdown por cliente da aba Pagar Victor — agregação das MESMAS linhas, não recálculo.
+import { montarBreakdown } from '../lib/victor-breakdown.js'
 
 // Recalcula o pai de um payable_victor após alterar seus pagamentos.
 async function recalcVictorParent(sql, payable_id) {
@@ -214,7 +216,23 @@ async function pagarComRateio(sql, req, res) {
     }
     const valor = r2(parseFloat(pg?.valor) || 0)
     if (valor <= 0) continue
-    itens.push({ categoria, kind: CATEGORIA_KIND[categoria], valor })
+    // `client_id` opcional: o breakdown por cliente manda "o INSS do Pharmalog", o modal
+    // "Receber" manda só "INSS" e deixa o rateio escolher. Ver planejarCategoria().
+    const client_id = pg?.client_id == null || pg.client_id === '' ? null : Number(pg.client_id)
+    if (client_id !== null && !Number.isFinite(client_id)) {
+      return res.status(400).json({ error: `client_id inválido em "${categoria}"` })
+    }
+    // Serviço e lucro são o saldo do próprio payable: sem alvo não há o que pagar, só a
+    // cascata genérica — que é justamente o que o breakdown por cliente veio substituir.
+    if (client_id === null && (categoria === 'servico' || categoria === 'lucro')) {
+      return res.status(400).json({ error: `A categoria "${categoria}" exige client_id` })
+    }
+    // `invoice_ids`: as notas do card que originou o valor. Prende o consumo ao mesmo
+    // recorte que a tela exibiu — ver planejarCategoria().
+    const invoice_ids = Array.isArray(pg?.invoice_ids)
+      ? pg.invoice_ids.map(Number).filter(Number.isFinite)
+      : null
+    itens.push({ categoria, kind: CATEGORIA_KIND[categoria], valor, client_id, invoice_ids })
     despesas[categoria] = r2((despesas[categoria] || 0) + valor)
   }
   if (!itens.length) return res.status(400).json({ error: 'Informe ao menos uma categoria com valor maior que zero' })
@@ -245,14 +263,18 @@ async function pagarComRateio(sql, req, res) {
 
   // Três situações que a tela precisa distinguir e que antes se pareciam:
   const faltando = plano.por_categoria.filter((c) => c.restante > LIMIAR_FIM)
-    .map((c) => ({ categoria: c.categoria, valor: c.valor, restante: c.restante }))
+    .map((c) => ({ categoria: c.categoria, valor: c.valor, restante: c.restante, client_id: c.client_id }))
   // Categoria fiscal cuja obrigação não existe no mês: competência não apurada. Não é
   // erro — o pagamento vira fallback puro —, mas sem avisar parece que o rateio falhou.
-  const sem_obrigacao = itens.filter((i) => i.kind && !obPorKind.has(i.kind)).map((i) => i.categoria)
+  const sem_obrigacao = [...new Set(itens.filter((i) => i.kind && !obPorKind.has(i.kind)).map((i) => i.categoria))]
   // Obrigação já quitada: pagar de novo debitaria o payable e superquitaria a guia.
-  const ja_quitadas = itens
-    .filter((i) => i.kind && obPorKind.has(i.kind) && saldoObrigacao(obPorKind.get(i.kind)) <= LIMIAR_FIM)
-    .map((i) => ({ categoria: i.categoria, kind: i.kind, obligation_id: obPorKind.get(i.kind).id }))
+  // Deduplicado por kind: no breakdown por cliente a mesma guia chega em várias entradas
+  // (uma por cliente), e repetir o aviso uma vez por linha só empilharia texto.
+  const ja_quitadas = [...new Map(
+    itens
+      .filter((i) => i.kind && obPorKind.has(i.kind) && saldoObrigacao(obPorKind.get(i.kind)) <= LIMIAR_FIM)
+      .map((i) => [i.kind, { categoria: i.categoria, kind: i.kind, obligation_id: obPorKind.get(i.kind).id }]),
+  ).values()]
 
   const quitacoes = quitacoesPorObrigacao(plano.por_categoria, obPorKind, saldoObrigacao)
 
@@ -279,6 +301,8 @@ async function pagarComRateio(sql, req, res) {
     nao_coberto: r2(faltando.reduce((s, f) => s + f.restante, 0)),
     por_categoria: plano.por_categoria.map((c) => ({
       categoria: c.categoria, kind: c.kind, valor: c.valor, restante: c.restante,
+      client_id: c.client_id,
+      cliente_nome: c.client_id == null ? null : nomes.get(Number(c.client_id)) || null,
       de_rateio: r2(c.alocacoes.filter((a) => a.tipo === 'rateio').reduce((s, a) => s + a.valor, 0)),
       de_fallback: r2(c.alocacoes.filter((a) => a.tipo !== 'rateio').reduce((s, a) => s + a.valor, 0)),
       rateios_sem_saldo: c.rateios_sem_saldo,
@@ -305,8 +329,13 @@ async function pagarComRateio(sql, req, res) {
   }
   if (faltando.length) {
     const f = faltando[0]
+    // Com alvo, o motivo é outro: não é que falte saldo no geral, é que falta NAQUELE
+    // cliente — e o valor não escorre para outro justamente porque o usuário o escolheu.
+    const ondeF = f.client_id == null
+      ? 'os lançamentos disponíveis não cobrem o valor'
+      : `${nomes.get(Number(f.client_id)) || `cliente ${f.client_id}`} não tem esse saldo disponível`
     return res.status(422).json({
-      error: `Faltam ${f.restante.toFixed(2)} para ${f.categoria}: os lançamentos disponíveis não cobrem o valor. Ajuste o valor ou a data do pagamento.`,
+      error: `Faltam ${f.restante.toFixed(2)} para ${f.categoria}: ${ondeF}. Ajuste o valor ou a data do pagamento.`,
       alocacoes: alocacoesOut, resumo,
     })
   }
@@ -418,6 +447,12 @@ export default async function handler(req, res) {
     // A filtragem exata por ano fiscal é client-side, sobre este superconjunto.
     const fiscal = mode === 'fiscal'
     const anos = fiscal ? [Number(year) - 1, Number(year)] : [Number(year)]
+    // ⚠️ Na visão fiscal `month` NÃO pode entrar na query: as colunas do payable são de
+    // COMPETÊNCIA, e o recorte fiscal é por data de emissão. Filtrar `p.month = 2` traria
+    // os payables de competência fevereiro — cujas notas saíram em março —, e o recorte
+    // por emissão feito depois zeraria o conjunto inteiro. O mês da visão fiscal é
+    // aplicado sobre `emission_date`, adiante (e no frontend, para a lista).
+    const monthSql = fiscal ? null : month
     const statusList = status ? status.split(',').map(s => s.trim()).filter(Boolean) : []
     let rows
     if (statusList.length && caixa) {
@@ -434,8 +469,8 @@ export default async function handler(req, res) {
         ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} AND p.payment_month = ${month} ORDER BY p.payment_month DESC, p.created_at DESC`
         : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.payment_year = ${year} ORDER BY p.payment_month DESC, p.created_at DESC`
     } else {
-      rows = month
-        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ANY(${anos}) AND p.month = ${month} ORDER BY p.month DESC, p.created_at DESC`
+      rows = monthSql
+        ? await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ANY(${anos}) AND p.month = ${monthSql} ORDER BY p.month DESC, p.created_at DESC`
         : await sql`SELECT p.*, c.name as client_name, i.invoice_value as invoice_amount, i.emission_date, rcv.status as receivable_status FROM payables_victor p LEFT JOIN clients c ON c.id = p.client_id LEFT JOIN invoices i ON i.id = p.invoice_id LEFT JOIN receivables rcv ON rcv.id = i.receivable_id WHERE p.company_id = ${company_id} AND p.year = ANY(${anos}) ORDER BY p.month DESC, p.created_at DESC`
     }
     const ids = rows.map(r => r.id)
@@ -446,6 +481,7 @@ export default async function handler(req, res) {
     const byId = {}
     for (const p of payments) { (byId[p.payable_id] ||= []).push(p) }
     for (const r of rows) { r.payments = byId[r.id] || [] }
+    let breakdown = null
 
     // Composição fiscal da fatura que gerou o payable: quanto do imposto real do mês
     // coube a esta NF, por tipo, e de onde o dinheiro saiu.
@@ -542,6 +578,95 @@ export default async function handler(req, res) {
       }
     }
 
+    // ── BREAKDOWN POR CLIENTE ──────────────────────────────────────────────────────
+    // Só quando a aba pede (`?breakdown=true`): são duas queries a mais, e o Dashboard
+    // e o Histórico consomem este mesmo GET sem precisar delas.
+    //
+    // Montado AQUI, sobre as linhas já filtradas e enriquecidas, e não numa rota própria:
+    // a lista e o breakdown passam a ser a mesma leitura vista de dois ângulos, então não
+    // há recorte de mês/visão para divergir entre eles.
+    //
+    // Fora do `if (invIds.length)` de propósito: um mês só com lançamentos manuais não tem
+    // fatura nenhuma e mesmo assim tem serviço/lucro a pagar por cliente.
+    if (req.query.breakdown === 'true') {
+      const consumos = new Map()
+      const pesos = new Map()
+      if (invIds.length) {
+        // As obrigações que rateiam ESTAS notas. Sai das alocações, não de month/year:
+        // a apuração agrupa pela data de emissão, então a obrigação de um payable de
+        // janeiro costuma ser a de fevereiro (ver lib/victor-rateio.js).
+        const obIds = [...new Set(
+          (await sql`
+            SELECT DISTINCT obligation_id FROM fiscal_allocations
+            WHERE basis = 'proporcional_nf' AND invoice_id = ANY(${invIds})`
+          ).map((o) => Number(o.obligation_id)),
+        )]
+
+        if (obIds.length) {
+          const [rateado, consumido] = await Promise.all([
+            // Fatia de cada cliente na obrigação — o "87,12%" que a tela mostra ao lado
+            // de INSS e Escritório. Sai do próprio rateio; calcular por
+            // NF_do_cliente / faturamento_do_mês no browser daria um segundo dono do
+            // percentual, e ele divergiria nos meses com NF sem incidência.
+            sql`
+              SELECT a.obligation_id, o.kind, a.client_id, SUM(a.amount) AS amount
+              FROM fiscal_allocations a
+              JOIN fiscal_obligations o ON o.id = a.obligation_id
+              WHERE a.basis = 'proporcional_nf' AND a.obligation_id = ANY(${obIds})
+              GROUP BY a.obligation_id, o.kind, a.client_id`,
+            // Quanto já saiu do saldo de cada cliente para cada obrigação. Inclui o
+            // fallback de propósito: se o INSS do Pharmalog saiu do Bokada, o dinheiro
+            // saiu do Bokada — é o saldo DELE que baixou.
+            sql`
+              SELECT o.kind, a.client_id, SUM(a.amount) AS amount
+              FROM fiscal_allocations a
+              JOIN fiscal_obligations o ON o.id = a.obligation_id
+              WHERE a.basis = 'consumo_payable' AND a.obligation_id = ANY(${obIds})
+              GROUP BY o.kind, a.client_id`,
+          ])
+
+          const totalObrigacao = new Map()
+          for (const a of rateado) {
+            const k = Number(a.obligation_id)
+            totalObrigacao.set(k, r2((totalObrigacao.get(k) || 0) + (parseFloat(a.amount) || 0)))
+          }
+          for (const a of rateado) {
+            const tot = totalObrigacao.get(Number(a.obligation_id)) || 0
+            if (tot <= 0) continue
+            const cid = Number(a.client_id)
+            if (!pesos.has(cid)) pesos.set(cid, {})
+            pesos.get(cid)[a.kind] = (parseFloat(a.amount) || 0) / tot
+          }
+          for (const a of consumido) {
+            const cid = Number(a.client_id)
+            if (!consumos.has(cid)) consumos.set(cid, {})
+            consumos.get(cid)[a.kind] = r2((consumos.get(cid)[a.kind] || 0) + (parseFloat(a.amount) || 0))
+          }
+        }
+      }
+
+      // Recorte da visão FISCAL. As outras duas já vieram recortadas pela query (month
+      // filtra p.month na competência e p.payment_month no caixa); a fiscal não pode —
+      // ela agrupa por `invoices.emission_date`, e a query devolve de propósito um
+      // superconjunto de dois anos para a NF de dezembro emitida em janeiro aparecer.
+      // Sem refiltrar aqui o breakdown cobriria o ano inteiro enquanto a lista ao lado
+      // mostra um mês, e a diferença passaria por erro de cálculo.
+      //
+      // ⚠️ `emission_date` chega como Date pelo driver e como string ISO pelo JSON — o
+      // mesmo tropeço documentado em CLAUDE.md, onde String(date) virava "Mon Feb 02 2026"
+      // e o split('-') caía no fallback de competência sem erro nenhum.
+      const alvo = !fiscal ? rows : rows.filter((r) => {
+        const d = r.emission_date
+        const iso = d instanceof Date ? d.toISOString().slice(0, 10) : String(d || '').slice(0, 10)
+        const [ey, em] = iso.split('-').map(Number)
+        const y = Number.isFinite(ey) ? ey : Number(r.year)
+        const m = Number.isFinite(em) ? em : Number(r.month)
+        return y === Number(year) && (!month || m === Number(month))
+      })
+
+      breakdown = montarBreakdown({ rows: alvo, consumos, pesos })
+    }
+
     // Previsão: recebíveis pendentes/parciais (cliente ainda não pagou) que ainda não geraram
     // payable. Retornados como entradas "previsto" (is_preview) usando invoices.victor_total.
     if (req.query.include_preview === 'true') {
@@ -561,7 +686,7 @@ export default async function handler(req, res) {
         })
       }
     }
-    return res.status(200).json({ data: rows })
+    return res.status(200).json({ data: rows, breakdown })
   }
   if (req.method === 'POST') {
     if (req.query.action === 'pagar-distribuido') return pagarDistribuido(sql, req, res)

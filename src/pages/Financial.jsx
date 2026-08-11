@@ -41,6 +41,22 @@ const RECEIVE_VICTOR_CATEGORIES = [
 ]
 const EMPTY_RECEIVE_CATS = { honorarios: '', das: '', inss: '', pro_labore: '', lucros: '', escritorio: '', demais: '' }
 
+// ── Breakdown por cliente (aba Pagar Victor) ────────────────────────────────────────────
+// Espelha CATEGORIAS/CATEGORIA_LABEL de lib/victor-breakdown.js e BREAKDOWN_KIND de
+// lib/victor-rateio.js. A ordem é a da cascata: o que o Victor recebe primeiro, o que o
+// fisco leva depois.
+const BREAKDOWN_CATEGORIAS = ['lucro', 'servico', 'das', 'inss', 'escritorio']
+const BREAKDOWN_LABEL = {
+  lucro: 'Lucro',
+  servico: 'Serviço Victor',
+  das: 'DAS',
+  inss: 'INSS',
+  escritorio: 'Escritório',
+}
+// As três categorias que são obrigação fiscal (`das`/`inss`/`honorarios` no backend)
+// aparecem com o percentual do rateio ao lado; pagá-las quita a guia da competência, o
+// que a prévia informa antes de gravar.
+
 // Rótulos dos `kind` de fiscal_obligations no card de Reservas.
 const RESERVA_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Honorários', pro_labore: 'Pro Labore', escritorio: 'Escritório' }
 
@@ -56,10 +72,21 @@ const MODO_LABEL = {
   caixa: 'caixa (mês do recebimento)',
 }
 const receiveCategoryTotal = (cats) => RECEIVE_VICTOR_CATEGORIES.reduce((s, [k]) => s + (parseFloat(cats[k]) || 0), 0)
-const RECEIVE_LABEL_TO_KEY = Object.fromEntries(RECEIVE_VICTOR_CATEGORIES.map(([k, label]) => [label, k]))
+// Vocabulário COMPLETO de categorias que podem aparecer em payable_payments.notes —
+// as 7 do modal "Receber" mais as duas do breakdown por cliente. Tem de bater com CATS
+// em lib/victor-distribution.js: o parser abaixo descarta rótulo desconhecido
+// (`if (!key) continue`), então uma sessão gravada com "Serviço: R$1000" e lida por um
+// parser que não o conhece voltaria sem essa parcela — e reeditá-la pagaria a menos, sem
+// erro nenhum. Só os 7 primeiros viram input no modal antigo.
+const ALL_VICTOR_CATEGORIES = [
+  ...RECEIVE_VICTOR_CATEGORIES,
+  ['servico', 'Serviço'],
+  ['lucro', 'Lucro'],
+]
+const RECEIVE_LABEL_TO_KEY = Object.fromEntries(ALL_VICTOR_CATEGORIES.map(([k, label]) => [label, k]))
 // Rótulo por chave — usado pelo painel do rateio, que recebe do backend as chaves
 // (`honorarios`, `inss`, ...) e não os rótulos.
-const CAT_LABEL = Object.fromEntries(RECEIVE_VICTOR_CATEGORIES)
+const CAT_LABEL = Object.fromEntries(ALL_VICTOR_CATEGORIES)
 // Reconstrói as categorias a partir da string de notes gravada pelo pagarDistribuido
 // (ex.: "Honorários: R$100 | DAS: R$50,5").
 function parseNotesToReceiveCats(notes) {
@@ -136,13 +163,10 @@ export default function Financial() {
   const [reserves, setReserves] = useState({})
   const [breakdownView, setBreakdownView] = useState('geral') // 'geral' | 'cliente' — detalhamento de categorias
   const [receiving, setReceiving] = useState(false)
-  // Pagamento roteado pelo rateio da apuração (?action=pagar-com-rateio). Quando ligado,
-  // cada categoria é consumida dos payables que fiscal_allocations aponta como donos
-  // daquele imposto; o modo antigo (pool único, mês mais antigo primeiro) continua no
-  // ?action=pagar-distribuido e é o que o Flow B/edição de sessão usam.
-  const [useRateio, setUseRateio] = useState(false)
-  const [rateioPlano, setRateioPlano] = useState(null)
-  const [rateioLoading, setRateioLoading] = useState(false)
+  // O ?action=pagar-com-rateio é acionado pelo breakdown por cliente da aba (bdEnviar),
+  // não mais por um checkbox deste modal: lá cada categoria já é digitada no cliente a que
+  // pertence, então não há o que rotear. Este modal ficou sendo só o ?action=pagar-
+  // distribuido (pool único, mês mais antigo primeiro) do Flow B e da edição de sessão.
   const [pendingVictor, setPendingVictor] = useState([])
   const [receiveTarget, setReceiveTarget] = useState(null) // item quando Flow B (específico), null = Flow A (geral)
   const [overflowInfo, setOverflowInfo] = useState(null)   // { overflow, targetSaldo, target_id } quando há sobra
@@ -172,6 +196,21 @@ export default function Financial() {
   const [erroImpostos, setErroImpostos] = useState('')
   const [msgImpostos, setMsgImpostos] = useState('')
 
+  // ── BREAKDOWN POR CLIENTE (aba Pagar Victor) ────────────────────────────────────────
+  // Serviço, lucro e o imposto rateado de cada cliente, com input de pagamento por
+  // categoria. Vem PRONTO do backend (`?breakdown=true`): a cascata e o rateio já têm dono
+  // em lib/fiscal-redistribution.js e fiscal_allocations, e reproduzi-los aqui repetiria a
+  // história do pró-labore — três donos do mesmo número, três valores diferentes.
+  const [breakdown, setBreakdown] = useState(null)
+  const [bdLoading, setBdLoading] = useState(false)
+  const [bdInputs, setBdInputs] = useState({})       // { [client_id]: { servico: '12,50', das: '' } }
+  const [bdPaidAt, setBdPaidAt] = useState(todayBR())
+  const [bdPlano, setBdPlano] = useState(null)        // prévia vinda do backend
+  const [bdSaving, setBdSaving] = useState(false)
+  const [bdErro, setBdErro] = useState('')
+  const [bdMsg, setBdMsg] = useState('')
+  const [bdAberto, setBdAberto] = useState({})       // { [client_id]: bool } — cards expandidos
+
   useEffect(() => { fetchAll() }, [activeCompany, filterYear, mode])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
 
@@ -198,39 +237,6 @@ export default function Financial() {
   // Reservas do Victor exibidas no card da aba (mês/ano/empresa do filtro ativo).
   useEffect(() => { if (tab === 'victor') fetchReserves() }, [tab, filterMonth, filterYear, activeCompany])
 
-  // Prévia do pagamento com rateio. Roda no backend (?action=pagar-com-rateio com
-  // `aplicar: false`) em vez de reproduzir a cascata no browser: qualquer diferença entre
-  // a prévia e o que é gravado é exatamente o bug que o "Receber" já teve uma vez, quando
-  // o teto de caixa da tela e o do backend eram calculados por regras diferentes.
-  // Debounce de 400ms porque o gatilho é a digitação dos valores.
-  useEffect(() => {
-    if (!showReceiveModal || !useRateio) { setRateioPlano(null); return }
-    const pagamentos = RECEIVE_VICTOR_CATEGORIES
-      .map(([k]) => ({ categoria: k, valor: parseFloat(receiveCats[k]) || 0 }))
-      .filter((p) => p.valor > 0)
-    if (!pagamentos.length || !receivePaidAt) { setRateioPlano(null); return }
-    let cancelado = false
-    const t = setTimeout(async () => {
-      setRateioLoading(true)
-      try {
-        const res = await fetch('/api/payables-victor?action=pagar-com-rateio', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(rateioBody(false)),
-        })
-        const data = await res.json()
-        if (cancelado) return
-        setRateioPlano(res.ok ? data : null)
-        if (!res.ok) setErroReceive(data.error || 'Falha ao calcular a prévia do rateio')
-        else setErroReceive('')
-      } catch {
-        if (!cancelado) setErroReceive('Erro de conexão ao calcular a prévia.')
-      } finally {
-        if (!cancelado) setRateioLoading(false)
-      }
-    }, 400)
-    return () => { cancelado = true; clearTimeout(t) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showReceiveModal, useRateio, receiveCats, receivePaidAt, filterMonth, filterYear, activeCompany])
   // Previsão de impostos: só Lumen. Busca config fiscal + total de NF do mês do filtro.
   useEffect(() => {
     if (tab === 'victor' && activeCompany.id === 1) fetchTaxPreview()
@@ -270,6 +276,89 @@ export default function Financial() {
       setPayablesVictor((await vic.json()).data || [])
     } catch(e) { console.error(e) }
     finally { setLoading(false) }
+  }
+
+  // Breakdown por cliente. Busca separada do fetchAll de propósito: a lista carrega o ANO
+  // (o filtro de mês é client-side, para trocar de mês sem ir ao servidor), mas o
+  // breakdown precisa do recorte exato do mês — e quem sabe recortar por competência,
+  // emissão ou caixa é o backend, que já faz isso para a lista.
+  async function fetchBreakdown() {
+    if (tab !== 'victor') return
+    setBdLoading(true)
+    try {
+      const qs = new URLSearchParams({
+        company_id: activeCompany.id, year: filterYear, mode, breakdown: 'true',
+      })
+      if (filterMonth !== '') qs.set('month', filterMonth)
+      const res = await fetch(`/api/payables-victor?${qs.toString()}`)
+      const data = await res.json()
+      setBreakdown(res.ok ? (data.breakdown || null) : null)
+    } catch (e) { console.error(e); setBreakdown(null) }
+    finally { setBdLoading(false) }
+  }
+  useEffect(() => { fetchBreakdown() }, [tab, activeCompany, filterYear, filterMonth, mode])
+
+  // Limpa o que foi digitado ao mudar o recorte: os valores se referem aos clientes e
+  // notas daquele mês, e mantê-los aplicaria um número pensado para outro período.
+  useEffect(() => {
+    setBdInputs({}); setBdPlano(null); setBdErro(''); setBdMsg('')
+  }, [tab, activeCompany, filterYear, filterMonth, mode])
+
+  // Itens do ?action=pagar-com-rateio a partir do que foi digitado. `invoice_ids` prende o
+  // consumo às MESMAS notas do card — sem isso o motor consome a maior fatia do mês e a
+  // linha paga não é a exibida (ver planejarCategoria em lib/victor-rateio.js).
+  function bdPagamentos() {
+    const out = []
+    for (const c of breakdown?.clientes || []) {
+      const digitado = bdInputs[c.client_id] || {}
+      for (const cat of BREAKDOWN_CATEGORIAS) {
+        const valor = parseFloat(String(digitado[cat] ?? '').replace(',', '.')) || 0
+        if (valor <= 0) continue
+        out.push({ categoria: cat, client_id: c.client_id, invoice_ids: c.nf.invoice_ids, valor })
+      }
+    }
+    return out
+  }
+
+  const bdTotalDigitado = bdPagamentos().reduce((s, p) => s + p.valor, 0)
+
+  // Prévia e gravação usam O MESMO endpoint, mudando só `aplicar` — a prévia não é uma
+  // cópia da cascata no browser. Prévia e gravação divergindo é exatamente o bug que o
+  // "Receber" já teve com o teto de caixa.
+  async function bdEnviar(aplicar) {
+    const pagamentos = bdPagamentos()
+    if (!pagamentos.length) { setBdErro('Informe ao menos um valor.'); return }
+    if (aplicar) setBdSaving(true)
+    setBdErro(''); setBdMsg('')
+    try {
+      const res = await fetch('/api/payables-victor?action=pagar-com-rateio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_id: activeCompany.id,
+          competencia_mes: refMonth,
+          competencia_ano: refYear,
+          data_pagamento: bdPaidAt,
+          pagamentos,
+          aplicar,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setBdErro(data.error || 'Não foi possível processar o pagamento.')
+        setBdPlano(data.resumo ? data : null)
+        return
+      }
+      if (aplicar) {
+        setBdInputs({}); setBdPlano(null)
+        setBdMsg(`Pagamento de ${fmt(data.resumo?.consumido)} registrado.`)
+        await Promise.all([fetchAll(), fetchBreakdown(), fetchReserves()])
+      } else {
+        setBdPlano(data)
+      }
+    } catch {
+      setBdErro('Erro de conexão com o servidor.')
+    } finally { setBdSaving(false) }
   }
 
   function closeModal() {
@@ -613,49 +702,9 @@ export default function Financial() {
     setShowMesAnterior(false)
     setEditSession(null)
     setErroReceive('')
-    setUseRateio(false)
-    setRateioPlano(null)
-  }
-
-  // Corpo do ?action=pagar-com-rateio. `pagamentos` é a lista de categorias com valor —
-  // o backend roteia cada uma pelo rateio da apuração da competência.
-  function rateioBody(aplicar) {
-    const { rm, ry } = reserveRefPeriod()
-    return {
-      company_id: activeCompany.id,
-      competencia_mes: rm,
-      competencia_ano: ry,
-      data_pagamento: receivePaidAt,
-      aplicar,
-      pagamentos: RECEIVE_VICTOR_CATEGORIES
-        .map(([k]) => ({ categoria: k, valor: parseFloat(receiveCats[k]) || 0 }))
-        .filter((p) => p.valor > 0),
-    }
-  }
-
-  async function confirmReceiveRateio() {
-    setReceiving(true)
-    setErroReceive('')
-    try {
-      const res = await fetch('/api/payables-victor?action=pagar-com-rateio', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rateioBody(true)),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setErroReceive(data.error || 'Falha ao pagar com rateio')
-        if (data.resumo) setRateioPlano(data)
-        return
-      }
-      closeReceive()
-      await fetchAll()
-    } finally {
-      setReceiving(false)
-    }
   }
 
   async function confirmReceive() {
-    if (useRateio) return confirmReceiveRateio()
     const total = Math.round(receiveCategoryTotal(receiveCats) * 100) / 100
     if (total <= 0) return
     if (!receivePaidAt) return
@@ -1220,6 +1269,152 @@ export default function Financial() {
     )
   }
 
+  // ── BREAKDOWN POR CLIENTE — a aba Pagar Victor vista por cliente ────────────────────
+  // Cada card é um cliente com as 5 categorias (lucro, serviço, DAS, INSS, escritório),
+  // o saldo de cada uma e um input de pagamento. Os números vêm PRONTOS do backend
+  // (lib/victor-breakdown.js): aqui só se subtrai o que está sendo digitado, para o saldo
+  // reagir em tempo real. Nenhuma fórmula financeira mora neste arquivo — a cascata é de
+  // lib/fiscal-redistribution.js e o rateio é de fiscal_allocations.
+  function bdSaldoRestante(c, cat) {
+    const saldo = c.categorias[cat]?.saldo || 0
+    const digitado = parseFloat(String(bdInputs[c.client_id]?.[cat] ?? '').replace(',', '.')) || 0
+    return saldo - digitado
+  }
+
+  function bdSetInput(client_id, cat, valor) {
+    setBdInputs(prev => ({ ...prev, [client_id]: { ...(prev[client_id] || {}), [cat]: valor } }))
+    // O plano vira obsoleto assim que um valor muda — deixá-lo na tela mostraria uma
+    // prévia de outros números.
+    setBdPlano(null); setBdErro(''); setBdMsg('')
+  }
+
+  function renderBreakdownCard(c) {
+    const aberto = bdAberto[c.client_id] !== false   // expandido por padrão
+    const temDigitado = BREAKDOWN_CATEGORIAS.some(cat =>
+      (parseFloat(String(bdInputs[c.client_id]?.[cat] ?? '').replace(',', '.')) || 0) > 0)
+
+    return (
+      <div key={c.client_id ?? 'sem'} className={`bg-gray-900 border rounded-xl overflow-hidden ${temDigitado ? 'border-blue-500/50' : 'border-gray-800'}`}>
+        <button
+          onClick={() => setBdAberto(p => ({ ...p, [c.client_id]: !aberto }))}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-800/40 text-left"
+        >
+          <span className="flex items-center gap-2 min-w-0 flex-wrap">
+            <span className="text-gray-500 text-xs">{aberto ? '▼' : '▶'}</span>
+            <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{c.client_name}</span>
+            {c.nf.total > 0 && <span className="text-gray-600 text-[11px]">NF {fmt(c.nf.total)}</span>}
+            {/* Fabrício é informativo: sai da fatura e é pago na aba dele. */}
+            {c.nf.fabricio > 0 && <span className="text-gray-600 text-[11px]">· Fab {fmt(c.nf.fabricio)}</span>}
+            {!c.disponivel && (
+              <span className="px-2 py-0.5 bg-gray-700 text-gray-400 text-[11px] rounded-full">aguardando cliente</span>
+            )}
+          </span>
+          <span className="text-right shrink-0">
+            <span className="block text-white font-semibold text-sm">{fmt(c.subtotal_saida)}</span>
+            <span className="block text-gray-600 text-[10px]">
+              receber {fmt(c.subtotal_receber)} + imposto {fmt(c.subtotal_impostos)}
+            </span>
+          </span>
+        </button>
+
+        {aberto && (
+          <div className="px-4 pb-4 space-y-1">
+            {BREAKDOWN_CATEGORIAS.map(cat => {
+              const v = c.categorias[cat]
+              const restante = bdSaldoRestante(c, cat)
+              // Categoria sem devido e sem pago não tem o que mostrar — poluiria o card
+              // com cinco linhas zeradas nos clientes 100/0 e nos meses sem apuração.
+              if (v.devido === 0 && v.pago === 0) return null
+              return (
+                <div key={cat} className="flex items-center gap-2 py-1.5 border-b border-gray-800/60 last:border-0">
+                  <span className="w-32 shrink-0 text-xs text-gray-400">{BREAKDOWN_LABEL[cat]}</span>
+
+                  <span className="flex-1 min-w-0 text-[11px] font-mono text-gray-600">
+                    {fmt(v.devido)}
+                    {v.pago > 0 && <span className="text-green-500"> · pago {fmt(v.pago)}</span>}
+                    {v.rateio_percentual != null && v.devido > 0 && (
+                      <span className="text-blue-400/70 font-sans"> · {v.rateio_percentual.toFixed(2)}%</span>
+                    )}
+                    {/* A cascata já zerou o lucro na gravação: dizer isso evita a leitura
+                        de que o cliente simplesmente não deu lucro. */}
+                    {cat === 'lucro' && v.cascade_aplicado && (
+                      <span className="text-amber-400/80 font-sans"> · zerado pela cascata (−{fmt(v.cascade_valor)})</span>
+                    )}
+                    {cat === 'servico' && v.absorveu_do_lucro > 0 && (
+                      <span className="text-amber-400/80 font-sans"> · absorveu {fmt(v.absorveu_do_lucro)} do lucro</span>
+                    )}
+                  </span>
+
+                  <span className={`w-24 shrink-0 text-right text-xs font-mono ${restante < -0.005 ? 'text-red-400' : restante <= 0.005 ? 'text-green-400' : 'text-gray-200'}`}>
+                    {fmt(restante)}
+                  </span>
+
+                  <input
+                    type="number" step="0.01" min="0" placeholder="0,00"
+                    disabled={!c.disponivel || v.saldo <= 0.005}
+                    value={bdInputs[c.client_id]?.[cat] ?? ''}
+                    onChange={e => bdSetInput(c.client_id, cat, e.target.value)}
+                    className="w-24 shrink-0 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs text-right placeholder-gray-600 focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                  />
+                  <button
+                    type="button"
+                    disabled={!c.disponivel || v.saldo <= 0.005}
+                    onClick={() => bdSetInput(c.client_id, cat, String(v.saldo.toFixed(2)))}
+                    className="shrink-0 text-[10px] text-gray-500 hover:text-blue-400 disabled:opacity-30 disabled:hover:text-gray-500"
+                    title="Preencher com o saldo total"
+                  >tudo</button>
+                </div>
+              )
+            })}
+
+            {fiscalDoCard(c)}
+
+            {c.avisos.map((a, i) => (
+              <p key={i} className="text-amber-400/80 text-[11px] pt-1">⚠️ {a}</p>
+            ))}
+            {!c.disponivel && (
+              <p className="text-gray-500 text-[11px] pt-1">
+                O cliente ainda não pagou o recebível — {fmt(c.aguardando)} em aberto. Não se
+                desconta imposto de dinheiro que ainda não entrou.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Cascata do lucro do cliente, no card. Mesmos números de cascataDoLucro().
+  function fiscalDoCard(c) {
+    if (!c.cascata) return null
+    const linhas = [
+      ['Lucro bruto (antes de imposto)', c.cascata.lucro_antes_escritorio, false],
+      ['− Escritório', c.cascata.escritorio, true],
+      ['− INSS', c.cascata.inss, true],
+      ['− DAS', c.cascata.das, true],
+    ]
+    return (
+      <details className="pt-2">
+        <summary className="text-[11px] text-gray-500 cursor-pointer hover:text-gray-300">💰 Cascata do lucro</summary>
+        <div className="mt-2 space-y-0.5 text-[11px] font-mono bg-gray-950/60 rounded-lg p-2">
+          {linhas.map(([label, valor, indent]) => (
+            <div key={label} className={`flex justify-between ${indent ? 'text-gray-500 pl-3' : 'text-gray-400'}`}>
+              <span className="font-sans">{label}</span><span>{fmt(valor)}</span>
+            </div>
+          ))}
+          <div className={`flex justify-between border-t border-gray-700 pt-1 font-semibold ${c.cascata.lucro_final < 0 ? 'text-red-400' : 'text-white'}`}>
+            <span className="font-sans">= Lucro final</span><span>{fmt(c.cascata.lucro_final)}</span>
+          </div>
+          {c.cascata.capital_proprio > 0 && (
+            <div className="flex justify-between text-yellow-400 pt-1">
+              <span className="font-sans">Capital próprio (injetar)</span><span>{fmt(c.cascata.capital_proprio)}</span>
+            </div>
+          )}
+        </div>
+      </details>
+    )
+  }
+
   // Demonstrativo do Fabrício: a cascata que a fatura percorreu até o valor dele.
   // Os números vêm prontos de `item.breakdown` (lib/fabricio-breakdown.js, no backend) —
   // aqui não se calcula nada, senão a explicação poderia divergir do valor que ela explica.
@@ -1681,7 +1876,98 @@ export default function Financial() {
                 ))}
             </div>
           )}
-          {availableData.length > 0 && (
+          {/* Aba Pagar Victor: a lista por lançamento deu lugar ao breakdown por cliente.
+              As outras abas seguem na lista — só o Victor tem cascata e rateio a mostrar. */}
+          {tab === 'victor' ? (
+            bdLoading ? (
+              <div className="text-gray-500 text-sm">Carregando breakdown...</div>
+            ) : !breakdown || breakdown.clientes.length === 0 ? (
+              <div className="text-center py-10 text-gray-600 text-sm">Nenhum lançamento por cliente neste recorte.</div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-xs font-medium uppercase tracking-wider text-green-400/80">👤 Por cliente</p>
+                  <span className="text-xs text-gray-500">
+                    Receber <span className="text-white font-medium">{fmt(breakdown.totais.receber)}</span>
+                    <span className="text-gray-700"> · </span>
+                    Imposto <span className="text-orange-400 font-medium">{fmt(breakdown.totais.impostos)}</span>
+                    <span className="text-gray-700"> · </span>
+                    Saída <span className="text-white font-semibold">{fmt(breakdown.totais.saida)}</span>
+                  </span>
+                </div>
+
+                {breakdown.clientes.map(renderBreakdownCard)}
+
+                {/* Barra de pagamento. Prévia e gravação chamam o MESMO endpoint,
+                    mudando só `aplicar` — ver bdEnviar(). */}
+                <div className="sticky bottom-2 bg-gray-900 border border-gray-700 rounded-xl p-3 space-y-2 shadow-lg">
+                  <div className="flex items-end gap-3 flex-wrap">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] text-gray-400">Data do pagamento</label>
+                      <input type="date" value={bdPaidAt} onChange={e => { setBdPaidAt(e.target.value); setBdPlano(null) }}
+                        className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-blue-500"/>
+                    </div>
+                    <div className="flex-1 min-w-[8rem]">
+                      <p className="text-[11px] text-gray-400">Total a pagar</p>
+                      <p className="text-lg font-bold text-green-400">{fmt(bdTotalDigitado)}</p>
+                    </div>
+                    <button
+                      onClick={() => bdEnviar(false)}
+                      disabled={bdTotalDigitado <= 0 || bdSaving}
+                      className="px-3 py-2 border border-gray-600 text-gray-200 hover:bg-gray-800 rounded-lg text-xs font-medium disabled:opacity-40"
+                    >👁️ Ver prévia</button>
+                    <button
+                      onClick={() => bdEnviar(true)}
+                      disabled={bdTotalDigitado <= 0 || bdSaving}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-medium disabled:opacity-40"
+                    >{bdSaving ? 'Gravando...' : '💸 Pagar'}</button>
+                  </div>
+
+                  {bdErro && <p className="text-red-400 text-xs">{bdErro}</p>}
+                  {bdMsg && <p className="text-green-400 text-xs">{bdMsg}</p>}
+
+                  {bdPlano?.resumo && (
+                    <div className="border-t border-gray-800 pt-2 space-y-1">
+                      <p className="text-[11px] uppercase tracking-wider text-blue-300">Prévia — nada foi gravado</p>
+                      {bdPlano.alocacoes?.map(a => (
+                        <div key={a.ordem} className="flex justify-between gap-2 text-[11px]">
+                          <span className="truncate text-gray-400">
+                            <span className="text-gray-600 font-mono">{a.ordem}.</span>{' '}
+                            <span className={a.tipo === 'rateio' ? 'text-blue-400' : 'text-amber-400'}>
+                              {a.tipo === 'rateio' ? 'rateio' : 'fallback'}
+                            </span>{' '}
+                            {CAT_LABEL[a.categoria] || a.categoria} · {a.cliente_nome} · lançamento #{a.payable_id}
+                          </span>
+                          <span className="shrink-0 font-mono text-green-400">{fmt(a.valor)}</span>
+                        </div>
+                      ))}
+                      {/* Pagar uma categoria fiscal quita a guia da competência — dizer
+                          isso aqui evita a descoberta pela /fiscal depois. */}
+                      {bdPlano.resumo.quitacoes?.length > 0 && (
+                        <p className="text-[11px] text-orange-400/90 pt-1">
+                          Quita em Apuração Fiscal: {bdPlano.resumo.quitacoes.map(q => `${CAT_LABEL[q.kind] || q.kind} ${fmt(q.valor)}`).join(' · ')}
+                        </p>
+                      )}
+                      {bdPlano.resumo.sem_obrigacao?.length > 0 && (
+                        <p className="text-[11px] text-amber-400/80">
+                          ⚠️ Sem apuração em {months[refMonth-1]}/{refYear} para: {bdPlano.resumo.sem_obrigacao.map(k => CAT_LABEL[k] || k).join(', ')}. Nenhuma guia será quitada.
+                        </p>
+                      )}
+                      {bdPlano.resumo.ja_quitadas?.length > 0 && (
+                        <p className="text-[11px] text-red-400">
+                          ⛔ Já quitado nesta competência: {bdPlano.resumo.ja_quitadas.map(q => CAT_LABEL[q.categoria] || q.categoria).join(', ')}. Estorne o abatimento em /fiscal antes de pagar de novo.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <p className="text-gray-600 text-[10px]">
+                    O estorno continua por lançamento (aba Histórico) e o abatimento fiscal em <strong>/fiscal</strong>.
+                  </p>
+                </div>
+              </div>
+            )
+          ) : availableData.length > 0 && (
             <div className="space-y-3">
               {isPayTab && (waitingData.length > 0 || previewData.length > 0) && (
                 <p className="text-xs font-medium uppercase tracking-wider text-green-400/80">✅ Disponível para pagar</p>
@@ -1689,7 +1975,10 @@ export default function Financial() {
               {availableData.map(item => renderRow(item, false))}
             </div>
           )}
-          {isPayTab && waitingData.length > 0 && (
+          {/* No Victor os que aguardam o cliente já aparecem no card do próprio cliente,
+              marcados e com os inputs desabilitados — repetir a lista aqui mostraria o
+              mesmo lançamento duas vezes. */}
+          {isPayTab && tab !== 'victor' && waitingData.length > 0 && (
             <div className="space-y-3 bg-gray-900/40 border border-gray-800/60 rounded-xl p-3">
               <p className="text-xs font-medium uppercase tracking-wider text-gray-500">⏳ Aguardando recebimento do cliente</p>
               <div className="space-y-3 opacity-70">
@@ -2066,107 +2355,11 @@ export default function Financial() {
                 <input type="date" value={receivePaidAt} onChange={e=>setReceivePaidAt(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
               </div>
 
-              {/* Rateio por cliente — só no Flow A. O Flow B (alvo específico) e a edição
-                  de sessão continuam no ?action=pagar-distribuido: lá o usuário já escolheu
-                  o destino à mão, e o rateio existe justamente para escolher por ele. */}
-              {!receiveTarget && !editSession && (
-                <label className="flex items-start gap-2 bg-blue-500/5 border border-blue-500/30 rounded-xl p-3 cursor-pointer">
-                  <input type="checkbox" checked={useRateio} onChange={e=>setUseRateio(e.target.checked)} className="mt-0.5 accent-blue-500"/>
-                  <span className="text-xs">
-                    <span className="text-blue-300 font-medium">Pagar pelo rateio da apuração</span>
-                    <span className="block text-gray-500 mt-0.5">
-                      Cada categoria sai primeiro do cliente que a apuração de {(() => { const {rm,ry} = reserveRefPeriod(); return `${months[rm-1]}/${ry}` })()} apontou como dono do imposto.
-                      O que sobrar vai para o Pharmalog e depois para os demais. Quita a guia em Apuração Fiscal.
-                    </span>
-                  </span>
-                </label>
-              )}
-
-              {useRateio ? (
-              <div className="bg-gray-950/60 border border-blue-500/30 rounded-xl p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-blue-300 text-xs font-medium uppercase tracking-wider">Distribuição pelo rateio</p>
-                  {rateioLoading && <span className="text-gray-500 text-[11px]">calculando...</span>}
-                </div>
-                {!rateioPlano ? (
-                  <p className="text-gray-600 text-xs text-center py-2">Informe os valores para ver a prévia</p>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Uma linha por categoria: quanto veio do rateio e quanto do fallback */}
-                    <div className="space-y-1">
-                      {rateioPlano.resumo.por_categoria.map(c => (
-                        <div key={c.categoria} className="flex items-center justify-between gap-2 text-[11px]">
-                          <span className="text-gray-300">{CAT_LABEL[c.categoria] || c.categoria}</span>
-                          <span className="font-mono text-right whitespace-nowrap">
-                            <span className="text-blue-400">rateio {fmt(c.de_rateio)}</span>
-                            <span className="text-gray-600"> + </span>
-                            <span className="text-amber-400">fallback {fmt(c.de_fallback)}</span>
-                            {c.restante > 0.005 && <span className="text-red-400"> · falta {fmt(c.restante)}</span>}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* A cascata na ordem em que o consumo acontece */}
-                    <div className="border-t border-gray-800 pt-2 space-y-1">
-                      {rateioPlano.alocacoes.map(a => (
-                        <div key={a.ordem} className="flex items-center justify-between gap-2 text-[11px]">
-                          <span className="truncate text-gray-300">
-                            <span className="text-gray-600 font-mono">{a.ordem}.</span>{' '}
-                            <span className={a.tipo === 'rateio' ? 'text-blue-400' : 'text-amber-400'}>
-                              {a.tipo === 'rateio' ? 'rateio' : a.tipo === 'fallback_pharma' ? 'fallback Pharmalog' : 'fallback outros'}
-                            </span>{' '}
-                            <span className="text-gray-500">{CAT_LABEL[a.categoria] || a.categoria}</span>{' '}
-                            {a.cliente_nome} <span className="text-gray-600">· {months[a.competencia.mes-1]}/{a.competencia.ano}</span>
-                          </span>
-                          <span className="shrink-0 font-mono text-green-400">{fmt(a.valor)}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Rateio que não pôde ser consumido: o valor foi para o fallback e é
-                        preciso dizer por quê, senão o INSS do Pharmalog saindo do Bokada
-                        parece erro de cálculo. */}
-                    {rateioPlano.resumo.por_categoria.some(c => c.rateios_sem_saldo.length > 0) && (
-                      <div className="border-t border-gray-800 pt-2 space-y-1">
-                        {rateioPlano.resumo.por_categoria.flatMap(c => c.rateios_sem_saldo).map((s, i) => (
-                          <p key={i} className="text-amber-400/80 text-[11px]">
-                            ⚠️ {fmt(s.valor)} de {CAT_LABEL[s.categoria] || s.categoria} (NF {s.invoice_id}) não coube no cliente do rateio: {s.motivo}. Foi para o fallback.
-                          </p>
-                        ))}
-                      </div>
-                    )}
-
-                    {rateioPlano.resumo.sem_obrigacao.length > 0 && (
-                      <p className="text-amber-400/80 text-[11px] border-t border-gray-800 pt-2">
-                        ⚠️ Sem apuração em {months[rateioPlano.resumo.competencia.mes-1]}/{rateioPlano.resumo.competencia.ano} para: {rateioPlano.resumo.sem_obrigacao.map(k => CAT_LABEL[k] || k).join(', ')}. Vai tudo para o fallback e nenhuma guia é quitada.
-                      </p>
-                    )}
-                    {rateioPlano.resumo.ja_quitadas.length > 0 && (
-                      <p className="text-red-400 text-[11px] border-t border-gray-800 pt-2">
-                        ⛔ Já quitado nesta competência: {rateioPlano.resumo.ja_quitadas.map(q => CAT_LABEL[q.categoria] || q.categoria).join(', ')}. Estorne o abatimento em Apuração Fiscal antes de pagar de novo.
-                      </p>
-                    )}
-
-                    {rateioPlano.resumo.quitacoes.length > 0 && (
-                      <div className="border-t border-gray-800 pt-2">
-                        <p className="text-gray-500 text-[11px] mb-1">Guias que serão quitadas:</p>
-                        {rateioPlano.resumo.quitacoes.map(q => (
-                          <div key={q.obligation_id} className="flex justify-between text-[11px]">
-                            <span className="text-gray-400">{CAT_LABEL[q.kind] || q.kind}</span>
-                            <span className="font-mono text-orange-400">
-                              {fmt(q.valor)}
-                              {q.excedente > 0.005 && <span className="text-gray-600"> (+{fmt(q.excedente)} acima da guia)</span>}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              ) : (
-              /* Distribuição do saldo — painel visual em tempo real */
+              {/* Distribuição do saldo — painel visual em tempo real.
+                  O rateio por cliente saiu daqui: virou o breakdown da própria aba,
+                  onde cada categoria é digitada no cliente a que pertence, em vez de
+                  ser roteada por um checkbox. Este modal ficou sendo só o
+                  ?action=pagar-distribuido (pool único) do Flow B e da edição de sessão. */}
               <div className="bg-gray-950/60 border border-gray-800 rounded-xl p-3">
                 <p className="text-gray-300 text-xs font-medium uppercase tracking-wider mb-2">Distribuição do saldo</p>
                 {distRows.length === 0 ? (
@@ -2208,7 +2401,6 @@ export default function Financial() {
                   </div>
                 )}
               </div>
-              )}
 
               {/* Detalhamento por categoria (Por cliente / Geral) — só na edição de sessão */}
               {editSession && breakdownPanel(editEntries)}

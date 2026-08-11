@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1786388285.318875,
-    "ast_hash": "d4cf074743581e017b29c3e2785985fa",
+    "mtime": 1786413361.5884385,
+    "ast_hash": "a8735dc30b1a4bc55fd730c2bf0dd0ea",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "api/payables-victor.js": {
-    "mtime": 1786376026.2758317,
-    "ast_hash": "e645a24c5775fb6e6a9728293be816ab",
+    "mtime": 1786413410.8990295,
+    "ast_hash": "c74fe0991cc8653fb60b6ad353541700",
     "semantic_hash": ""
   },
   "api/receivables.js": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1786376169.2210658,
-    "ast_hash": "ce3590631b2abe554caaff51c770f878",
+    "mtime": 1786413361.8011281,
+    "ast_hash": "1716dc8ed717c051f515171a7afc52e7",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/pages/TimeEntries.jsx": {
-    "mtime": 1784511643.023902,
-    "ast_hash": "2199c0373505f36f8c33630039567e8b",
+    "mtime": 1786408925.4223144,
+    "ast_hash": "76e07edd4c74fc9afa3976db150b9cae",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1786388720.973476,
-    "ast_hash": "d61d26b706569c727207db2e69ddef18",
+    "mtime": 1786413646.808982,
+    "ast_hash": "cce1b69084b4d89acd2c6088a9793480",
     "semantic_hash": ""
   },
   "README.md": {
@@ -385,8 +385,8 @@
     "semantic_hash": ""
   },
   "lib/victor-distribution.js": {
-    "mtime": 1785254664.5000093,
-    "ast_hash": "27b8019f1d356605a1fd0c0c50e7b6b4",
+    "mtime": 1786412404.971816,
+    "ast_hash": "af01df3684b6760de8e97bc02945e3eb",
     "semantic_hash": ""
   },
   "src/pages/FiscalObligations.jsx": {
@@ -445,13 +445,18 @@
     "semantic_hash": ""
   },
   "lib/victor-rateio.js": {
-    "mtime": 1786375903.4953399,
-    "ast_hash": "8e3a83d38c928bda958e96cd14a7f6ef",
+    "mtime": 1786412721.2058823,
+    "ast_hash": "953dfc46dd1c1061e7e9b2029ada14e5",
     "semantic_hash": ""
   },
   "DIAGNOSTICO-CONTRATO-REGRA.md": {
     "mtime": 1786387689.770167,
     "ast_hash": "16ab15a97838d3aa2c69c66203494dd2",
+    "semantic_hash": ""
+  },
+  "lib/victor-breakdown.js": {
+    "mtime": 1786412863.4381814,
+    "ast_hash": "e3538019f729f6bc7d6ba00d95a0d32a",
     "semantic_hash": ""
   }
 }

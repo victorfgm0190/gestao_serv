@@ -302,7 +302,7 @@ em cada chamada.
 | `invoices.js` | GET/POST/PATCH/PUT/DELETE | **Coração do faturamento.** Gera fatura (contrato ou agenda), cria `receivable`, e ao receber propaga `payables`. Calculador unificado (seção 6). |
 | `receivables.js` | GET/POST/PATCH/DELETE | Contas a receber. PATCH `pago` gera payables da fatura; PATCH `estorno` reverte. Protege `origin='faturamento'`. |
 | `payables-fabricio.js` | GET/POST/PATCH/DELETE | Contas a pagar Fabrício. Valor no campo `amount`. Traz `payments[]`. |
-| `payables-victor.js` | GET/POST `?action=pagar-distribuido\|pagar-com-rateio`/PATCH/DELETE | Contas a pagar Victor. Valor em `total_amount` (`service_amount`+`profit_amount`). Traz `payments[]`. `?action=pagar-com-rateio` paga cada categoria pelos payables que `fiscal_allocations` aponta como donos daquele imposto, com fallback no Pharmalog (ver seção 6); prévia por padrão, grava só com `aplicar: true`. |
+| `payables-victor.js` | GET/POST `?action=pagar-distribuido\|pagar-com-rateio`/PATCH/DELETE | Contas a pagar Victor. Valor em `total_amount` (`service_amount`+`profit_amount`). Traz `payments[]`. **`?breakdown=true`** devolve também o breakdown por cliente da aba (5 categorias com saldo — `lib/victor-breakdown.js`). `?action=pagar-com-rateio` paga cada categoria pelos payables que `fiscal_allocations` aponta como donos daquele imposto, com fallback no Pharmalog (ver seção 6); aceita `client_id` e `invoice_ids` por item para prender o consumo ao cliente/nota do card; prévia por padrão, grava só com `aplicar: true`. |
 | `payable-payments.js` | GET/POST/DELETE | Múltiplos pagamentos por payable; recalcula `status`/`paid_amount` do pai (pendente/parcial/pago). |
 | `fiscal-obligations.js` | GET/POST `?action=apurar\|recalcular`/PATCH `?action=lancar-guia\|corrigir-escritorio` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. `PATCH ?action=lancar-guia` grava `amount_actual`/`due_date`/`doc_number` quando a guia oficial chega (só sobrescreve os campos enviados); `amount_actual: null` desfaz o lançamento — e **refaz o rateio** com o valor real. `POST ?action=recalcular` é a **redistribuição**: compara a provisão de imposto da fatura (`invoices.tax_amount`) com o custo fiscal real rateado e devolve o antes/depois do que o Victor recebe; é **prévia por padrão** e só grava com `aplicar: true`. `PATCH ?action=corrigir-escritorio` = lançar guia + rerateio + prévia, numa chamada. |
 | `fiscal-payments.js` | GET/POST `?action=pagar`/DELETE | **Quitação da guia.** Múltiplos pagamentos por obrigação. `paid_amount`/`status` da obrigação são sempre **re-somados** de `fiscal_payments` (nunca incrementados), em transação com o INSERT/DELETE. Estornar tudo devolve a obrigação a `apurado` (se a guia oficial já chegou) ou `previsto`. Usa o `PAID_EPSILON` de `lib/payment-status.js`. |
@@ -330,7 +330,7 @@ Rotas definidas em `src/main.jsx` dentro de `<Layout>` (sidebar). `App.jsx` é v
 | `/time-entries` | `TimeEntries.jsx` | Apontamento de horas (por horário + intervalo + deslocamento). Filtros pill mês/ano/cliente. Export Excel. | time-entries, clients, financial-rules, contracts, export-os |
 | `/financial-rules` | `FinancialRules.jsx` | CRUD de regras financeiras por cliente; também cadastra clientes. | financial-rules, clients |
 | `/contracts` | `Contracts.jsx` | CRUD de contratos (vinculados a uma regra financeira). Cálculo bidirecional de imposto do cliente (NF ↔ %). Lançamentos mensais. | contracts, clients, contract-months, financial-rules |
-| `/financial` | `Financial.jsx` | 4 abas: A Receber, Pagar Fab, Pagar Victor, Histórico. Filtro pill de mês + status. Múltiplos pagamentos, estorno, "Receber" (distribui entre payables do Victor). Oculta registros R$ 0,00 nas abas de Pagar. No card de Previsão de Impostos: memória de cálculo e **✏️ Editar valores** (lança as guias reais da competência e redistribui). Em Pagar Fab: demonstrativo em cascata no modal e export Excel. | receivables, payables-*, payable-payments, clients, fiscal-obligations, export-payables-fabricio |
+| `/financial` | `Financial.jsx` | 4 abas: A Receber, Pagar Fab, **Pagar Victor (breakdown por cliente: 5 categorias com saldo e input de pagamento)**, Histórico. Filtro pill de mês + status. Múltiplos pagamentos, estorno, "Receber" (distribui entre payables do Victor). Oculta registros R$ 0,00 nas abas de Pagar. No card de Previsão de Impostos: memória de cálculo e **✏️ Editar valores** (lança as guias reais da competência e redistribui). Em Pagar Fab: demonstrativo em cascata no modal e export Excel. | receivables, payables-*, payable-payments, clients, fiscal-obligations, export-payables-fabricio |
 | `/fiscal` | `FiscalObligations.jsx` | **Apuração fiscal.** Cards de DAS/INSS/Honorários (estimado × guia × pago), lançamento da guia oficial, múltiplos pagamentos com estorno, tabela de custo por cliente, painel do `calc_snapshot` (RBT12, Fator R, anexo, pró-labore) e abatimento nos payables do Victor. | fiscal-obligations, fiscal-payments |
 | `/billing` | `Billing.jsx` | Geração de fatura por Contrato ou por Agenda (horas). Seção "Impostos" editável (imposto real + imposto do cliente, NF bidirecional) e demonstrativo. Filtros pill mês/cliente. | invoices, contracts, clients, time-entries, financial-rules |
 
@@ -786,6 +786,98 @@ Junto foi corrigido em `estornarSessao` (edição de sessão): ele apagava os `p
 sem chamar `desfazerAbatimentoFiscal`, então os `fiscal_payments` de abatimento sobreviveriam
 a uma sessão criada por esta rota — a obrigação seguiria paga com o dinheiro de volta no
 saldo do Victor. Mesma correção que o `PATCH ?action=estornar` já tinha.
+
+### Breakdown por cliente na aba Pagar Victor (`lib/victor-breakdown.js`) — 2026-08-10
+
+A aba listava um card por **lançamento** e mostrava o imposto como leitura. Passou a listar
+um card por **cliente**, com as cinco categorias (Lucro, Serviço, DAS, INSS, Escritório),
+o saldo de cada uma e um input de pagamento por categoria. `?breakdown=true` no GET de
+`api/payables-victor.js` devolve o breakdown ao lado de `data`.
+
+**`montarBreakdown()` não calcula nada — agrega.** Serviço e lucro saem das colunas do
+payable, a cascata de `cascataDoLucro()` e o imposto por cliente de `fiscal_allocations`
+(`basis='proporcional_nf'`). Recalcular de `invoices`+`receivables`, como o pedido original
+sugeria, criaria um segundo dono de cada número — a mesma armadilha do pró-labore com três
+donos e da regra financeira sorteada pela heap. Por isso ele recebe as **linhas que o GET já
+montou e filtrou**: lista e breakdown são a mesma leitura em dois ângulos.
+
+Três correções em relação à especificação, todas conferidas no banco:
+- **`fab_share = lucro / 2` está errado** fora do split 50/50 — SteelDek NF#5 tem lucro 400 e
+  Fabrício 400; Eurofral NF#19 tem 325,40 e 180,32. O valor vem de `invoices.fabricio_total`
+  (via `r.conferencia`), nunca de uma divisão presumida. Ver `lib/fabricio-breakdown.js`.
+- **A cascata parte do lucro BRUTO**, não do líquido. Subtrair o imposto real do
+  `victor_profit` descontaria a provisão de 7% duas vezes, em toda linha.
+- `invoices.invoice_date` e `das_amount` não existem — são `emission_date` e o rateio.
+
+**Saldo por categoria.** `payables_victor` tem um `paid_amount` único, então serviço e lucro
+são quebrados por `quebrarPago()` sob a hipótese de que **o lucro absorve primeiro** — a mesma
+de `prepararCandidatos()` e de `aplicarDelta()`. Hipótese única entre exibição e pagamento é o
+que impede o saldo mostrado de divergir do consumido. O pago das três categorias fiscais sai
+das linhas `consumo_payable` do próprio cliente (inclui fallback: se o INSS do Pharmalog saiu
+do Bokada, foi o saldo do Bokada que baixou).
+
+Ficam de fora do breakdown, pelos motivos de sempre: previsões (sem payable, nada a pagar) e
+linhas `origin='fiscal'` (o que se deve ao FISCO, não ao Victor — contá-las duplicaria o
+imposto que já aparece rateado). Cliente cujo recebível ainda não foi pago vem com
+`disponivel: false` e os inputs desabilitados: `candidatosDisponiveis()` o recusaria com 422,
+e o usuário leria isso como bug.
+
+#### Pagamento: `?action=pagar-com-rateio` ganhou alvo
+
+O motor foi **reutilizado**, não substituído — é a tripla dele (`payable_payments` +
+`fiscal_allocations` + `fiscal_payments`) que `lib/fiscal-unlink.js`, o
+`?action=estornar-distribuicao` e o "Estornar abatimento" da `/fiscal` sabem desfazer. Um
+endpoint novo nasceria com os três estornos cegos.
+
+Cada item de `pagamentos` aceita agora `client_id` e `invoice_ids`:
+- **`client_id`** restringe rateio e fallback àquele cliente. O que não couber **não vaza**
+  para outro: vira `restante` e a gravação é recusada com 422 — debitar quem o usuário não
+  escolheu seria pior que não gravar. Sem `client_id` o comportamento é o de antes.
+- **`invoice_ids`** prende o consumo às notas do card. ⚠️ **Sem ele a prévia diverge do que
+  é exibido.** Caso real reproduzido: pedindo "DAS do Pharmalog, R$ 345" no card de 03/2026,
+  `ordemRateio` consome a maior fatia do mês (NF #7, 748,65) e debitava o payable **#45**,
+  enquanto o serviço caía no **#28** (janeiro, competência mais antiga pelo `ordenarFallback`)
+  — os dois fora do card, que seguia exibindo o mesmo saldo depois de pago.
+
+Categorias novas `servico` e `lucro` (kind `null`): são o saldo do próprio payable, e **exigem
+`client_id`** — sem alvo não há o que pagar além da cascata genérica, que é justamente o que o
+breakdown veio substituir. ⚠️ Os rótulos entraram em `CATS` (`lib/victor-distribution.js`) **e**
+em `ALL_VICTOR_CATEGORIES` (`Financial.jsx`) ao mesmo tempo: o parser da tela descarta rótulo
+que não conhece (`if (!key) continue`), então uma sessão gravada com "Serviço: R$1000" e lida
+por um parser desatualizado voltaria sem essa parcela — e reeditá-la pagaria a menos, sem erro.
+
+**`quitacoesPorObrigacao` passou a acumular por obrigação.** A mesma guia agora chega repartida
+em várias entradas ("DAS do Pharmalog" + "DAS do Bokada"); medindo cada uma contra
+`saldoDe(ob)` — que só enxerga o já gravado — as duas veriam o saldo cheio e a soma passaria do
+devido (guia de 300 recebendo 250 + 100). Agora as entradas do mesmo kind são somadas antes do
+corte e sai **uma** linha de `fiscal_payments` por obrigação.
+
+#### 🐞 `month` na visão fiscal trazia o conjunto errado
+
+Descoberto ao recortar o breakdown: as colunas do payable são de **competência**, e a query do
+GET aplicava `p.month = ${month}` também no `mode=fiscal`. Pedindo fevereiro vinham os payables
+de competência fev (#43, #44, #45) — cujas notas foram emitidas em **março** —, e o recorte por
+`emission_date` zerava o conjunto inteiro. Agora `monthSql = fiscal ? null : month`: a query
+devolve o superconjunto de dois anos e o mês fiscal é aplicado sobre `emission_date`, com o
+mesmo `COALESCE` de `faturasDoMes` (e o mesmo cuidado de `emission_date` chegar como `Date`
+pelo driver e string ISO pelo JSON). A lista nunca passou `month`, então só o breakdown expunha
+o problema.
+
+#### O que saiu
+
+O checkbox **"Pagar pelo rateio da apuração"** e seu painel de prévia foram removidos do modal
+"Receber", junto com `rateioBody`/`confirmReceiveRateio` e o efeito de debounce: o breakdown já
+digita cada categoria no cliente a que ela pertence, então não há o que rotear. O modal ficou
+sendo só o `?action=pagar-distribuido` (pool único) do **Flow B** e da **edição de sessão** —
+que continuam existindo porque lá o usuário escolhe o destino à mão. O estorno segue por
+lançamento (Histórico) e o abatimento fiscal na `/fiscal`: dois canais de pagamento para a
+mesma guia é como o `paid_amount` de um dos dois passa a mentir.
+
+⚠️ **Os três subtotais do card são rotulados de propósito.** `receber` (serviço + lucro) é o que
+entra nos totais da aba; `impostos` é o que se deve ao fisco por conta daquele cliente; `saida`
+é a soma. Colapsá-los num número só — como o `subtotal: 5232.25` da especificação — é como o
+sinal do imposto se perde: `payables_victor` guarda o que a empresa deve **ao Victor**, e
+imposto tem o sinal oposto.
 
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 
