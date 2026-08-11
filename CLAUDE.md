@@ -801,6 +801,10 @@ sugeria, criaria um segundo dono de cada número — a mesma armadilha do pró-l
 donos e da regra financeira sorteada pela heap. Por isso ele recebe as **linhas que o GET já
 montou e filtrou**: lista e breakdown são a mesma leitura em dois ângulos.
 
+**As três decisões abaixo foram ratificadas pelo Victor em 2026-08-10**, depois de
+implementadas — não reabrir sem decisão nova. O código já estava como ele confirmou; a
+revisão não gerou nenhuma alteração.
+
 Três correções em relação à especificação, todas conferidas no banco:
 - **`fab_share = lucro / 2` está errado** fora do split 50/50 — SteelDek NF#5 tem lucro 400 e
   Fabrício 400; Eurofral NF#19 tem 325,40 e 180,32. O valor vem de `invoices.fabricio_total`
@@ -877,7 +881,17 @@ mesma guia é como o `paid_amount` de um dos dois passa a mentir.
 entra nos totais da aba; `impostos` é o que se deve ao fisco por conta daquele cliente; `saida`
 é a soma. Colapsá-los num número só — como o `subtotal: 5232.25` da especificação — é como o
 sinal do imposto se perde: `payables_victor` guarda o que a empresa deve **ao Victor**, e
-imposto tem o sinal oposto.
+imposto tem o sinal oposto. O card destaca `saida` (o desembolso total por aquele cliente) e
+mostra `receber + imposto` embaixo: leitura de holerite, com o total e o desconto visíveis ao
+mesmo tempo.
+
+⚠️ **`receber − impostos` NÃO é um subtotal válido**, por mais natural que pareça ao ler
+"quanto sobra". O que o payable registra já está líquido: em Jan/2026 o Pharmalog recebe
+R$ 8.453,08 porque a provisão de R$ 684,25 foi retida na NF e a cascata absorveu outros
+R$ 342,30 — juntos, os R$ 1.026,55 do imposto real (contra R$ 1.026,68 rateados; a diferença
+de 13 centavos é o resíduo de arredondamento de sempre). Subtrair os impostos de novo daria
+R$ 7.426,40 e descontaria o mesmo tributo duas vezes — o erro da cascata, deslocado para o
+subtotal. Foi proposto e recusado na revisão de 2026-08-10.
 
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 
