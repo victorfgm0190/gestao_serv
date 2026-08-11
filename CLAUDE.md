@@ -689,6 +689,27 @@ Decisões que acompanham:
 mas com `ORDER BY id` e só como *fallback* de exibição do split quando a fatura não tem
 contrato. Não entram em cálculo gravado.
 
+**O preview do `/time-entries` tinha o mesmo bug, em três lugares** (corrigido no mesmo
+dia). `calcPreview` fazia `rules.find(r => r.client_id === ...)` e o `GET` de
+`financial-rules` ordena por **nome do cliente** — com duas regras do mesmo cliente o
+desempate volta a ser a heap. Com "Bokada(Renato) 85" selecionado o preview mostrava
+**R$ 6.000** de bruto (regra #12, R$ 1.500/h) onde o contrato dá **R$ 340** (regra #8,
+R$ 85/h), e o número exibido não era o que o backend gravava.
+
+Os outros dois eram do mesmo tipo e passariam despercebidos:
+- `contratoDoCliente()` escolhia "o primeiro contrato ativo do cliente" e **ignorava o
+  contrato selecionado no formulário** — a config de deslocamento vinha do contrato
+  errado, e com ela o campo de despesas que aparece só em `hora_despesas`.
+- O demonstrativo do mês decompunha `victor_share` usando o `victor_fixed_per_hour` da
+  regra do cliente: uma linha do Bokada por hora era quebrada com o fixo de R$ 800 da
+  regra de projeto, e o "lucro" saía **negativo**.
+
+Agora os três saem de `contratoSelecionado(form)` / `regraDoContrato(contrato)`, que
+espelham `lib/financial-rule.js`. ⚠️ A fórmula do preview continua **duplicada** do
+`calcular()` de `api/time-entries.js` (o backend importa `neon`, então não dá para
+importá-lo no browser como está). Hoje as duas são linha a linha equivalentes; unificar
+exige extrair `calcular` para um módulo puro em `lib/`.
+
 ### Pagamento com rateio (`lib/victor-rateio.js`) — 2026-08-10
 
 `?action=pagar-distribuido` soma todas as categorias num **pool único** e o consome do mês

@@ -97,17 +97,39 @@ export default function TimeEntries() {
     return Math.max(fim - inicio - intervalo, 0)
   }
 
-  function contratoDoCliente(client_id) {
-    if (!client_id) return null
-    const doCliente = contracts.filter(c => String(c.client_id) === String(client_id))
-    return doCliente.find(c => c.is_active) || doCliente[0] || null
+  // Contrato do preview: o SELECIONADO no formulário, nunca "o primeiro ativo do
+  // cliente". O Bokada tem dois (5 por hora e 10 mensal) e a regra de deslocamento
+  // saía do errado. `clientContracts` é a lista carregada ao escolher o cliente;
+  // `contracts` (a empresa inteira) cobre o instante em que openEdit ainda não a
+  // resolveu.
+  function contratoSelecionado(f) {
+    const id = f?.contract_id
+    if (!id) return null
+    return clientContracts.find(c => String(c.id) === String(id))
+      || contracts.find(c => String(c.id) === String(id))
+      || null
+  }
+
+  // A regra vem do contrato — espelha lib/financial-rule.js no backend. Buscar pelo
+  // cliente pegava a primeira das duas do Bokada: com "Bokada(Renato) 85" selecionado
+  // o preview mostrava R$ 6.000 de bruto (regra #12, R$ 1.500/h, split 50/50) onde o
+  // contrato dá R$ 340 (regra #8, R$ 85/h, 100/0) — e divergia do que era gravado.
+  function regraDoContrato(contrato) {
+    if (!contrato) return null
+    if (!contrato.financial_rule_id) {
+      console.warn(`Contrato ${contrato.id} (${contrato.name}) sem regra financeira vinculada.`)
+      return null
+    }
+    const rule = rules.find(r => String(r.id) === String(contrato.financial_rule_id))
+    if (!rule) console.warn(`Regra ${contrato.financial_rule_id} do contrato ${contrato.id} não está na lista carregada.`)
+    return rule || null
   }
 
   function calcPreview(f) {
-    const rule = rules.find(r => String(r.client_id) === String(f.client_id))
+    const contrato = contratoSelecionado(f)
+    const rule = regraDoContrato(contrato)
     const hours = calcHoras(f)
     if (!rule || !hours) { setPreview(null); return }
-    const contrato = contratoDoCliente(f.client_id)
     const h = hours
     const hd = parseFloat(f.hours_fuel) || 0
     const despesas = parseFloat(f.despesas_deslocamento) || 0
@@ -316,9 +338,12 @@ export default function TimeEntries() {
   const totalHoras = filteredEntries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
   const totalBruto = filteredEntries.reduce((s, e) => s + (parseFloat(e.gross_value) || 0), 0)
   // Demonstrativo: separa a parte de Victor em serviço (fixo/hora), deslocamento e
-  // lucro (restante do victor_share), recalculados a partir da regra financeira do cliente.
+  // lucro (restante do victor_share). O fixo/hora sai da regra do CONTRATO do
+  // lançamento — pela regra do cliente, uma linha do Bokada por hora era decomposta
+  // com o fixo de R$ 800 da regra de projeto e o "lucro" saía negativo.
   const breakdown = filteredEntries.reduce((acc, e) => {
-    const rule = rules.find(r => String(r.client_id) === String(e.client_id))
+    const ct = contracts.find(c => String(c.id) === String(e.contract_id))
+    const rule = ct ? rules.find(r => String(r.id) === String(ct.financial_rule_id)) : null
     const hours = parseFloat(e.hours) || 0
     const victorTotal = parseFloat(e.victor_share) || 0
     const valorDesloc = parseFloat(e.valor_deslocamento) || 0
@@ -526,7 +551,7 @@ export default function TimeEntries() {
 
               <textarea placeholder="Descrição da atividade" value={form.description} onChange={e=>updateForm('description',e.target.value)} rows={3} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
               <input placeholder="Horas de deslocamento (opcional)" type="number" step="0.5" value={form.hours_fuel} onChange={e=>updateForm('hours_fuel',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              {contratoDoCliente(form.client_id)?.deslocamento_tipo === 'hora_despesas' && (
+              {contratoSelecionado(form)?.deslocamento_tipo === 'hora_despesas' && (
                 <input placeholder="Despesas de deslocamento (R$) — pedágio + combustível + almoço" type="number" step="0.01" value={form.despesas_deslocamento} onChange={e=>updateForm('despesas_deslocamento',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
               )}
               <input placeholder="Observações" value={form.notes} onChange={e=>updateForm('notes',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>

@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1785931613.4783883,
-    "ast_hash": "c3ab388323a66c04f0ef58eaf93b93f0",
+    "mtime": 1786388285.318875,
+    "ast_hash": "d4cf074743581e017b29c3e2785985fa",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -60,28 +60,28 @@
     "semantic_hash": ""
   },
   "api/invoices.js": {
-    "mtime": 1785254733.3254433,
-    "ast_hash": "bf1feba4de3f761a1ccfa73706342527",
+    "mtime": 1786388698.0099108,
+    "ast_hash": "b1d26528147f39b5c64d66f2a0f7ab5d",
     "semantic_hash": ""
   },
   "api/payable-payments.js": {
-    "mtime": 1784511485.0407746,
-    "ast_hash": "3df0595432e07035920998a4a3e09e48",
+    "mtime": 1786312973.6477103,
+    "ast_hash": "4dc0e4d0aaf90901bbc47901fa001feb",
     "semantic_hash": ""
   },
   "api/payables-fabricio.js": {
-    "mtime": 1785934051.7167213,
-    "ast_hash": "3e1b28ab50a0cc62cdcf50c881abbfbd",
+    "mtime": 1786313012.5135074,
+    "ast_hash": "806d3d535391171fb1943bf14d14a7c7",
     "semantic_hash": ""
   },
   "api/payables-victor.js": {
-    "mtime": 1785462068.305298,
-    "ast_hash": "b7b3d87637a3c14f04801873c9aa4cd7",
+    "mtime": 1786376026.2758317,
+    "ast_hash": "e645a24c5775fb6e6a9728293be816ab",
     "semantic_hash": ""
   },
   "api/receivables.js": {
-    "mtime": 1785461966.5182014,
-    "ast_hash": "fc67167d9be95d8133051ab48b73ce22",
+    "mtime": 1786388475.0081198,
+    "ast_hash": "5bf5ed101ff431b3f53d9ac14e2b6485",
     "semantic_hash": ""
   },
   "api/reclassify-demands.js": {
@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "api/time-entries.js": {
-    "mtime": 1784510270.1325638,
-    "ast_hash": "30b1b8a77956b09e2b1584b32708f3b3",
+    "mtime": 1786388438.1357906,
+    "ast_hash": "49a0526fe2f02d104eb13dd1b800cd64",
     "semantic_hash": ""
   },
   "package.json": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1785935574.1712382,
-    "ast_hash": "81cf0a67c454e3adb02d6c73bab629db",
+    "mtime": 1786376169.2210658,
+    "ast_hash": "ce3590631b2abe554caaff51c770f878",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785935689.5412698,
-    "ast_hash": "65ec87100a2914b38fbf7a38cf459ccc",
+    "mtime": 1786388720.973476,
+    "ast_hash": "d61d26b706569c727207db2e69ddef18",
     "semantic_hash": ""
   },
   "README.md": {
@@ -290,8 +290,8 @@
     "semantic_hash": ""
   },
   "api/recalc-time-entries.js": {
-    "mtime": 1784509790.8459303,
-    "ast_hash": "b23ca06a139eaa0e80f277630dfaa3c9",
+    "mtime": 1786388458.0534475,
+    "ast_hash": "c4a4b8547eaf8ac29174e44db0d9659b",
     "semantic_hash": ""
   },
   "lib/admin-auth.js": {
@@ -432,6 +432,26 @@
   "lib/fabricio-breakdown.js": {
     "mtime": 1785932483.661452,
     "ast_hash": "ebe44b82debee3e7b3bb30288b467ed5",
+    "semantic_hash": ""
+  },
+  "lib/cash-month.js": {
+    "mtime": 1786312952.4303575,
+    "ast_hash": "ae6b8c5a7ce443cbdab6a74435259b0c",
+    "semantic_hash": ""
+  },
+  "lib/financial-rule.js": {
+    "mtime": 1786388362.8739917,
+    "ast_hash": "3fa718fd6afa3965d835c8d000702de0",
+    "semantic_hash": ""
+  },
+  "lib/victor-rateio.js": {
+    "mtime": 1786375903.4953399,
+    "ast_hash": "8e3a83d38c928bda958e96cd14a7f6ef",
+    "semantic_hash": ""
+  },
+  "DIAGNOSTICO-CONTRATO-REGRA.md": {
+    "mtime": 1786387689.770167,
+    "ast_hash": "16ab15a97838d3aa2c69c66203494dd2",
     "semantic_hash": ""
   }
 }
