@@ -856,6 +856,45 @@ em várias entradas ("DAS do Pharmalog" + "DAS do Bokada"); medindo cada uma con
 devido (guia de 300 recebendo 250 + 100). Agora as entradas do mesmo kind são somadas antes do
 corte e sai **uma** linha de `fiscal_payments` por obrigação.
 
+#### "Distribuição do saldo" em cascata — 2026-08-10
+
+O painel do modal "Receber" mostrava uma linha por lançamento (`Saldo → Líquido`) e passou a
+abrir cada uma em árvore: **Serviço Victor**, os três impostos rateados com o percentual da
+guia, **Lucro** e o total. O cabeçalho `Saldo → Líquido` **ficou**: é o efeito do pagamento
+sendo digitado, a razão de ser do painel; a árvore diz de que aquele saldo é feito.
+
+Os dados já vinham prontos — `pendingVictor` sai do mesmo GET de `payables-victor`, que
+enriquece toda linha com `.fiscal` e `.cascata`. O que se calcula na tela é só a **quebra do
+que resta** em serviço e lucro, sob a hipótese de sempre: **o lucro é consumido primeiro**
+(mesma de `quebrarPago`, `prepararCandidatos` e `aplicarDelta`). Hipótese única entre o que a
+tela mostra e o que o backend debita — divergir aqui faria a prévia mentir sobre qual parcela
+some.
+
+⚠️ **O imposto não é consumido pelo pagamento.** Ele já está descontado do que o Victor recebe
+(provisão retida na NF + cascata lucro→serviço) e não entra no pool. Aparece na árvore como
+leitura, e o total é rotulado **"Sai de caixa"** — distinto de "Líquido" — para que ninguém o
+some ao saldo consumível. `serviço + lucro = líquido` e `líquido + imposto = sai de caixa` são
+invariantes verificadas contra as 20 linhas do banco.
+
+**O percentual do rateio agora vem do backend**, em `r.fiscal.linhas[].percentual`, com o
+denominador (`obrigacao_total`) trazido por CTE na mesma query — uma ida ao banco a menos, e a
+query separada de `pesos` foi eliminada. Calculá-lo no browser como *fatia ÷ soma-dos-visíveis*
+daria **100% sempre que a tela estivesse filtrada num mês**, que é o caso normal.
+
+Junto foram corrigidos dois erros no percentual do breakdown por cliente, ambos invisíveis com
+o filtro num mês só:
+- **Sobrescrita:** `pesos[cliente][kind]` era atribuído por obrigação, então um cliente com
+  NFs de competências diferentes ficava com o percentual da última. Agora acumula.
+- **Denominador duplicado:** somar `obrigacao_total` por linha faz um cliente com duas NFs na
+  MESMA guia contá-la duas vezes. O denominador é deduplicado por `obligation_id` (exato: uma
+  NF pertence a uma competência, e há uma obrigação por kind/competência). No ano inteiro o
+  Pharmalog saía com 54,55% onde a fatia real é **80,89%** — conferido por query direta.
+
+⚠️ O percentual descreve **as NFs em tela**, não o cliente inteiro: no card de 03/2026 o
+Pharmalog aparece com 29,78% do DAS porque só a NF #8 está ali — a #7 mora no card de 02/2026.
+Antes exibia 94,39% (a fatia do cliente na guia) ao lado de um valor que era só o da NF #8:
+o número e o rótulo descreviam conjuntos diferentes.
+
 #### 🐞 `month` na visão fiscal trazia o conjunto errado
 
 Descoberto ao recortar o breakdown: as colunas do payable são de **competência**, e a query do

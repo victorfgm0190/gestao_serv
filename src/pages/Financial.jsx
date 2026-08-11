@@ -59,6 +59,10 @@ const BREAKDOWN_LABEL = {
 
 // Rótulos dos `kind` de fiscal_obligations no card de Reservas.
 const RESERVA_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Honorários', pro_labore: 'Pro Labore', escritorio: 'Escritório' }
+// Idem, na grafia da árvore de distribuição. Difere do RESERVA_LABEL num ponto: `honorarios`
+// aparece como "Escritório", que é como o Victor chama os R$ 150 da contabilidade — o mesmo
+// nome usado no breakdown por cliente (BREAKDOWN_LABEL) e em lib/victor-breakdown.js.
+const DIST_KIND_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Escritório', escritorio: 'Escritório' }
 
 // As 3 visões de data. [chave, rótulo do botão, tooltip]
 const MODOS = [
@@ -984,7 +988,40 @@ export default function Financial() {
     const liquido = Math.round((saldo - consumed) * 100) / 100
     distPool = Math.round((distPool - consumed) * 100) / 100
     const state = consumed <= 0 ? 'full' : liquido <= 0 ? 'zero' : 'partial'
-    return { id: r.id, month: r.month, year: r.year, client_name: r.client_name, saldo, liquido, state }
+
+    // Quebra do que RESTA em serviço e lucro. `payables_victor` tem um `paid_amount`
+    // único, então a divisão segue a hipótese de sempre — o lucro é consumido primeiro —,
+    // a mesma de quebrarPago() (lib/victor-breakdown.js), prepararCandidatos()
+    // (lib/victor-rateio.js) e aplicarDelta(). Hipótese única entre o que a tela mostra e
+    // o que o backend debita; divergir aqui faria a prévia mentir sobre qual parcela some.
+    const pagoTotal = (parseFloat(r.paid_amount) || 0) + consumed
+    const lucroTot = parseFloat(r.profit_amount) || 0
+    const servTot = parseFloat(r.service_amount) || 0
+    const lucroPago = Math.min(pagoTotal, Math.max(lucroTot, 0))
+    const cents = (v) => Math.round(v * 100) / 100
+    const lucroRest = Math.max(cents(lucroTot - lucroPago), 0)
+    const servRest = Math.max(cents(servTot - (pagoTotal - lucroPago)), 0)
+
+    // Imposto rateado desta NF. É LEITURA: já está descontado do que o Victor recebe
+    // (provisão retida + cascata lucro→serviço) e não entra no pool consumido — some
+    // junto no `subtotal` só para dizer quanto de caixa sai por este lançamento.
+    const impostos = (r.fiscal?.linhas || []).map(l => ({
+      kind: l.kind,
+      label: DIST_KIND_LABEL[l.kind] || l.kind,
+      valor: l.amount,
+      percentual: l.percentual ?? null,
+    }))
+    const impostoTotal = cents(impostos.reduce((s, l) => s + l.valor, 0))
+
+    return {
+      id: r.id, month: r.month, year: r.year, client_name: r.client_name,
+      saldo, liquido, state, consumed: cents(consumed),
+      servico: servRest, lucro: lucroRest, impostos, impostoTotal,
+      subtotal: cents(liquido + impostoTotal),
+      // Cascata negativa = o imposto superou o lucro e o serviço absorveu a diferença.
+      // O payable já foi gravado com o lucro zerado; isto explica por que ele é 0,00.
+      cascadeAbsorvido: r.cascata && r.cascata.lucro_final < -0.005 ? cents(-r.cascata.lucro_final) : 0,
+    }
   })
   const distOverflow = distPool > 0.005 ? distPool : 0
 
@@ -2365,21 +2402,61 @@ export default function Financial() {
                 {distRows.length === 0 ? (
                   <p className="text-gray-600 text-xs text-center py-2">Nenhum saldo pendente</p>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {distRows.map(d => (
-                      <div key={d.id} className="flex items-center justify-between gap-2 text-xs">
-                        <span className={`truncate ${d.state === 'zero' ? 'text-gray-600' : 'text-gray-300'}`}>
-                          <span className="text-gray-500">{months[d.month-1]}/{d.year}</span> {d.client_name}
-                        </span>
-                        <span className="shrink-0 font-mono text-right whitespace-nowrap">
-                          <span className="text-gray-500">Saldo: {fmt(d.saldo)}</span>
-                          <span className="text-gray-600"> → </span>
-                          <span className={
-                            d.state === 'zero' ? 'text-gray-600 line-through'
-                            : d.state === 'partial' ? 'text-yellow-400'
-                            : 'text-green-400'
-                          }>Líquido: {fmt(d.liquido)}</span>
-                        </span>
+                      <div key={d.id} className="border-b border-gray-800/60 last:border-0 pb-2 last:pb-0">
+                        {/* Cabeçalho: o saldo consumido pelo pagamento — a razão de ser
+                            do painel. A árvore abaixo diz de QUE esse saldo é feito. */}
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                          <span className={`truncate ${d.state === 'zero' ? 'text-gray-600' : 'text-gray-300'}`}>
+                            <span className="text-gray-500">{months[d.month-1]}/{d.year}</span> {d.client_name}
+                          </span>
+                          <span className="shrink-0 font-mono text-right whitespace-nowrap">
+                            <span className="text-gray-500">Saldo: {fmt(d.saldo)}</span>
+                            <span className="text-gray-600"> → </span>
+                            <span className={
+                              d.state === 'zero' ? 'text-gray-600 line-through'
+                              : d.state === 'partial' ? 'text-yellow-400'
+                              : 'text-green-400'
+                            }>Líquido: {fmt(d.liquido)}</span>
+                          </span>
+                        </div>
+
+                        {/* Árvore: do que o líquido é composto, mais o imposto rateado
+                            daquela NF. ⚠️ O imposto NÃO é consumido pelo pagamento — já
+                            está descontado do que o Victor recebe (provisão retida na NF
+                            + cascata lucro→serviço). Entra aqui como leitura, e por isso
+                            o "Sai de caixa" é rotulado à parte do Líquido. */}
+                        <div className="mt-1 pl-2 space-y-0.5 font-mono text-[11px]">
+                          <div className="flex justify-between gap-2">
+                            <span className="text-gray-500 font-sans">├─ Serviço Victor</span>
+                            <span className="text-white">{fmt(d.servico)}</span>
+                          </div>
+                          {d.impostos.map(l => (
+                            <div key={l.kind} className="flex justify-between gap-2">
+                              <span className="text-gray-500 font-sans">
+                                ├─ {l.label}
+                                {l.percentual != null && (
+                                  <span className="text-gray-600"> ({l.percentual.toFixed(2)}% da guia)</span>
+                                )}
+                              </span>
+                              <span className="text-gray-400">{fmt(l.valor)}</span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between gap-2">
+                            <span className={`font-sans ${d.cascadeAbsorvido > 0 ? 'text-orange-400' : 'text-gray-500'}`}>
+                              ├─ Lucro
+                              {d.cascadeAbsorvido > 0 && (
+                                <span className="text-orange-400/80"> · cascata absorveu {fmt(d.cascadeAbsorvido)} no serviço</span>
+                              )}
+                            </span>
+                            <span className={d.cascadeAbsorvido > 0 ? 'text-orange-400' : 'text-gray-400'}>{fmt(d.lucro)}</span>
+                          </div>
+                          <div className="flex justify-between gap-2 border-t border-gray-800 pt-0.5 font-semibold">
+                            <span className="text-gray-400 font-sans">└─ Sai de caixa</span>
+                            <span className="text-white">{fmt(d.subtotal)}</span>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -503,13 +503,35 @@ export default async function handler(req, res) {
           SELECT id, tax_amount, invoice_value, victor_service, victor_profit,
                  victor_tax_diff, fabricio_total
           FROM invoices WHERE id = ANY(${invIds})`,
+        // `obrigacao_total` = o rateio INTEIRO daquela obrigação, não só a parte das notas
+        // desta consulta. É o denominador do percentual que a tela mostra ("INSS 92,74%").
+        // Vem por CTE na mesma query — uma ida ao banco, e um dono só para o percentual:
+        // calculá-lo no browser como fatia/soma-dos-visíveis daria 100% sempre que a tela
+        // estivesse filtrada num mês, que é o caso normal.
         sql`
+          WITH alvo AS (
+            SELECT DISTINCT obligation_id FROM fiscal_allocations
+            WHERE basis = 'proporcional_nf' AND invoice_id = ANY(${invIds})
+          ), tot AS (
+            SELECT fa.obligation_id, SUM(fa.amount) AS total
+            FROM fiscal_allocations fa
+            JOIN alvo ON alvo.obligation_id = fa.obligation_id
+            WHERE fa.basis = 'proporcional_nf'
+            GROUP BY fa.obligation_id
+          )
           SELECT a.invoice_id, o.kind,
                  SUM(a.amount)                      AS amount,
                  SUM(COALESCE(a.from_service, 0))   AS from_service,
-                 SUM(COALESCE(a.from_profit, 0))    AS from_profit
+                 SUM(COALESCE(a.from_profit, 0))    AS from_profit,
+                 MAX(t.total)                       AS obrigacao_total,
+                 -- Uma NF pertence a UMA competência (pela emissão) e há uma obrigação por
+                 -- kind/competência (UNIQUE), então o MAX aqui é exato, não uma escolha.
+                 -- Serve para deduplicar o denominador do percentual: um cliente com duas
+                 -- NFs na mesma guia não pode contá-la duas vezes.
+                 MAX(a.obligation_id)               AS obligation_id
           FROM fiscal_allocations a
           JOIN fiscal_obligations o ON o.id = a.obligation_id
+          JOIN tot t ON t.obligation_id = a.obligation_id
           WHERE a.basis = 'proporcional_nf' AND a.invoice_id = ANY(${invIds})
           GROUP BY a.invoice_id, o.kind`,
       ])
@@ -519,11 +541,17 @@ export default async function handler(req, res) {
       for (const a of allocs) {
         const k = Number(a.invoice_id)
         if (!porFatura.has(k)) porFatura.set(k, [])
+        const total = parseFloat(a.obrigacao_total) || 0
+        const amount = parseFloat(a.amount) || 0
         porFatura.get(k).push({
           kind: a.kind,
-          amount: parseFloat(a.amount) || 0,
+          amount,
           from_service: parseFloat(a.from_service) || 0,
           from_profit: parseFloat(a.from_profit) || 0,
+          // Fatia desta NF na guia do mês. `obrigacao_total` é o denominador completo.
+          obrigacao_total: total,
+          obligation_id: a.obligation_id == null ? null : Number(a.obligation_id),
+          percentual: total > 0 ? r2((amount / total) * 100) : null,
         })
       }
       for (const r of rows) {
@@ -579,8 +607,8 @@ export default async function handler(req, res) {
     }
 
     // ── BREAKDOWN POR CLIENTE ──────────────────────────────────────────────────────
-    // Só quando a aba pede (`?breakdown=true`): são duas queries a mais, e o Dashboard
-    // e o Histórico consomem este mesmo GET sem precisar delas.
+    // Só quando a aba pede (`?breakdown=true`): é uma query a mais, e o Dashboard e o
+    // Histórico consomem este mesmo GET sem precisar dela.
     //
     // Montado AQUI, sobre as linhas já filtradas e enriquecidas, e não numa rota própria:
     // a lista e o breakdown passam a ser a mesma leitura vista de dois ângulos, então não
@@ -588,60 +616,35 @@ export default async function handler(req, res) {
     //
     // Fora do `if (invIds.length)` de propósito: um mês só com lançamentos manuais não tem
     // fatura nenhuma e mesmo assim tem serviço/lucro a pagar por cliente.
+    //
+    // O percentual do rateio NÃO é consultado aqui: `r.fiscal.linhas` já traz
+    // `obrigacao_total` (CTE da query acima) e montarBreakdown() acumula numerador e
+    // denominador. Uma query a menos e um dono só para a fatia.
     if (req.query.breakdown === 'true') {
       const consumos = new Map()
-      const pesos = new Map()
       if (invIds.length) {
-        // As obrigações que rateiam ESTAS notas. Sai das alocações, não de month/year:
-        // a apuração agrupa pela data de emissão, então a obrigação de um payable de
-        // janeiro costuma ser a de fevereiro (ver lib/victor-rateio.js).
-        const obIds = [...new Set(
-          (await sql`
+        // Quanto já saiu do saldo de cada cliente para cada obrigação. Inclui o fallback
+        // de propósito: se o INSS do Pharmalog saiu do Bokada, o dinheiro saiu do Bokada
+        // — é o saldo DELE que baixou.
+        //
+        // As obrigações saem das alocações, não de month/year: a apuração agrupa pela data
+        // de emissão, então a obrigação de um payable de janeiro costuma ser a de
+        // fevereiro (ver lib/victor-rateio.js).
+        const consumido = await sql`
+          WITH alvo AS (
             SELECT DISTINCT obligation_id FROM fiscal_allocations
-            WHERE basis = 'proporcional_nf' AND invoice_id = ANY(${invIds})`
-          ).map((o) => Number(o.obligation_id)),
-        )]
-
-        if (obIds.length) {
-          const [rateado, consumido] = await Promise.all([
-            // Fatia de cada cliente na obrigação — o "87,12%" que a tela mostra ao lado
-            // de INSS e Escritório. Sai do próprio rateio; calcular por
-            // NF_do_cliente / faturamento_do_mês no browser daria um segundo dono do
-            // percentual, e ele divergiria nos meses com NF sem incidência.
-            sql`
-              SELECT a.obligation_id, o.kind, a.client_id, SUM(a.amount) AS amount
-              FROM fiscal_allocations a
-              JOIN fiscal_obligations o ON o.id = a.obligation_id
-              WHERE a.basis = 'proporcional_nf' AND a.obligation_id = ANY(${obIds})
-              GROUP BY a.obligation_id, o.kind, a.client_id`,
-            // Quanto já saiu do saldo de cada cliente para cada obrigação. Inclui o
-            // fallback de propósito: se o INSS do Pharmalog saiu do Bokada, o dinheiro
-            // saiu do Bokada — é o saldo DELE que baixou.
-            sql`
-              SELECT o.kind, a.client_id, SUM(a.amount) AS amount
-              FROM fiscal_allocations a
-              JOIN fiscal_obligations o ON o.id = a.obligation_id
-              WHERE a.basis = 'consumo_payable' AND a.obligation_id = ANY(${obIds})
-              GROUP BY o.kind, a.client_id`,
-          ])
-
-          const totalObrigacao = new Map()
-          for (const a of rateado) {
-            const k = Number(a.obligation_id)
-            totalObrigacao.set(k, r2((totalObrigacao.get(k) || 0) + (parseFloat(a.amount) || 0)))
-          }
-          for (const a of rateado) {
-            const tot = totalObrigacao.get(Number(a.obligation_id)) || 0
-            if (tot <= 0) continue
-            const cid = Number(a.client_id)
-            if (!pesos.has(cid)) pesos.set(cid, {})
-            pesos.get(cid)[a.kind] = (parseFloat(a.amount) || 0) / tot
-          }
-          for (const a of consumido) {
-            const cid = Number(a.client_id)
-            if (!consumos.has(cid)) consumos.set(cid, {})
-            consumos.get(cid)[a.kind] = r2((consumos.get(cid)[a.kind] || 0) + (parseFloat(a.amount) || 0))
-          }
+            WHERE basis = 'proporcional_nf' AND invoice_id = ANY(${invIds})
+          )
+          SELECT o.kind, a.client_id, SUM(a.amount) AS amount
+          FROM fiscal_allocations a
+          JOIN alvo ON alvo.obligation_id = a.obligation_id
+          JOIN fiscal_obligations o ON o.id = a.obligation_id
+          WHERE a.basis = 'consumo_payable'
+          GROUP BY o.kind, a.client_id`
+        for (const a of consumido) {
+          const cid = Number(a.client_id)
+          if (!consumos.has(cid)) consumos.set(cid, {})
+          consumos.get(cid)[a.kind] = r2((consumos.get(cid)[a.kind] || 0) + (parseFloat(a.amount) || 0))
         }
       }
 
@@ -664,7 +667,7 @@ export default async function handler(req, res) {
         return y === Number(year) && (!month || m === Number(month))
       })
 
-      breakdown = montarBreakdown({ rows: alvo, consumos, pesos })
+      breakdown = montarBreakdown({ rows: alvo, consumos })
     }
 
     // Previsão: recebíveis pendentes/parciais (cliente ainda não pagou) que ainda não geraram
