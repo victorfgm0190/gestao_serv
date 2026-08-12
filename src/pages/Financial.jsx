@@ -5,6 +5,10 @@ import CopyButton from '../components/CopyButton'
 import MemoriaCalculo from '../components/MemoriaCalculo'
 import { calcularImpostos } from '../../lib/taxCalc.js'
 import { ORDEM_KIND as KIND_ORDEM } from '../../lib/fiscal-lines.js'
+// Categoria do modal → `kind` de fiscal_obligations. Importado, não copiado: é o MESMO
+// mapa que o motor de pagamento usa, e uma segunda versão aqui faria a seção "a distribuir"
+// procurar a obrigação por um nome que o backend não conhece.
+import { CATEGORIA_KIND } from '../../lib/victor-rateio.js'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const STATUS_COLORS = {
@@ -1194,6 +1198,72 @@ export default function Financial() {
   const distOverflow = distPool > 0.005 ? distPool : 0
   // Digitado que não achou linha nenhuma onde entrar — todas as 5 já estavam zeradas.
   const distSobraCategoria = cents(Object.values(distSobras).reduce((s, v) => s + v, 0))
+
+  // ── VALORES DISTRIBUÍDOS ────────────────────────────────────────────────────────────
+  // O que JÁ foi alocado por categoria nos lançamentos listados, lido do histórico de
+  // pagamentos — a mesma fonte do extrato por cliente da aba.
+  //
+  // ⚠️ `notes` guarda as categorias da SESSÃO inteira, não a fatia deste pagamento: uma
+  // sessão de R$ 173 espalhada por dois payables grava a MESMA string nos dois. Somar as
+  // strings direto multiplicaria o valor pelo número de lançamentos atingidos. Por isso
+  // passa por proportionalCats(), que escala a sessão para o valor do pagamento — o mesmo
+  // caminho que paymentEntries e editEntries já usam.
+  const distribuidos = (() => {
+    const porCat = {}
+    for (const r of pendingVictor) {
+      for (const p of r.payments || []) {
+        const nc = parseNotesToAmounts(p.notes)
+        const nt = Object.values(nc).reduce((s, v) => s + v, 0)
+        const amt = parseFloat(p.amount) || 0
+        // Pagamento sem categoria no notes (lançado pelo modal simples de pagamento):
+        // entra como "sem categoria" em vez de sumir — o dinheiro saiu do mesmo jeito.
+        const porCategoria = nt > 0 ? proportionalCats(amt, nc, nt) : { _sem: amt }
+        for (const [k, v] of Object.entries(porCategoria)) {
+          if (v <= 0.005) continue
+          porCat[k] ||= { valor: 0, data: null, clientes: new Set() }
+          porCat[k].valor = cents(porCat[k].valor + v)
+          // ⚠️ `paid_at` chega como string ISO pelo JSON, mas como Date em qualquer
+          // consumo direto do driver. `String(date).slice(0,10)` dá "Tue Feb 1", o
+          // split('-') não casa e a data sai como lixo — sem erro nenhum. Mesmo tropeço
+          // já documentado com `emission_date` na visão fiscal.
+          const d = p.paid_at ? (p.paid_at instanceof Date ? p.paid_at.toISOString().slice(0, 10) : String(p.paid_at).slice(0, 10)) : null
+          if (d && (!porCat[k].data || d > porCat[k].data)) porCat[k].data = d
+          if (r.client_name) porCat[k].clientes.add(r.client_name)
+        }
+      }
+    }
+    return porCat
+  })()
+  const distribuidosLista = [...RECEIVE_VICTOR_CATEGORIES, ['_sem', 'Sem categoria']]
+    .filter(([k]) => (distribuidos[k]?.valor || 0) > 0.005)
+    .map(([k, label]) => ({ k, label, ...distribuidos[k], clientes: [...distribuidos[k].clientes] }))
+  const distribuidosTotal = cents(distribuidosLista.reduce((s, d) => s + d.valor, 0))
+
+  // ── VALORES A DISTRIBUIR ────────────────────────────────────────────────────────────
+  // Saldo em aberto das obrigações da competência (`reserves` = devido − pago, montado a
+  // partir de fiscal_obligations em fetchReserves), menos o que está sendo digitado agora.
+  //
+  // ⚠️ NÃO desconta o que aparece em "distribuídos", e isso é o ponto: o
+  // ?action=pagar-distribuido deste modal não grava `fiscal_payments`, então alocar R$ 150
+  // ao Escritório aqui NÃO quita a guia — ela segue devida. Descontar os dois faria a
+  // pendência sumir da tela enquanto a /fiscal continua cobrando. Quando a mesma categoria
+  // aparece nas duas seções, é exatamente isso que está acontecendo, e a linha avisa.
+  //
+  // `lucros` e `demais` não são obrigação fiscal (kind null), então nunca têm pendência —
+  // aparecem zeradas, como na especificação.
+  const aDistribuir = RECEIVE_VICTOR_CATEGORIES.map(([k, label]) => {
+    const kind = CATEGORIA_KIND[k]
+    const devido = kind ? (parseFloat(reserves[kind]) || 0) : 0
+    const digitando = parseFloat(String(receiveCats[k] ?? '').replace(',', '.')) || 0
+    return {
+      k, label, kind, devido, digitando,
+      restante: Math.max(cents(devido - digitando), 0),
+      alocadoSemQuitar: kind && (distribuidos[k]?.valor || 0) > 0.005 && devido > 0.005
+        ? cents(Math.min(distribuidos[k].valor, devido)) : 0,
+    }
+  })
+  const aDistribuirTotal = cents(aDistribuir.reduce((s, d) => s + d.restante, 0))
+  const aDistribuirSemQuitar = aDistribuir.filter(d => d.alocadoSemQuitar > 0.005)
 
   // Reservas do mês (ficam no caixa) e saldo disponível para distribuir.
   // Soma o que a apuração ainda tem em aberto no mês, qualquer que seja o tipo —
@@ -2955,6 +3025,79 @@ export default function Financial() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
                 <input type="date" value={receivePaidAt} onChange={e=>setReceivePaidAt(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+              </div>
+
+              {/* VALORES DISTRIBUÍDOS — o que já saiu, por categoria.
+                  Some quando não há histórico: um bloco vazio dizendo "Total R$ 0,00"
+                  ocuparia espaço para não informar nada. */}
+              {distribuidosLista.length > 0 && (
+                <div className="bg-green-500/5 border border-green-500/30 rounded-xl p-3">
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <p className="text-green-400/90 text-xs font-medium uppercase tracking-wider">Valores distribuídos</p>
+                    <span className="text-xs text-gray-500">
+                      Total <span className="text-green-400 font-mono font-semibold">{fmt(distribuidosTotal)}</span>
+                    </span>
+                  </div>
+                  <div className="space-y-0.5 font-mono text-[11px]">
+                    {distribuidosLista.map(d => (
+                      <div key={d.k} className="flex justify-between gap-2">
+                        <span className="font-sans text-gray-400 min-w-0 truncate">
+                          <span className="text-green-500">✓</span> {d.label}
+                          {d.data && <span className="text-gray-600"> · {d.data.split('-').reverse().join('/')}</span>}
+                          {d.clientes.length > 0 && <span className="text-gray-600"> · {d.clientes.join(', ')}</span>}
+                        </span>
+                        <span className="text-green-400 shrink-0">−{fmt(d.valor)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-gray-600 text-[10px] mt-1.5 leading-tight">
+                    Já consumido dos lançamentos listados abaixo. A quebra por categoria vem do
+                    histórico de cada pagamento; pagamento lançado sem categoria aparece como
+                    &quot;sem categoria&quot;.
+                  </p>
+                </div>
+              )}
+
+              {/* VALORES A DISTRIBUIR — o que a competência ainda deve, por categoria. */}
+              <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-3">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <p className="text-amber-400/90 text-xs font-medium uppercase tracking-wider">Valores a distribuir</p>
+                  <span className="text-xs text-gray-500">
+                    Total <span className="text-amber-400 font-mono font-semibold">{fmt(aDistribuirTotal)}</span>
+                  </span>
+                </div>
+                <div className="space-y-0.5 font-mono text-[11px]">
+                  {aDistribuir.map(d => (
+                    <div key={d.k} className="flex justify-between gap-2">
+                      <span className="font-sans text-gray-400 min-w-0 truncate">
+                        {d.label}
+                        {d.digitando > 0.005 && d.devido > 0.005 && (
+                          <span className="text-gray-600"> · {fmt(d.digitando)} de {fmt(d.devido)} sendo digitado</span>
+                        )}
+                        {/* Alocado neste modal, guia ainda aberta — ver o cálculo de aDistribuir. */}
+                        {d.alocadoSemQuitar > 0.005 && (
+                          <span className="text-amber-400/70"> · {fmt(d.alocadoSemQuitar)} já alocado sem quitar a guia</span>
+                        )}
+                      </span>
+                      <span className={`shrink-0 ${d.restante > 0.005 ? 'text-amber-400' : 'text-gray-600'}`}>
+                        {fmt(d.restante)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {aDistribuirSemQuitar.length > 0 && (
+                  <p className="text-amber-400/80 text-[10px] mt-1.5 leading-tight">
+                    ⚠️ {aDistribuirSemQuitar.map(d => d.label).join(', ')} aparece nas duas seções: o
+                    valor já saiu do saldo do Victor, mas este modal não quita a guia — ela segue
+                    devida em <strong>/fiscal</strong>, onde é registrada como abatimento.
+                  </p>
+                )}
+                {Object.keys(reserves).length === 0 && (
+                  <p className="text-gray-600 text-[10px] mt-1.5 leading-tight">
+                    Sem apuração em {months[refMonth-1]}/{refYear} — nada a distribuir por
+                    categoria. Apure em <strong>/fiscal</strong> para ver DAS, INSS e Escritório aqui.
+                  </p>
+                )}
               </div>
 
               {/* Distribuição do saldo — painel visual em tempo real.

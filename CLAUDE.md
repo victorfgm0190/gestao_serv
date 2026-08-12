@@ -953,6 +953,31 @@ caiu 10,89" ao lado de "Saldo caiu 150,00" se lê como erro de conta. E **pagar 
 guia nenhuma**: `pagar-distribuido` não grava `fiscal_payments`. Quitação é na `/fiscal` ou
 pela visão Cards da aba (`?action=pagar-com-rateio`).
 
+#### "Valores distribuídos" e "Valores a distribuir" — 2026-08-12
+
+Duas seções acima da tabela de distribuição, no modal "Receber":
+
+**Distribuídos** (verde) — o que já saiu, por categoria, com data e clientes atingidos.
+Lido de `payable_payments` dos lançamentos listados. ⚠️ `notes` guarda as categorias da
+**sessão inteira**, não a fatia de cada pagamento: uma sessão de R$ 173 espalhada por dois
+payables grava a MESMA string nos dois, e somar as strings direto multiplicaria o valor pelo
+número de lançamentos atingidos. Passa por `proportionalCats()`, o mesmo caminho de
+`paymentEntries`/`editEntries`. Conferido contra a produção: soma das categorias = soma dos
+`payable_payments` (R$ 23,00 nos dois).
+
+**A distribuir** (âmbar) — saldo em aberto das obrigações da competência, por categoria.
+Sai de `reserves` (o mesmo `devido − pago` que `fetchReserves()` já montava de
+`fiscal_obligations`), menos o que está sendo digitado. `lucros` e `demais` têm `kind` null
+em `CATEGORIA_KIND` e portanto nunca têm pendência — aparecem zeradas. O mapa é **importado**
+de `lib/victor-rateio.js`, não copiado: uma segunda versão faria a seção procurar a obrigação
+por um nome que o backend não conhece.
+
+⚠️ **A segunda seção NÃO desconta a primeira, de propósito.** O `?action=pagar-distribuido`
+deste modal não grava `fiscal_payments`, então alocar R$ 150 ao Escritório aqui **não quita a
+guia** — ela segue devida. Descontar os dois faria a pendência sumir da tela enquanto a
+`/fiscal` continua cobrando. Quando a mesma categoria aparece nas duas seções, é exatamente
+isso que está acontecendo, e a linha diz (`alocadoSemQuitar`).
+
 #### "Fev aparecendo em Jan" NÃO é o filtro — 2026-08-10
 
 Reportado como bug do filtro de mês (Bokada #42 comp 01 e #44 comp 02 aparecendo juntos).
