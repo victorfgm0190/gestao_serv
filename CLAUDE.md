@@ -914,6 +914,45 @@ Pharmalog aparece com 29,78% do DAS porque só a NF #8 está ali — a #7 mora n
 Antes exibia 94,39% (a fatia do cliente na guia) ao lado de um valor que era só o da NF #8:
 o número e o rótulo descreviam conjuntos diferentes.
 
+#### "Distribuição do saldo" virou tabela com cascata condicional — 2026-08-12
+
+O painel do modal "Receber" trocou a árvore (`├─ Serviço / ├─ DAS / └─ Lucro`) e o bloco
+`Bruto → menos impostos → Líquido` por uma tabela **CATEGORIA | BRUTO | LÍQUIDO** por
+lançamento: **5 linhas trabalháveis** (Escritório, DAS, INSS, Lucro, Serviço — absorvem o
+que é digitado), **SUB** (soma das 5, recalcula sozinha) e **FAB** (estática, sem líquido —
+sai da FATURA e é paga na aba do Fabrício).
+
+`alocarCascataDist()` (`Financial.jsx`) aloca cada categoria digitada em **dois passos**, os
+mesmos de `planejarCategoria()`: (1) a linha própria da categoria, percorrendo todos os
+lançamentos do mais antigo ao mais novo; (2) o que sobrar desce para **Lucro → Serviço**,
+lançamento a lançamento.
+
+⚠️ **A cascata é condicional, não posicional: linha já zerada é PULADA.** Digitar
+"Escritório 150" com o escritório já quitado manda os 150 inteiros para Lucro/Serviço, em vez
+de parar na linha zerada. É o que separa os dois cenários da especificação, e depende de o
+backend saber quanto já foi abatido — `lib/victor-recorte.js` passou a trazer
+`fiscal.linhas[].pago`/`.saldo` por **payable** (`consumo_payable` agrupado por
+`payable_victor_id`, não por cliente como no breakdown da aba: o painel lista lançamentos, e
+a mesma guia alcança mais de um).
+
+⚠️ **O total absorvido é exatamente o digitado — nada é contado duas vezes.** Com 139,11 de
+escritório em aberto, "Escritório 150" tira 139,11 da linha Escritório e 10,89 do Serviço; o
+SUB cai 150, não 289,11. Conferido em Jan/2026 (Pharmalog #28).
+
+⚠️ **Uma categoria não abate a linha de outra.** A capacidade de um pagamento de Escritório é
+`escritório + lucro + serviço` — DAS e INSS ficam fora do alcance dele, e é por isso que o
+"saldo disponível" da especificação era R$ 2.987,07 (98,57 + 0 + 2.888,50) e não o SUB. O que
+passar disso vira `distSobraCategoria`, com aviso próprio, distinto do `distOverflow` (que é
+o pool contra o saldo dos lançamentos).
+
+⚠️ **A tabela é ALOCAÇÃO por categoria; o cabeçalho é o saldo do lançamento.** São duas
+leituras do mesmo pagamento e elas não coincidem por construção: o `?action=pagar-distribuido`
+debita o saldo do payable (serviço + lucro) e grava a quebra por categoria em
+`payable_payments.notes` — é essa quebra que a tabela mostra. Sem a frase de legenda, "Serviço
+caiu 10,89" ao lado de "Saldo caiu 150,00" se lê como erro de conta. E **pagar aqui não quita
+guia nenhuma**: `pagar-distribuido` não grava `fiscal_payments`. Quitação é na `/fiscal` ou
+pela visão Cards da aba (`?action=pagar-com-rateio`).
+
 #### "Fev aparecendo em Jan" NÃO é o filtro — 2026-08-10
 
 Reportado como bug do filtro de mês (Bokada #42 comp 01 e #44 comp 02 aparecendo juntos).

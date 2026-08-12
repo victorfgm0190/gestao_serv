@@ -78,10 +78,69 @@ const TAB_COM_PERCENTUAL = new Set(['escritorio', 'das', 'inss'])
 
 // Rótulos dos `kind` de fiscal_obligations no card de Reservas.
 const RESERVA_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Honorários', pro_labore: 'Pro Labore', escritorio: 'Escritório' }
-// Idem, na grafia da árvore de distribuição. Difere do RESERVA_LABEL num ponto: `honorarios`
-// aparece como "Escritório", que é como o Victor chama os R$ 150 da contabilidade — o mesmo
-// nome usado no breakdown por cliente (BREAKDOWN_LABEL) e em lib/victor-breakdown.js.
-const DIST_KIND_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Escritório', escritorio: 'Escritório' }
+// ── Painel "Distribuição do saldo" (modal Receber) ──────────────────────────────────────
+// 5 linhas TRABALHÁVEIS (absorvem o que é digitado) + 2 INFORMATIVAS (SUB, que é a soma
+// das 5, e FAB, que nunca muda e não tem líquido).
+//
+// A ordem é a mesma cascata de ORDEM_LINHAS (lib/victor-tabulado.js) e ORDEM_CATEGORIA
+// (lib/victor-rateio.js), alinhadas em 2026-08-12.
+const DIST_LINHAS = ['escritorio', 'das', 'inss', 'lucro', 'servico']
+const DIST_LINHA_LABEL = {
+  escritorio: 'Escritório', das: 'DAS', inss: 'INSS',
+  lucro: 'Lucro', servico: 'Serviço', sub: 'SUB', fab: 'FAB',
+}
+// `kind` de fiscal_obligations → linha. `honorarios` são os R$ 150 da contabilidade, que
+// é o "Escritório" da tela; o kind `escritorio` é o legado sem rateio e não vira linha.
+const DIST_KIND_LINHA = { honorarios: 'escritorio', das: 'das', inss: 'inss' }
+// Categoria digitada no modal → linha própria que ela abate primeiro.
+// `null` = não tem linha (Pró-labore, Lucros, Demais despesas): desce direto a Lucro → Serviço.
+const DIST_ENTRADA_LINHA = {
+  honorarios: 'escritorio', escritorio: 'escritorio', das: 'das', inss: 'inss',
+  pro_labore: null, lucros: null, demais: null,
+}
+// Ordem de processamento das entradas — espelha ORDEM_CATEGORIA de lib/victor-rateio.js.
+const DIST_ORDEM_ENTRADA = ['honorarios', 'escritorio', 'das', 'inss', 'pro_labore', 'lucros', 'demais']
+
+// Aloca em cascata o que foi digitado sobre as linhas dos lançamentos. MUTA `lancamentos`
+// (reconstruídos a cada render) e devolve o que sobrou de cada entrada.
+//
+// Para cada categoria digitada, dois passos — os MESMOS de planejarCategoria()
+// (lib/victor-rateio.js), que é quem grava:
+//   1. a linha própria da categoria, percorrendo todos os lançamentos (mais antigo antes)
+//   2. o que sobrar desce para Lucro → Serviço, lançamento a lançamento
+//
+// Linha já zerada é PULADA, não recebe nada: digitar "Escritório 150" com o escritório já
+// quitado manda os 150 inteiros para Lucro/Serviço. É o Cenário 2 da especificação, e é o
+// que torna a cascata condicional em vez de posicional.
+//
+// ⚠️ O total absorvido é exatamente o digitado — uma categoria não é contada duas vezes.
+// Digitar "Escritório 150" com 98,57 em aberto tira 98,57 do Escritório e 51,43 do
+// Serviço; o SUB cai 150, não 248,57.
+function alocarCascataDist(lancamentos, valores) {
+  const cents = (v) => Math.round(v * 100) / 100
+  const sobras = {}
+  for (const entrada of DIST_ORDEM_ENTRADA) {
+    let resta = cents(parseFloat(String(valores?.[entrada] ?? '').replace(',', '.')) || 0)
+    if (resta <= 0.005) continue
+    const alvo = DIST_ENTRADA_LINHA[entrada]
+    const passos = alvo ? [[alvo], ['lucro', 'servico']] : [['lucro', 'servico']]
+    for (const cats of passos) {
+      for (const l of lancamentos) {
+        if (resta <= 0.005) break
+        for (const cat of cats) {
+          if (resta <= 0.005) break
+          const usa = cents(Math.min(resta, l.cats[cat].liquido))
+          if (usa <= 0.005) continue
+          l.cats[cat].liquido = cents(l.cats[cat].liquido - usa)
+          l.cats[cat].absorvido = cents(l.cats[cat].absorvido + usa)
+          resta = cents(resta - usa)
+        }
+      }
+    }
+    sobras[entrada] = resta
+  }
+  return sobras
+}
 
 // As 3 visões de data. [chave, rótulo do botão, tooltip]
 const MODOS = [
@@ -1062,63 +1121,79 @@ export default function Financial() {
   const prevMonthsWithBalance = sortedPending
     .filter(r => payKey(r) < effectiveRefKey && (!receiveTarget || r.id !== receiveTarget.id))
     .map(r => ({ id: r.id, client_name: r.client_name, month: r.month, year: r.year, saldo: saldoOf(r) }))
-  let distPool = Math.round(receiveTotal * 100) / 100
-  const distRows = orderedPending.map(r => {
+  const cents = (v) => Math.round(v * 100) / 100
+  let distPool = cents(receiveTotal)
+
+  // ESTADO INICIAL das 5 linhas trabalháveis, ANTES de alocar o que está sendo digitado.
+  // O que foi digitado entra depois, por alocarCascataDist().
+  const distBase = orderedPending.map(r => {
     const saldo = saldoOf(r)
     const consumed = Math.min(distPool, saldo)
-    const liquido = Math.round((saldo - consumed) * 100) / 100
-    distPool = Math.round((distPool - consumed) * 100) / 100
+    const liquido = cents(saldo - consumed)
+    distPool = cents(distPool - consumed)
     const state = consumed <= 0 ? 'full' : liquido <= 0 ? 'zero' : 'partial'
 
-    // Quebra do que RESTA em serviço e lucro. `payables_victor` tem um `paid_amount`
-    // único, então a divisão segue a hipótese de sempre — o lucro é consumido primeiro —,
-    // a mesma de quebrarPago() (lib/victor-breakdown.js), prepararCandidatos()
-    // (lib/victor-rateio.js) e aplicarDelta(). Hipótese única entre o que a tela mostra e
-    // o que o backend debita; divergir aqui faria a prévia mentir sobre qual parcela some.
-    const pagoTotal = (parseFloat(r.paid_amount) || 0) + consumed
+    // Lucro e serviço partem do que sobrou dos pagamentos JÁ GRAVADOS (`paid_amount`) —
+    // o que está sendo digitado é alocado depois, pela cascata, para que a linha da
+    // categoria digitada absorva antes. O lucro é consumido primeiro, a mesma hipótese de
+    // quebrarPago() (lib/victor-breakdown.js), prepararCandidatos() (lib/victor-rateio.js)
+    // e aplicarDelta(). Hipótese única entre o que a tela mostra e o que o backend debita.
+    const pagoGravado = parseFloat(r.paid_amount) || 0
     const lucroTot = parseFloat(r.profit_amount) || 0
     const servTot = parseFloat(r.service_amount) || 0
-    const lucroPago = Math.min(pagoTotal, Math.max(lucroTot, 0))
-    const cents = (v) => Math.round(v * 100) / 100
-    const lucroRest = Math.max(cents(lucroTot - lucroPago), 0)
-    const servRest = Math.max(cents(servTot - (pagoTotal - lucroPago)), 0)
+    const lucroPago = Math.min(pagoGravado, Math.max(lucroTot, 0))
 
-    // Imposto rateado desta NF. É LEITURA: já está descontado do que o Victor recebe
-    // (provisão retida + cascata lucro→serviço) e não entra no pool consumido — some
-    // junto no `subtotal` só para dizer quanto de caixa sai por este lançamento.
-    const impostos = (r.fiscal?.linhas || []).map(l => ({
-      kind: l.kind,
-      label: DIST_KIND_LABEL[l.kind] || l.kind,
-      valor: l.amount,
-      percentual: l.percentual ?? null,
-    }))
-    const impostoTotal = cents(impostos.reduce((s, l) => s + l.valor, 0))
+    const cats = {
+      escritorio: { bruto: 0, liquido: 0, absorvido: 0, percentual: null },
+      das: { bruto: 0, liquido: 0, absorvido: 0, percentual: null },
+      inss: { bruto: 0, liquido: 0, absorvido: 0, percentual: null },
+      lucro: { bruto: cents(lucroTot), liquido: Math.max(cents(lucroTot - lucroPago), 0), absorvido: 0, percentual: null },
+      servico: { bruto: cents(servTot), liquido: Math.max(cents(servTot - (pagoGravado - lucroPago)), 0), absorvido: 0, percentual: null },
+    }
+    // As três fiscais: BRUTO é o rateio da NF; LÍQUIDO já desconta o que foi abatido
+    // deste lançamento em pagamentos anteriores (`l.saldo`, de lib/victor-recorte.js).
+    // Sem isso a linha mostraria o rateio cheio depois de quitada, e o Cenário 2 da
+    // especificação — digitar de novo e pular direto para Lucro/Serviço — não existiria.
+    for (const l of r.fiscal?.linhas || []) {
+      const cat = DIST_KIND_LINHA[l.kind]
+      if (!cat) continue
+      cats[cat].bruto = cents(cats[cat].bruto + l.amount)
+      cats[cat].liquido = cents(cats[cat].liquido + (l.saldo ?? l.amount))
+      cats[cat].percentual = l.percentual ?? null
+    }
 
     return {
       id: r.id, month: r.month, year: r.year, client_name: r.client_name,
-      saldo, liquido, state, consumed: cents(consumed),
-      servico: servRest, lucro: lucroRest, impostos, impostoTotal,
-      // Bruto da parte do VICTOR, antes do imposto — não o total da NF: o que cabe ao
-      // Fabrício sai da nota à parte e nunca passa por aqui. Confere na NF #6 (Pharmalog,
-      // Jan/2026): 8.453,08 + 1.026,68 = 9.479,76, e 9.479,76 + 295,38 do Fabrício =
-      // 9.775,00 da nota (os 14 centavos são o resíduo de arredondamento de sempre).
-      //
-      // É derivado do que RESTA, então acompanha o valor digitado — o painel inteiro é
-      // sobre o saldo restante, e a linha "Saldo → Líquido" logo acima mostra o consumo.
-      // Sem nada digitado, restante = saldo, e o bloco explica exatamente o saldo.
-      bruto: cents(liquido + impostoTotal),
+      saldo, liquido, state, consumed: cents(consumed), cats,
+      // FAB: o que cabe ao Fabrício nesta NF. Informativa e estática — sai da FATURA e é
+      // paga na aba dele, então nunca entra no SUB nem é absorvida por nada.
+      fabricio: r.conferencia ? cents(r.conferencia.fabricio) : null,
       // Excedente do imposto real que a apuração já rateou mas o ?action=recalcular ainda
       // não aplicou. Enquanto ≠ 0, o payable carrega o valor da PROVISÃO (7%) e o imposto
-      // exibido é o REAL — então o bruto derivado fica acima do que a NF reconstitui, pela
-      // diferença. Hoje isso vale para 13 das 14 notas do banco, então calar seria deixar o
-      // número mais visível do painel sem explicação.
+      // exibido é o REAL — então as linhas fiscais somam mais do que a NF reteve. Hoje
+      // isso vale para 13 das 14 notas do banco, então calar deixaria o SUB sem explicação.
       aRedistribuir: cents(r.fiscal?.a_redistribuir || 0),
       // Cascata negativa = o imposto superou o lucro e o serviço absorveu a diferença.
       // O payable já foi gravado com o lucro zerado; isto explica por que ele é 0,00.
       cascadeAbsorvido: r.cascata && r.cascata.lucro_final < -0.005 ? cents(-r.cascata.lucro_final) : 0,
     }
   })
+
+  // Aloca o que foi digitado. MUTA `distBase` — que é reconstruído a cada render.
+  const distSobras = alocarCascataDist(distBase, receiveCats)
+  // SUB e FAB, as duas informativas. SUB é sempre a soma das 5, então recalcula sozinho
+  // quando qualquer uma muda; FAB fica de fora dele.
+  const distRows = distBase.map(d => ({
+    ...d,
+    sub: {
+      bruto: cents(DIST_LINHAS.reduce((s, c) => s + d.cats[c].bruto, 0)),
+      liquido: cents(DIST_LINHAS.reduce((s, c) => s + d.cats[c].liquido, 0)),
+      absorvido: cents(DIST_LINHAS.reduce((s, c) => s + d.cats[c].absorvido, 0)),
+    },
+  }))
   const distOverflow = distPool > 0.005 ? distPool : 0
+  // Digitado que não achou linha nenhuma onde entrar — todas as 5 já estavam zeradas.
+  const distSobraCategoria = cents(Object.values(distSobras).reduce((s, v) => s + v, 0))
 
   // Reservas do mês (ficam no caixa) e saldo disponível para distribuir.
   // Soma o que a apuração ainda tem em aberto no mês, qualquer que seja o tipo —
@@ -2900,6 +2975,14 @@ export default function Financial() {
                   Todas as competências em aberto até {months[effRefMonth-1]}/{effRefYear}, da mais
                   antiga para a mais nova — não só o mês do filtro. É a ordem em que o pagamento
                   consome os saldos.
+                  {/* Sem esta frase, "Serviço caiu 51,43" ao lado de "Saldo caiu 150" parece
+                      erro de conta. São duas leituras: o cabeçalho é o saldo do lançamento
+                      (o que o backend debita), a tabela é a alocação por categoria (o que
+                      fica registrado no histórico do pagamento). ⚠️ Pagar aqui NÃO quita a
+                      guia — isso é na /fiscal ou pela visão Cards da aba. */}
+                  {' '}Na tabela, cada valor digitado abate primeiro a linha da própria categoria e
+                  desce para Lucro → Serviço; o cabeçalho mostra o saldo do lançamento, que é o
+                  que sai do caixa. Pagar aqui não quita a guia — isso é em <strong>/fiscal</strong>.
                 </p>
                 {distRows.length === 0 ? (
                   <p className="text-gray-600 text-xs text-center py-2">Nenhum saldo pendente</p>
@@ -2924,74 +3007,85 @@ export default function Financial() {
                           </span>
                         </div>
 
-                        {/* De onde vem o líquido: bruto da parte do Victor, menos o
-                            imposto rateado daquela NF. A subtração é exibida porque o
-                            saldo do payable já chega líquido e não dizia de onde veio.
-                            Omitido quando não há imposto (contrato sem NF, como a Minas):
-                            "− R$ 0,00" só acrescentaria ruído. */}
-                        {d.impostoTotal > 0.005 && (
-                          <div className="mt-1.5 mb-1 px-2 py-1.5 bg-gray-900/70 rounded-lg space-y-0.5 font-mono text-[11px]">
-                            <div className="flex justify-between gap-2">
-                              <span className="text-gray-400 font-sans">Bruto (parte do Victor)</span>
-                              <span className="text-white">{fmt(d.bruto)}</span>
-                            </div>
-                            <div className="flex justify-between gap-2">
-                              <span className="text-gray-500 font-sans">Menos impostos</span>
-                              <span className="text-red-400">−{fmt(d.impostoTotal)}</span>
-                            </div>
-                            <div className="flex justify-between gap-2 border-t border-gray-700 pt-0.5 font-semibold">
-                              <span className="text-gray-400 font-sans">Líquido (p/ Victor)</span>
-                              <span className="text-green-400">{fmt(d.liquido)}</span>
-                            </div>
-                            {Math.abs(d.aRedistribuir) > 0.005 && (
-                              <p className="text-amber-400/80 text-[10px] font-sans leading-tight pt-0.5">
-                                ⚠️ O líquido ainda é o da provisão de 7%: {fmt(d.aRedistribuir)} de
-                                imposto real não foi redistribuído, então o bruto acima está
-                                alto nesse valor. Aplicar em /fiscal.
-                              </p>
+                        {/* Tabela CATEGORIA | BRUTO | LÍQUIDO. As 5 primeiras absorvem o
+                            que é digitado, em cascata; SUB é a soma delas e FAB é estática
+                            e sem líquido (sai da FATURA e é paga na aba do Fabrício).
+                            Linha zerada é pulada pela cascata — ver alocarCascataDist(). */}
+                        <table className="w-full mt-1.5 font-mono text-[11px]">
+                          <thead>
+                            <tr className="text-[9px] uppercase tracking-wide text-gray-600">
+                              <th className="text-left font-medium font-sans pb-0.5">Categoria</th>
+                              <th className="text-right font-medium font-sans pb-0.5">Bruto</th>
+                              <th className="text-right font-medium font-sans pb-0.5">Líquido</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {DIST_LINHAS.map(cat => {
+                              const c = d.cats[cat]
+                              const zerou = c.bruto > 0.005 && c.liquido <= 0.005
+                              return (
+                                <tr key={cat}>
+                                  <td className="font-sans text-gray-500 py-px">
+                                    {DIST_LINHA_LABEL[cat]}
+                                    {c.percentual != null && (
+                                      <span className="text-gray-700"> ({c.percentual.toFixed(2)}% da guia)</span>
+                                    )}
+                                    {/* O lucro zerado por cascata não é "cliente sem lucro":
+                                        o imposto o superou e o serviço absorveu a diferença. */}
+                                    {cat === 'lucro' && d.cascadeAbsorvido > 0 && (
+                                      <span className="text-orange-400/80"> · cascata absorveu {fmt(d.cascadeAbsorvido)}</span>
+                                    )}
+                                  </td>
+                                  <td className="text-right text-gray-500 py-px">{fmt(c.bruto)}</td>
+                                  <td className={`text-right py-px ${
+                                    c.absorvido > 0.005 ? 'text-yellow-400'
+                                    : zerou ? 'text-gray-600'
+                                    : 'text-gray-200'}`}>
+                                    {fmt(c.liquido)}
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                            {/* Separador entre as trabalháveis e as informativas. */}
+                            <tr>
+                              <td className="font-sans text-gray-400 font-semibold border-t-2 border-gray-700 pt-0.5">SUB</td>
+                              <td className="text-right text-gray-400 font-semibold border-t-2 border-gray-700 pt-0.5">{fmt(d.sub.bruto)}</td>
+                              <td className="text-right text-white font-semibold border-t-2 border-gray-700 pt-0.5">{fmt(d.sub.liquido)}</td>
+                            </tr>
+                            {d.fabricio != null && (
+                              <tr>
+                                <td className="font-sans text-gray-600 py-px">FAB</td>
+                                <td className="text-right text-gray-600 py-px">{fmt(d.fabricio)}</td>
+                                <td className="text-right text-gray-700 py-px">—</td>
+                              </tr>
                             )}
-                          </div>
+                          </tbody>
+                        </table>
+                        {Math.abs(d.aRedistribuir) > 0.005 && (
+                          <p className="text-amber-400/80 text-[10px] leading-tight pt-1">
+                            ⚠️ As três linhas fiscais são o imposto REAL, mas o lançamento ainda
+                            carrega a provisão de 7%: {fmt(d.aRedistribuir)} não foi
+                            redistribuído, então o SUB está alto nesse valor. Aplicar em /fiscal.
+                          </p>
                         )}
-
-                        {/* Árvore: do que o líquido é composto, mais o imposto rateado
-                            daquela NF. ⚠️ O imposto NÃO é consumido pelo pagamento — já
-                            está descontado do que o Victor recebe (provisão retida na NF
-                            + cascata lucro→serviço). Entra aqui como leitura. */}
-                        <div className="mt-1 pl-2 space-y-0.5 font-mono text-[11px]">
-                          <div className="flex justify-between gap-2">
-                            <span className="text-gray-500 font-sans">├─ Serviço Victor</span>
-                            <span className="text-white">{fmt(d.servico)}</span>
-                          </div>
-                          {d.impostos.map(l => (
-                            <div key={l.kind} className="flex justify-between gap-2">
-                              <span className="text-gray-500 font-sans">
-                                ├─ {l.label}
-                                {l.percentual != null && (
-                                  <span className="text-gray-600"> ({l.percentual.toFixed(2)}% da guia)</span>
-                                )}
-                              </span>
-                              <span className="text-gray-400">{fmt(l.valor)}</span>
-                            </div>
-                          ))}
-                          {/* Fecha a árvore: o total já foi dito no bloco acima (o Bruto
-                              é o mesmo número), e repeti-lo aqui como "sai de caixa"
-                              contaria a mesma soma com outra história. */}
-                          <div className="flex justify-between gap-2">
-                            <span className={`font-sans ${d.cascadeAbsorvido > 0 ? 'text-orange-400' : 'text-gray-500'}`}>
-                              └─ Lucro
-                              {d.cascadeAbsorvido > 0 && (
-                                <span className="text-orange-400/80"> · cascata absorveu {fmt(d.cascadeAbsorvido)} no serviço</span>
-                              )}
-                            </span>
-                            <span className={d.cascadeAbsorvido > 0 ? 'text-orange-400' : 'text-gray-400'}>{fmt(d.lucro)}</span>
-                          </div>
-                        </div>
                       </div>
                     ))}
                   </div>
                 )}
                 {distOverflow > 0 && (
                   <p className="text-red-400 text-xs mt-2">⚠️ Valor excede o saldo disponível em {fmt(distOverflow)}</p>
+                )}
+                {/* Distinto do overflow acima: ali o POOL passou do saldo dos lançamentos;
+                    aqui o valor coube no pool, mas passou do que AQUELA categoria alcança —
+                    a própria linha, mais Lucro e Serviço. DAS e INSS não são alcançados por
+                    um pagamento de Escritório, então não entram na capacidade dele. Sem este
+                    aviso, digitar sobre um mês já quitado não muda nada e parece travamento. */}
+                {distSobraCategoria > 0.005 && distOverflow <= 0.005 && (
+                  <p className="text-amber-400/80 text-[11px] mt-2">
+                    ⚠️ {fmt(distSobraCategoria)} não encontrou linha onde ser alocado — o valor
+                    passou do que essas categorias alcançam (a própria linha, depois Lucro e
+                    Serviço). Uma categoria não abate a linha de outra.
+                  </p>
                 )}
                 {foraDoTeto.length > 0 && (
                   <div className="mt-3 pt-2 border-t border-gray-800">
