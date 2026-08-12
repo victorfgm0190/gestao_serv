@@ -19,6 +19,9 @@ import { ORDEM_KIND } from '../lib/fiscal-lines.js'
 import { aplicarDelta, cascataDoLucro } from '../lib/fiscal-redistribution.js'
 // Breakdown por cliente da aba Pagar Victor — agregação das MESMAS linhas, não recálculo.
 import { montarBreakdown } from '../lib/victor-breakdown.js'
+// Momento 1 (prévio): o imposto do que ainda não virou nota — horas apontadas e contrato
+// mensal do mês. Os momentos 2 e 3 saem do rateio que já existe. Ver lib/victor-momentos.js.
+import { buscarFaturamentoPrevisto, momentoPrevio } from '../lib/victor-momentos.js'
 
 // Recalcula o pai de um payable_victor após alterar seus pagamentos.
 async function recalcVictorParent(sql, payable_id) {
@@ -528,7 +531,14 @@ export default async function handler(req, res) {
                  -- kind/competência (UNIQUE), então o MAX aqui é exato, não uma escolha.
                  -- Serve para deduplicar o denominador do percentual: um cliente com duas
                  -- NFs na mesma guia não pode contá-la duas vezes.
-                 MAX(a.obligation_id)               AS obligation_id
+                 MAX(a.obligation_id)               AS obligation_id,
+                 -- Os dois valores da obrigação, para reconstruir os momentos 2 e 3.
+                 -- fiscal_allocations guarda só o rateio VIGENTE: quando a guia é lançada,
+                 -- o rerateio sobrescreve o que fora rateado do estimado. Com o estimado e o
+                 -- oficial em mãos, momentosDaLinha() recompõe os dois pela proporção, sem
+                 -- um segundo motor de rateio para divergir do primeiro no arredondamento.
+                 MAX(o.amount_estimated)            AS obrigacao_estimado,
+                 MAX(o.amount_actual)               AS obrigacao_real
           FROM fiscal_allocations a
           JOIN fiscal_obligations o ON o.id = a.obligation_id
           JOIN tot t ON t.obligation_id = a.obligation_id
@@ -552,6 +562,9 @@ export default async function handler(req, res) {
           obrigacao_total: total,
           obligation_id: a.obligation_id == null ? null : Number(a.obligation_id),
           percentual: total > 0 ? r2((amount / total) * 100) : null,
+          // `null` = guia oficial ainda não lançada, distinto de uma guia de R$ 0,00.
+          obrigacao_estimado: a.obrigacao_estimado == null ? null : parseFloat(a.obrigacao_estimado),
+          obrigacao_real: a.obrigacao_real == null ? null : parseFloat(a.obrigacao_real),
         })
       }
       for (const r of rows) {
@@ -667,7 +680,68 @@ export default async function handler(req, res) {
         return y === Number(year) && (!month || m === Number(month))
       })
 
-      breakdown = montarBreakdown({ rows: alvo, consumos })
+      // ── MOMENTO 1 (PRÉVIO) ────────────────────────────────────────────────────────
+      // Precisa de um mês: o pró-labore tem piso mensal e o escritório é valor fechado,
+      // então "a previsão de todos os meses" não é uma soma, é um erro de categoria (seria
+      // um piso de INSS por mês somado com outro). Sem filtro de mês a previsão é omitida
+      // e a tela mostra só os momentos 2 e 3, que são por competência de verdade.
+      const hoje = new Date()
+      const curKey = hoje.getFullYear() * 100 + (hoje.getMonth() + 1)
+
+      const mesPrevisao = month ? Number(month) : null
+      let previo = null
+      let previsao = null
+      if (mesPrevisao) {
+        const settings = (await sql`
+          SELECT * FROM company_settings WHERE company_id = ${company_id} LIMIT 1`)[0] || {}
+        // Mês fechado não projeta contrato mensal — ver buscarFaturamentoPrevisto().
+        const projetarContratos = (Number(year) * 100 + mesPrevisao) >= curKey
+        const fat = await buscarFaturamentoPrevisto(sql, company_id, mesPrevisao, Number(year), { projetarContratos })
+        previo = momentoPrevio({ porCliente: fat.porCliente, base: fat.base, settings })
+        previsao = {
+          mes: fat.mes, ano: fat.ano, base: fat.base,
+          contratos_projetados: fat.contratos_projetados,
+          ...previo.mes,
+          detalhe: [...fat.porCliente.values()].map((c) => ({
+            client_id: c.client_id,
+            emitido: c.emitido,
+            nao_faturado: c.nao_faturado,
+            base: c.base,
+            horas: c.horas,
+            lancamentos: c.lancamentos,
+            contratos: c.contratos,
+          })).filter((d) => d.base > 0),
+        }
+      }
+
+      // Nomes: o breakdown recebe as linhas de payables_victor (que já trazem
+      // `client_name` do JOIN), mas a previsão pode conter cliente que ainda não tem
+      // payable nenhum — e aí o nome não vem de lugar algum.
+      const nomes = new Map()
+      const idsPrev = [...(previo?.clientes?.keys() || [])]
+      if (idsPrev.length) {
+        for (const c of await sql`SELECT id, name FROM clients WHERE id = ANY(${idsPrev})`) {
+          nomes.set(Number(c.id), c.name)
+        }
+      }
+
+      // `curKey` (acima) é o teto de caixa de HOJE — o mesmo que candidatosDisponiveis()
+      // aplicará no pagamento. É a data corrente, não o mês do filtro: a restrição real é
+      // "não consumir dinheiro que ainda não entrou", e quem a define é o calendário.
+      // Olhar abril em março mostra os saldos, mas eles ficam marcados como bloqueados —
+      // que é a informação que faltava, já que a recusa do backend era silenciosa.
+      breakdown = montarBreakdown({ rows: alvo, consumos, nomes, previo, curKey })
+      breakdown.previsao = previsao
+      breakdown.caixa = {
+        mes_referencia: hoje.getMonth() + 1,
+        ano_referencia: hoje.getFullYear(),
+        bloqueado: breakdown.totais.bloqueado_futuro,
+      }
+      // `?momento=` só diz qual dos três a tela abre destacando — os três vêm sempre.
+      // Devolver um só faria a comparação exigir três requisições, e o valor de pôr as
+      // etapas lado a lado é justamente vê-las juntas.
+      const pedido = String(req.query.momento || '').trim()
+      breakdown.momento = ['previo', 'real', 'final'].includes(pedido) ? pedido : null
     }
 
     // Previsão: recebíveis pendentes/parciais (cliente ainda não pagou) que ainda não geraram

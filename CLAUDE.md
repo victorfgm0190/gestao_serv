@@ -979,6 +979,111 @@ de 13 centavos é o resíduo de arredondamento de sempre). Subtrair os impostos 
 R$ 7.426,40 e descontaria o mesmo tributo duas vezes — o erro da cascata, deslocado para o
 subtotal. Foi proposto e recusado na revisão de 2026-08-10.
 
+### Os três momentos do imposto (`lib/victor-momentos.js`) — 2026-08-11
+
+O custo fiscal de um cliente muda três vezes, e a aba só mostrava o último estado — o
+número "mudava sozinho" entre duas visitas sem nada explicar. Agora os três aparecem lado
+a lado no card, com o delta entre eles.
+
+| momento | fonte | o que muda |
+|---------|-------|-----------|
+| **1 · Prévio** | `invoices.tax_amount` das notas do card | provisão de 7% retida na NF |
+| **2 · Real** | `amount_estimated` rateado | DAS vira a alíquota efetiva do Simples |
+| **3 · Final** | `amount_actual` rateado | guia oficial do contador |
+
+São as MESMAS três etapas de `lib/fiscal-redistribution.js`, não um quarto caminho.
+
+**Só o DAS muda entre 1 e 2 — e isso não é simplificação.** INSS e escritório prévios saem
+da mesma fórmula mensal que a apuração usa (`proLaboreDoMes` → `calcINSS`; honorários é
+valor fechado), então `previo.inss === real.inss` por construção. Inventar um "INSS prévio"
+distinto daria um segundo dono a um número que só tem uma fórmula. Há uma invariante de
+teste sobre isso.
+
+⚠️ **Os três têm de descrever as MESMAS notas.** A primeira versão ancorava o prévio na
+previsão do **mês de emissão** enquanto o card agrupa por **competência**: no card de
+03/2026 o Pharmalog saía com prévio R$ 1.978,93 contra real R$ 566,77, e a "diferença entre
+os momentos" era a troca das notas por baixo, não a alíquota. O prévio passou a sair de
+`r.fiscal.provisionado`, que é por nota.
+
+⚠️ **Os momentos 2 e 3 são reconstruídos pela PROPORÇÃO, não relidos.** `fiscal_allocations`
+guarda um estado por vez — `lancar-guia` sobrescreve o rateio do estimado. Como `ratear()` é
+proporcional à NF, o peso do cliente na guia é o mesmo nos dois, e `momentosDaLinha()` faz
+`real = peso × amount_estimated` / `final = peso × amount_actual`. Um segundo motor de
+rateio divergiria do primeiro no arredondamento — centavos que aparecem e somem.
+`amount_actual` nulo é "guia não lançada", distinto de uma guia de R$ 0,00.
+
+#### Momento 1 puro: o que ainda não virou nota
+
+Bloco à parte (`breakdown.previstos`), fora dos cards: **horas apontadas sem fatura**
+(`time_entries` cujo id não está em nenhum `invoices.time_entry_ids`) e **contrato mensal
+sem nota no mês**. Não há input — sem payable não há o que pagar, e o lançamento do Victor
+só nasce quando o cliente paga o recebível.
+
+⚠️ **Contrato mensal não é projetado em mês fechado** (`projetarContratos: false`).
+`contracts` não tem data de início nem de fim: um contrato ativo hoje parece ativo desde
+sempre, e "sem nota no mês" seria lido como pendência em todo mês anterior à sua criação.
+Os três contratos fixos faturaram só 06-07/2026 (SteelDek), 04/2026 (ALEX) e 07-08/2026
+(Bokada) — sem o corte, janeiro aparecia devendo R$ 6.000 de um contrato que nem existia, e
+a previsão do mês fechado ficava maior que o faturamento real dele. Horas apontadas entram
+em qualquer mês: ali existe registro do trabalho, não uma inferência do calendário.
+
+⚠️ **A previsão exige filtro de mês.** O piso do pró-labore é mensal e os honorários são
+valor fechado; "a previsão de todos os meses" somaria dois pisos de INSS. Sem mês o bloco é
+omitido — os momentos dos cards continuam funcionando, porque não dependem dele.
+
+#### Histórico de pagamentos e caixa futuro
+
+`historico_pagamentos` por cliente, com saldo corrente que parte do **total devido** e
+desce. A última linha tem de terminar no `saldo_atual`; terminar noutro lugar denuncia
+pagamento gravado fora de `payable_payments` — é a mesma conferência que `saldo_atual` ×
+`subtotal_receber` faz por outro caminho.
+
+A quebra por categoria de cada pagamento sai de **`parseNotes()`**, nova em
+`lib/victor-distribution.js` — a inversa exata de `montarNotes()`, derivada de `CATS` e
+morando ao lado dele. A advertência em `CATS` ("mudar um acento aqui quebra a leitura de
+todo o histórico") só se sustenta com um lugar só para mudar.
+
+`bloqueado_futuro` marca o saldo cujo mês de caixa é posterior a **hoje**.
+`candidatosDisponiveis()` já o recusava, mas **em silêncio** — o card mostrava saldo, o
+pagamento não acontecia e isso se lia como bug. O teto é a data corrente, não o mês do
+filtro: a restrição é "não consumir dinheiro que ainda não entrou".
+
+⚠️ **A restrição temporal NÃO foi implementada por competência**, como
+`WHERE month <= mesRef AND year <= anoRef`. Esse filtro tem dois defeitos: quebra na virada
+de ano (dez/2025 com referência mar/2026 dá `12 <= 3` = false) e filtra a coluna errada — um
+payable de janeiro é pago em fevereiro *por construção*, então recortar por competência
+descarta justamente o mês que se está olhando. É o 🐞 "Receber gravava zero em silêncio"
+(2026-07-30) de volta. O teto correto é o de caixa, que já existia.
+
+#### O que NÃO foi criado
+
+Boa parte do pedido já existia e foi reusada em vez de reimplementada:
+
+| pedido | onde já estava |
+|--------|----------------|
+| rateio de INSS e Escritório por cliente | `victor-breakdown.js:224`, desde 2026-08-10 |
+| campo `competencias` | `victor-breakdown.js`, idem |
+| Pharmalog-first no motor | `ordemRateio()` + `ordenarFallback()` em `victor-rateio.js` |
+| cascata Lucro → Serviço | `debitar()` / `prepararCandidatos()`, idem |
+| `?action=pagar-das`, `?action=pagar-pro-labore` | `?action=pagar-com-rateio`, com `categoria` |
+
+Endpoints separados por categoria **não** foram criados de propósito: é a tripla do
+`pagar-com-rateio` (`payable_payments` + `fiscal_allocations` + `fiscal_payments`) que
+`lib/fiscal-unlink.js`, o `?action=estornar-distribuicao` e o "Estornar abatimento" da
+`/fiscal` sabem desfazer. Uma rota nova nasceria cega aos três estornos.
+
+**Pró-labore não quita guia** (decisão do Victor, 2026-08-11): `pro_labore` está fora de
+`KINDS_COM_RATEIO`, cai no fallback Pharmalog-first com cascata lucro→serviço e grava só
+`payable_payments`. Conferido em prévia: R$ 1.442,69 → payable #28, `sem_obrigacao:
+['pro_labore']`, nenhum `fiscal_payments`. Criar a obrigação exigiria apurá-la junto com
+DAS/INSS/honorários e reapurar todos os meses.
+
+⚠️ **Os 7% de `contracts.tax_percentage` não são o DAS**, embora a tela chame o Momento 1
+de "DAS prévio". São a provisão retida antes do split; o DAS sai da tabela do Simples
+(`lib/taxCalc.js`), depende do faturamento do mês e da RBT12, e só existe após a apuração.
+O rótulo é aceitável — é o que o Victor reserva —, mas no código a provisão nunca é
+recalculada como se fosse imposto apurado.
+
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 
 Cliente que não pede nota (hoje só a **Minas Distribuicao**, contrato 4) fatura, recebe e

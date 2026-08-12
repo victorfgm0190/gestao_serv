@@ -1428,6 +1428,8 @@ export default function Financial() {
               )
             })}
 
+            {momentosDoCard(c)}
+            {extratoDoCard(c)}
             {fiscalDoCard(c)}
 
             {c.avisos.map((a, i) => (
@@ -1439,9 +1441,128 @@ export default function Financial() {
                 desconta imposto de dinheiro que ainda não entrou.
               </p>
             )}
+            {/* Caixa futuro: candidatosDisponiveis() recusaria estes payables, e a recusa
+                do backend é silenciosa — sem o aviso, pagar não faria nada e leria como bug. */}
+            {c.bloqueado_futuro > 0.005 && (
+              <p className="text-amber-400/80 text-[11px] pt-1">
+                🔒 {fmt(c.bloqueado_futuro)} com mês de caixa posterior a{' '}
+                {months[(breakdown?.caixa?.mes_referencia || 1) - 1]}/{breakdown?.caixa?.ano_referencia} —
+                não pode ser consumido ainda. O dinheiro não entrou.
+              </p>
+            )}
           </div>
         )}
       </div>
+    )
+  }
+
+  // OS TRÊS MOMENTOS, lado a lado. Vêm prontos de lib/victor-breakdown.js — aqui não se
+  // calcula nada, nem o delta (que o backend já mede na direção em que o Victor lê:
+  // imposto que CAI sobra para ele).
+  //
+  // Os três descrevem as MESMAS notas do card, e é isso que torna a comparação honesta.
+  // A primeira versão puxava o prévio da previsão do mês de emissão enquanto o card
+  // agrupa por competência: a "diferença entre os momentos" era a troca das notas por
+  // baixo, não a mudança de alíquota.
+  function momentosDoCard(c) {
+    const M = c.momentos
+    if (!M?.previo && !M?.real?.total) return null
+    const col = (chave, titulo, legenda) => {
+      const m = M[chave]
+      const atual = M.atual === chave
+      if (!m) {
+        return (
+          <div key={chave} className="flex-1 min-w-[8.5rem] rounded-lg p-2 bg-gray-950/40 border border-dashed border-gray-800">
+            <p className="text-[10px] uppercase tracking-wide text-gray-600">{titulo}</p>
+            <p className="text-sm text-gray-700 mt-1">aguardando</p>
+            <p className="text-[10px] text-gray-700 mt-0.5">{legenda}</p>
+          </div>
+        )
+      }
+      return (
+        <div key={chave} className={`flex-1 min-w-[8.5rem] rounded-lg p-2 border ${atual ? 'bg-blue-500/10 border-blue-500/40' : 'bg-gray-950/60 border-gray-800'}`}>
+          <p className={`text-[10px] uppercase tracking-wide ${atual ? 'text-blue-300' : 'text-gray-500'}`}>
+            {titulo}{atual && ' · vigente'}
+          </p>
+          <p className="text-sm font-mono text-white mt-1">{fmt(m.total)}</p>
+          <div className="text-[10px] font-mono text-gray-500 mt-1 space-y-0.5">
+            <div className="flex justify-between"><span className="font-sans">DAS</span><span>{fmt(m.das)}</span></div>
+            <div className="flex justify-between"><span className="font-sans">INSS</span><span>{fmt(m.inss)}</span></div>
+            <div className="flex justify-between"><span className="font-sans">Escritório</span><span>{fmt(m.escritorio)}</span></div>
+          </div>
+          <p className="text-[10px] text-gray-600 mt-1">{legenda}</p>
+          {/* Guia parcial: algumas categorias já têm valor oficial, outras não. Sem dizer
+              quais, o total do Momento 3 pareceria já ser o definitivo. */}
+          {chave === 'final' && m.aguardando_guia?.length > 0 && (
+            <p className="text-[10px] text-amber-400/70 mt-0.5">
+              {m.aguardando_guia.map(k => BREAKDOWN_LABEL[k]).join(', ')} ainda no estimado
+            </p>
+          )}
+        </div>
+      )
+    }
+    // Delta positivo = o imposto caiu, e a diferença fica com o Victor.
+    const delta = (v, de, para) => v == null || Math.abs(v) < 0.005 ? null : (
+      <span className={v > 0 ? 'text-green-400' : 'text-red-400'}>
+        {de} → {para}: {v > 0 ? '+' : '−'}{fmt(Math.abs(v))} {v > 0 ? 'para o lucro' : 'a mais de imposto'}
+      </span>
+    )
+    return (
+      <details className="pt-2" open>
+        <summary className="text-[11px] text-gray-500 cursor-pointer hover:text-gray-300">🕒 Os três momentos do imposto</summary>
+        <div className="mt-2 flex gap-2 flex-wrap">
+          {col('previo', '1 · Prévio', 'provisão de 7% retida na NF')}
+          {col('real', '2 · Real', 'apuração: alíquota efetiva do Simples')}
+          {col('final', '3 · Final', 'guia oficial do contador')}
+        </div>
+        {(M.delta_previo_real || M.delta_real_final) && (
+          <p className="text-[10px] mt-1.5 space-x-3">
+            {delta(M.delta_previo_real, '1', '2')}
+            {delta(M.delta_real_final, '2', '3')}
+          </p>
+        )}
+      </details>
+    )
+  }
+
+  // Extrato do cliente: cada pagamento e o saldo que restou depois dele.
+  //
+  // O saldo corrente vem do backend, que parte do total DEVIDO e desce — não do saldo de
+  // hoje subindo. Assim a última linha tem de terminar exatamente no saldo atual, e
+  // terminar noutro lugar denuncia pagamento gravado fora de payable_payments.
+  function extratoDoCard(c) {
+    const h = c.historico_pagamentos || []
+    if (!h.length) return null
+    return (
+      <details className="pt-2">
+        <summary className="text-[11px] text-gray-500 cursor-pointer hover:text-gray-300">
+          🧾 Histórico de pagamentos ({h.length})
+        </summary>
+        <div className="mt-2 space-y-0.5 text-[11px] font-mono bg-gray-950/60 rounded-lg p-2">
+          <div className="flex justify-between text-gray-600 pb-1 border-b border-gray-800">
+            <span className="font-sans">Saldo inicial</span>
+            <span>{fmt(h[0].saldo + h[0].valor)}</span>
+          </div>
+          {h.map(p => (
+            <div key={p.payment_id} className="flex justify-between gap-2 py-0.5">
+              <span className="font-sans text-gray-400 min-w-0 truncate">
+                {p.data.split('-').reverse().join('/')}
+                {/* Categorias parseadas de notes pela inversa de montarNotes() — no
+                    backend, para o formato ter um dono só. */}
+                {Object.keys(p.categorias || {}).length > 0 && (
+                  <span className="text-gray-600"> · {Object.entries(p.categorias)
+                    .map(([k, v]) => `${CAT_LABEL[k] || k} ${fmt(v)}`).join(', ')}</span>
+                )}
+              </span>
+              <span className="shrink-0">
+                <span className="text-red-400/80">−{fmt(p.valor)}</span>
+                <span className="text-gray-600"> → </span>
+                <span className="text-gray-300">{fmt(p.saldo)}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </details>
     )
   }
 
@@ -1957,7 +2078,71 @@ export default function Financial() {
                   </span>
                 </div>
 
+                {/* Os três momentos do MÊS. Só as notas dos cards — o não faturado tem
+                    bloco próprio abaixo, senão o "prévio" cobriria um conjunto maior que
+                    o "real" e a diferença entre eles deixaria de ser a alíquota. */}
+                {breakdown.momentos?.previo != null && (
+                  <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3">
+                    <div className="flex items-center gap-3 flex-wrap text-xs">
+                      <span className="text-[11px] uppercase tracking-wide text-gray-500">🕒 Imposto do recorte</span>
+                      <span className="text-gray-500">1 · Prévio <span className="text-gray-200 font-mono">{fmt(breakdown.momentos.previo)}</span></span>
+                      <span className="text-gray-700">→</span>
+                      <span className="text-gray-500">2 · Real <span className="text-gray-200 font-mono">{fmt(breakdown.momentos.real)}</span></span>
+                      <span className="text-gray-700">→</span>
+                      <span className="text-gray-500">3 · Final{' '}
+                        {breakdown.momentos.final == null
+                          ? <span className="text-gray-700">aguardando guia</span>
+                          : <span className="text-gray-200 font-mono">{fmt(breakdown.momentos.final)}</span>}
+                      </span>
+                    </div>
+                    {breakdown.caixa?.bloqueado > 0.005 && (
+                      <p className="text-amber-400/80 text-[11px] mt-2">
+                        🔒 {fmt(breakdown.caixa.bloqueado)} em caixa posterior a{' '}
+                        {months[breakdown.caixa.mes_referencia - 1]}/{breakdown.caixa.ano_referencia} —
+                        aparece no card, mas não pode ser pago ainda.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {breakdown.clientes.map(renderBreakdownCard)}
+
+                {/* MOMENTO 1 puro: trabalho apontado e contrato mensal que ainda não viraram
+                    nota. Ficam FORA dos cards porque não há payable — o Victor só recebe
+                    quando o cliente paga o recebível, e um input aqui gravaria em nada. */}
+                {breakdown.previstos?.length > 0 && (
+                  <div className="bg-gray-900/40 border border-dashed border-gray-700 rounded-xl p-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+                      <p className="text-[11px] uppercase tracking-wide text-gray-500">
+                        🔮 Ainda sem NF — imposto previsto
+                      </p>
+                      <span className="text-xs text-gray-500">
+                        Base <span className="text-gray-300 font-mono">{fmt(breakdown.previsao?.base)}</span>
+                        <span className="text-gray-700"> · </span>
+                        Imposto <span className="text-orange-400/80 font-mono">{fmt(breakdown.momentos?.previsto_nao_faturado)}</span>
+                      </span>
+                    </div>
+                    {breakdown.previstos.map(p => (
+                      <div key={p.client_id} className="flex justify-between gap-2 py-1 text-[11px] font-mono border-b border-gray-800/60 last:border-0">
+                        <span className="font-sans text-gray-400">{p.client_name}</span>
+                        <span className="text-gray-500">
+                          base {fmt(p.base)}
+                          <span className="text-gray-700"> · </span>
+                          DAS {fmt(p.momentos.previo.das)} · INSS {fmt(p.momentos.previo.inss)} · Escrit {fmt(p.momentos.previo.escritorio)}
+                          <span className="text-gray-700"> · </span>
+                          <span className="text-orange-400/80">{fmt(p.momentos.previo.total)}</span>
+                        </span>
+                      </div>
+                    ))}
+                    <p className="text-gray-600 text-[10px] mt-2">
+                      Horas apontadas sem fatura e contrato mensal sem nota no mês. Nada a pagar
+                      aqui: o lançamento do Victor só nasce quando o cliente paga o recebível.
+                      {breakdown.previsao?.contratos_projetados === false && (
+                        <> Mês fechado — contratos mensais não são projetados, só as horas apontadas.</>
+                      )}
+                    </p>
+                  </div>
+                )}
 
                 {/* Barra de pagamento. Prévia e gravação chamam o MESMO endpoint,
                     mudando só `aplicar` — ver bdEnviar(). */}
