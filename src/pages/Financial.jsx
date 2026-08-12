@@ -1704,7 +1704,11 @@ export default function Financial() {
         {/* ── Seção 1: os totais a distribuir ── */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
           <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-            <p className="text-[11px] uppercase tracking-wide text-gray-500">💸 Valores a distribuir</p>
+            {/* NÃO chamar de "Valores a distribuir": esse nome é da seção do modal
+                "Receber", que mostra o que a competência ainda DEVE. Aqui são os valores
+                que se está DIGITANDO. Os dois nomes iguais na mesma tela fizeram procurar
+                a seção verde (que mora no modal) aqui na aba, onde ela nunca existiu. */}
+            <p className="text-[11px] uppercase tracking-wide text-gray-500">💸 Valores a lançar</p>
             <span className="text-xs text-gray-500">
               Total <span className="text-green-400 font-mono font-semibold">{fmt(tabTotalDigitado)}</span>
               {tabLoading && <span className="text-gray-600"> · calculando…</span>}
@@ -3028,35 +3032,45 @@ export default function Financial() {
               </div>
 
               {/* VALORES DISTRIBUÍDOS — o que já saiu, por categoria.
-                  Some quando não há histórico: um bloco vazio dizendo "Total R$ 0,00"
-                  ocuparia espaço para não informar nada. */}
-              {distribuidosLista.length > 0 && (
-                <div className="bg-green-500/5 border border-green-500/30 rounded-xl p-3">
-                  <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <p className="text-green-400/90 text-xs font-medium uppercase tracking-wider">Valores distribuídos</p>
-                    <span className="text-xs text-gray-500">
-                      Total <span className="text-green-400 font-mono font-semibold">{fmt(distribuidosTotal)}</span>
-                    </span>
-                  </div>
-                  <div className="space-y-0.5 font-mono text-[11px]">
-                    {distribuidosLista.map(d => (
-                      <div key={d.k} className="flex justify-between gap-2">
-                        <span className="font-sans text-gray-400 min-w-0 truncate">
-                          <span className="text-green-500">✓</span> {d.label}
-                          {d.data && <span className="text-gray-600"> · {d.data.split('-').reverse().join('/')}</span>}
-                          {d.clientes.length > 0 && <span className="text-gray-600"> · {d.clientes.join(', ')}</span>}
-                        </span>
-                        <span className="text-green-400 shrink-0">−{fmt(d.valor)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-gray-600 text-[10px] mt-1.5 leading-tight">
-                    Já consumido dos lançamentos listados abaixo. A quebra por categoria vem do
-                    histórico de cada pagamento; pagamento lançado sem categoria aparece como
-                    &quot;sem categoria&quot;.
-                  </p>
+                  ⚠️ Renderiza SEMPRE, inclusive vazia. A primeira versão se escondia quando
+                  não havia histórico ("um bloco de R$ 0,00 é ruído"), e o resultado foi uma
+                  investigação de bug: sem histórico a seção sumia, e some é indistinguível
+                  de quebrada. Um empty-state de uma linha responde a pergunta. */}
+              <div className="bg-green-500/5 border border-green-500/30 rounded-xl p-3">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <p className="text-green-400/90 text-xs font-medium uppercase tracking-wider">Valores distribuídos</p>
+                  <span className="text-xs text-gray-500">
+                    Total <span className="text-green-400 font-mono font-semibold">{fmt(distribuidosTotal)}</span>
+                  </span>
                 </div>
-              )}
+                {distribuidosLista.length === 0 ? (
+                  <p className="text-gray-500 text-[11px]">
+                    Nenhum pagamento registrado nos lançamentos em aberto de{' '}
+                    <span className="text-gray-400">{activeCompany.name}</span>. O que for pago
+                    aqui aparece nesta lista, por categoria.
+                  </p>
+                ) : (
+                  <>
+                    <div className="space-y-0.5 font-mono text-[11px]">
+                      {distribuidosLista.map(d => (
+                        <div key={d.k} className="flex justify-between gap-2">
+                          <span className="font-sans text-gray-400 min-w-0 truncate">
+                            <span className="text-green-500">✓</span> {d.label}
+                            {d.data && <span className="text-gray-600"> · {d.data.split('-').reverse().join('/')}</span>}
+                            {d.clientes.length > 0 && <span className="text-gray-600"> · {d.clientes.join(', ')}</span>}
+                          </span>
+                          <span className="text-green-400 shrink-0">−{fmt(d.valor)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-gray-600 text-[10px] mt-1.5 leading-tight">
+                      Já consumido dos lançamentos listados abaixo. A quebra por categoria vem do
+                      histórico de cada pagamento; pagamento lançado sem categoria aparece como
+                      &quot;sem categoria&quot;.
+                    </p>
+                  </>
+                )}
+              </div>
 
               {/* VALORES A DISTRIBUIR — o que a competência ainda deve, por categoria. */}
               <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-3">

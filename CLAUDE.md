@@ -972,6 +972,15 @@ em `CATEGORIA_KIND` e portanto nunca têm pendência — aparecem zeradas. O map
 de `lib/victor-rateio.js`, não copiado: uma segunda versão faria a seção procurar a obrigação
 por um nome que o backend não conhece.
 
+⚠️ **A seção verde renderiza sempre, inclusive vazia**, e o nome "Valores a distribuir"
+é exclusivo do modal. A primeira versão se escondia sem histórico e a visão Tabela da aba
+tinha um "💸 Valores a distribuir" que era só o grid de inputs — a combinação gerou um
+relatório de bug ("a verde não aparece") que não era bug: as duas seções vivem no **modal
+Receber**, e o único `payable_payments` do banco é da **Lumen**, então em Imperium a verde
+fica corretamente vazia. Conferido rodando a lógica da tela sobre a resposta real:
+`distribuidosLista.length` = 1 na empresa 1 e 0 na empresa 2. O grid da aba virou
+"💸 Valores a lançar" e a verde ganhou empty-state — sumir é indistinguível de quebrar.
+
 ⚠️ **A segunda seção NÃO desconta a primeira, de propósito.** O `?action=pagar-distribuido`
 deste modal não grava `fiscal_payments`, então alocar R$ 150 ao Escritório aqui **não quita a
 guia** — ela segue devida. Descontar os dois faria a pendência sumir da tela enquanto a
