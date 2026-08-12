@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { todayBR } from '../lib/dateUtils'
 import CopyButton from '../components/CopyButton'
@@ -56,6 +56,25 @@ const BREAKDOWN_LABEL = {
 // As três categorias que são obrigação fiscal (`das`/`inss`/`honorarios` no backend)
 // aparecem com o percentual do rateio ao lado; pagá-las quita a guia da competência, o
 // que a prévia informa antes de gravar.
+
+// ── Tabela tabulada (aba Pagar Victor, visão "Tabela") ──────────────────────────────────
+// Espelha ORDEM_LINHAS e LINHA_LABEL de lib/victor-tabulado.js. A ordem é a da cascata
+// pedida: Escritório → DAS → INSS → Lucro → Serviço, com SUB fechando o cliente.
+//
+// As caixas de entrada são as MESMAS 7 de RECEIVE_VICTOR_CATEGORIES — o vocabulário de
+// categoria tem um dono só (CATS em lib/victor-distribution.js), e um rótulo extra aqui
+// viraria um valor digitado que o backend recusa com 400.
+// A ORDEM das linhas não é repetida aqui de propósito: ela vem na resposta
+// (`rows` já chega em ORDEM_LINHAS), e uma segunda lista local se desalinharia em
+// silêncio no dia em que uma categoria entrasse ou saísse.
+const TAB_LINHA_LABEL = {
+  escritorio: 'Escritório', das: 'DAS', inss: 'INSS',
+  lucro: 'Lucro', servico: 'Serviço Victor', sub: 'SUB',
+}
+const EMPTY_TAB_INPUTS = { ...EMPTY_RECEIVE_CATS }
+// Só as 3 fiscais mostram o % — Lucro e Serviço são o saldo do próprio lançamento, não
+// fatia de nada.
+const TAB_COM_PERCENTUAL = new Set(['escritorio', 'das', 'inss'])
 
 // Rótulos dos `kind` de fiscal_obligations no card de Reservas.
 const RESERVA_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Honorários', pro_labore: 'Pro Labore', escritorio: 'Escritório' }
@@ -214,6 +233,21 @@ export default function Financial() {
   const [bdErro, setBdErro] = useState('')
   const [bdMsg, setBdMsg] = useState('')
   const [bdAberto, setBdAberto] = useState({})       // { [client_id]: bool } — cards expandidos
+
+  // ── TABELA TABULADA ─────────────────────────────────────────────────────────────────
+  // Segunda visão da mesma aba: os totais são digitados uma vez em cima e a tabela mostra,
+  // por cliente e categoria, BRUTO | % | LÍQUIDO. A distribuição vem do BACKEND
+  // (?action=calcular-distribuicao) e não de uma cópia da cascata aqui — repetir a
+  // fórmula no browser é o que fez a prévia do "Receber" divergir da gravação.
+  //
+  // ⚠️ Esta visão é LEITURA. Ela não grava: o pagamento continua na visão Cards, cuja
+  // semântica de abatimento é diferente (lá o imposto sai do saldo do Victor). Ver a
+  // advertência no topo de lib/victor-tabulado.js.
+  const [tabView, setTabView] = useState('tabela')   // 'tabela' | 'cards'
+  const [tabInputs, setTabInputs] = useState(EMPTY_TAB_INPUTS)
+  const [tabDist, setTabDist] = useState(null)
+  const [tabLoading, setTabLoading] = useState(false)
+  const [tabErro, setTabErro] = useState('')
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear, mode])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
@@ -891,6 +925,53 @@ export default function Financial() {
   const refMonth = filterMonth === '' ? (new Date().getMonth() + 1) : Number(filterMonth)
   const refYear = Number(filterYear) || new Date().getFullYear()
   const REF_KEY = refYear * 100 + refMonth
+
+  // ── TABELA TABULADA: distribuição vinda do backend, com debounce ────────────────────
+  // Recorte IDÊNTICO ao de fetchBreakdown (mesmos filterMonth/filterYear/mode): a tabela
+  // e os cards têm de descrever os mesmos clientes, senão a diferença passa por erro de
+  // rateio em vez de recorte diferente.
+  const tabTotalDigitado = RECEIVE_VICTOR_CATEGORIES
+    .reduce((s, [k]) => s + (parseFloat(String(tabInputs[k]).replace(',', '.')) || 0), 0)
+
+  useEffect(() => {
+    if (tab !== 'victor' || tabView !== 'tabela') return
+    let cancelado = false
+    // 500ms como pedido: o cálculo é uma ida ao banco, e disparar a cada tecla faria a
+    // tabela piscar com resultados de valores já obsoletos.
+    const t = setTimeout(async () => {
+      setTabLoading(true); setTabErro('')
+      try {
+        const payments = {}
+        for (const [k] of RECEIVE_VICTOR_CATEGORIES) {
+          payments[k] = parseFloat(String(tabInputs[k]).replace(',', '.')) || 0
+        }
+        const res = await fetch('/api/payables-victor?action=calcular-distribuicao', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            company_id: activeCompany.id,
+            year: filterYear,
+            month: filterMonth === '' ? null : Number(filterMonth),
+            mode,
+            payments,
+          }),
+        })
+        const data = await res.json()
+        if (cancelado) return
+        if (!res.ok) { setTabErro(data.error || 'Não foi possível calcular a distribuição.'); setTabDist(null); return }
+        setTabDist(data)
+      } catch (e) {
+        if (!cancelado) { console.error(e); setTabErro('Falha de rede ao calcular a distribuição.'); setTabDist(null) }
+      } finally {
+        if (!cancelado) setTabLoading(false)
+      }
+    }, 500)
+    return () => { cancelado = true; clearTimeout(t) }
+  }, [tab, tabView, activeCompany, filterYear, filterMonth, mode, tabInputs])
+
+  // Trocar o recorte zera o que foi digitado: os valores se referem aos clientes e notas
+  // daquele período, e mantê-los aplicaria um número pensado para outro mês.
+  useEffect(() => { setTabInputs(EMPTY_TAB_INPUTS) }, [activeCompany, filterYear, filterMonth, mode])
   // Previsão de impostos (só Lumen, aba Victor, config fiscal preenchida).
   //
   // A RBT12 sai do faturamento REAL do mês (NFs com require_nf, somadas em
@@ -1451,6 +1532,187 @@ export default function Financial() {
               </p>
             )}
           </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── TABELA TABULADA ─────────────────────────────────────────────────────────────────
+  // CLIENTE | CATEGORIA | BRUTO | % | LÍQUIDO | STATUS, com SUB fechando cada cliente e a
+  // linha FAB (informativa) embaixo. Tudo vem pronto de lib/victor-tabulado.js: aqui não
+  // se rateia, não se soma e não se decide status. O único cálculo local é o total
+  // digitado, que é a soma das caixas de entrada.
+  function tabStatusCell(s) {
+    if (s === 'pago') return <span className="text-green-400">✓ Pago</span>
+    if (s === 'parcial') return <span className="text-orange-400">◐ Parcial</span>
+    if (s === 'pendente') return <span className="text-gray-500">— Pendente</span>
+    if (s === 'subtotal') return <span className="text-gray-600">Subtotal</span>
+    // 'na' = a categoria não existe para este cliente (split 100/0 sem lucro, mês sem
+    // apuração). Marcá-la como paga encheria a tabela de ✓ enganosos.
+    return <span className="text-gray-700">—</span>
+  }
+
+  function renderTabelaTabulada() {
+    const d = tabDist
+    return (
+      <div className="space-y-3">
+        {/* ── Seção 1: os totais a distribuir ── */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+            <p className="text-[11px] uppercase tracking-wide text-gray-500">💸 Valores a distribuir</p>
+            <span className="text-xs text-gray-500">
+              Total <span className="text-green-400 font-mono font-semibold">{fmt(tabTotalDigitado)}</span>
+              {tabLoading && <span className="text-gray-600"> · calculando…</span>}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {RECEIVE_VICTOR_CATEGORIES.map(([k, label]) => (
+              <div key={k} className="flex flex-col gap-1">
+                <label className="text-[10px] text-gray-500">{label}</label>
+                <input
+                  type="number" step="0.01" min="0" placeholder="0,00"
+                  value={tabInputs[k]}
+                  onChange={e => setTabInputs(p => ({ ...p, [k]: e.target.value }))}
+                  className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs text-right placeholder-gray-600 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-gray-600 text-[10px] mt-2">
+            Cada total é rateado pelo peso da NF de cada cliente e absorvido na ordem
+            Escritório → DAS → INSS → Lucro → Serviço; o que não couber num cliente desce
+            para o próximo. <strong className="text-gray-500">Esta visão é leitura</strong> —
+            o pagamento é registrado na visão Cards.
+          </p>
+        </div>
+
+        {tabErro && <p className="text-red-400 text-xs">{tabErro}</p>}
+
+        {/* ── Seção 2: a distribuição ── */}
+        {!d ? (
+          <div className="text-gray-600 text-sm text-center py-6">
+            {tabLoading ? 'Calculando distribuição…' : 'Sem distribuição para este recorte.'}
+          </div>
+        ) : d.distribution.length === 0 ? (
+          <div className="text-gray-600 text-sm text-center py-6">
+            Nenhum cliente com NF neste recorte.
+          </div>
+        ) : (
+          <>
+            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-800">
+                      <th className="text-left font-medium px-3 py-2">Cliente</th>
+                      <th className="text-left font-medium px-3 py-2">Categoria</th>
+                      <th className="text-right font-medium px-3 py-2">Bruto</th>
+                      <th className="text-right font-medium px-3 py-2">%</th>
+                      <th className="text-right font-medium px-3 py-2">Líquido</th>
+                      <th className="text-left font-medium px-3 py-2">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {d.distribution.map(c => (
+                      <Fragment key={c.client_id ?? 'sem'}>
+                        {c.rows.map(r => {
+                          const sub = r.category === 'sub'
+                          return (
+                            <tr key={r.category}
+                              className={sub
+                                ? 'bg-gray-950/60 border-b border-gray-800 font-medium'
+                                : 'border-b border-gray-800/40 hover:bg-gray-800/20'}>
+                              <td className="px-3 py-1.5 text-gray-400 whitespace-nowrap">
+                                {c.client_name}
+                                {/* candidatosDisponiveis() recusaria o pagamento enquanto o
+                                    cliente não pagar o recebível. A tabela não bloqueia
+                                    nada, mas omitir isso faria o LÍQUIDO prometer um
+                                    pagamento que o motor não faria. */}
+                                {r.category === 'escritorio' && !c.disponivel && (
+                                  <span className="ml-2 px-1.5 py-0.5 bg-gray-700 text-gray-400 text-[10px] rounded-full">
+                                    aguardando cliente
+                                  </span>
+                                )}
+                              </td>
+                              <td className={`px-3 py-1.5 ${sub ? 'text-gray-300' : 'text-gray-500'}`}>
+                                {TAB_LINHA_LABEL[r.category] || r.category}
+                              </td>
+                              <td className="px-3 py-1.5 text-right font-mono text-gray-400">{fmt(r.bruto)}</td>
+                              <td className="px-3 py-1.5 text-right text-blue-400/70">
+                                {TAB_COM_PERCENTUAL.has(r.category) && r.percentual != null
+                                  ? `${r.percentual.toFixed(2)}%`
+                                  : <span className="text-gray-700">—</span>}
+                              </td>
+                              <td className={`px-3 py-1.5 text-right font-mono ${
+                                r.liquido <= 0.005 && r.bruto > 0.005 ? 'text-green-400'
+                                  : sub ? 'text-white' : 'text-gray-200'}`}>
+                                {fmt(r.liquido)}
+                              </td>
+                              <td className="px-3 py-1.5 whitespace-nowrap">{tabStatusCell(r.status)}</td>
+                            </tr>
+                          )
+                        })}
+                        {/* FAB: sai da FATURA e é pago na aba do Fabrício. Fora de todos os
+                            totais — somá-lo aqui acrescentaria à conta do Victor um valor
+                            que nunca passa por ela. */}
+                        <tr className="border-b-2 border-gray-800 bg-gray-950/30">
+                          <td className="px-3 py-1 text-gray-700 text-[11px]"></td>
+                          <td className="px-3 py-1 text-gray-600 text-[11px]">FAB</td>
+                          <td className="px-3 py-1 text-right text-gray-700">—</td>
+                          <td className="px-3 py-1 text-right text-gray-700">—</td>
+                          <td className="px-3 py-1 text-right font-mono text-gray-600">{fmt(c.fabricio_share)}</td>
+                          <td className="px-3 py-1 text-gray-700 text-[11px]">aba Pagar Fab</td>
+                        </tr>
+                      </Fragment>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-gray-700 text-xs">
+                      <td className="px-3 py-2 text-gray-400 font-medium" colSpan={2}>Total</td>
+                      <td className="px-3 py-2 text-right font-mono text-gray-300">{fmt(d.totals.total_bruto)}</td>
+                      <td className="px-3 py-2"></td>
+                      <td className="px-3 py-2 text-right font-mono text-white font-semibold">{fmt(d.totals.total_liquido)}</td>
+                      <td className="px-3 py-2 text-green-400 text-[11px] whitespace-nowrap">
+                        absorvido {fmt(d.totals.total_paid)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* ── Avisos: cada um cobre um jeito de a tabela parecer errada ── */}
+            <div className="space-y-1">
+              {d.totals.nao_coberto > 0.005 && (
+                <p className="text-amber-400/80 text-[11px]">
+                  ⚠️ {fmt(d.totals.nao_coberto)} não encontrou lançamento onde entrar — o total
+                  digitado passou do que os clientes deste recorte devem.
+                </p>
+              )}
+              {d.rateio?.origem_peso === 'nf' && (
+                <p className="text-amber-400/80 text-[11px]">
+                  ⚠️ Competência ainda não apurada: sem rateio de DAS/INSS/Escritório, o peso
+                  saiu do valor da NF e os valores digitados caem em Lucro/Serviço. Apure em{' '}
+                  <strong>/fiscal</strong>.
+                </p>
+              )}
+              {d.rateio?.soma_percentual != null && d.rateio.soma_percentual < 99.5 && (
+                <p className="text-amber-400/80 text-[11px]">
+                  ⚠️ Os clientes em tela somam {d.rateio.soma_percentual.toFixed(2)}% das guias
+                  da competência — o resto é de nota fora deste recorte. O valor digitado foi
+                  repartido só entre os presentes.
+                </p>
+              )}
+              {/* Sem esta linha a Minas some da tela sem explicação e o total da tabela
+                  não bate com o total da aba, logo acima. */}
+              {d.excluidos?.length > 0 && (
+                <p className="text-gray-600 text-[11px]">
+                  Fora da tabela: {d.excluidos.map(e => `${e.client_name} (${fmt(e.subtotal_receber)})`).join(', ')} —
+                  contrato sem NF, não entra no rateio de DAS/INSS/Escritório e é pago à parte.
+                </p>
+              )}
+            </div>
+          </>
         )}
       </div>
     )
@@ -2068,7 +2330,22 @@ export default function Financial() {
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <p className="text-xs font-medium uppercase tracking-wider text-green-400/80">👤 Por cliente</p>
+                  <span className="flex items-center gap-2">
+                    <p className="text-xs font-medium uppercase tracking-wider text-green-400/80">👤 Por cliente</p>
+                    {/* As duas visões leem o MESMO breakdown do backend — a tabela pelo
+                        ?action=calcular-distribuicao, os cards pelo ?breakdown=true —,
+                        então não têm como divergir no conjunto de clientes.
+                        Só os Cards pagam: ver o comentário do estado tabView. */}
+                    <span className="flex gap-1 bg-gray-800 rounded-lg p-0.5">
+                      <button onClick={() => setTabView('tabela')}
+                        className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'tabela' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                      >📋 Tabela</button>
+                      <button onClick={() => setTabView('cards')}
+                        className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'cards' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                        title="Momentos do imposto, extrato por cliente e pagamento"
+                      >🗂️ Cards</button>
+                    </span>
+                  </span>
                   <span className="text-xs text-gray-500">
                     Receber <span className="text-white font-medium">{fmt(breakdown.totais.receber)}</span>
                     <span className="text-gray-700"> · </span>
@@ -2105,7 +2382,7 @@ export default function Financial() {
                   </div>
                 )}
 
-                {breakdown.clientes.map(renderBreakdownCard)}
+                {tabView === 'tabela' ? renderTabelaTabulada() : breakdown.clientes.map(renderBreakdownCard)}
 
                 {/* MOMENTO 1 puro: trabalho apontado e contrato mensal que ainda não viraram
                     nota. Ficam FORA dos cards porque não há payable — o Victor só recebe
@@ -2145,8 +2422,12 @@ export default function Financial() {
                 )}
 
                 {/* Barra de pagamento. Prévia e gravação chamam o MESMO endpoint,
-                    mudando só `aplicar` — ver bdEnviar(). */}
-                <div className="sticky bottom-2 bg-gray-900 border border-gray-700 rounded-xl p-3 space-y-2 shadow-lg">
+                    mudando só `aplicar` — ver bdEnviar().
+                    Só na visão Cards: lá cada valor é digitado no cliente e na categoria a
+                    que pertence. Na Tabela os totais são globais e a absorção é exibição —
+                    ligar o botão a ela faria a gravação (que abate do saldo do Victor)
+                    divergir do que a tabela mostra. Ver lib/victor-tabulado.js. */}
+                <div className={`sticky bottom-2 bg-gray-900 border border-gray-700 rounded-xl p-3 space-y-2 shadow-lg ${tabView === 'tabela' ? 'hidden' : ''}`}>
                   <div className="flex items-end gap-3 flex-wrap">
                     <div className="flex flex-col gap-1">
                       <label className="text-[11px] text-gray-400">Data do pagamento</label>

@@ -2,6 +2,8 @@ import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { statusFor, remainingBalance } from '../lib/payment-status.js'
 import { mesDeCaixaOriginal } from '../lib/cash-month.js'
+// Tabela tabulada da aba Pagar Victor — ver o comentário no dispatch do POST.
+import { calcularDistribuicao } from './payables-victor.js'
 
 // Tabela pai e coluna de total por tipo
 const TABLES = {
@@ -76,6 +78,13 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
+    // Caminho da especificação da tabela tabulada. O handler mora em
+    // api/payables-victor.js, junto do recorte e do breakdown que ele lê — aqui é só o
+    // endereço. Reimplementá-lo daria dois motores para a mesma distribuição, que é a
+    // classe de bug que este projeto já pagou três vezes (pró-labore, regra financeira,
+    // percentual do rateio).
+    if (req.query.action === 'calculate-distribution') return calcularDistribuicao(sql, req, res)
+
     const { payable_type, payable_id, amount, paid_at, notes } = req.body
     if (!TABLES[payable_type]) return res.status(400).json({ error: 'payable_type inválido' })
     if (!payable_id) return res.status(400).json({ error: 'payable_id obrigatório' })

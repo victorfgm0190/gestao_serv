@@ -302,8 +302,8 @@ em cada chamada.
 | `invoices.js` | GET/POST/PATCH/PUT/DELETE | **Coração do faturamento.** Gera fatura (contrato ou agenda), cria `receivable`, e ao receber propaga `payables`. Calculador unificado (seção 6). |
 | `receivables.js` | GET/POST/PATCH/DELETE | Contas a receber. PATCH `pago` gera payables da fatura; PATCH `estorno` reverte. Protege `origin='faturamento'`. |
 | `payables-fabricio.js` | GET/POST/PATCH/DELETE | Contas a pagar Fabrício. Valor no campo `amount`. Traz `payments[]`. |
-| `payables-victor.js` | GET/POST `?action=pagar-distribuido\|pagar-com-rateio`/PATCH/DELETE | Contas a pagar Victor. Valor em `total_amount` (`service_amount`+`profit_amount`). Traz `payments[]`. **`?breakdown=true`** devolve também o breakdown por cliente da aba (5 categorias com saldo — `lib/victor-breakdown.js`). `?action=pagar-com-rateio` paga cada categoria pelos payables que `fiscal_allocations` aponta como donos daquele imposto, com fallback no Pharmalog (ver seção 6); aceita `client_id` e `invoice_ids` por item para prender o consumo ao cliente/nota do card; prévia por padrão, grava só com `aplicar: true`. |
-| `payable-payments.js` | GET/POST/DELETE | Múltiplos pagamentos por payable; recalcula `status`/`paid_amount` do pai (pendente/parcial/pago). |
+| `payables-victor.js` | GET/POST `?action=pagar-distribuido\|pagar-com-rateio\|calcular-distribuicao`/PATCH/DELETE | Contas a pagar Victor. Valor em `total_amount` (`service_amount`+`profit_amount`). Traz `payments[]`. **`?breakdown=true`** devolve também o breakdown por cliente da aba (5 categorias com saldo — `lib/victor-breakdown.js`). `?action=pagar-com-rateio` paga cada categoria pelos payables que `fiscal_allocations` aponta como donos daquele imposto, com fallback no Pharmalog (ver seção 6); aceita `client_id` e `invoice_ids` por item para prender o consumo ao cliente/nota do card; prévia por padrão, grava só com `aplicar: true`. **`?action=calcular-distribuicao`** monta a tabela tabulada (rateio dos totais digitados + cascata Escritório → DAS → INSS → Lucro → Serviço); **não grava nada** e não tem `aplicar` — ver `lib/victor-tabulado.js`. |
+| `payable-payments.js` | GET/POST `?action=calculate-distribution`/DELETE | Múltiplos pagamentos por payable; recalcula `status`/`paid_amount` do pai (pendente/parcial/pago). `?action=calculate-distribution` é **alias** do `?action=calcular-distribuicao` de `payables-victor.js` (caminho da spec da tabela tabulada) — o handler é um só. |
 | `fiscal-obligations.js` | GET/POST `?action=apurar\|recalcular`/PATCH `?action=lancar-guia\|corrigir-escritorio` | **Apuração fiscal.** Calcula RBT12 e folha dos 12 meses (proporcionalizados enquanto houver < 12 meses), Fator R, pró-labore (`max(28% do faturamento, R$ 1.621)`), DAS, INSS e honorários; grava `fiscal_obligations` e rateia por cliente em `fiscal_allocations` (proporcional à NF). Idempotente: reapurar substitui o rateio. GET lê o apurado do mês/ano com as alocações. `PATCH ?action=lancar-guia` grava `amount_actual`/`due_date`/`doc_number` quando a guia oficial chega (só sobrescreve os campos enviados); `amount_actual: null` desfaz o lançamento — e **refaz o rateio** com o valor real. `POST ?action=recalcular` é a **redistribuição**: compara a provisão de imposto da fatura (`invoices.tax_amount`) com o custo fiscal real rateado e devolve o antes/depois do que o Victor recebe; é **prévia por padrão** e só grava com `aplicar: true`. `PATCH ?action=corrigir-escritorio` = lançar guia + rerateio + prévia, numa chamada. |
 | `fiscal-payments.js` | GET/POST `?action=pagar`/DELETE | **Quitação da guia.** Múltiplos pagamentos por obrigação. `paid_amount`/`status` da obrigação são sempre **re-somados** de `fiscal_payments` (nunca incrementados), em transação com o INSERT/DELETE. Estornar tudo devolve a obrigação a `apurado` (se a guia oficial já chegou) ou `previsto`. Usa o `PAID_EPSILON` de `lib/payment-status.js`. |
 | `export-os.js` | GET | Gera Excel (ExcelJS) das horas do mês, opcionalmente filtrado por `client_id`. |
@@ -330,7 +330,7 @@ Rotas definidas em `src/main.jsx` dentro de `<Layout>` (sidebar). `App.jsx` é v
 | `/time-entries` | `TimeEntries.jsx` | Apontamento de horas (por horário + intervalo + deslocamento). Filtros pill mês/ano/cliente. Export Excel. | time-entries, clients, financial-rules, contracts, export-os |
 | `/financial-rules` | `FinancialRules.jsx` | CRUD de regras financeiras por cliente; também cadastra clientes. | financial-rules, clients |
 | `/contracts` | `Contracts.jsx` | CRUD de contratos (vinculados a uma regra financeira). Cálculo bidirecional de imposto do cliente (NF ↔ %). Lançamentos mensais. | contracts, clients, contract-months, financial-rules |
-| `/financial` | `Financial.jsx` | 4 abas: A Receber, Pagar Fab, **Pagar Victor (breakdown por cliente: 5 categorias com saldo e input de pagamento)**, Histórico. Filtro pill de mês + status. Múltiplos pagamentos, estorno, "Receber" (distribui entre payables do Victor). Oculta registros R$ 0,00 nas abas de Pagar. No card de Previsão de Impostos: memória de cálculo e **✏️ Editar valores** (lança as guias reais da competência e redistribui). Em Pagar Fab: demonstrativo em cascata no modal e export Excel. | receivables, payables-*, payable-payments, clients, fiscal-obligations, export-payables-fabricio |
+| `/financial` | `Financial.jsx` | 4 abas: A Receber, Pagar Fab, **Pagar Victor (duas visões: 📋 Tabela tabulada com totais no topo — leitura — e 🗂️ Cards por cliente com 5 categorias e input de pagamento)**, Histórico. Filtro pill de mês + status. Múltiplos pagamentos, estorno, "Receber" (distribui entre payables do Victor). Oculta registros R$ 0,00 nas abas de Pagar. No card de Previsão de Impostos: memória de cálculo e **✏️ Editar valores** (lança as guias reais da competência e redistribui). Em Pagar Fab: demonstrativo em cascata no modal e export Excel. | receivables, payables-*, payable-payments, clients, fiscal-obligations, export-payables-fabricio |
 | `/fiscal` | `FiscalObligations.jsx` | **Apuração fiscal.** Cards de DAS/INSS/Honorários (estimado × guia × pago), lançamento da guia oficial, múltiplos pagamentos com estorno, tabela de custo por cliente, painel do `calc_snapshot` (RBT12, Fator R, anexo, pró-labore) e abatimento nos payables do Victor. | fiscal-obligations, fiscal-payments |
 | `/billing` | `Billing.jsx` | Geração de fatura por Contrato ou por Agenda (horas). Seção "Impostos" editável (imposto real + imposto do cliente, NF bidirecional) e demonstrativo. Filtros pill mês/cliente. | invoices, contracts, clients, time-entries, financial-rules |
 
@@ -1083,6 +1083,72 @@ de "DAS prévio". São a provisão retida antes do split; o DAS sai da tabela do
 (`lib/taxCalc.js`), depende do faturamento do mês e da RBT12, e só existe após a apuração.
 O rótulo é aceitável — é o que o Victor reserva —, mas no código a provisão nunca é
 recalculada como se fosse imposto apurado.
+
+### Tabela tabulada (`lib/victor-tabulado.js`) — 2026-08-12
+
+A aba Pagar Victor ganhou uma segunda visão (**📋 Tabela** | **🗂️ Cards**, toggle no
+cabeçalho): os totais são digitados **uma vez em cima** (as 7 categorias de
+`RECEIVE_VICTOR_CATEGORIES`) e a tela mostra, por cliente e categoria,
+**CLIENTE | CATEGORIA | BRUTO | % | LÍQUIDO | STATUS**, com uma linha **SUB** fechando o
+cliente e **FAB** (informativa) embaixo. Endpoint:
+`POST /api/payables-victor?action=calcular-distribuicao`, com alias em
+`POST /api/payable-payments?action=calculate-distribution` (o caminho da spec — o handler
+é um só).
+
+`montarTabulado()` **não calcula valor financeiro novo**: BRUTO sai de
+`categorias[cat].devido`, o % de `rateio_percentual` e o LÍQUIDO do `saldo` menos o que o
+digitado absorve. A absorção segue **Escritório → DAS → INSS → Lucro → Serviço → próximo
+cliente**, com o excedente de cada categoria descendo para o pool de Lucro/Serviço junto
+com Pró-labore, Lucros e Demais despesas.
+
+⚠️ **Esta visão é LEITURA e não grava.** A cascata dela **não é** a de
+`lib/victor-rateio.js`, e a diferença é material: no `?action=pagar-com-rateio` o imposto é
+quitado por **abatimento** — o dinheiro sai do payable do Victor, então pagar o DAS reduz
+também o que ele recebe. Aqui cada categoria é independente: pagar o Escritório do
+Pharmalog baixa a linha Escritório e o SUB, e não toca em Serviço. É o modelo pedido
+("BRUTO sempre, LÍQUIDO reduz conforme paga") e é coerente enquanto ninguém gravar por
+aqui. Ligar um botão de pagar a esta tabela recria o bug do teto de caixa que o "Receber"
+já teve — prévia e gravação com semânticas diferentes. Por isso a barra de pagamento só
+aparece na visão **Cards**, onde cada valor é digitado no cliente e na categoria a que
+pertence.
+
+⚠️ **O peso do rateio sai dos valores alocados, não do percentual exibido.** O percentual
+é arredondado a 2 casas, e `632,40 × 0,9274 = 586,49` — um centavo abaixo dos R$ 586,50 que
+`fiscal_allocations` gravou para o Pharmalog. A linha ficava "parcial" com R$ 0,01 em aberto
+e o centavo transbordava para o Serviço: duas linhas mentindo por um arredondamento de
+exibição. `pesosDaCategoria()` usa os próprios valores rateados, então digitar o total da
+guia zera as linhas no centavo. Conferido em Jan/2026: Escritório 150 → Pharmalog 139,11 +
+Bokada 10,89; DAS 632,40 → 586,50 + 45,90.
+
+⚠️ **Cliente sem NF fica de fora** (`require_nf = false`, hoje só a Minas). Sem nota não há
+`fiscal_allocations`, logo não há fatia de DAS/INSS/Escritório — e mantê-lo na tabela com as
+três linhas zeradas convidaria a absorver imposto no saldo dele. Decisão do Victor
+(2026-08-12): *"Minas fica apenas com lucro, sem DAS sem INSS sem escritório; geralmente
+Minas eu recebo e pago à parte."* Isto é **diferente** do `?action=distribuir`, que continua
+elegendo o payable da Minas como origem de caixa — lá se consome saldo, aqui se rateia
+tributo. `breakdown.clientes[].sem_nf` é o marcador; quem sai aparece em `excluidos`, com o
+motivo, para o total da tabela não parecer divergir do total da aba.
+
+A **ordem de exibição/absorção** (`ORDEM_LINHAS`) é deliberadamente diferente de
+`ORDEM_CATEGORIA` (`lib/victor-rateio.js`), que consome DAS → INSS → Honorários. Mudar
+aquela mudaria o que o `?action=pagar-com-rateio` grava, inclusive pelos cards já em
+produção — e a ordem só altera resultado quando o dinheiro não cobre tudo.
+
+Três avisos existem porque cada um é um jeito de a tabela parecer quebrada:
+`nao_coberto` (o digitado passou do devido), `origem_peso: 'nf'` (competência não apurada —
+sem rateio, tudo cai em Lucro/Serviço) e `soma_percentual < 100` (parte da guia é de nota
+fora do recorte, e o digitado foi repartido só entre os presentes).
+
+#### `lib/victor-recorte.js` — o recorte da aba, extraído
+
+A query de linhas + enriquecimento fiscal + `montarBreakdown()` vivia inline no GET de
+`api/payables-victor.js` e passou a ter dois consumidores (o GET e a tabela). Virou
+`carregarRecorte(sql, …)`. Se a tabela montasse a própria query, bastaria um filtro de mês
+divergir para ela somar clientes que os cards não mostram — e a diferença apareceria como
+erro de rateio, não como recorte diferente. Mesma razão pela qual `montarBreakdown()` recebe
+linhas prontas em vez de ir ao banco. A extração foi conferida byte a byte contra a versão
+anterior em 7 recortes (as 3 visões de data, com e sem mês, com `include_preview`, as duas
+empresas): saída idêntica, exceto os campos novos `require_nf` e `sem_nf`.
 
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 
