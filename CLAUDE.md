@@ -972,6 +972,59 @@ em `CATEGORIA_KIND` e portanto nunca têm pendência — aparecem zeradas. O map
 de `lib/victor-rateio.js`, não copiado: uma segunda versão faria a seção procurar a obrigação
 por um nome que o backend não conhece.
 
+#### Expandir e estornar no card "Valores pagos" — 2026-08-12
+
+O card verde (antes "Valores distribuídos") virou **"Valores pagos"**: cada categoria abre
+em clique e lista os pagamentos individuais — data, cliente, competência, **de onde saiu**
+(Lucro/Serviço) e um botão **Estornar** com modal de confirmação.
+
+**Não foi criado um segundo card.** A especificação pedia um "VALORES PAGOS" separado, mas
+no próprio mockup ele exibia os mesmos R$ 23,00 do card acima — mesma fonte
+(`payable_payments` agrupado por categoria). Dois cards com o número idêntico leem como
+R$ 46. O que faltava era **abrir** e **estornar**, e foi isso que entrou no card existente.
+
+**Não foi criado `?action=reverter-pagamento`.** O `DELETE /api/payable-payments?id=X` já
+recompõe `paid_amount`, `status` e o mês de caixa — uma rota nova nasceria sem as três
+coisas. A tabela de distribuição recalcula sozinha por ser derivada de `paid_amount`, e por
+isso o estorno **não devolve o valor para os campos de input**: ele recompõe o SALDO.
+
+🐞 **O DELETE não desfazia o abatimento fiscal.** Era a lacuna documentada em
+`lib/fiscal-unlink.js`, que `payables-victor.js`, `receivables.js` e `invoices.js` já
+cobriam e só este caminho não: o CASCADE levava `fiscal_allocations`, mas o
+`fiscal_payments` de `'abatimento'` sobrevivia e ninguém recalculava a obrigação — o DAS
+seguia marcado como pago com o dinheiro de volta no saldo do Victor. Passava despercebido
+porque não havia botão; agora há. Junto foi trocado o `DELETE … RETURNING` por um SELECT
+antes: `desfazerAbatimentoFiscal` precisa **enxergar** as alocações, e o CASCADE já as teria
+levado.
+
+⚠️ **A unidade de reversão do abatimento é o MÊS, não o pagamento** — estornar um pagamento
+que fazia parte de uma distribuição derruba a competência inteira. A resposta devolve
+`fiscal: { obrigacoes, pagamentos_removidos }` e a tela avisa; sem isso, sumiriam pagamentos
+que o usuário não mandou estornar.
+
+⚠️ **`payable_payments` é UMA linha por sessão.** Se o pagamento cobria várias categorias, o
+estorno devolve todas — o modal diz isso quando `categorias_da_sessao > 1`, senão o valor do
+botão não bateria com o que some da tela.
+
+Nada de `status='reversed'`: o estorno apaga a linha e grava a trilha em `notes`
+(`Estornado em DD/MM/AAAA HH:MM (motivo)`), o padrão documentado — status fora do
+vocabulário sumiria dos filtros de todas as telas.
+
+A origem (Lucro/Serviço) é **derivada**, não lida: os pagamentos são percorridos em ordem
+cronológica e cada um pega a sobreposição de `[acumulado, acumulado+valor]` com
+`[0, profit_amount]`. É a hipótese única do sistema — o lucro absorve primeiro —, a mesma de
+`quebrarPago()`, `prepararCandidatos()` e `aplicarDelta()`.
+
+Testado contra a produção com rollback: pagamento temporário criado, estornado pelo handler
+real, estado conferido (pagamento apagado, `paid_amount` zerado, status `pendente`, trilha
+gravada, mês de caixa fora do mês apagado) e a linha restaurada ao original. O estorno em
+LOTE não foi implementado — a especificação o marcou como opcional/fase 2.
+
+⚠️ Ao zerar os pagamentos, `recalcParent` devolve o mês de caixa ao do **recebimento do
+cliente** (`mesDeCaixaOriginal`), não ao valor que estava gravado. É pré-existente e
+deliberado: preservar o valor atual deixaria o payable encalhado no mês do pagamento
+apagado, fora do teto de `candidatosDisponiveis()`.
+
 ⚠️ **A seção verde renderiza sempre, inclusive vazia**, e o nome "Valores a distribuir"
 é exclusivo do modal. A primeira versão se escondia sem histórico e a visão Tabela da aba
 tinha um "💸 Valores a distribuir" que era só o grid de inputs — a combinação gerou um

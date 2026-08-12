@@ -264,6 +264,11 @@ export default function Financial() {
   const [erroPay, setErroPay] = useState('')
   const [erroPayments, setErroPayments] = useState('')
   const [erroReceive, setErroReceive] = useState('')
+  // Card "Valores pagos": categorias expandidas e o estorno de um pagamento.
+  const [pagosAberto, setPagosAberto] = useState({})   // { [categoria]: bool }
+  const [estornoPagamento, setEstornoPagamento] = useState(null) // item em confirmação
+  const [estornando, setEstornando] = useState(false)
+  const [estornoAviso, setEstornoAviso] = useState('')
   // Previsão de impostos (só Lumen / company_id=1) — reserva de caixa na aba Pagar Victor.
   const [companySettings, setCompanySettings] = useState(null)
   const [monthFaturamento, setMonthFaturamento] = useState(0)
@@ -741,6 +746,39 @@ export default function Financial() {
     finally { setLoadingMemoria(false) }
   }
 
+  // Estorna UM pagamento. Reusa o DELETE de /api/payable-payments — que já recompõe
+  // paid_amount, status e o mês de caixa do payable, e agora também desfaz o abatimento
+  // fiscal. Uma rota nova (`?action=reverter-pagamento`) seria um segundo caminho para a
+  // mesma operação, e nasceria sem essas três coisas.
+  //
+  // ⚠️ Não devolve o valor para os campos de input: o estorno recompõe o SALDO, e a tabela
+  // de distribuição reflete isso sozinha por ser derivada de `paid_amount`.
+  async function confirmarEstornoPagamento() {
+    const it = estornoPagamento
+    if (!it) return
+    setEstornando(true)
+    setErroReceive(''); setEstornoAviso('')
+    try {
+      const res = await fetch(`/api/payable-payments?id=${it.payment_id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: it.payment_id, motivo: 'estorno pela aba Pagar Victor' }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErroReceive(data.error || 'Não foi possível estornar o pagamento.'); return }
+      setEstornoPagamento(null)
+      // A unidade de reversão do abatimento é o MÊS (lib/fiscal-unlink.js): estornar um
+      // pagamento que fazia parte de uma distribuição derruba a competência inteira.
+      // Calar sobre isso faria sumir pagamentos que o usuário não mandou estornar.
+      if (data.fiscal?.obrigacoes?.length) {
+        setEstornoAviso(`Este pagamento fazia parte de uma distribuição fiscal: a competência inteira foi desfeita — ${data.fiscal.pagamentos_removidos} pagamento(s) removido(s) e ${data.fiscal.obrigacoes.length} obrigação(ões) voltaram a ficar em aberto. Confira em /fiscal.`)
+      }
+      await Promise.all([fetchPendingVictor(), fetchReserves(), fetchAll(), fetchBreakdown()])
+    } catch (e) {
+      console.error(e); setErroReceive('Falha de rede ao estornar o pagamento.')
+    } finally { setEstornando(false) }
+  }
+
   // Flow A — Pagar Geral (não vinculado a um registro específico)
   async function openReceive() {
     setReceiveCats(EMPTY_RECEIVE_CATS)
@@ -1211,16 +1249,35 @@ export default function Financial() {
   const distribuidos = (() => {
     const porCat = {}
     for (const r of pendingVictor) {
-      for (const p of r.payments || []) {
+      // Ordem cronológica para a origem (lucro/serviço) de cada pagamento: o lucro é
+      // consumido primeiro, então quanto dele sobrou depende dos pagamentos ANTERIORES.
+      // Empate pelo id, que é a ordem real de gravação — mesma regra do extrato por
+      // cliente em lib/victor-breakdown.js.
+      const pagamentos = [...(r.payments || [])].sort((a, b) => {
+        const da = String(a.paid_at || ''), db = String(b.paid_at || '')
+        return da < db ? -1 : da > db ? 1 : Number(a.id) - Number(b.id)
+      })
+      const lucroTot = Math.max(parseFloat(r.profit_amount) || 0, 0)
+      let acumulado = 0
+      for (const p of pagamentos) {
         const nc = parseNotesToAmounts(p.notes)
         const nt = Object.values(nc).reduce((s, v) => s + v, 0)
         const amt = parseFloat(p.amount) || 0
+        // De onde este pagamento saiu. `payables_victor` tem um `paid_amount` único, então
+        // a quebra segue a hipótese única do sistema — o LUCRO absorve primeiro —, a mesma
+        // de quebrarPago(), prepararCandidatos() e aplicarDelta(). O que este pagamento
+        // pegou de lucro é a sobreposição de [acumulado, acumulado+amt] com [0, lucroTot].
+        const deLucro = cents(Math.max(Math.min(acumulado + amt, lucroTot) - acumulado, 0))
+        const deServico = cents(amt - deLucro)
+        acumulado = cents(acumulado + amt)
+        const origem = deLucro > 0.005 && deServico > 0.005 ? 'Lucro + Serviço'
+          : deLucro > 0.005 ? 'Lucro' : 'Serviço'
         // Pagamento sem categoria no notes (lançado pelo modal simples de pagamento):
         // entra como "sem categoria" em vez de sumir — o dinheiro saiu do mesmo jeito.
         const porCategoria = nt > 0 ? proportionalCats(amt, nc, nt) : { _sem: amt }
         for (const [k, v] of Object.entries(porCategoria)) {
           if (v <= 0.005) continue
-          porCat[k] ||= { valor: 0, data: null, clientes: new Set() }
+          porCat[k] ||= { valor: 0, data: null, clientes: new Set(), itens: [] }
           porCat[k].valor = cents(porCat[k].valor + v)
           // ⚠️ `paid_at` chega como string ISO pelo JSON, mas como Date em qualquer
           // consumo direto do driver. `String(date).slice(0,10)` dá "Tue Feb 1", o
@@ -1229,8 +1286,28 @@ export default function Financial() {
           const d = p.paid_at ? (p.paid_at instanceof Date ? p.paid_at.toISOString().slice(0, 10) : String(p.paid_at).slice(0, 10)) : null
           if (d && (!porCat[k].data || d > porCat[k].data)) porCat[k].data = d
           if (r.client_name) porCat[k].clientes.add(r.client_name)
+          // Um item por pagamento, para a categoria expandir. `valor` é a FATIA desta
+          // categoria; `valor_pagamento` é o pagamento inteiro — é ele que o estorno
+          // remove, porque payable_payments é uma linha só para a sessão toda.
+          porCat[k].itens.push({
+            payment_id: Number(p.id),
+            payable_id: Number(r.id),
+            client_name: r.client_name || 'Sem cliente',
+            competencia: `${months[Number(r.month) - 1]}/${r.year}`,
+            data: d,
+            valor: cents(v),
+            valor_pagamento: amt,
+            origem,
+            de_lucro: deLucro,
+            de_servico: deServico,
+            // A sessão pode ter mais de uma categoria: estornar remove todas de uma vez.
+            categorias_da_sessao: Object.keys(nc).length,
+          })
         }
       }
+    }
+    for (const c of Object.values(porCat)) {
+      c.itens.sort((a, b) => (a.data < b.data ? 1 : a.data > b.data ? -1 : b.payment_id - a.payment_id))
     }
     return porCat
   })()
@@ -2980,6 +3057,61 @@ export default function Financial() {
       )}
 
       {/* Modal Receber — distribui valor entre os registros pendentes/parciais do Victor */}
+      {/* Confirmação do estorno de UM pagamento. z-60 para ficar sobre o modal Receber,
+          de onde é aberto. Não devolve o valor para os inputs: o estorno recompõe o SALDO,
+          e a tabela de distribuição reflete isso sozinha por ser derivada de paid_amount. */}
+      {estornoPagamento && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 w-full max-w-sm">
+            <h3 className="text-base font-bold text-white mb-3">Estornar pagamento</h3>
+            <div className="space-y-1 text-xs font-mono bg-gray-950/60 rounded-lg p-3">
+              {[
+                ['Cliente', estornoPagamento.client_name],
+                ['Competência', estornoPagamento.competencia],
+                ['Data do pagamento', estornoPagamento.data ? estornoPagamento.data.split('-').reverse().join('/') : '—'],
+                ['Absorveu de', `${estornoPagamento.origem} · lucro ${fmt(estornoPagamento.de_lucro)} + serviço ${fmt(estornoPagamento.de_servico)}`],
+              ].map(([label, valor]) => (
+                <div key={label} className="flex justify-between gap-3">
+                  <span className="font-sans text-gray-500">{label}</span>
+                  <span className="text-gray-300 text-right">{valor}</span>
+                </div>
+              ))}
+              <div className="flex justify-between gap-3 border-t border-gray-800 pt-1 mt-1">
+                <span className="font-sans text-gray-400 font-semibold">Valor a devolver</span>
+                <span className="text-red-400 font-semibold">{fmt(estornoPagamento.valor_pagamento)}</span>
+              </div>
+            </div>
+            {/* payable_payments é UMA linha por sessão: se o pagamento cobria mais de uma
+                categoria, estornar devolve todas. Mostrar só a fatia clicada faria o valor
+                do botão não bater com o que some da tela. */}
+            {estornoPagamento.categorias_da_sessao > 1 && (
+              <p className="text-amber-400/80 text-[11px] mt-2 leading-tight">
+                ⚠️ Este pagamento cobre {estornoPagamento.categorias_da_sessao} categorias — o
+                estorno devolve as {estornoPagamento.categorias_da_sessao}, não só{' '}
+                {fmt(estornoPagamento.valor)}.
+              </p>
+            )}
+            <p className="text-gray-600 text-[11px] mt-2 leading-tight">
+              O saldo do lançamento volta ao valor anterior e a distribuição recalcula. O
+              estorno fica registrado nas observações do lançamento.
+            </p>
+            {erroReceive && <p className="text-red-400 text-xs mt-2">{erroReceive}</p>}
+            <div className="flex gap-2 mt-4">
+              <button
+                onClick={() => { setEstornoPagamento(null); setErroReceive('') }}
+                disabled={estornando}
+                className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg text-sm disabled:opacity-40"
+              >Cancelar</button>
+              <button
+                onClick={confirmarEstornoPagamento}
+                disabled={estornando}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium disabled:opacity-40"
+              >{estornando ? 'Estornando...' : 'Confirmar estorno'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showReceiveModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -3038,7 +3170,11 @@ export default function Financial() {
                   de quebrada. Um empty-state de uma linha responde a pergunta. */}
               <div className="bg-green-500/5 border border-green-500/30 rounded-xl p-3">
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <p className="text-green-400/90 text-xs font-medium uppercase tracking-wider">Valores distribuídos</p>
+                  {/* "Valores pagos" e não "distribuídos": é o mesmo número que a spec
+                      pediu num card separado, e dois cards com o mesmo valor lado a lado
+                      leem como R$ 46. O que faltava era poder ABRIR e ESTORNAR — foi isso
+                      que entrou aqui, em vez de um segundo card. */}
+                  <p className="text-green-400/90 text-xs font-medium uppercase tracking-wider">Valores pagos</p>
                   <span className="text-xs text-gray-500">
                     Total <span className="text-green-400 font-mono font-semibold">{fmt(distribuidosTotal)}</span>
                   </span>
@@ -3052,23 +3188,64 @@ export default function Financial() {
                 ) : (
                   <>
                     <div className="space-y-0.5 font-mono text-[11px]">
-                      {distribuidosLista.map(d => (
-                        <div key={d.k} className="flex justify-between gap-2">
-                          <span className="font-sans text-gray-400 min-w-0 truncate">
-                            <span className="text-green-500">✓</span> {d.label}
-                            {d.data && <span className="text-gray-600"> · {d.data.split('-').reverse().join('/')}</span>}
-                            {d.clientes.length > 0 && <span className="text-gray-600"> · {d.clientes.join(', ')}</span>}
-                          </span>
-                          <span className="text-green-400 shrink-0">−{fmt(d.valor)}</span>
-                        </div>
-                      ))}
+                      {distribuidosLista.map(d => {
+                        const aberto = !!pagosAberto[d.k]
+                        return (
+                          <div key={d.k}>
+                            <button
+                              type="button"
+                              onClick={() => setPagosAberto(p => ({ ...p, [d.k]: !aberto }))}
+                              className="w-full flex justify-between gap-2 text-left hover:bg-green-500/5 rounded px-1 -mx-1 py-0.5"
+                            >
+                              <span className="font-sans text-gray-400 min-w-0 truncate">
+                                <span className="text-gray-600">{aberto ? '▼' : '▶'}</span>{' '}
+                                <span className="text-green-500">✓</span> {d.label}
+                                {d.data && <span className="text-gray-600"> · {d.data.split('-').reverse().join('/')}</span>}
+                                {d.clientes.length > 0 && <span className="text-gray-600"> · {d.clientes.join(', ')}</span>}
+                              </span>
+                              <span className="text-green-400 shrink-0">−{fmt(d.valor)}</span>
+                            </button>
+                            {aberto && (
+                              <div className="ml-3 mt-0.5 mb-1 pl-2 border-l border-gray-800 space-y-0.5">
+                                {d.itens.map(it => (
+                                  <div key={it.payment_id} className="flex items-center justify-between gap-2">
+                                    <span className="font-sans text-gray-500 min-w-0 truncate">
+                                      {it.data ? it.data.split('-').reverse().join('/') : '—'} · {it.client_name}
+                                      <span className="text-gray-700"> · {it.competencia}</span>
+                                      {/* De onde o dinheiro saiu — o lucro absorve primeiro. */}
+                                      <span className="text-gray-600"> · de {it.origem}</span>
+                                    </span>
+                                    <span className="flex items-center gap-2 shrink-0">
+                                      <span className="text-gray-300">{fmt(it.valor)}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => { setEstornoAviso(''); setEstornoPagamento(it) }}
+                                        className="font-sans text-[10px] px-1.5 py-0.5 border border-red-500/40 text-red-400 hover:bg-red-500/10 rounded"
+                                      >Estornar</button>
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                     <p className="text-gray-600 text-[10px] mt-1.5 leading-tight">
-                      Já consumido dos lançamentos listados abaixo. A quebra por categoria vem do
-                      histórico de cada pagamento; pagamento lançado sem categoria aparece como
+                      Já consumido dos lançamentos listados abaixo — clique numa categoria para
+                      ver os pagamentos e estornar. A quebra por categoria vem do histórico de
+                      cada pagamento; pagamento lançado sem categoria aparece como
                       &quot;sem categoria&quot;.
                     </p>
                   </>
+                )}
+                {/* O abatimento fiscal é revertido por MÊS, não por pagamento — estornar um
+                    pode derrubar a distribuição inteira da competência. Calar sobre isso
+                    faria sumir pagamentos que o usuário não mandou estornar. */}
+                {estornoAviso && (
+                  <p className="text-amber-400/90 text-[10px] mt-2 leading-tight border-t border-green-500/20 pt-1.5">
+                    ⚠️ {estornoAviso}
+                  </p>
                 )}
               </div>
 

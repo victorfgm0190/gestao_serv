@@ -4,6 +4,9 @@ import { statusFor, remainingBalance } from '../lib/payment-status.js'
 import { mesDeCaixaOriginal } from '../lib/cash-month.js'
 // Tabela tabulada da aba Pagar Victor — ver o comentário no dispatch do POST.
 import { calcularDistribuicao } from './payables-victor.js'
+// Apagar um pagamento que quitou guia por abatimento tem de desfazer a quitação junto —
+// ver o comentário no DELETE.
+import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 
 // Tabela pai e coluna de total por tipo
 const TABLES = {
@@ -130,18 +133,66 @@ export default async function handler(req, res) {
   if (req.method === 'DELETE') {
     const id = req.body?.id || req.query?.id
     if (!id) return res.status(400).json({ error: 'id obrigatório' })
+    const motivo = req.body?.motivo || null
 
-    // O tipo/id do pai vêm da própria linha apagada, não do body. Antes o DELETE
-    // usava só o id e recalculava o payable informado no body: apagar um
-    // pagamento do payable 42 e recalcular o 1 deixava o 42 permanentemente
-    // com paid_amount e status errados.
-    const deleted = await sql`
-      DELETE FROM payable_payments WHERE id = ${id}
-      RETURNING payable_type, payable_id`
-    if (!deleted.length) return res.status(404).json({ error: 'Pagamento não encontrado' })
+    // O tipo/id do pai vêm da própria linha, não do body. Antes o DELETE usava só o id e
+    // recalculava o payable informado no body: apagar um pagamento do payable 42 e
+    // recalcular o 1 deixava o 42 permanentemente com paid_amount e status errados.
+    //
+    // ⚠️ SELECT antes de apagar (era um DELETE ... RETURNING): o abatimento fiscal precisa
+    // ENXERGAR as alocações para saber o que reverter, e elas morrem no CASCADE do DELETE.
+    const alvo = await sql`SELECT payable_type, payable_id FROM payable_payments WHERE id = ${id}`
+    if (!alvo.length) return res.status(404).json({ error: 'Pagamento não encontrado' })
+    const { payable_type, payable_id } = alvo[0]
 
-    await recalcParent(sql, deleted[0].payable_type, deleted[0].payable_id)
-    return res.status(200).json({ success: true })
+    // Se este pagamento fazia parte de uma distribuição fiscal, desfazer o abatimento
+    // INTEIRO antes de apagar. Sem isto, a FK ON DELETE CASCADE levaria a
+    // `fiscal_allocations` junto, mas o `fiscal_payments` de 'abatimento' sobreviveria e
+    // ninguém recalcularia a obrigação: o DAS seguiria marcado como pago enquanto o
+    // dinheiro volta para o saldo do Victor — o mesmo valor contado duas vezes. É a mesma
+    // proteção que payables-victor.js, receivables.js e invoices.js já tomavam; só este
+    // caminho (apagar UM pagamento) não a tinha, e ele acabou de ganhar um botão na tela.
+    //
+    // A unidade de reversão é o MÊS, não o pagamento — ver lib/fiscal-unlink.js. Por isso
+    // a resposta devolve o que foi desfeito: estornar um pagamento pode derrubar a
+    // distribuição inteira da competência, e a tela precisa poder dizer isso.
+    //
+    // Fabrício não participa da distribuição fiscal (candidatosDisponiveis só lê
+    // payables_victor), então não há o que desamarrar.
+    let fiscal = null
+    if (payable_type === 'victor') {
+      const r = await desfazerAbatimentoFiscal(sql, [payable_id])
+      if (r.obrigacoes.length) fiscal = r
+    }
+
+    // O desfazer acima pode ter apagado ESTE pagamento junto (ele era parte da
+    // distribuição). Só apaga o que sobrou — e a ausência aqui é sucesso, não 404.
+    const aindaExiste = await sql`SELECT 1 FROM payable_payments WHERE id = ${id}`
+    if (aindaExiste.length) {
+      await sql`DELETE FROM payable_payments WHERE id = ${id}`
+      await recalcParent(sql, payable_type, payable_id)
+    }
+
+    // Trilha de auditoria — o padrão documentado em lib/fiscal-unlink.js. Preserva o que
+    // já estava em `notes` em vez de sobrescrever, e NÃO grava status='estornado': esse
+    // valor não existe no vocabulário de nenhuma tabela e sumiria dos filtros de todas as
+    // telas. Repetido em cada rota porque o driver do Neon não compõe fragmentos.
+    const tabela = payable_type === 'victor' ? 'payables_victor' : 'payables_fabricio'
+    if (tabela === 'payables_victor') {
+      await sql`
+        UPDATE payables_victor SET notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
+          to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
+          COALESCE(' (' || ${motivo}::text || ')', '')
+        WHERE id = ${payable_id}`
+    } else {
+      await sql`
+        UPDATE payables_fabricio SET notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
+          to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
+          COALESCE(' (' || ${motivo}::text || ')', '')
+        WHERE id = ${payable_id}`
+    }
+
+    return res.status(200).json({ success: true, fiscal })
   }
 
   res.status(405).json({ error: 'Method not allowed' })
