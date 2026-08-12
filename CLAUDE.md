@@ -1015,10 +1015,27 @@ cronológica e cada um pega a sobreposição de `[acumulado, acumulado+valor]` c
 `[0, profit_amount]`. É a hipótese única do sistema — o lucro absorve primeiro —, a mesma de
 `quebrarPago()`, `prepararCandidatos()` e `aplicarDelta()`.
 
-Testado contra a produção com rollback: pagamento temporário criado, estornado pelo handler
-real, estado conferido (pagamento apagado, `paid_amount` zerado, status `pendente`, trilha
-gravada, mês de caixa fora do mês apagado) e a linha restaurada ao original. O estorno em
-LOTE não foi implementado — a especificação o marcou como opcional/fase 2.
+**Estorno em LOTE** (2026-08-12): checkbox por pagamento e "Estornar selecionados (N)". Roda
+pelo **mesmo** `DELETE`, que passou a aceitar `ids: []` além de `id` — uma rota separada
+duplicaria o unlink fiscal, o recálculo do pai e a trilha de auditoria.
+
+⚠️ **Um POST só para o lote, nunca N chamadas.** O unlink fiscal apaga a distribuição
+inteira da competência, então pode levar junto pagamentos que também estão na seleção: em
+chamadas separadas, a segunda veria 404 num pagamento que o próprio estorno acabou de
+remover. A resposta traz `pedidos`/`removidos`, e a diferença entre os dois é o que a tela
+usa para explicar um lote de 3 que fez sumir 5.
+
+⚠️ **Deduplicado por `payment_id`, nos dois lados.** A mesma sessão aparece em várias
+categorias do card (um pagamento de "DAS + INSS" é UMA linha em `payable_payments`), então
+a tela pode mandar o mesmo id duas vezes; o total da confirmação soma `valor_pagamento` de
+ids distintos, não as fatias. E o pai é recalculado e anotado **uma vez** por payable — dois
+pagamentos do mesmo lançamento gerariam duas linhas idênticas de "Estornado em".
+
+Testado contra a produção com rollback, em dois cenários: (1) um pagamento — apagado,
+`paid_amount` zerado, status `pendente`, trilha gravada, mês de caixa fora do mês apagado;
+(2) lote de 3 pagamentos em 2 payables, com id repetido de propósito — `pedidos: 3` (não 4),
+`removidos: 3`, os dois payables de volta a `pendente` e o que tinha dois pagamentos anotado
+**uma** vez. Em ambos, as linhas foram restauradas ao estado original.
 
 ⚠️ Ao zerar os pagamentos, `recalcParent` devolve o mês de caixa ao do **recebimento do
 cliente** (`mesDeCaixaOriginal`), não ao valor que estava gravado. É pré-existente e

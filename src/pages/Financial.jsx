@@ -266,7 +266,13 @@ export default function Financial() {
   const [erroReceive, setErroReceive] = useState('')
   // Card "Valores pagos": categorias expandidas e o estorno de um pagamento.
   const [pagosAberto, setPagosAberto] = useState({})   // { [categoria]: bool }
-  const [estornoPagamento, setEstornoPagamento] = useState(null) // item em confirmação
+  // Seleção do estorno em lote. Guarda o ITEM inteiro, não só o id: a confirmação precisa
+  // mostrar cliente/data/valor, e o item some da lista assim que a categoria é recolhida.
+  // ⚠️ Chaveado por payment_id — a mesma sessão aparece em várias categorias (um pagamento
+  // de "DAS + INSS" é UMA linha em payable_payments), e contá-la duas vezes inflaria o
+  // total da confirmação.
+  const [pagosSel, setPagosSel] = useState({})         // { [payment_id]: item }
+  const [estornoItens, setEstornoItens] = useState(null) // array em confirmação (1 ou N)
   const [estornando, setEstornando] = useState(false)
   const [estornoAviso, setEstornoAviso] = useState('')
   // Previsão de impostos (só Lumen / company_id=1) — reserva de caixa na aba Pagar Victor.
@@ -333,6 +339,9 @@ export default function Financial() {
     setEditSession(null)
     setModalPayments([])
     setPendingVictor([])
+    // A seleção guarda ITENS de uma lista que acabou de ser descartada; mantê-la marcaria
+    // pagamentos que não estão mais na tela e o lote estornaria fora do que se vê.
+    setPagosSel({}); setEstornoItens(null); setEstornoAviso('')
     setShowMemoria(false)
     setCalculoMemoria(null)
     setEditImpostos(null)
@@ -754,36 +763,60 @@ export default function Financial() {
   // ⚠️ Não devolve o valor para os campos de input: o estorno recompõe o SALDO, e a tabela
   // de distribuição reflete isso sozinha por ser derivada de `paid_amount`.
   async function confirmarEstornoPagamento() {
-    const it = estornoPagamento
-    if (!it) return
+    const itens = estornoItens
+    if (!itens?.length) return
     setEstornando(true)
     setErroReceive(''); setEstornoAviso('')
     try {
-      const res = await fetch(`/api/payable-payments?id=${it.payment_id}`, {
+      // Um POST só para o lote inteiro, não N chamadas: o unlink fiscal pode apagar
+      // pagamentos que também estão na seleção, e em chamadas separadas a segunda veria
+      // 404 num pagamento que o próprio estorno acabou de levar. O backend dedupe e
+      // reporta a diferença.
+      const ids = [...new Set(itens.map(i => i.payment_id))]
+      const res = await fetch('/api/payable-payments', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: it.payment_id, motivo: 'estorno pela aba Pagar Victor' }),
+        body: JSON.stringify({ ids, motivo: 'estorno pela aba Pagar Victor' }),
       })
       const data = await res.json()
-      if (!res.ok) { setErroReceive(data.error || 'Não foi possível estornar o pagamento.'); return }
-      setEstornoPagamento(null)
+      if (!res.ok) { setErroReceive(data.error || 'Não foi possível estornar.'); return }
+      setEstornoItens(null)
+      setPagosSel({})
+      const avisos = []
       // A unidade de reversão do abatimento é o MÊS (lib/fiscal-unlink.js): estornar um
       // pagamento que fazia parte de uma distribuição derruba a competência inteira.
       // Calar sobre isso faria sumir pagamentos que o usuário não mandou estornar.
       if (data.fiscal?.obrigacoes?.length) {
-        setEstornoAviso(`Este pagamento fazia parte de uma distribuição fiscal: a competência inteira foi desfeita — ${data.fiscal.pagamentos_removidos} pagamento(s) removido(s) e ${data.fiscal.obrigacoes.length} obrigação(ões) voltaram a ficar em aberto. Confira em /fiscal.`)
+        avisos.push(`Havia distribuição fiscal envolvida: a competência inteira foi desfeita — ${data.fiscal.pagamentos_removidos} pagamento(s) removido(s) e ${data.fiscal.obrigacoes.length} obrigação(ões) voltaram a ficar em aberto. Confira em /fiscal.`)
       }
+      // Pedidos > removidos = o unlink fiscal já havia levado o resto. Sem esta linha,
+      // "estornei 3 e sumiram 5" pareceria bug.
+      if (data.removidos < data.pedidos) {
+        avisos.push(`${data.pedidos - data.removidos} dos ${data.pedidos} pagamentos selecionados já haviam sido removidos junto com a distribuição.`)
+      }
+      if (avisos.length) setEstornoAviso(avisos.join(' '))
       await Promise.all([fetchPendingVictor(), fetchReserves(), fetchAll(), fetchBreakdown()])
     } catch (e) {
-      console.error(e); setErroReceive('Falha de rede ao estornar o pagamento.')
+      console.error(e); setErroReceive('Falha de rede ao estornar.')
     } finally { setEstornando(false) }
   }
+
+  // Total de uma seleção. Soma `valor_pagamento` (o pagamento inteiro), não a fatia da
+  // categoria: é a linha de payable_payments que é apagada, e somar as fatias prometeria
+  // devolver menos do que o estorno devolve de fato.
+  const estornoTotal = (itens) => cents(
+    [...new Map((itens || []).map(i => [i.payment_id, i])).values()]
+      .reduce((s, i) => s + i.valor_pagamento, 0))
+  const pagosSelLista = Object.values(pagosSel)
 
   // Flow A — Pagar Geral (não vinculado a um registro específico)
   async function openReceive() {
     setReceiveCats(EMPTY_RECEIVE_CATS)
     setReceivePaidAt(todayBR())
     setPendingVictor([])
+    // A seleção guarda ITENS de uma lista que acabou de ser descartada; mantê-la marcaria
+    // pagamentos que não estão mais na tela e o lote estornaria fora do que se vê.
+    setPagosSel({}); setEstornoItens(null); setEstornoAviso('')
     setReceiveTarget(null)
     setOverflowInfo(null)
     setShowMesAnterior(false)
@@ -798,6 +831,9 @@ export default function Financial() {
     setReceiveCats(EMPTY_RECEIVE_CATS)
     setReceivePaidAt(todayBR())
     setPendingVictor([])
+    // A seleção guarda ITENS de uma lista que acabou de ser descartada; mantê-la marcaria
+    // pagamentos que não estão mais na tela e o lote estornaria fora do que se vê.
+    setPagosSel({}); setEstornoItens(null); setEstornoAviso('')
     setReceiveTarget(item)
     setOverflowInfo(null)
     setShowMesAnterior(false)
@@ -827,6 +863,9 @@ export default function Financial() {
     setOverflowInfo(null)
     setShowMesAnterior(false)
     setPendingVictor([])
+    // A seleção guarda ITENS de uma lista que acabou de ser descartada; mantê-la marcaria
+    // pagamentos que não estão mais na tela e o lote estornaria fora do que se vê.
+    setPagosSel({}); setEstornoItens(null); setEstornoAviso('')
     setErroReceive('')
     setShowReceiveModal(true)
     fetchPendingVictor()
@@ -3060,35 +3099,58 @@ export default function Financial() {
       {/* Confirmação do estorno de UM pagamento. z-60 para ficar sobre o modal Receber,
           de onde é aberto. Não devolve o valor para os inputs: o estorno recompõe o SALDO,
           e a tabela de distribuição reflete isso sozinha por ser derivada de paid_amount. */}
-      {estornoPagamento && (
+      {estornoItens?.length > 0 && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 w-full max-w-sm">
-            <h3 className="text-base font-bold text-white mb-3">Estornar pagamento</h3>
-            <div className="space-y-1 text-xs font-mono bg-gray-950/60 rounded-lg p-3">
-              {[
-                ['Cliente', estornoPagamento.client_name],
-                ['Competência', estornoPagamento.competencia],
-                ['Data do pagamento', estornoPagamento.data ? estornoPagamento.data.split('-').reverse().join('/') : '—'],
-                ['Absorveu de', `${estornoPagamento.origem} · lucro ${fmt(estornoPagamento.de_lucro)} + serviço ${fmt(estornoPagamento.de_servico)}`],
-              ].map(([label, valor]) => (
-                <div key={label} className="flex justify-between gap-3">
-                  <span className="font-sans text-gray-500">{label}</span>
-                  <span className="text-gray-300 text-right">{valor}</span>
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 w-full max-w-sm max-h-[85vh] overflow-y-auto">
+            <h3 className="text-base font-bold text-white mb-3">
+              {estornoItens.length === 1 ? 'Estornar pagamento' : `Estornar ${estornoItens.length} pagamentos`}
+            </h3>
+            {/* Um pagamento: os detalhes cabem e são o que se quer conferir antes de
+                confirmar. Vários: a lista, porque repetir "Absorveu de" N vezes viraria
+                parede de texto e o que importa no lote é o conjunto e o total. */}
+            {estornoItens.length === 1 ? (
+              <div className="space-y-1 text-xs font-mono bg-gray-950/60 rounded-lg p-3">
+                {[
+                  ['Cliente', estornoItens[0].client_name],
+                  ['Competência', estornoItens[0].competencia],
+                  ['Data do pagamento', estornoItens[0].data ? estornoItens[0].data.split('-').reverse().join('/') : '—'],
+                  ['Absorveu de', `${estornoItens[0].origem} · lucro ${fmt(estornoItens[0].de_lucro)} + serviço ${fmt(estornoItens[0].de_servico)}`],
+                ].map(([label, valor]) => (
+                  <div key={label} className="flex justify-between gap-3">
+                    <span className="font-sans text-gray-500">{label}</span>
+                    <span className="text-gray-300 text-right">{valor}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between gap-3 border-t border-gray-800 pt-1 mt-1">
+                  <span className="font-sans text-gray-400 font-semibold">Valor a devolver</span>
+                  <span className="text-red-400 font-semibold">{fmt(estornoItens[0].valor_pagamento)}</span>
                 </div>
-              ))}
-              <div className="flex justify-between gap-3 border-t border-gray-800 pt-1 mt-1">
-                <span className="font-sans text-gray-400 font-semibold">Valor a devolver</span>
-                <span className="text-red-400 font-semibold">{fmt(estornoPagamento.valor_pagamento)}</span>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-0.5 text-[11px] font-mono bg-gray-950/60 rounded-lg p-3">
+                {estornoItens.map(it => (
+                  <div key={it.payment_id} className="flex justify-between gap-3">
+                    <span className="font-sans text-gray-500 min-w-0 truncate">
+                      {it.data ? it.data.split('-').reverse().join('/') : '—'} · {it.client_name}
+                      <span className="text-gray-700"> · {it.competencia}</span>
+                    </span>
+                    <span className="text-gray-300 shrink-0">{fmt(it.valor_pagamento)}</span>
+                  </div>
+                ))}
+                <div className="flex justify-between gap-3 border-t border-gray-800 pt-1 mt-1">
+                  <span className="font-sans text-gray-400 font-semibold">Total a devolver</span>
+                  <span className="text-red-400 font-semibold">{fmt(estornoTotal(estornoItens))}</span>
+                </div>
+              </div>
+            )}
             {/* payable_payments é UMA linha por sessão: se o pagamento cobria mais de uma
                 categoria, estornar devolve todas. Mostrar só a fatia clicada faria o valor
                 do botão não bater com o que some da tela. */}
-            {estornoPagamento.categorias_da_sessao > 1 && (
+            {estornoItens.some(i => i.categorias_da_sessao > 1) && (
               <p className="text-amber-400/80 text-[11px] mt-2 leading-tight">
-                ⚠️ Este pagamento cobre {estornoPagamento.categorias_da_sessao} categorias — o
-                estorno devolve as {estornoPagamento.categorias_da_sessao}, não só{' '}
-                {fmt(estornoPagamento.valor)}.
+                ⚠️ {estornoItens.length === 1 ? 'Este pagamento cobre' : 'Há pagamento que cobre'} mais
+                de uma categoria — o estorno devolve todas elas, não só a fatia da categoria
+                em que foi marcado.
               </p>
             )}
             <p className="text-gray-600 text-[11px] mt-2 leading-tight">
@@ -3098,7 +3160,7 @@ export default function Financial() {
             {erroReceive && <p className="text-red-400 text-xs mt-2">{erroReceive}</p>}
             <div className="flex gap-2 mt-4">
               <button
-                onClick={() => { setEstornoPagamento(null); setErroReceive('') }}
+                onClick={() => { setEstornoItens(null); setErroReceive('') }}
                 disabled={estornando}
                 className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg text-sm disabled:opacity-40"
               >Cancelar</button>
@@ -3209,17 +3271,30 @@ export default function Financial() {
                               <div className="ml-3 mt-0.5 mb-1 pl-2 border-l border-gray-800 space-y-0.5">
                                 {d.itens.map(it => (
                                   <div key={it.payment_id} className="flex items-center justify-between gap-2">
-                                    <span className="font-sans text-gray-500 min-w-0 truncate">
-                                      {it.data ? it.data.split('-').reverse().join('/') : '—'} · {it.client_name}
-                                      <span className="text-gray-700"> · {it.competencia}</span>
-                                      {/* De onde o dinheiro saiu — o lucro absorve primeiro. */}
-                                      <span className="text-gray-600"> · de {it.origem}</span>
+                                    <span className="font-sans text-gray-500 min-w-0 truncate flex items-center gap-1.5">
+                                      <input
+                                        type="checkbox"
+                                        checked={!!pagosSel[it.payment_id]}
+                                        onChange={e => setPagosSel(p => {
+                                          const n = { ...p }
+                                          if (e.target.checked) n[it.payment_id] = it
+                                          else delete n[it.payment_id]
+                                          return n
+                                        })}
+                                        className="accent-red-500 w-3 h-3 shrink-0 cursor-pointer"
+                                      />
+                                      <span className="min-w-0 truncate">
+                                        {it.data ? it.data.split('-').reverse().join('/') : '—'} · {it.client_name}
+                                        <span className="text-gray-700"> · {it.competencia}</span>
+                                        {/* De onde o dinheiro saiu — o lucro absorve primeiro. */}
+                                        <span className="text-gray-600"> · de {it.origem}</span>
+                                      </span>
                                     </span>
                                     <span className="flex items-center gap-2 shrink-0">
                                       <span className="text-gray-300">{fmt(it.valor)}</span>
                                       <button
                                         type="button"
-                                        onClick={() => { setEstornoAviso(''); setEstornoPagamento(it) }}
+                                        onClick={() => { setEstornoAviso(''); setEstornoItens([it]) }}
                                         className="font-sans text-[10px] px-1.5 py-0.5 border border-red-500/40 text-red-400 hover:bg-red-500/10 rounded"
                                       >Estornar</button>
                                     </span>
@@ -3231,11 +3306,33 @@ export default function Financial() {
                         )
                       })}
                     </div>
+                    {/* Barra do lote. Aparece só com algo marcado — um botão permanente
+                        dizendo "(0)" ocuparia espaço para não fazer nada. O contador é de
+                        pagamentos DISTINTOS: marcar a mesma sessão em duas categorias
+                        seleciona uma linha só. */}
+                    {pagosSelLista.length > 0 && (
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-green-500/20">
+                        <span className="font-sans text-[11px] text-gray-400">
+                          {pagosSelLista.length} pagamento{pagosSelLista.length > 1 ? 's' : ''} ·{' '}
+                          <span className="font-mono text-red-400">{fmt(estornoTotal(pagosSelLista))}</span>
+                          <button
+                            type="button"
+                            onClick={() => setPagosSel({})}
+                            className="ml-2 text-[10px] text-gray-500 hover:text-gray-300 underline"
+                          >limpar</button>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => { setEstornoAviso(''); setEstornoItens(pagosSelLista) }}
+                          className="font-sans text-[10px] px-2 py-1 bg-red-600/80 hover:bg-red-500 text-white rounded"
+                        >Estornar selecionados ({pagosSelLista.length})</button>
+                      </div>
+                    )}
                     <p className="text-gray-600 text-[10px] mt-1.5 leading-tight">
                       Já consumido dos lançamentos listados abaixo — clique numa categoria para
-                      ver os pagamentos e estornar. A quebra por categoria vem do histórico de
-                      cada pagamento; pagamento lançado sem categoria aparece como
-                      &quot;sem categoria&quot;.
+                      ver os pagamentos, marcar vários e estornar de uma vez. A quebra por
+                      categoria vem do histórico de cada pagamento; pagamento lançado sem
+                      categoria aparece como &quot;sem categoria&quot;.
                     </p>
                   </>
                 )}

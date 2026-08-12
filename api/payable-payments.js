@@ -131,68 +131,98 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'DELETE') {
-    const id = req.body?.id || req.query?.id
-    if (!id) return res.status(400).json({ error: 'id obrigatório' })
+    // Aceita `id` (um) ou `ids` (lote). O lote roda pelo MESMO caminho de propósito: o
+    // unlink fiscal, o recálculo do pai e a trilha de auditoria são os mesmos, e uma rota
+    // separada para "estornar vários" nasceria com as três coisas duplicadas — a classe de
+    // divergência que este projeto já pagou várias vezes.
+    //
+    // ⚠️ Deduplicado: a mesma sessão aparece em VÁRIAS categorias do card (um pagamento
+    // com "DAS + INSS" é uma linha só em payable_payments), então a tela pode mandar o
+    // mesmo id duas vezes. Sem o dedupe, o segundo cairia no "já removido" e o contador
+    // devolvido mentiria sobre quantos pagamentos existiam.
+    const brutos = Array.isArray(req.body?.ids) ? req.body.ids : [req.body?.id ?? req.query?.id]
+    const ids = [...new Set(brutos.map(Number).filter(Number.isFinite))]
+    if (!ids.length) return res.status(400).json({ error: 'id ou ids obrigatório' })
     const motivo = req.body?.motivo || null
 
-    // O tipo/id do pai vêm da própria linha, não do body. Antes o DELETE usava só o id e
+    // O tipo/id do pai vêm das próprias linhas, não do body. Antes o DELETE usava só o id e
     // recalculava o payable informado no body: apagar um pagamento do payable 42 e
     // recalcular o 1 deixava o 42 permanentemente com paid_amount e status errados.
     //
     // ⚠️ SELECT antes de apagar (era um DELETE ... RETURNING): o abatimento fiscal precisa
     // ENXERGAR as alocações para saber o que reverter, e elas morrem no CASCADE do DELETE.
-    const alvo = await sql`SELECT payable_type, payable_id FROM payable_payments WHERE id = ${id}`
-    if (!alvo.length) return res.status(404).json({ error: 'Pagamento não encontrado' })
-    const { payable_type, payable_id } = alvo[0]
+    const alvos = await sql`SELECT id, payable_type, payable_id FROM payable_payments WHERE id = ANY(${ids})`
+    if (!alvos.length) return res.status(404).json({ error: 'Nenhum dos pagamentos foi encontrado' })
 
-    // Se este pagamento fazia parte de uma distribuição fiscal, desfazer o abatimento
-    // INTEIRO antes de apagar. Sem isto, a FK ON DELETE CASCADE levaria a
+    // Pais afetados, sem repetição: N pagamentos do mesmo payable recalculam e anotam UMA
+    // vez. Anotar por pagamento encheria `notes` de linhas idênticas para um único estorno.
+    const pais = [...new Map(alvos.map((a) => [`${a.payable_type}:${a.payable_id}`, a])).values()]
+
+    // Se algum destes pagamentos fazia parte de uma distribuição fiscal, desfazer o
+    // abatimento INTEIRO antes de apagar. Sem isto, a FK ON DELETE CASCADE levaria a
     // `fiscal_allocations` junto, mas o `fiscal_payments` de 'abatimento' sobreviveria e
     // ninguém recalcularia a obrigação: o DAS seguiria marcado como pago enquanto o
     // dinheiro volta para o saldo do Victor — o mesmo valor contado duas vezes. É a mesma
     // proteção que payables-victor.js, receivables.js e invoices.js já tomavam; só este
-    // caminho (apagar UM pagamento) não a tinha, e ele acabou de ganhar um botão na tela.
+    // caminho (apagar pagamentos avulsos) não a tinha, e ele ganhou botão na tela.
     //
     // A unidade de reversão é o MÊS, não o pagamento — ver lib/fiscal-unlink.js. Por isso
-    // a resposta devolve o que foi desfeito: estornar um pagamento pode derrubar a
-    // distribuição inteira da competência, e a tela precisa poder dizer isso.
+    // a resposta devolve o que foi desfeito: estornar pode derrubar a distribuição inteira
+    // da competência, e a tela precisa poder dizer isso.
     //
+    // UMA chamada para todos os payables do lote: `desfazerAbatimentoFiscal` já resolve a
+    // competência inteira, e chamá-la em laço repetiria o trabalho a cada iteração.
     // Fabrício não participa da distribuição fiscal (candidatosDisponiveis só lê
-    // payables_victor), então não há o que desamarrar.
+    // payables_victor), então fica de fora.
     let fiscal = null
-    if (payable_type === 'victor') {
-      const r = await desfazerAbatimentoFiscal(sql, [payable_id])
+    const idsVictor = pais.filter((p) => p.payable_type === 'victor').map((p) => p.payable_id)
+    if (idsVictor.length) {
+      const r = await desfazerAbatimentoFiscal(sql, idsVictor)
       if (r.obrigacoes.length) fiscal = r
     }
 
-    // O desfazer acima pode ter apagado ESTE pagamento junto (ele era parte da
-    // distribuição). Só apaga o que sobrou — e a ausência aqui é sucesso, não 404.
-    const aindaExiste = await sql`SELECT 1 FROM payable_payments WHERE id = ${id}`
-    if (aindaExiste.length) {
-      await sql`DELETE FROM payable_payments WHERE id = ${id}`
-      await recalcParent(sql, payable_type, payable_id)
-    }
+    // O desfazer acima pode ter apagado parte destes pagamentos (eles eram da distribuição).
+    // Só apaga o que sobrou — e a ausência aqui é sucesso, não 404.
+    const sobraram = await sql`SELECT id FROM payable_payments WHERE id = ANY(${ids})`
+    const aApagar = sobraram.map((r) => Number(r.id))
+    if (aApagar.length) await sql`DELETE FROM payable_payments WHERE id = ANY(${aApagar})`
+
+    // Recalcula cada pai uma vez, DEPOIS de todos os deletes: com dois pagamentos do mesmo
+    // payable no lote, recalcular entre um e outro deixaria o status intermediário visível
+    // e faria trabalho a mais para o mesmo resultado.
+    for (const p of pais) await recalcParent(sql, p.payable_type, p.payable_id)
 
     // Trilha de auditoria — o padrão documentado em lib/fiscal-unlink.js. Preserva o que
     // já estava em `notes` em vez de sobrescrever, e NÃO grava status='estornado': esse
     // valor não existe no vocabulário de nenhuma tabela e sumiria dos filtros de todas as
-    // telas. Repetido em cada rota porque o driver do Neon não compõe fragmentos.
-    const tabela = payable_type === 'victor' ? 'payables_victor' : 'payables_fabricio'
-    if (tabela === 'payables_victor') {
-      await sql`
-        UPDATE payables_victor SET notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
-          to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
-          COALESCE(' (' || ${motivo}::text || ')', '')
-        WHERE id = ${payable_id}`
-    } else {
-      await sql`
-        UPDATE payables_fabricio SET notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
-          to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
-          COALESCE(' (' || ${motivo}::text || ')', '')
-        WHERE id = ${payable_id}`
+    // telas. Repetido aqui porque o driver do Neon não compõe fragmentos.
+    for (const p of pais) {
+      if (p.payable_type === 'victor') {
+        await sql`
+          UPDATE payables_victor SET notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
+            to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
+            COALESCE(' (' || ${motivo}::text || ')', '')
+          WHERE id = ${p.payable_id}`
+      } else {
+        await sql`
+          UPDATE payables_fabricio SET notes = COALESCE(NULLIF(notes,'') || ' | ', '') || 'Estornado em ' ||
+            to_char(now() AT TIME ZONE 'America/Sao_Paulo','DD/MM/YYYY HH24:MI') ||
+            COALESCE(' (' || ${motivo}::text || ')', '')
+          WHERE id = ${p.payable_id}`
+      }
     }
 
-    return res.status(200).json({ success: true, fiscal })
+    return res.status(200).json({
+      success: true,
+      fiscal,
+      // `pedidos` conta os ids distintos que a tela mandou; `removidos` os que esta chamada
+      // apagou; a diferença são os que o unlink fiscal já havia levado — e é essa diferença
+      // que explica um lote de 3 devolvendo "5 pagamentos removidos" no aviso fiscal.
+      pedidos: ids.length,
+      removidos: aApagar.length,
+      nao_encontrados: ids.length - alvos.length,
+      payables_afetados: pais.map((p) => p.payable_id),
+    })
   }
 
   res.status(405).json({ error: 'Method not allowed' })
