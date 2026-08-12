@@ -1129,10 +1129,38 @@ elegendo o payable da Minas como origem de caixa — lá se consome saldo, aqui 
 tributo. `breakdown.clientes[].sem_nf` é o marcador; quem sai aparece em `excluidos`, com o
 motivo, para o total da tabela não parecer divergir do total da aba.
 
-A **ordem de exibição/absorção** (`ORDEM_LINHAS`) é deliberadamente diferente de
-`ORDEM_CATEGORIA` (`lib/victor-rateio.js`), que consome DAS → INSS → Honorários. Mudar
-aquela mudaria o que o `?action=pagar-com-rateio` grava, inclusive pelos cards já em
-produção — e a ordem só altera resultado quando o dinheiro não cobre tudo.
+A **ordem de exibição/absorção** (`ORDEM_LINHAS`) e a do motor (`ORDEM_CATEGORIA` em
+`lib/victor-rateio.js`) foram **alinhadas em 2026-08-12** — ver a seção seguinte. Mexer numa
+exige mexer na outra: lembrando que o "Escritório" da tela é o kind `honorarios`, e que o
+kind `escritorio` é o legado sem rateio.
+
+### Ordem da cascata alinhada entre tela e motor — 2026-08-12
+
+`ORDEM_CATEGORIA` passou de `das → inss → honorarios → …` para
+`honorarios → das → inss → escritorio → pro_labore → lucros → demais`, batendo com a
+`ORDEM_LINHAS` da tabela tabulada. Enquanto divergiam, a tela mostrava uma absorção e o
+`?action=pagar-com-rateio` gravava outra — e só quando o dinheiro **não cobria tudo**, que é
+exatamente quando alguém está olhando a tela para decidir o que pagar primeiro.
+
+⚠️ **O item movido é `honorarios`, não `escritorio`.** "Escritório" na tela são os R$ 150 da
+contabilidade, que é o kind `honorarios` — o único dos dois com rateio. O kind `escritorio`
+é legado da migração de `victor_reserves`, nunca entrou em `KINDS_COM_RATEIO` e segue depois
+dos três rateados, preservando a invariante original ("rateio antes de fallback puro", senão
+uma Demais despesas processada primeiro esvaziaria o payable do Pharmalog que o INSS dele
+precisa em seguida). Mover o `escritorio` legado não teria efeito nenhum sobre a cascata.
+
+Conferido contra a produção, motor antigo × novo sobre os mesmos candidatos:
+
+| cenário | resultado |
+|---------|-----------|
+| pool folgado (Jan/2026, 1.107,03 pedidos) | **idêntico** — `{payable 28: 1.107,03}` nos dois |
+| `demais 8.400` + rateados | **idêntico** — a invariante do fallback continua valendo |
+| pedido acima do pool (60.000 sobre 51.888) | **muda**: antes faltavam 6.611,94 de **honorários**; agora falta de **INSS**, e o Escritório é quitado 100% primeiro |
+
+O **total debitado por payable é igual em todos os cenários**, inclusive no de escassez — o
+que muda é qual categoria fica descoberta (e, portanto, o 422 que a gravação devolve). A
+atribuição `from_profit`/`from_service` também fecha igual (Ago/2026: lucro 173,83 / serviço
+1.326,17 nos dois); só a sequência das linhas troca, e ela já era informativa.
 
 Três avisos existem porque cada um é um jeito de a tabela parecer quebrada:
 `nao_coberto` (o digitado passou do devido), `origem_peso: 'nf'` (competência não apurada —
