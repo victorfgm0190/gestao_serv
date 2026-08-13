@@ -961,6 +961,45 @@ própria tela, que já exibia R$ 429,95 de sobra (e não 382,90) para os R$ 8.00
 "original" do Lucro é o lucro BRUTO, de onde o imposto ainda ia sair, e as três linhas
 fiscais o listam de novo. A coluna que fecha com a nota é **Ajust. bruto** (= `subtotal_saida`).
 
+#### Os dois modos de cascata: IMPOSTO e TRABALHO — 2026-08-12
+
+Cada categoria digitada opera num de dois modos, **derivados de `DIST_ENTRADA_LINHA`** (não
+uma segunda lista — derivar é o que impede as duas fontes de divergirem):
+
+| modo | categorias | cascata |
+|------|-----------|---------|
+| **imposto** | Honorários, Escritório, DAS, INSS | a própria linha → Lucro → Serviço |
+| **trabalho** | Pró-labore, Lucros, Demais despesas | Lucro → Serviço |
+
+As duas garantias — imposto não abate a linha de OUTRO imposto, e trabalho não abate imposto
+nenhum — **já eram o comportamento** de `alocarCascataDist()` e de `planejarCategoria()`
+(cujo passo 2 consome `rec._saldo`, que é serviço + lucro do payable, nunca o rateio de outro
+kind). O que faltava era a tela DIZER isso: cada input ganhou etiqueta de modo e o painel uma
+legenda. Nenhuma mudança de motor foi necessária.
+
+⚠️ **`honorarios` é IMPOSTO, não trabalho** — ao contrário do que a especificação propunha.
+É o kind rateado (`KINDS_COM_RATEIO = das, inss, honorarios`) e é ele que alimenta a linha
+"Escritório"; o input `escritorio` é o kind legado de `victor_reserves`, sem rateio, mas
+aponta para a mesma linha. Classificá-lo como trabalho tiraria a guia do contador do modo
+protegido. É o mesmo par que já havia confundido a ordem da cascata em `ORDEM_CATEGORIA`.
+
+⚠️ **Categoria de trabalho continua descendo para Lucro → Serviço**, e não "sem cascata
+nenhuma" como a especificação pedia. Restringi-la à linha `lucro` a tornaria impagável: o
+lucro é zerado pelo imposto na maior parte dos clientes, e foi de SERVIÇO que saíram os
+R$ 8.900 de Lucros efetivamente gravados. Pró-labore e Demais despesas nem linha própria têm.
+
+Os 4 casos da especificação, verificados contra a produção:
+
+| caso | resultado |
+|------|-----------|
+| Escritório 500 | 496,16 da própria linha + 3,84 do Serviço; DAS/INSS intactos |
+| Lucros 8.900 | 8.900 do Serviço; nenhum imposto tocado |
+| Lucros 999.999 | consome Lucro 2.948 + Serviço 50.230,76, sobra 946.820,24; impostos intactos |
+| INSS 500 | 500 da linha do INSS; Escritório/DAS intactos |
+
+O aviso de sobra passou a nomear a categoria e a regra que a limitou — "R$ X não coube" sem
+dizer de quê obriga a conferir as sete à mão.
+
 🐞 **DIGITADO rateava por proporção enquanto SERÁ PAGO consome por ordem** — corrigido
 2026-08-12. A primeira versão espalhava o valor digitado proporcionalmente entre TODAS as
 linhas em aberto daquela categoria, em todas as competências do painel; o consumo é

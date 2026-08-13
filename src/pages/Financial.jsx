@@ -105,6 +105,34 @@ const DIST_ENTRADA_LINHA = {
 // Ordem de processamento das entradas — espelha ORDEM_CATEGORIA de lib/victor-rateio.js.
 const DIST_ORDEM_ENTRADA = ['honorarios', 'escritorio', 'das', 'inss', 'pro_labore', 'lucros', 'demais']
 
+// Os DOIS modos de cascata, DERIVADOS de DIST_ENTRADA_LINHA — não uma segunda lista.
+//
+//   IMPOSTO   tem linha própria: consome a linha daquele tributo e, se faltar, desce para
+//             Lucro → Serviço. NUNCA toca a linha de outro imposto.
+//   TRABALHO  não tem linha própria: vai direto para Lucro → Serviço. NUNCA toca imposto.
+//
+// ⚠️ `honorarios` é IMPOSTO, não trabalho: é o kind rateado (KINDS_COM_RATEIO = das, inss,
+// honorarios) e é ele que alimenta a linha "Escritório". O input `escritorio` é o kind
+// legado da migração de victor_reserves — sem rateio —, mas aponta para a mesma linha, e
+// por isso também entra como imposto. Classificar `honorarios` como trabalho tiraria a guia
+// do contador justamente do modo protegido.
+//
+// Derivar em vez de listar é o que impede as duas fontes de divergirem: uma categoria nova
+// entra nos dois lugares de uma vez.
+const modoDaCategoria = (cat) => (DIST_ENTRADA_LINHA[cat] ? 'imposto' : 'trabalho')
+const MODO_INFO = {
+  imposto: {
+    label: 'imposto',
+    cls: 'bg-orange-500/15 text-orange-300/90',
+    ajuda: 'consome a própria linha; se faltar, desce para Lucro → Serviço. Não toca os outros impostos.',
+  },
+  trabalho: {
+    label: 'trabalho',
+    cls: 'bg-blue-500/15 text-blue-300/90',
+    ajuda: 'vai direto para Lucro → Serviço. Não toca imposto nenhum.',
+  },
+}
+
 // Aloca em cascata o que foi digitado sobre as linhas dos lançamentos. MUTA `lancamentos`
 // (reconstruídos a cada render) e devolve o que sobrou de cada entrada.
 //
@@ -3304,12 +3332,34 @@ export default function Financial() {
               </div>
 
               <div className="grid grid-cols-2 gap-2">
-                {RECEIVE_VICTOR_CATEGORIES.map(([key, label]) => (
-                  <div key={key} className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400 font-medium">{label} (R$)</label>
-                    <input type="number" placeholder="0" value={receiveCats[key]} onChange={e=>setReceiveCats(c=>({...c,[key]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                  </div>
-                ))}
+                {RECEIVE_VICTOR_CATEGORIES.map(([key, label]) => {
+                  const modo = MODO_INFO[modoDaCategoria(key)]
+                  const digitou = (parseFloat(String(receiveCats[key] ?? '').replace(',', '.')) || 0) > 0
+                  return (
+                    <div key={key} className="flex flex-col gap-1">
+                      <label className="text-xs text-gray-400 font-medium flex items-center gap-1.5">
+                        {label} (R$)
+                        {/* O modo diz para onde o valor pode escorrer. Fica sempre visível
+                            (não só ao digitar) porque a pergunta é feita ANTES de digitar:
+                            "se eu puser 500 aqui, de onde sai?". */}
+                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] uppercase tracking-wide ${modo.cls} ${digitou ? '' : 'opacity-60'}`}
+                          title={`Modo ${modo.label}: ${modo.ajuda}`}>{modo.label}</span>
+                      </label>
+                      <input type="number" placeholder="0" value={receiveCats[key]} onChange={e=>setReceiveCats(c=>({...c,[key]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex flex-col gap-1 text-[10px] leading-tight">
+                <p className="text-orange-300/70">
+                  <strong className="uppercase">imposto</strong> (Honorários, Escritório, DAS, INSS) — consome a
+                  própria linha e, se faltar, desce para Lucro → Serviço. <strong>Nunca toca a linha de outro
+                  imposto.</strong>
+                </p>
+                <p className="text-blue-300/70">
+                  <strong className="uppercase">trabalho</strong> (Pró-labore, Lucros, Demais despesas) — vai
+                  direto para Lucro → Serviço. <strong>Nunca toca imposto nenhum.</strong>
+                </p>
               </div>
 
               <div className="flex flex-col gap-1">
@@ -3667,12 +3717,21 @@ export default function Financial() {
                     a própria linha, mais Lucro e Serviço. DAS e INSS não são alcançados por
                     um pagamento de Escritório, então não entram na capacidade dele. Sem este
                     aviso, digitar sobre um mês já quitado não muda nada e parece travamento. */}
+                {/* Nomeia QUEM sobrou e por qual regra. "R$ X não coube" sem dizer de que
+                    categoria manda o usuário conferir as sete à mão. */}
                 {distSobraCategoria > 0.005 && distOverflow <= 0.005 && (
-                  <p className="text-amber-400/80 text-[11px] mt-2">
-                    ⚠️ {fmt(distSobraCategoria)} não encontrou linha onde ser alocado — o valor
-                    passou do que essas categorias alcançam (a própria linha, depois Lucro e
-                    Serviço). Uma categoria não abate a linha de outra.
-                  </p>
+                  <div className="text-amber-400/80 text-[11px] mt-2 space-y-0.5">
+                    {Object.entries(distSobras).filter(([, v]) => v > 0.005).map(([cat, v]) => {
+                      const rotulo = (RECEIVE_VICTOR_CATEGORIES.find(([k]) => k === cat) || [cat, cat])[1]
+                      return (
+                        <p key={cat}>
+                          ⚠️ Sobraram <strong>{fmt(v)}</strong> de {rotulo}: {modoDaCategoria(cat) === 'imposto'
+                            ? 'o valor passou da linha desse imposto e do Lucro/Serviço disponível. Não abate a linha de outro imposto.'
+                            : 'o valor passou do Lucro/Serviço disponível. Categoria de trabalho não abate imposto.'}
+                        </p>
+                      )
+                    })}
+                  </div>
                 )}
                 {foraDoTeto.length > 0 && (
                   <div className="mt-3 pt-2 border-t border-gray-800">
