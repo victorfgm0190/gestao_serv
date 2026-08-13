@@ -127,6 +127,27 @@ function alocarCascataDist(lancamentos, valores) {
     let resta = cents(parseFloat(String(valores?.[entrada] ?? '').replace(',', '.')) || 0)
     if (resta <= 0.005) continue
     const alvo = DIST_ENTRADA_LINHA[entrada]
+    // Coluna DIGITADO: quanto foi DIRECIONADO a esta linha, antes de saber se cabe. A
+    // diferença para "será pago" é o que transbordou — digitar "Escritório 150" numa linha
+    // de 139,11 mostra 150 aqui e 139,11 ali, e os 10,89 aparecem como "será pago" no
+    // Lucro/Serviço. É rateado entre os lançamentos na proporção do que cada um tem em
+    // aberto na linha: o valor digitado é UM só e a cascata o espalha, então repeti-lo
+    // inteiro em cada lançamento faria o SUB somar N vezes o que foi digitado uma.
+    // Categoria sem linha própria (Pró-labore, Lucros, Demais despesas) é registrada no
+    // LUCRO, que é onde a cascata dela começa. Sem isso, digitar "Demais despesas 8000"
+    // não acendia coluna nenhuma de DIGITADO — o número sumia da simulação inteira.
+    const alvoDigitado = alvo || 'lucro'
+    {
+      const abertos = lancamentos.filter(l => l.cats[alvoDigitado].liquido > 0.005)
+      const base = abertos.reduce((s, l) => s + l.cats[alvoDigitado].liquido, 0)
+      if (base > 0.005) {
+        for (const l of abertos) l.cats[alvoDigitado].direcionado = cents(l.cats[alvoDigitado].direcionado + resta * (l.cats[alvoDigitado].liquido / base))
+      } else if (lancamentos.length) {
+        // Linha já zerada em todos: o digitado ainda foi direcionado a ela (e vai
+        // transbordar inteiro), e some da tela se não for registrado em lugar nenhum.
+        lancamentos[0].cats[alvoDigitado].direcionado = cents(lancamentos[0].cats[alvoDigitado].direcionado + resta)
+      }
+    }
     const passos = alvo ? [[alvo], ['lucro', 'servico']] : [['lucro', 'servico']]
     for (const cats of passos) {
       for (const l of lancamentos) {
@@ -1224,12 +1245,37 @@ export default function Financial() {
     const servTot = parseFloat(r.service_amount) || 0
     const lucroPago = Math.min(pagoGravado, Math.max(lucroTot, 0))
 
+    // ── as 9 colunas, por linha ───────────────────────────────────────────────────────
+    //   original    o bruto ANTES de a cascata fiscal mexer nele
+    //   absorveu    o que a cascata moveu (imposto que o lucro/serviço cobriu)
+    //   bruto       o que está gravado no payable hoje  (= original − absorveu)
+    //   pagos       o que já saiu por esta linha (histórico)
+    //   liquido     bruto − pagos, e é o que a cascata do que está sendo digitado consome
+    //   direcionado / absorvido / (liquido restante)  → DIGITADO / SERÁ PAGO / SOBRA
+    //
+    // ⚠️ `service_amount` e `profit_amount` JÁ chegam líquidos da cascata (aplicarDelta
+    // grava o lucro clampado em zero e o serviço reduzido). Então o ORIGINAL é reconstruído
+    // somando de volta o que foi absorvido — subtrair de novo, como a leitura intuitiva
+    // sugere, descontaria o mesmo imposto duas vezes. Com isso a identidade
+    // `original − absorveu = bruto` fecha em toda linha.
+    const absLucro = r.cascata ? Math.max(cents((parseFloat(r.cascata.lucro_antes_escritorio) || 0) - lucroTot), 0) : 0
+    const absServico = r.cascata && r.cascata.lucro_final < -0.005 ? cents(-r.cascata.lucro_final) : 0
+    const linha = (bruto, pagos, absorveu = 0) => ({
+      original: cents(bruto + absorveu),
+      absorveu: cents(absorveu),
+      bruto: cents(bruto),
+      pagos: cents(pagos),
+      liquido: Math.max(cents(bruto - pagos), 0),
+      direcionado: 0,
+      absorvido: 0,
+      percentual: null,
+    })
     const cats = {
-      escritorio: { bruto: 0, liquido: 0, absorvido: 0, percentual: null },
-      das: { bruto: 0, liquido: 0, absorvido: 0, percentual: null },
-      inss: { bruto: 0, liquido: 0, absorvido: 0, percentual: null },
-      lucro: { bruto: cents(lucroTot), liquido: Math.max(cents(lucroTot - lucroPago), 0), absorvido: 0, percentual: null },
-      servico: { bruto: cents(servTot), liquido: Math.max(cents(servTot - (pagoGravado - lucroPago)), 0), absorvido: 0, percentual: null },
+      escritorio: linha(0, 0),
+      das: linha(0, 0),
+      inss: linha(0, 0),
+      lucro: linha(lucroTot, lucroPago, absLucro),
+      servico: linha(servTot, pagoGravado - lucroPago, absServico),
     }
     // As três fiscais: BRUTO é o rateio da NF; LÍQUIDO já desconta o que foi abatido
     // deste lançamento em pagamentos anteriores (`l.saldo`, de lib/victor-recorte.js).
@@ -1238,7 +1284,10 @@ export default function Financial() {
     for (const l of r.fiscal?.linhas || []) {
       const cat = DIST_KIND_LINHA[l.kind]
       if (!cat) continue
+      // Imposto não sofre cascata: o rateio é o que é. original = bruto, absorveu = 0.
+      cats[cat].original = cents(cats[cat].original + l.amount)
       cats[cat].bruto = cents(cats[cat].bruto + l.amount)
+      cats[cat].pagos = cents(cats[cat].pagos + (l.pago || 0))
       cats[cat].liquido = cents(cats[cat].liquido + (l.saldo ?? l.amount))
       cats[cat].percentual = l.percentual ?? null
     }
@@ -1254,9 +1303,8 @@ export default function Financial() {
       // exibido é o REAL — então as linhas fiscais somam mais do que a NF reteve. Hoje
       // isso vale para 13 das 14 notas do banco, então calar deixaria o SUB sem explicação.
       aRedistribuir: cents(r.fiscal?.a_redistribuir || 0),
-      // Cascata negativa = o imposto superou o lucro e o serviço absorveu a diferença.
-      // O payable já foi gravado com o lucro zerado; isto explica por que ele é 0,00.
-      cascadeAbsorvido: r.cascata && r.cascata.lucro_final < -0.005 ? cents(-r.cascata.lucro_final) : 0,
+      // A cascata negativa (imposto > lucro) agora vive nas colunas ORIGINAL/ABSORVEU de
+      // cada linha, em `absLucro`/`absServico` — não há mais um campo solto aqui.
     }
   })
 
@@ -1264,14 +1312,27 @@ export default function Financial() {
   const distSobras = alocarCascataDist(distBase, receiveCats)
   // SUB e FAB, as duas informativas. SUB é sempre a soma das 5, então recalcula sozinho
   // quando qualquer uma muda; FAB fica de fora dele.
-  const distRows = distBase.map(d => ({
-    ...d,
-    sub: {
-      bruto: cents(DIST_LINHAS.reduce((s, c) => s + d.cats[c].bruto, 0)),
-      liquido: cents(DIST_LINHAS.reduce((s, c) => s + d.cats[c].liquido, 0)),
-      absorvido: cents(DIST_LINHAS.reduce((s, c) => s + d.cats[c].absorvido, 0)),
-    },
-  }))
+  const distRows = distBase.map(d => {
+    const somaCol = (campo) => cents(DIST_LINHAS.reduce((s, c) => s + d.cats[c][campo], 0))
+    return {
+      ...d,
+      // SUB é sempre a soma das 5 em TODAS as colunas — recalcula sozinho quando qualquer
+      // uma muda. FAB fica de fora: sai da FATURA e é pago na aba do Fabrício.
+      sub: {
+        original: somaCol('original'),
+        absorveu: somaCol('absorveu'),
+        bruto: somaCol('bruto'),
+        pagos: somaCol('pagos'),
+        // LÍQUIDO da coluna 5 é o de ANTES da alocação do que está sendo digitado: o que
+        // resta depois dela é a coluna SOBRA. Somar o pós-alocação aqui faria as duas
+        // colunas mostrarem o mesmo número e a simulação sumir.
+        liquido: cents(somaCol('liquido') + somaCol('absorvido')),
+        direcionado: somaCol('direcionado'),
+        absorvido: somaCol('absorvido'),
+        sobra: somaCol('liquido'),
+      },
+    }
+  })
   const distOverflow = distPool > 0.005 ? distPool : 0
   // Digitado que não achou linha nenhuma onde entrar — todas as 5 já estavam zeradas.
   const distSobraCategoria = cents(Object.values(distSobras).reduce((s, v) => s + v, 0))
@@ -3176,7 +3237,9 @@ export default function Financial() {
 
       {showReceiveModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+          {/* max-w-3xl (era md): a tabela de distribuição passou a ter 9 colunas e em
+              448px elas quebravam linha, deixando os valores ilegíveis. */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-white mb-1">{editSession ? 'Editar recebimento — Pagar Victor' : receiveTarget ? 'Pagar — Pagar Victor' : 'Receber — Pagar Victor'}</h3>
             {receiveTarget && (
               <p className="text-gray-400 text-xs mb-4">Alvo: {receiveTarget.client_name} — {months[receiveTarget.month-1]}/{receiveTarget.year} · Saldo: {fmt((parseFloat(receiveTarget.total_amount)||0) - (parseFloat(receiveTarget.paid_amount)||0))}</p>
@@ -3442,56 +3505,92 @@ export default function Financial() {
                             que é digitado, em cascata; SUB é a soma delas e FAB é estática
                             e sem líquido (sai da FATURA e é paga na aba do Fabrício).
                             Linha zerada é pulada pela cascata — ver alocarCascataDist(). */}
-                        <table className="w-full mt-1.5 font-mono text-[11px]">
+                        {/* 5 colunas de ESTADO (original → absorveu → bruto → pagos →
+                            líquido) e 3 de SIMULAÇÃO do que está sendo digitado
+                            (digitado → será pago → sobra). Rola na horizontal: não cabem
+                            9 colunas na largura do modal em tela estreita, e espremer faria
+                            os valores quebrarem linha. */}
+                        <div className="mt-1.5 overflow-x-auto">
+                        <table className="w-full min-w-[46rem] font-mono text-[11px]">
                           <thead>
-                            <tr className="text-[9px] uppercase tracking-wide text-gray-600">
-                              <th className="text-left font-medium font-sans pb-0.5">Categoria</th>
-                              <th className="text-right font-medium font-sans pb-0.5">Bruto</th>
-                              <th className="text-right font-medium font-sans pb-0.5">Líquido</th>
+                            <tr className="text-[9px] uppercase tracking-wide text-gray-600 border-b border-gray-800">
+                              <th className="text-left font-medium font-sans pb-0.5 pr-2">Categoria</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1">Original</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1">Absorveu</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1">Ajust. bruto</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1">Pagos</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1 text-green-500/70">Líquido</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1 bg-blue-500/10 text-blue-300/80">Digitado</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1 bg-orange-500/10 text-orange-300/80">Será pago</th>
+                              <th className="text-right font-medium font-sans pb-0.5 pl-1 bg-green-500/10 text-green-300/80">Sobra</th>
                             </tr>
                           </thead>
                           <tbody>
                             {DIST_LINHAS.map(cat => {
                               const c = d.cats[cat]
+                              // LÍQUIDO da coluna 5 é o de ANTES da alocação; a SOBRA é o
+                              // que resta depois. Somar `absorvido` de volta é o que separa
+                              // as duas — senão a simulação não teria de onde sair.
+                              const liquidoAntes = cents(c.liquido + c.absorvido)
                               const zerou = c.bruto > 0.005 && c.liquido <= 0.005
+                              const opt = (v, cls = 'text-gray-500') => v > 0.005
+                                ? <span className={cls}>{fmt(v)}</span>
+                                : <span className="text-gray-700">—</span>
                               return (
-                                <tr key={cat}>
-                                  <td className="font-sans text-gray-500 py-px">
+                                <tr key={cat} className="border-b border-gray-800/40">
+                                  <td className="font-sans text-gray-500 py-px pr-2 whitespace-nowrap">
                                     {DIST_LINHA_LABEL[cat]}
                                     {c.percentual != null && (
-                                      <span className="text-gray-700"> ({c.percentual.toFixed(2)}% da guia)</span>
-                                    )}
-                                    {/* O lucro zerado por cascata não é "cliente sem lucro":
-                                        o imposto o superou e o serviço absorveu a diferença. */}
-                                    {cat === 'lucro' && d.cascadeAbsorvido > 0 && (
-                                      <span className="text-orange-400/80"> · cascata absorveu {fmt(d.cascadeAbsorvido)}</span>
+                                      <span className="text-gray-700"> ({c.percentual.toFixed(2)}%)</span>
                                     )}
                                   </td>
-                                  <td className="text-right text-gray-500 py-px">{fmt(c.bruto)}</td>
-                                  <td className={`text-right py-px ${
-                                    c.absorvido > 0.005 ? 'text-yellow-400'
-                                    : zerou ? 'text-gray-600'
-                                    : 'text-gray-200'}`}>
-                                    {fmt(c.liquido)}
-                                  </td>
+                                  <td className="text-right text-gray-500 py-px px-1">{fmt(c.original)}</td>
+                                  {/* O lucro zerado por cascata não é "cliente sem lucro": o
+                                      imposto o superou e o serviço cobriu a diferença. */}
+                                  <td className="text-right py-px px-1">{opt(c.absorveu, 'text-red-400/80')}</td>
+                                  <td className="text-right text-gray-400 py-px px-1">{fmt(c.bruto)}</td>
+                                  <td className="text-right py-px px-1">{opt(c.pagos, 'text-orange-400/80')}</td>
+                                  <td className={`text-right py-px px-1 ${zerou ? 'text-gray-600' : 'text-green-400'}`}>{fmt(liquidoAntes)}</td>
+                                  <td className="text-right py-px px-1 bg-blue-500/5">{opt(c.direcionado, 'text-blue-300')}</td>
+                                  <td className="text-right py-px px-1 bg-orange-500/5">{opt(c.absorvido, 'text-orange-300')}</td>
+                                  <td className={`text-right py-px pl-1 bg-green-500/5 ${c.absorvido > 0.005 ? 'text-white font-semibold' : 'text-gray-300'}`}>{fmt(c.liquido)}</td>
                                 </tr>
                               )
                             })}
-                            {/* Separador entre as trabalháveis e as informativas. */}
-                            <tr>
-                              <td className="font-sans text-gray-400 font-semibold border-t-2 border-gray-700 pt-0.5">SUB</td>
-                              <td className="text-right text-gray-400 font-semibold border-t-2 border-gray-700 pt-0.5">{fmt(d.sub.bruto)}</td>
-                              <td className="text-right text-white font-semibold border-t-2 border-gray-700 pt-0.5">{fmt(d.sub.liquido)}</td>
+                            {/* Separador entre as 5 trabalháveis e as 2 informativas. */}
+                            <tr className="font-semibold">
+                              <td className="font-sans text-gray-400 border-t-2 border-gray-700 pt-0.5 pr-2">SUB</td>
+                              <td className="text-right text-gray-400 border-t-2 border-gray-700 pt-0.5 px-1">{fmt(d.sub.original)}</td>
+                              <td className="text-right text-red-400/80 border-t-2 border-gray-700 pt-0.5 px-1">{d.sub.absorveu > 0.005 ? fmt(d.sub.absorveu) : '—'}</td>
+                              <td className="text-right text-gray-400 border-t-2 border-gray-700 pt-0.5 px-1">{fmt(d.sub.bruto)}</td>
+                              <td className="text-right text-orange-400/80 border-t-2 border-gray-700 pt-0.5 px-1">{d.sub.pagos > 0.005 ? fmt(d.sub.pagos) : '—'}</td>
+                              <td className="text-right text-green-400 border-t-2 border-gray-700 pt-0.5 px-1">{fmt(d.sub.liquido)}</td>
+                              <td className="text-right text-blue-300 border-t-2 border-gray-700 pt-0.5 px-1 bg-blue-500/5">{d.sub.direcionado > 0.005 ? fmt(d.sub.direcionado) : '—'}</td>
+                              <td className="text-right text-orange-300 border-t-2 border-gray-700 pt-0.5 px-1 bg-orange-500/5">{d.sub.absorvido > 0.005 ? fmt(d.sub.absorvido) : '—'}</td>
+                              <td className="text-right text-white border-t-2 border-gray-700 pt-0.5 pl-1 bg-green-500/5">{fmt(d.sub.sobra)}</td>
                             </tr>
                             {d.fabricio != null && (
                               <tr>
-                                <td className="font-sans text-gray-600 py-px">FAB</td>
-                                <td className="text-right text-gray-600 py-px">{fmt(d.fabricio)}</td>
-                                <td className="text-right text-gray-700 py-px">—</td>
+                                <td className="font-sans text-gray-600 py-px pr-2">FAB</td>
+                                <td className="text-right text-gray-600 py-px px-1">{fmt(d.fabricio)}</td>
+                                <td colSpan={7} className="text-right text-gray-700 py-px text-[10px] font-sans">sai da nota · pago na aba Pagar Fab</td>
                               </tr>
                             )}
                           </tbody>
                         </table>
+                        </div>
+                        {/* ⚠️ O SUB de ORIGINAL conta o imposto duas vezes por construção: o
+                            "original" do Lucro é o lucro BRUTO, de onde o imposto ainda ia
+                            sair, e as três linhas fiscais o listam de novo. A coluna que
+                            fecha com a nota é AJUST. BRUTO. Dizer isso evita a leitura de
+                            que a decomposição está estourada em ~R$ 1.000. */}
+                        <p className="text-gray-700 text-[10px] mt-1 leading-tight">
+                            O SUB de <strong>Original</strong> soma o lucro bruto e o imposto que
+                            saiu dele — a coluna que fecha com a nota é <strong>Ajust. bruto</strong>.
+                            Pró-labore, Lucros e Demais despesas não têm linha própria: aparecem
+                            em <strong>Digitado</strong> no Lucro, que é onde a cascata delas
+                            começa, e escorrem para o Serviço.
+                        </p>
                         {Math.abs(d.aRedistribuir) > 0.005 && (
                           <p className="text-amber-400/80 text-[10px] leading-tight pt-1">
                             ⚠️ As três linhas fiscais são o imposto REAL, mas o lançamento ainda

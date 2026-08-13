@@ -945,6 +945,34 @@ SUB cai 150, não 289,11. Conferido em Jan/2026 (Pharmalog #28).
 passar disso vira `distSobraCategoria`, com aviso próprio, distinto do `distOverflow` (que é
 o pool contra o saldo dos lançamentos).
 
+**As 9 colunas** (2026-08-12): 5 de ESTADO — `Original → Absorveu → Ajust. bruto → Pagos →
+Líquido` — e 3 de SIMULAÇÃO do que está sendo digitado — `Digitado → Será pago → Sobra`.
+As duas últimas já eram calculadas por `alocarCascataDist()` (`absorvido` e o `liquido`
+pós-alocação); só faltava expor.
+
+⚠️ **`service_amount` e `profit_amount` JÁ chegam líquidos da cascata** (`aplicarDelta` grava
+o lucro clampado em zero e o serviço reduzido). Então **ORIGINAL é reconstruído somando de
+volta o absorvido**, não subtraindo: `original = bruto + absorveu`. A leitura intuitiva
+(`ajust.bruto = original − absorveu` partindo de `service_amount`) descontaria o mesmo
+imposto duas vezes — daria R$ 8.405,90 onde o valor real é R$ 8.452,95. Confere com a
+própria tela, que já exibia R$ 429,95 de sobra (e não 382,90) para os R$ 8.000 digitados.
+
+⚠️ **O SUB de ORIGINAL conta o imposto duas vezes por construção** e a tabela diz isso: o
+"original" do Lucro é o lucro BRUTO, de onde o imposto ainda ia sair, e as três linhas
+fiscais o listam de novo. A coluna que fecha com a nota é **Ajust. bruto** (= `subtotal_saida`).
+
+⚠️ **DIGITADO ≠ SERÁ PAGO, e a diferença é o transbordo.** `Digitado` é o que foi
+*direcionado* àquela linha; `Será pago` é o que coube. "Escritório 150" numa linha de 139,11
+mostra 150 / 139,11 / 0,00 e os 10,89 reaparecem como `Será pago` no Serviço. Categorias sem
+linha própria (Pró-labore, Lucros, Demais despesas) são registradas no **Lucro**, onde a
+cascata delas começa — sem isso, digitar "Demais despesas 8000" não acendia coluna nenhuma
+e o número sumia da simulação. O modal passou de `max-w-md` para `max-w-3xl` (9 colunas não
+cabiam em 448px) e a tabela rola na horizontal.
+
+Identidades verificadas contra a produção em três cenários (nada digitado, `demais 8000`,
+`escritorio 150` com transbordo): `original − absorveu = ajust. bruto`,
+`será pago + sobra = líquido` e `SUB.será pago = total que coube`, em toda linha.
+
 ⚠️ **A tabela é ALOCAÇÃO por categoria; o cabeçalho é o saldo do lançamento.** São duas
 leituras do mesmo pagamento e elas não coincidem por construção: o `?action=pagar-distribuido`
 debita o saldo do payable (serviço + lucro) e grava a quebra por categoria em
