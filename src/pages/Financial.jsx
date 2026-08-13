@@ -1194,7 +1194,12 @@ export default function Financial() {
     .filter(r => saldoOf(r) > 0)
     .filter(r => payKey(r) <= effectiveRefKey)  // nunca consome mês de CAIXA futuro ao período ativo
     .sort((a, b) => {
-      // Idêntico ao backend (ordenar): competência ASC — mês mais antigo primeiro.
+      // ⚠️ Idêntico a ordenar() em lib/victor-distribution.js — os dois TÊM de andar
+      // juntos, senão a prévia mostra um consumo e a gravação faz outro.
+      // 1º quem emite nota antes de quem não emite (a Minas é paga à parte e vai para o
+      //    fim da fila); 2º competência ASC; 3º Pharmalog; 4º saldo desc.
+      const na = a.require_nf === false, nb = b.require_nf === false
+      if (na !== nb) return na ? 1 : -1      // sem NF por último
       const ka = a.year * 100 + a.month, kb = b.year * 100 + b.month
       if (ka !== kb) return ka - kb          // competência ASC (mais antigo primeiro)
       if (a.client_id === 7 && b.client_id !== 7) return -1  // Pharmalog/ANB primeiro
@@ -1294,6 +1299,9 @@ export default function Financial() {
 
     return {
       id: r.id, month: r.month, year: r.year, client_name: r.client_name,
+      // Contrato sem nota: vai para o fim da fila de consumo, e a etiqueta diz por quê —
+      // sem ela, um cliente fora da ordem de competência parece erro de ordenação.
+      semNf: r.require_nf === false,
       saldo, liquido, state, consumed: cents(consumed), cats,
       // FAB: o que cabe ao Fabrício nesta NF. Informativa e estática — sai da FATURA e é
       // paga na aba dele, então nunca entra no SUB nem é absorvida por nada.
@@ -3489,6 +3497,11 @@ export default function Financial() {
                         <div className="flex items-center justify-between gap-2 text-xs">
                           <span className={`truncate ${d.state === 'zero' ? 'text-gray-600' : 'text-gray-300'}`}>
                             <span className="text-gray-500">{months[d.month-1]}/{d.year}</span> {d.client_name}
+                            {d.semNf && (
+                              <span className="ml-1.5 px-1.5 py-0.5 bg-gray-700 text-gray-400 text-[10px] rounded-full font-sans">
+                                sem NF · consumido por último
+                              </span>
+                            )}
                           </span>
                           <span className="shrink-0 font-mono text-right whitespace-nowrap">
                             <span className="text-gray-500">Saldo: {fmt(d.saldo)}</span>

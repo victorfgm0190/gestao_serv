@@ -981,6 +981,35 @@ caiu 10,89" ao lado de "Saldo caiu 150,00" se lê como erro de conta. E **pagar 
 guia nenhuma**: `pagar-distribuido` não grava `fiscal_payments`. Quitação é na `/fiscal` ou
 pela visão Cards da aba (`?action=pagar-com-rateio`).
 
+#### Contrato sem NF vai para o fim da fila de consumo — 2026-08-12
+
+`ordenar()` (`lib/victor-distribution.js`) ganhou um critério ANTES da competência:
+**quem emite nota vem antes de quem não emite**. A Minas é recebida e paga à parte, então o
+saldo dela só é consumido quando não sobrou mais nada — e nunca no meio dos outros clientes.
+`candidatosDisponiveis()` passou a trazer `i.require_nf` para isso.
+
+⚠️ **É ORDEM, não elegibilidade.** O payable da Minas continua elegível — consumir saldo é
+origem de caixa, não incidência de tributo (a decisão registrada acima segue valendo). Só
+foi para o fim. Isto é diferente da **tabela tabulada**, que a exclui por completo: lá se
+rateia tributo, aqui se consome saldo.
+
+⚠️ **A competência ASC agora vale DENTRO de cada grupo.** A Minas de janeiro vem depois do
+Bokada de agosto — é o que "processar por último" significa. Antes o critério de competência
+era global.
+
+⚠️ **Os dois lados mudaram juntos.** `ordenar()` e o `sortedPending` de `Financial.jsx` são
+espelhos: a ordem não é cosmética, é a sequência em que o pool é consumido, e mexer só na
+exibição faria a prévia mostrar um consumo e a gravação fazer outro. Verificado contra a
+produção com o comparador REAL extraído da tela: os 26 candidatos saem na mesma ordem nos
+dois, com os 2 payables sem NF (#70 e #61) no fim e Pharmalog #28 → Bokada #42 abrindo
+janeiro. A linha ganhou a etiqueta "sem NF · consumido por último", senão um cliente fora da
+ordem de competência se lê como erro de ordenação.
+
+⚠️ **`ordenarFallback()` (`lib/victor-rateio.js`) NÃO foi alterado.** Ele serve o
+`?action=pagar-com-rateio`, onde o usuário escolhe o cliente à mão e a regra é
+"sem rateio → Pharmalog". Mudá-lo alteraria o que os cards já em produção gravam, e a tabela
+tabulada — o outro consumidor daquele motor — já exclui a Minas antes de chegar lá.
+
 #### "Valores distribuídos" e "Valores a distribuir" — 2026-08-12
 
 Duas seções acima da tabela de distribuição, no modal "Receber":
