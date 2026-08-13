@@ -609,7 +609,16 @@ export default function Financial() {
   async function fetchPendingVictor() {
     try {
       // No modo caixa, restringe a lista de distribuição ao mês/ano de caixa do filtro ativo.
-      const params = new URLSearchParams({ status: 'pendente,parcial', company_id: activeCompany.id, year: filterYear, mode })
+      //
+      // ⚠️ `pago` entra na lista de propósito, embora um lançamento quitado não tenha saldo
+      // a distribuir. O card "Valores pagos" lê o histórico DESTAS linhas, e sem os quitados
+      // um pagamento que zerou o lançamento sumia da tela junto com ele — inclusive do
+      // estorno. Caso real: R$ 8.900 em Lucros consumiram 8.429,95 do payable #28 e o
+      // quitaram; o total pago subiu, mas o pagamento ficou inalcançável.
+      //
+      // A DISTRIBUIÇÃO não é afetada: `sortedPending` filtra `saldoOf(r) > 0`, e um payable
+      // quitado tem saldo zero. É o mesmo corte que candidatosDisponiveis() faz no backend.
+      const params = new URLSearchParams({ status: 'pendente,parcial,pago', company_id: activeCompany.id, year: filterYear, mode })
       if (filterMonth !== '') params.set('month', filterMonth)
       const res = await fetch(`/api/payables-victor?${params.toString()}`)
       setPendingVictor((await res.json()).data || [])
@@ -1191,6 +1200,9 @@ export default function Financial() {
     return [...map.values()]
   })()
   const sortedPending = [...distSource]
+    // ⚠️ É este filtro que mantém os quitados fora da distribuição. `pendingVictor` traz
+    // `pago` junto (para o card "Valores pagos" alcançar o histórico deles), e um payable
+    // quitado tem saldo zero — mesmo corte que candidatosDisponiveis() faz no backend.
     .filter(r => saldoOf(r) > 0)
     .filter(r => payKey(r) <= effectiveRefKey)  // nunca consome mês de CAIXA futuro ao período ativo
     .sort((a, b) => {
@@ -3314,7 +3326,7 @@ export default function Financial() {
                 </div>
                 {distribuidosLista.length === 0 ? (
                   <p className="text-gray-500 text-[11px]">
-                    Nenhum pagamento registrado nos lançamentos em aberto de{' '}
+                    Nenhum pagamento registrado nos lançamentos de{' '}
                     <span className="text-gray-400">{activeCompany.name}</span>. O que for pago
                     aqui aparece nesta lista, por categoria.
                   </p>

@@ -1029,6 +1029,26 @@ em `CATEGORIA_KIND` e portanto nunca têm pendência — aparecem zeradas. O map
 de `lib/victor-rateio.js`, não copiado: uma segunda versão faria a seção procurar a obrigação
 por um nome que o backend não conhece.
 
+#### 🐞 Pagamento que QUITAVA o lançamento sumia do card — corrigido 2026-08-12
+
+`fetchPendingVictor()` carregava só `pendente,parcial`. Quando um pagamento zerava o saldo,
+o payable virava `pago` e **saía da lista** — levando junto o próprio pagamento que acabara
+de ser feito, e com ele o botão de estornar. O total pago subia e o card não mudava.
+
+Caso real: R$ 8.900 em Lucros + R$ 186,16 de Pró-labore foram gravados em DOIS payables
+(#28 Pharmalog, R$ 8.429,95 — que quitou o lançamento — e #42 Bokada, R$ 656,21). O card
+mostrava **R$ 642,77 de Lucros** (só a fatia do Bokada) em vez de R$ 8.900, e o R$ 23,00 de
+"Demais despesas" que estava ali antes também tinha desaparecido, porque morava no #28.
+
+A correção é `status: 'pendente,parcial,pago'`. **A distribuição não muda**: `sortedPending`
+filtra `saldoOf(r) > 0` e um payable quitado tem saldo zero — o mesmo corte que
+`candidatosDisponiveis()` faz no backend. Conferido: 39 linhas distribuíveis antes e depois,
+e o card passou a somar exatamente os R$ 9.109,16 gravados.
+
+⚠️ A lição estrutural: `pendingVictor` serve a DOIS consumidores com necessidades opostas —
+a distribuição quer só o que tem saldo, o card quer todo o histórico. Filtrar na origem pelo
+que um deles precisa quebra o outro em silêncio.
+
 #### Expandir e estornar no card "Valores pagos" — 2026-08-12
 
 O card verde (antes "Valores distribuídos") virou **"Valores pagos"**: cada categoria abre
