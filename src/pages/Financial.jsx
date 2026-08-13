@@ -127,28 +127,21 @@ function alocarCascataDist(lancamentos, valores) {
     let resta = cents(parseFloat(String(valores?.[entrada] ?? '').replace(',', '.')) || 0)
     if (resta <= 0.005) continue
     const alvo = DIST_ENTRADA_LINHA[entrada]
-    // Coluna DIGITADO: quanto foi DIRECIONADO a esta linha, antes de saber se cabe. A
-    // diferença para "será pago" é o que transbordou — digitar "Escritório 150" numa linha
-    // de 139,11 mostra 150 aqui e 139,11 ali, e os 10,89 aparecem como "será pago" no
-    // Lucro/Serviço. É rateado entre os lançamentos na proporção do que cada um tem em
-    // aberto na linha: o valor digitado é UM só e a cascata o espalha, então repeti-lo
-    // inteiro em cada lançamento faria o SUB somar N vezes o que foi digitado uma.
-    // Categoria sem linha própria (Pró-labore, Lucros, Demais despesas) é registrada no
-    // LUCRO, que é onde a cascata dela começa. Sem isso, digitar "Demais despesas 8000"
-    // não acendia coluna nenhuma de DIGITADO — o número sumia da simulação inteira.
-    const alvoDigitado = alvo || 'lucro'
-    {
-      const abertos = lancamentos.filter(l => l.cats[alvoDigitado].liquido > 0.005)
-      const base = abertos.reduce((s, l) => s + l.cats[alvoDigitado].liquido, 0)
-      if (base > 0.005) {
-        for (const l of abertos) l.cats[alvoDigitado].direcionado = cents(l.cats[alvoDigitado].direcionado + resta * (l.cats[alvoDigitado].liquido / base))
-      } else if (lancamentos.length) {
-        // Linha já zerada em todos: o digitado ainda foi direcionado a ela (e vai
-        // transbordar inteiro), e some da tela se não for registrado em lugar nenhum.
-        lancamentos[0].cats[alvoDigitado].direcionado = cents(lancamentos[0].cats[alvoDigitado].direcionado + resta)
-      }
-    }
     const passos = alvo ? [[alvo], ['lucro', 'servico']] : [['lucro', 'servico']]
+    // Coluna DIGITADO: a fatia do valor digitado que foi direcionada A ESTA LINHA.
+    //
+    // 🐞 A primeira versão rateava o digitado PROPORCIONALMENTE entre todas as linhas em
+    // aberto daquela categoria, em todas as competências do painel — enquanto o consumo é
+    // SEQUENCIAL, do mês mais antigo até o valor acabar. Duas distribuições diferentes para
+    // o mesmo dinheiro: com 13 linhas de Escritório em aberto, "Honorários 150" mostrava
+    // DIGITADO 4,57 no Bokada de janeiro (3,05% de 150) ao lado de SERÁ PAGO 10,89, e
+    // espalhava números arbitrários por meses que a cascata nem alcançava.
+    //
+    // Agora é registrado NO MOMENTO DO CONSUMO, na mesma ordem e na mesma medida — então
+    // as duas colunas descrevem a mesma coisa. Só na primeira passada: o que transborda
+    // para Lucro/Serviço foi direcionado ao ALVO, não a eles, e a diferença entre o total
+    // digitado e a soma de DIGITADO é exatamente o transbordo.
+    let naPrimeiraPassada = true
     for (const cats of passos) {
       for (const l of lancamentos) {
         if (resta <= 0.005) break
@@ -158,9 +151,11 @@ function alocarCascataDist(lancamentos, valores) {
           if (usa <= 0.005) continue
           l.cats[cat].liquido = cents(l.cats[cat].liquido - usa)
           l.cats[cat].absorvido = cents(l.cats[cat].absorvido + usa)
+          if (naPrimeiraPassada) l.cats[cat].direcionado = cents(l.cats[cat].direcionado + usa)
           resta = cents(resta - usa)
         }
       }
+      naPrimeiraPassada = false
     }
     sobras[entrada] = resta
   }
@@ -1354,6 +1349,11 @@ export default function Financial() {
     }
   })
   const distOverflow = distPool > 0.005 ? distPool : 0
+  // Lançamentos que o painel esconde por não terem saldo. Um pagamento que QUITA o
+  // lançamento o faz sumir da distribuição no mesmo instante — correto (não há mais o que
+  // consumir), mas indistinguível de "o filtro quebrou". Caso real: os R$ 8.900 em Lucros
+  // quitaram o Pharmalog #28 e ele desapareceu da tela sem explicação.
+  const quitadosOcultos = distSource.filter(r => saldoOf(r) <= 0)
   // Digitado que não achou linha nenhuma onde entrar — todas as 5 já estavam zeradas.
   const distSobraCategoria = cents(Object.values(distSobras).reduce((s, v) => s + v, 0))
 
@@ -3498,6 +3498,14 @@ export default function Financial() {
                   desce para Lucro → Serviço; o cabeçalho mostra o saldo do lançamento, que é o
                   que sai do caixa. Pagar aqui não quita a guia — isso é em <strong>/fiscal</strong>.
                 </p>
+                {quitadosOcultos.length > 0 && (
+                  <p className="text-gray-600 text-[10px] mb-2 leading-tight">
+                    {quitadosOcultos.length === 1 ? '1 lançamento já quitado não aparece' : `${quitadosOcultos.length} lançamentos já quitados não aparecem`}
+                    {' '}({quitadosOcultos.slice(0, 3).map(r => `${r.client_name} ${months[r.month-1]}/${r.year}`).join(', ')}
+                    {quitadosOcultos.length > 3 ? ` +${quitadosOcultos.length - 3}` : ''}) — não têm saldo a consumir.
+                    O histórico deles continua em &quot;Valores pagos&quot;, com estorno.
+                  </p>
+                )}
                 {distRows.length === 0 ? (
                   <p className="text-gray-600 text-xs text-center py-2">Nenhum saldo pendente</p>
                 ) : (

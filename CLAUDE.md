@@ -961,12 +961,22 @@ própria tela, que já exibia R$ 429,95 de sobra (e não 382,90) para os R$ 8.00
 "original" do Lucro é o lucro BRUTO, de onde o imposto ainda ia sair, e as três linhas
 fiscais o listam de novo. A coluna que fecha com a nota é **Ajust. bruto** (= `subtotal_saida`).
 
-⚠️ **DIGITADO ≠ SERÁ PAGO, e a diferença é o transbordo.** `Digitado` é o que foi
-*direcionado* àquela linha; `Será pago` é o que coube. "Escritório 150" numa linha de 139,11
-mostra 150 / 139,11 / 0,00 e os 10,89 reaparecem como `Será pago` no Serviço. Categorias sem
-linha própria (Pró-labore, Lucros, Demais despesas) são registradas no **Lucro**, onde a
-cascata delas começa — sem isso, digitar "Demais despesas 8000" não acendia coluna nenhuma
-e o número sumia da simulação. O modal passou de `max-w-md` para `max-w-3xl` (9 colunas não
+🐞 **DIGITADO rateava por proporção enquanto SERÁ PAGO consome por ordem** — corrigido
+2026-08-12. A primeira versão espalhava o valor digitado proporcionalmente entre TODAS as
+linhas em aberto daquela categoria, em todas as competências do painel; o consumo é
+sequencial, do mês mais antigo até o valor acabar. Duas distribuições diferentes para o
+mesmo dinheiro: com 13 linhas de Escritório em aberto, "Honorários 150" mostrava
+**DIGITADO 4,57** no Bokada de janeiro (3,05% de 150) ao lado de **SERÁ PAGO 10,89**, e
+pintava números arbitrários em meses que a cascata nem alcançava.
+
+Agora `direcionado` é gravado **no momento do consumo**, na mesma ordem e na mesma medida —
+e só na primeira passada. O que transborda para Lucro/Serviço foi direcionado ao ALVO, não a
+eles, então `total digitado − Σ DIGITADO` é exatamente o transbordo. Conferido: "Honorários
+150" dá Σ DIGITADO = Σ SERÁ PAGO = 150 com DIGITADO igual a SERÁ PAGO em toda linha;
+"Escritório 500" dá Σ DIGITADO 357,05 (o que coube) contra Σ SERÁ PAGO 500.
+
+Categorias sem linha própria (Pró-labore, Lucros, Demais despesas) entram direto na cascata
+Lucro → Serviço, que para elas É a primeira passada — então aparecem em DIGITADO ali. O modal passou de `max-w-md` para `max-w-3xl` (9 colunas não
 cabiam em 448px) e a tabela rola na horizontal.
 
 Identidades verificadas contra a produção em três cenários (nada digitado, `demais 8000`,
@@ -1028,6 +1038,15 @@ Sai de `reserves` (o mesmo `devido − pago` que `fetchReserves()` já montava d
 em `CATEGORIA_KIND` e portanto nunca têm pendência — aparecem zeradas. O mapa é **importado**
 de `lib/victor-rateio.js`, não copiado: uma segunda versão faria a seção procurar a obrigação
 por um nome que o backend não conhece.
+
+#### Lançamento quitado some do painel — e agora diz que sumiu (2026-08-12)
+
+`sortedPending` filtra `saldoOf(r) > 0`, então um pagamento que QUITA o lançamento o faz
+desaparecer da distribuição no mesmo instante. É correto — não há mais saldo a consumir —,
+mas indistinguível de "o filtro quebrou": os R$ 8.900 em Lucros quitaram o Pharmalog #28 e
+ele sumiu da tela sem explicação, junto com os R$ 139,11 de Escritório de janeiro que a
+cascata usava. O painel passou a listar `quitadosOcultos` numa linha discreta, apontando
+para "Valores pagos", onde o histórico deles continua acessível e estornável.
 
 #### 🐞 Pagamento que QUITAVA o lançamento sumia do card — corrigido 2026-08-12
 
