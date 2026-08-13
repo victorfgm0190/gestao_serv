@@ -961,6 +961,27 @@ própria tela, que já exibia R$ 429,95 de sobra (e não 382,90) para os R$ 8.00
 "original" do Lucro é o lucro BRUTO, de onde o imposto ainda ia sair, e as três linhas
 fiscais o listam de novo. A coluna que fecha com a nota é **Ajust. bruto** (= `subtotal_saida`).
 
+#### ⚠️ ABSORVEU não é consumo — o lucro que o imposto comeu
+
+Investigação de 2026-08-12: *"Lucros 8.900 consome TUDO do Serviço; deveria consumir 7.920,37
+e deixar 323,42, porque o Lucro entra com 979,63"*. **Os 979,63 não existem como saldo.**
+`payables_victor.profit_amount` do #28 é **0,00**: o imposto real (R$ 1.026,68) superou o lucro
+bruto (R$ 979,63) e o serviço cobriu a diferença — o caso `capital_proprio` já documentado.
+Na tabela, a linha Lucro aparece como `ORIGINAL 979,63 · ABSORVEU 979,63 · AJUST 0,00 ·
+LÍQUIDO 0,00`, e é o ORIGINAL que se lê como disponível.
+
+O motor estava correto em tudo o que a especificação pedia, verificado com os dados reais:
+consumiu **8.900,00 exatos** (Pharmalog Jan 8.243,79 → Bokada Jan 656,21), **não tocou
+DAS/INSS/Escritório** (SERÁ PAGO 0,00 nas três linhas dos dois clientes) e deixou **24
+lançamentos intactos**. A conta esperada (`979,63 + 7.920,37`) só fecha contando duas vezes
+um lucro que o imposto já levou.
+
+A correção foi de leitura: a linha do Lucro passou a dizer **"imposto absorveu tudo, nada a
+consumir"** (ou "imposto levou R$ X" quando sobrou algo), e a nota da tabela passou a separar
+explicitamente as colunas de HISTÓRICO FISCAL (Original, Absorveu) das de SIMULAÇÃO
+(Líquido → Será pago). Um número grande numa coluna chamada "Original", ao lado de um zero,
+vai ser somado — não adianta só estar certo.
+
 #### Os dois modos de cascata: IMPOSTO e TRABALHO — 2026-08-12
 
 Cada categoria digitada opera num de dois modos, **derivados de `DIST_ENTRADA_LINHA`** (não

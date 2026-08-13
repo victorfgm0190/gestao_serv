@@ -3650,6 +3650,18 @@ export default function Financial() {
                                     {c.percentual != null && (
                                       <span className="text-gray-700"> ({c.percentual.toFixed(2)}%)</span>
                                     )}
+                                    {/* ⚠️ ABSORVEU é o que a cascata FISCAL levou, não o que este
+                                        pagamento vai consumir — e a linha do Lucro quase sempre
+                                        aparece com ORIGINAL cheio e LÍQUIDO zero, o que se lê como
+                                        "tem 979,63 disponível". Foi essa leitura que gerou a conta
+                                        "979,63 + 7.920,37 = 8.900". Dizer em palavras, na própria
+                                        linha, é o único lugar onde a confusão não passa. */}
+                                    {c.absorveu > 0.005 && c.bruto <= 0.005 && (
+                                      <span className="text-red-400/70"> · imposto absorveu tudo, nada a consumir</span>
+                                    )}
+                                    {c.absorveu > 0.005 && c.bruto > 0.005 && (
+                                      <span className="text-red-400/60"> · imposto levou {fmt(c.absorveu)}</span>
+                                    )}
                                   </td>
                                   <td className="text-right text-gray-500 py-px px-1">{fmt(c.original)}</td>
                                   {/* O lucro zerado por cascata não é "cliente sem lucro": o
@@ -3692,6 +3704,10 @@ export default function Financial() {
                             fecha com a nota é AJUST. BRUTO. Dizer isso evita a leitura de
                             que a decomposição está estourada em ~R$ 1.000. */}
                         <p className="text-gray-700 text-[10px] mt-1 leading-tight">
+                            <strong>Original</strong> e <strong>Absorveu</strong> descrevem o que a
+                            cascata FISCAL já fez — não o pagamento que está sendo digitado. Só
+                            <strong> Líquido</strong> é consumível, e o que este pagamento leva está
+                            em <strong>Será pago</strong>.{' '}
                             O SUB de <strong>Original</strong> soma o lucro bruto e o imposto que
                             saiu dele — a coluna que fecha com a nota é <strong>Ajust. bruto</strong>.
                             Pró-labore, Lucros e Demais despesas não têm linha própria: aparecem
