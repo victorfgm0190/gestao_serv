@@ -1353,7 +1353,16 @@ export default function Financial() {
   // lançamento o faz sumir da distribuição no mesmo instante — correto (não há mais o que
   // consumir), mas indistinguível de "o filtro quebrou". Caso real: os R$ 8.900 em Lucros
   // quitaram o Pharmalog #28 e ele desapareceu da tela sem explicação.
-  const quitadosOcultos = distSource.filter(r => saldoOf(r) <= 0)
+  const quitadosOcultos = distSource.filter(r => saldoOf(r) <= 0).map(r => ({
+    id: r.id, client_name: r.client_name, month: r.month, year: r.year,
+    // ⚠️ O imposto rateado da NF NÃO morre com a quitação do lançamento: o payable é o que
+    // a empresa deve ao Victor, e a guia é devida ao fisco. Um lançamento quitado pode
+    // carregar imposto em aberto que esta cascata não alcança mais — foi exatamente a
+    // leitura de "a cascata pulou o Pharmalog Jan, que tem R$ 139,11". Não pulou: aqueles
+    // R$ 139,11 são o rateio de Escritório da NF#6, e o saldo do lançamento é zero.
+    impostoAberto: Math.round((r.fiscal?.linhas || []).reduce((s, l) => s + (l.saldo ?? l.amount ?? 0), 0) * 100) / 100,
+  }))
+  const quitadosComImposto = quitadosOcultos.filter(r => r.impostoAberto > 0.005)
   // Digitado que não achou linha nenhuma onde entrar — todas as 5 já estavam zeradas.
   const distSobraCategoria = cents(Object.values(distSobras).reduce((s, v) => s + v, 0))
 
@@ -3499,12 +3508,27 @@ export default function Financial() {
                   que sai do caixa. Pagar aqui não quita a guia — isso é em <strong>/fiscal</strong>.
                 </p>
                 {quitadosOcultos.length > 0 && (
-                  <p className="text-gray-600 text-[10px] mb-2 leading-tight">
-                    {quitadosOcultos.length === 1 ? '1 lançamento já quitado não aparece' : `${quitadosOcultos.length} lançamentos já quitados não aparecem`}
-                    {' '}({quitadosOcultos.slice(0, 3).map(r => `${r.client_name} ${months[r.month-1]}/${r.year}`).join(', ')}
-                    {quitadosOcultos.length > 3 ? ` +${quitadosOcultos.length - 3}` : ''}) — não têm saldo a consumir.
-                    O histórico deles continua em &quot;Valores pagos&quot;, com estorno.
-                  </p>
+                  <div className="mb-2">
+                    <p className="text-gray-600 text-[10px] leading-tight">
+                      {quitadosOcultos.length === 1 ? '1 lançamento já quitado não aparece' : `${quitadosOcultos.length} lançamentos já quitados não aparecem`}
+                      {' '}({quitadosOcultos.slice(0, 3).map(r => `${r.client_name} ${months[r.month-1]}/${r.year}`).join(', ')}
+                      {quitadosOcultos.length > 3 ? ` +${quitadosOcultos.length - 3}` : ''}) — não têm saldo a consumir.
+                      O histórico deles continua em &quot;Valores pagos&quot;, com estorno.
+                    </p>
+                    {/* O caso que gerou a investigação: o lançamento está quitado, mas a
+                        guia rateada para a NF dele continua devida — e a cascata não tem
+                        mais de onde tirar. Sem esta linha, parece que a cascata "pulou" o
+                        cliente que ainda mostra imposto em aberto no card. */}
+                    {quitadosComImposto.length > 0 && (
+                      <p className="text-amber-400/80 text-[10px] leading-tight mt-1">
+                        ⚠️ Deles, {quitadosComImposto.map(r => `${r.client_name} ${months[r.month-1]}/${r.year} (${fmt(r.impostoAberto)})`).join(', ')}
+                        {' '}ainda {quitadosComImposto.length === 1 ? 'tem imposto' : 'têm imposto'} em aberto. O imposto é devido ao
+                        fisco e não morre com a quitação do lançamento, mas esta cascata só
+                        consome saldo do Victor — estorne o pagamento em &quot;Valores pagos&quot;
+                        para alcançá-lo, ou quite a guia em <strong>/fiscal</strong>.
+                      </p>
+                    )}
+                  </div>
                 )}
                 {distRows.length === 0 ? (
                   <p className="text-gray-600 text-xs text-center py-2">Nenhum saldo pendente</p>

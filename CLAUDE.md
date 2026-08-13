@@ -1039,6 +1039,26 @@ em `CATEGORIA_KIND` e portanto nunca têm pendência — aparecem zeradas. O map
 de `lib/victor-rateio.js`, não copiado: uma segunda versão faria a seção procurar a obrigação
 por um nome que o backend não conhece.
 
+#### ⚠️ "Saldo do lançamento" e "imposto rateado" são coisas diferentes
+
+Investigação de 2026-08-12: *"a cascata pulou o Pharmalog Jan, que tem R$ 139,11 de saldo
+em Escritório"*. **Não pulou.** O payable #28 estava `pago` (8.452,95 de 8.452,95, saldo
+zero) e por isso nem entra na lista de candidatos. Os R$ 139,11 são o **rateio de Escritório
+da NF#6** — o que a empresa deve ao FISCO por aquela nota —, não dinheiro disponível no
+lançamento, que é o que a empresa deve ao VICTOR. A cascata do modal consome saldo do
+Victor; imposto rateado é leitura.
+
+Os dois números vivem lado a lado na mesma linha da tabela justamente porque descrevem a
+mesma NF por ângulos opostos, e é fácil somá-los mentalmente. O painel passou a dizer, para
+cada lançamento quitado e escondido, quanto de imposto ficou em aberto nele e como alcançá-lo
+(estornar em "Valores pagos" ou quitar em `/fiscal`).
+
+A ordenação foi conferida no mesmo passo e está correta: competência ASC, Pharmalog primeiro
+dentro do mês, depois saldo desc — `#42 Bokada jan → #45 Pharmalog fev → #44 Bokada fev →
+#43 Enpla fev → #48 Pharmalog mar`. ⚠️ Um trace anterior sugeriu desordem porque o script de
+teste lia a resposta crua da API sem aplicar o comparador da tela; ao investigar ordem, o
+teste precisa usar `sortedPending`, não `data`.
+
 #### Lançamento quitado some do painel — e agora diz que sumiu (2026-08-12)
 
 `sortedPending` filtra `saldoOf(r) > 0`, então um pagamento que QUITA o lançamento o faz
