@@ -26,6 +26,8 @@ import { montarTabulado, CATEGORIAS_ENTRADA } from '../lib/victor-tabulado.js'
 import {
   writesDeOrigemDestino, movimentosDoPlano, movimentosDoConsumo,
 } from '../lib/payment-source-tracker.js'
+// Créditos de compensação do Fabrício e a leitura do rastreamento.
+import { compensacoesDisponiveis, rastreamentoOD } from '../lib/fabricio-compensation.js'
 
 // Recalcula o pai de um payable_victor após alterar seus pagamentos.
 async function recalcVictorParent(sql, payable_id) {
@@ -469,6 +471,106 @@ async function pagarComRateio(sql, req, res) {
   })
 }
 
+// POST ?action=pagar-compensacao — realiza um crédito de compensação do Fabrício.
+//
+// O crédito nasce em `payment_sources` com `payment_id NULL` quando um lançamento do
+// Fabrício é marcado como compensação (ver lib/fabricio-compensation.js). "Pagar" aqui
+// significa USÁ-LO: o valor quita um lançamento que a empresa deve ao Victor, sem sair
+// caixa novo — que é exatamente o que a compensação é (o Fabrício deixou de receber, então
+// esse dinheiro fica na empresa e vai para o Victor).
+//
+// ── POR QUE NÃO É O QUE A ESPECIFICAÇÃO DESCREVIA ─────────────────────────────────────
+//
+// O passo 4 do PROMPT 4 propunha `INSERT INTO payable_payments (…, category, amount_paid)
+// VALUES ('victor', NULL, …)`. Três coisas impedem:
+//   • não existem as colunas `category` nem `amount_paid` — são `amount` e `notes`;
+//   • `payable_id` é NOT NULL, então não há pagamento "solto";
+//   • um pagamento sem payable não teria pai para recalcular, e sumiria de todas as telas,
+//     que leem por `payable_id`.
+//
+// Ligar o crédito a um payable REAL resolve as três de uma vez e ainda dá sentido ao
+// `payment_id`: o crédito sai de "disponível" no instante em que vira pagamento, sem
+// coluna de estado nova.
+//
+// ⚠️ O alvo é do MESMO CLIENTE da origem. A compensação do Pharmalog quita o Pharmalog:
+// usar o crédito de um cliente para quitar outro desfaria a única coisa que esta tabela
+// existe para responder — de onde veio o dinheiro.
+async function pagarCompensacao(sql, req, res) {
+  const { compensation_id, company_id, payable_id = null, paid_at = null } = req.body || {}
+  if (!compensation_id || !company_id) {
+    return res.status(400).json({ error: 'compensation_id e company_id são obrigatórios' })
+  }
+
+  const cred = (await sql`
+    SELECT ps.*, c.name AS client_name FROM payment_sources ps
+    LEFT JOIN clients c ON c.id = ps.client_id
+    WHERE ps.id = ${compensation_id} AND ps.company_id = ${company_id}
+      AND ps.source_type = 'compensation_fabricio' AND ps.payment_id IS NULL
+    LIMIT 1`)[0]
+  if (!cred) {
+    return res.status(404).json({ error: 'Crédito de compensação não encontrado, ou já foi usado.' })
+  }
+
+  const valor = r2(cred.amount)
+  const when = String(paid_at || new Date().toISOString().slice(0, 10)).slice(0, 10)
+  const [payY, payM] = when.split('-').map(Number)
+  const curKey = Math.max(payM ? payY * 100 + payM : 0, cred.year * 100 + cred.month)
+
+  // Mesmas regras de sempre: só payable cujo recebível já foi pago e cujo caixa não é
+  // futuro. Restringido ao cliente da origem.
+  const todos = await candidatosDisponiveis(sql, company_id, curKey)
+  const doCliente = ordenar(todos.filter((c) => Number(c.client_id) === Number(cred.client_id)))
+  const alvo = payable_id
+    ? doCliente.find((c) => c.id === Number(payable_id))
+    : doCliente[0]
+
+  if (!alvo) {
+    return res.status(422).json({
+      error: `${cred.client_name || 'O cliente'} não tem lançamento em aberto para receber esta compensação. O crédito continua disponível.`,
+      credito: valor,
+    })
+  }
+  // Consumo parcial deixaria metade do crédito usado e metade não, e a linha de
+  // payment_sources é uma só — não há onde registrar a sobra sem quebrá-la em duas.
+  if (valor > alvo._saldo + 0.005) {
+    return res.status(422).json({
+      error: `O crédito (${valor.toFixed(2)}) é maior que o saldo do lançamento escolhido (${alvo._saldo.toFixed(2)}). Escolha outro lançamento ou registre a diferença como pagamento normal.`,
+      credito: valor, saldo_alvo: alvo._saldo, payable_id: alvo.id,
+    })
+  }
+
+  // `payment_sources.notes` já vem no formato "Compensação Fabrício: <origem>" — prefixar
+  // de novo produzia "Compensação Fabrício: Compensação Fabrício: Pharmalog…" no extrato.
+  const notes = cred.notes?.startsWith('Compensação Fabrício')
+    ? cred.notes
+    : `Compensação Fabrício: ${cred.notes || `${cred.client_name} ${cred.month}/${cred.year}`}`
+  const { writes, applied } = consumir(sql, valor, [alvo], when, notes)
+  if (!writes.length) {
+    return res.status(422).json({ error: 'Nada a consumir no lançamento escolhido.' })
+  }
+
+  // O `payment_id` do pagamento recém-inserido, pelo mesmo caminho de
+  // fiscal_allocations e do tracker: o driver do Neon não devolve RETURNING dentro de
+  // transação em lote. `ORDER BY id DESC LIMIT 1` garante a linha nova.
+  writes.push(sql`
+    UPDATE payment_sources SET payment_id = (
+      SELECT pp.id FROM payable_payments pp
+      WHERE pp.payable_type = 'victor' AND pp.payable_id = ${alvo.id}
+        AND pp.paid_at = ${when} AND pp.notes = ${notes}
+      ORDER BY pp.id DESC LIMIT 1
+    ), updated_at = NOW()
+    WHERE id = ${compensation_id}`)
+
+  await sql.transaction(writes)
+  return res.status(200).json({
+    status: 'sucesso',
+    compensation_id: Number(compensation_id),
+    amount: valor,
+    aplicado_em: applied[0],
+    notes,
+  })
+}
+
 // POST ?action=calcular-distribuicao — a tabela tabulada da aba Pagar Victor.
 //
 // Recebe os totais digitados e devolve, por cliente e por categoria, BRUTO / % / LÍQUIDO.
@@ -528,6 +630,21 @@ export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
   if (req.method === 'GET') {
+    // Créditos de compensação do Fabrício ainda não usados (`payment_id IS NULL`) e o
+    // rastreamento origem → destino do recorte. Duas leituras da MESMA tabela: a primeira
+    // é o subconjunto com ação pendente, a segunda é tudo.
+    if (req.query.action === 'compensacoes' || req.query.action === 'rastreamento') {
+      const { company_id, month, year } = req.query
+      if (!company_id) return res.status(400).json({ error: 'company_id é obrigatório' })
+      const filtro = {
+        month: month === undefined || month === '' ? null : Number(month),
+        year: year === undefined || year === '' ? null : Number(year),
+      }
+      const data = req.query.action === 'compensacoes'
+        ? await compensacoesDisponiveis(sql, Number(company_id), filtro)
+        : await rastreamentoOD(sql, Number(company_id), filtro)
+      return res.status(200).json({ data })
+    }
     // Info da sessão de recebimento (para edição): payables afetados + valor consumido na sessão.
     if (req.query.action === 'sessao') {
       const { company_id, paid_at, notes } = req.query
@@ -583,6 +700,7 @@ export default async function handler(req, res) {
     if (req.query.action === 'pagar-distribuido') return pagarDistribuido(sql, req, res)
     if (req.query.action === 'pagar-com-rateio') return pagarComRateio(sql, req, res)
     if (req.query.action === 'calcular-distribuicao') return calcularDistribuicao(sql, req, res)
+    if (req.query.action === 'pagar-compensacao') return pagarCompensacao(sql, req, res)
     const { company_id, client_id, month, year, description, service_amount, profit_amount, notes } = req.body
     const total = (parseFloat(service_amount)||0) + (parseFloat(profit_amount)||0)
     const result = await sql`INSERT INTO payables_victor (company_id, client_id, month, year, description, service_amount, profit_amount, total_amount, notes, payment_month, payment_year) VALUES (${company_id}, ${client_id}, ${month}, ${year}, ${description}, ${service_amount||0}, ${profit_amount||0}, ${total.toFixed(2)}, ${notes||null}, ${month}, ${year}) RETURNING *`

@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect } from 'react'
+import { Fragment, useState, useEffect, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { todayBR } from '../lib/dateUtils'
 import CopyButton from '../components/CopyButton'
@@ -375,11 +375,24 @@ export default function Financial() {
   // ⚠️ Esta visão é LEITURA. Ela não grava: o pagamento continua na visão Cards, cuja
   // semântica de abatimento é diferente (lá o imposto sai do saldo do Victor). Ver a
   // advertência no topo de lib/victor-tabulado.js.
-  const [tabView, setTabView] = useState('tabela')   // 'tabela' | 'cards'
+  const [tabView, setTabView] = useState('tabela')   // 'tabela' | 'cards' | 'rastreio'
   const [tabInputs, setTabInputs] = useState(EMPTY_TAB_INPUTS)
   const [tabDist, setTabDist] = useState(null)
   const [tabLoading, setTabLoading] = useState(false)
   const [tabErro, setTabErro] = useState('')
+
+  // Terceira visão: rastreamento origem → destino (`payment_sources`).
+  //
+  // ⚠️ Ela responde uma pergunta que as outras duas não respondem, e por isso é uma visão
+  // e não um painel a mais nos cards: origem e destino são recortes DIFERENTES do mesmo
+  // dinheiro. O card do Pharmalog mostra o que ele deve; aqui se vê que o pró-labore de
+  // agosto saiu do serviço do Pharmalog de janeiro. Misturar as duas leituras no mesmo
+  // card faria o valor de uma parecer subtotal da outra.
+  const [rastreio, setRastreio] = useState([])
+  const [compensacoes, setCompensacoes] = useState([])
+  const [rastreioLoading, setRastreioLoading] = useState(false)
+  const [rastreioErro, setRastreioErro] = useState('')
+  const [pagandoComp, setPagandoComp] = useState(null)
 
   useEffect(() => { fetchAll() }, [activeCompany, filterYear, mode])
   useEffect(() => { setHistClient('') }, [histType, filterYear, activeCompany])
@@ -1185,6 +1198,52 @@ export default function Financial() {
   // Trocar o recorte zera o que foi digitado: os valores se referem aos clientes e notas
   // daquele período, e mantê-los aplicaria um número pensado para outro mês.
   useEffect(() => { setTabInputs(EMPTY_TAB_INPUTS) }, [activeCompany, filterYear, filterMonth, mode])
+
+  // Rastreamento + créditos de compensação. Duas leituras da mesma tabela, buscadas juntas
+  // porque a visão mostra as duas e um fetch a menos evita o estado meio-carregado.
+  //
+  // ⚠️ O filtro é de COMPETÊNCIA DA ORIGEM, e não da data do pagamento: um pagamento feito
+  // em agosto consumindo saldo de janeiro pertence a JANEIRO aqui, que é de onde o dinheiro
+  // veio. É o mesmo recorte dos cards — ver rastreamentoOD() em lib/fabricio-compensation.js.
+  const fetchRastreio = useCallback(async () => {
+    setRastreioLoading(true); setRastreioErro('')
+    try {
+      const p = new URLSearchParams({ company_id: activeCompany.id, year: filterYear })
+      if (filterMonth !== '') p.set('month', filterMonth)
+      const [r1, r2] = await Promise.all([
+        fetch(`/api/payables-victor?action=rastreamento&${p}`),
+        fetch(`/api/payables-victor?action=compensacoes&${p}`),
+      ])
+      const [d1, d2] = [await r1.json(), await r2.json()]
+      if (!r1.ok || !r2.ok) { setRastreioErro(d1.error || d2.error || 'Falha ao carregar o rastreamento.'); return }
+      setRastreio(d1.data || [])
+      setCompensacoes(d2.data || [])
+    } catch { setRastreioErro('Erro de conexão com o servidor.') }
+    finally { setRastreioLoading(false) }
+  }, [activeCompany, filterYear, filterMonth])
+
+  useEffect(() => {
+    if (tab !== 'victor' || tabView !== 'rastreio') return
+    fetchRastreio()
+  }, [tab, tabView, activeCompany, filterYear, filterMonth])
+
+  // Usa um crédito de compensação: ele quita um lançamento do MESMO cliente, sem sair
+  // caixa. Não cria payable — ver o comentário de pagarCompensacao() no backend.
+  async function usarCompensacao(comp) {
+    if (pagandoComp) return
+    setPagandoComp(comp.id)
+    try {
+      const res = await fetch('/api/payables-victor?action=pagar-compensacao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ compensation_id: comp.id, company_id: activeCompany.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) { alert(data.error || 'Não foi possível usar o crédito.'); return }
+      await Promise.all([fetchRastreio(), fetchAll()])
+    } catch { alert('Erro de conexão com o servidor.') }
+    finally { setPagandoComp(null) }
+  }
   // Previsão de impostos (só Lumen, aba Victor, config fiscal preenchida).
   //
   // A RBT12 sai do faturamento REAL do mês (NFs com require_nf, somadas em
@@ -1987,6 +2046,149 @@ export default function Financial() {
     return <span className="text-gray-700">—</span>
   }
 
+  // ── VISÃO RASTREIO — origem → destino (payment_sources) ────────────────────────────
+  //
+  // Três seções, e cada uma responde uma pergunta diferente do MESMO conjunto de linhas:
+  //   ORIGEM     de onde o recurso pode vir / veio (por cliente e natureza)
+  //   DESTINO    para onde foi, por categoria, com a origem de cada fatia
+  //   HISTÓRICO  agrupado por pagamento, na ordem em que aconteceu
+  //
+  // ⚠️ Só entram movimentos JÁ REALIZADOS (com `payment_id`) nas seções de destino e
+  // histórico. O que ainda não virou pagamento são os créditos de compensação, que têm
+  // seção própria e botão — misturá-los com o realizado faria a soma dos destinos
+  // prometer dinheiro que não saiu.
+  function renderRastreio() {
+    const realizados = rastreio.filter(r => r.payment_id != null)
+    const soma = (arr) => cents(arr.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0))
+    const rotuloOrigem = (r) => (
+      r.source_type === 'compensation_fabricio' ? 'Compensação Fabrício'
+        : r.source_type === 'profit' ? 'Lucro' : 'Serviço'
+    )
+
+    // ORIGEM: agrupa por (cliente, natureza). É o que a tabela sabe dizer — o saldo em
+    // aberto continua sendo dos cards, que leem `payables_victor`.
+    const porOrigem = new Map()
+    for (const r of realizados) {
+      const k = `${r.client_id ?? 'x'}|${r.source_type}`
+      if (!porOrigem.has(k)) porOrigem.set(k, { nome: r.client_name || 'Sem cliente', tipo: rotuloOrigem(r), linhas: [] })
+      porOrigem.get(k).linhas.push(r)
+    }
+    const porDestino = new Map()
+    for (const r of realizados) {
+      if (!porDestino.has(r.destination_category)) porDestino.set(r.destination_category, [])
+      porDestino.get(r.destination_category).push(r)
+    }
+    const porPagamento = new Map()
+    for (const r of realizados) {
+      if (!porPagamento.has(r.payment_id)) porPagamento.set(r.payment_id, { paid_at: r.paid_at, notes: r.payment_notes, linhas: [] })
+      porPagamento.get(r.payment_id).linhas.push(r)
+    }
+
+    return (
+      <div className="space-y-3">
+        {rastreioErro && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{rastreioErro}</p>}
+        {rastreioLoading && <p className="text-gray-500 text-xs">Carregando rastreamento…</p>}
+
+        {/* ── 1 · ORIGEM ── */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
+          <p className="text-[11px] uppercase tracking-wide text-blue-400/80 font-medium mb-2">📊 Origem do recurso</p>
+          {porOrigem.size === 0 && compensacoes.length === 0 ? (
+            <p className="text-gray-600 text-xs">Nenhum movimento rastreado neste recorte. O rastreamento passou a ser gravado em 15/08/2026 — pagamentos anteriores a isso não têm origem registrada.</p>
+          ) : (
+            <div className="space-y-1">
+              {[...porOrigem.values()].map((g, i) => (
+                <div key={i} className="flex justify-between gap-2 text-xs">
+                  <span className="text-gray-400">{g.nome} <span className="text-gray-600">{g.tipo}</span></span>
+                  <span className="text-white font-mono">{fmt(soma(g.linhas))}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Créditos de compensação: origem que ainda NÃO virou pagamento. */}
+          {compensacoes.length > 0 && (
+            <div className="mt-3 border-t border-gray-800 pt-2">
+              <p className="text-[11px] text-green-400 font-medium mb-1">✨ Compensações do Fabrício disponíveis</p>
+              <p className="text-[10px] text-gray-600 mb-2 leading-tight">
+                O Fabrício deixou de receber e o valor virou crédito. Usar quita um lançamento
+                do mesmo cliente, sem sair caixa — não cria lançamento novo.
+              </p>
+              {compensacoes.map(c => (
+                <div key={c.id} className="flex justify-between items-center gap-2 text-xs mb-1">
+                  <span className="text-gray-400 truncate">
+                    {c.client_name || 'Sem cliente'} <span className="text-gray-600">{c.month}/{c.year}</span>
+                    {c.fabricio_description && <span className="text-gray-700"> · {c.fabricio_description}</span>}
+                  </span>
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className="text-green-300 font-mono">{fmt(c.amount)}</span>
+                    <button onClick={() => usarCompensacao(c)} disabled={pagandoComp === c.id}
+                      className="px-2 py-0.5 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded text-[11px]">
+                      {pagandoComp === c.id ? '...' : 'Usar'}
+                    </button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── 2 · DESTINO ── */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
+          <p className="text-[11px] uppercase tracking-wide text-blue-400/80 font-medium mb-2">💰 Destino do recurso</p>
+          {porDestino.size === 0 ? (
+            <p className="text-gray-600 text-xs">Nada pago com rastreamento neste recorte.</p>
+          ) : [...porDestino.entries()].map(([destino, linhas]) => (
+            <div key={destino} className="mb-2 last:mb-0">
+              <div className="flex justify-between gap-2 text-xs">
+                <span className="text-gray-300 font-medium">{CAT_LABEL[destino] || destino}</span>
+                <span className="text-green-400 font-mono">{fmt(soma(linhas))}</span>
+              </div>
+              {linhas.map(l => (
+                <div key={l.id} className="flex justify-between gap-2 text-[11px] pl-3">
+                  <span className="text-gray-600">← {l.client_name || 'Sem cliente'} {rotuloOrigem(l)} <span className="text-gray-700">{l.month}/{l.year}</span></span>
+                  <span className="text-gray-500 font-mono">{fmt(l.amount)}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* ── 3 · HISTÓRICO ── */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
+          <p className="text-[11px] uppercase tracking-wide text-blue-400/80 font-medium mb-2">📋 Histórico rastreado</p>
+          {porPagamento.size === 0 ? (
+            <p className="text-gray-600 text-xs">Nenhum pagamento rastreado neste recorte.</p>
+          ) : [...porPagamento.entries()].map(([pid, pg]) => (
+            <div key={pid} className="mb-2 last:mb-0 bg-gray-800/40 rounded-lg px-2 py-1.5">
+              <div className="flex justify-between gap-2 text-xs">
+                <span className="text-gray-300">
+                  {pg.paid_at ? new Date(pg.paid_at).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'}
+                  <span className="text-gray-600"> · {pg.notes || 'sem descrição'}</span>
+                </span>
+                <span className="text-white font-mono">{fmt(soma(pg.linhas))}</span>
+              </div>
+              {pg.linhas.map(l => (
+                <div key={l.id} className="flex justify-between gap-2 text-[11px] pl-3 text-gray-600">
+                  <span>├─ {l.client_name || 'Sem cliente'} {rotuloOrigem(l)} {l.month}/{l.year} → {CAT_LABEL[l.destination_category] || l.destination_category}</span>
+                  <span className="font-mono">{fmt(l.amount)}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <p className="text-gray-700 text-[10px] leading-tight">
+          O recorte é pela <strong>competência da origem</strong>, não pela data do pagamento:
+          um pagamento feito em agosto consumindo saldo de janeiro aparece em janeiro, que é
+          de onde o dinheiro veio.{' '}
+          No <strong>?action=pagar-distribuido</strong> (modal Receber) a origem é exata e a
+          categoria de destino é uma fatia proporcional da sessão — no pagamento por cliente
+          (Cards) as duas são exatas.
+        </p>
+      </div>
+    )
+  }
+
   function renderTabelaTabulada() {
     const d = tabDist
     return (
@@ -2783,6 +2985,10 @@ export default function Financial() {
                         className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'cards' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
                         title="Momentos do imposto, extrato por cliente e pagamento"
                       >🗂️ Cards</button>
+                      <button onClick={() => setTabView('rastreio')}
+                        className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'rastreio' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                        title="De onde veio cada centavo e para onde foi (payment_sources)"
+                      >🔎 Rastreio</button>
                     </span>
                   </span>
                   <span className="text-xs text-gray-500">
@@ -2821,7 +3027,9 @@ export default function Financial() {
                   </div>
                 )}
 
-                {tabView === 'tabela' ? renderTabelaTabulada() : breakdown.clientes.map(renderBreakdownCard)}
+                {tabView === 'rastreio' ? renderRastreio()
+                  : tabView === 'tabela' ? renderTabelaTabulada()
+                    : breakdown.clientes.map(renderBreakdownCard)}
 
                 {/* MOMENTO 1 puro: trabalho apontado e contrato mensal que ainda não viraram
                     nota. Ficam FORA dos cards porque não há payable — o Victor só recebe

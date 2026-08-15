@@ -440,6 +440,54 @@ Testado contra a produção (payable 27, Pharmalog 1/2026, R$ 295,38) nos dois c
 a idempotência (re-registrar mantém 1 linha), a recusa (compensar acima do pago) e o
 estorno — tudo restaurado ao final.
 
+### Visão 🔎 Rastreio e uso do crédito de compensação — 2026-08-15
+
+A aba Pagar Victor ganhou a **terceira visão** no toggle (📋 Tabela · 🗂️ Cards · **🔎
+Rastreio**), lendo `payment_sources` por três ângulos: **origem** (por cliente e natureza,
+mais os créditos de compensação disponíveis), **destino** (por categoria, com a origem de
+cada fatia) e **histórico** (agrupado por pagamento).
+
+É visão e não painel dentro dos cards de propósito: origem e destino são recortes
+diferentes do mesmo dinheiro. O card do Pharmalog mostra o que ele deve; o rastreio mostra
+que o pró-labore de agosto saiu do serviço do Pharmalog de **janeiro**. Empilhados no mesmo
+card, um valor pareceria subtotal do outro.
+
+Rotas novas em `api/payables-victor.js`: `GET ?action=compensacoes` (créditos com
+`payment_id IS NULL`), `GET ?action=rastreamento` e `POST ?action=pagar-compensacao`.
+
+⚠️ **O recorte é a COMPETÊNCIA DA ORIGEM, não a data do pagamento.** Um pagamento feito em
+agosto consumindo saldo de janeiro aparece em **janeiro** — que é de onde o dinheiro veio.
+Recortar por `paid_at` colocaria a linha num mês em que ela não tem origem nenhuma.
+
+⚠️ **Só movimentos realizados** (com `payment_id`) entram em destino e histórico. O que
+ainda não virou pagamento são os créditos de compensação, que têm seção e botão próprios —
+misturá-los faria a soma dos destinos prometer dinheiro que não saiu.
+
+#### `?action=pagar-compensacao` — usar o crédito
+
+"Usar" um crédito quita um lançamento **do mesmo cliente** com o valor da compensação, sem
+sair caixa: é o que a compensação significa (o Fabrício deixou de receber, o dinheiro fica
+na empresa e vai para o Victor). O crédito sai de "disponível" no instante em que
+`payment_sources.payment_id` deixa de ser NULL — sem coluna de estado nova.
+
+**A especificação propunha `INSERT INTO payable_payments (…, category, amount_paid) VALUES
+('victor', NULL, …)` e as três partes são impossíveis:** não existem as colunas `category`
+nem `amount_paid` (são `amount` e `notes`), `payable_id` é **NOT NULL**, e um pagamento sem
+payable não teria pai para recalcular — sumiria de todas as telas, que leem por
+`payable_id`. Ligar a um payable real resolve as três de uma vez.
+
+⚠️ **O alvo é do mesmo cliente da origem.** Usar o crédito do Pharmalog para quitar o
+Bokada desfaria a única coisa que esta tabela existe para responder. Sem lançamento em
+aberto daquele cliente → **422**, e o crédito continua disponível.
+
+⚠️ **Não há consumo parcial**: crédito maior que o saldo do alvo é recusado (422) com o
+saldo na mensagem. A linha de `payment_sources` é uma só — metade usada e metade não exigiria
+quebrá-la em duas, e aí o rastreamento passaria a ter dois donos para o mesmo crédito.
+
+Testado ponta a ponta pelo handler real (com JWT): listar → usar (payable #28 foi a
+`parcial` com R$ 295,38) → recusar o reuso (404) → ver no rastreamento → apagar o pagamento
+e confirmar que o CASCADE limpou a trilha. Tudo restaurado.
+
 ### `monthly_closings` / `payments`
 Tabelas do fechamento mensal (modelo antigo). Pouco/ não usadas pelas telas atuais.
 
