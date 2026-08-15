@@ -1357,6 +1357,16 @@ export default function Financial() {
 
     return {
       id: r.id, month: r.month, year: r.year, client_name: r.client_name,
+      // Devido total do lançamento e o que JÁ havia sido pago antes desta sessão.
+      //
+      // ⚠️ `saldo` (= total − pago) é o que a cascata consome, e sem o par ao lado ele é
+      // indistinguível de um lançamento menor. Caso real: o Pharmalog #28 devia 8.795,38 e
+      // já tinha 209,16 pagos (Pró-labore + Demais, cinco dias antes), então o saldo era
+      // 8.586,22 — e "Lucros 8.900" quitou o lançamento e mandou 313,78 para o Bokada.
+      // Foi lido como "faltou consumir 209,16 do Pharmalog", quando aqueles 209,16 já
+      // estavam pagos; somá-los de novo pagaria 9.109,16 com 8.900.
+      total: cents(parseFloat(r.total_amount) || 0),
+      jaPago: cents(pagoGravado),
       // Contrato sem nota: vai para o fim da fila de consumo, e a etiqueta diz por quê —
       // sem ela, um cliente fora da ordem de competência parece erro de ordenação.
       semNf: r.require_nf === false,
@@ -3639,6 +3649,15 @@ export default function Financial() {
                           </span>
                           <span className="shrink-0 font-mono text-right whitespace-nowrap">
                             <span className="text-gray-500">Saldo: {fmt(d.saldo)}</span>
+                            {/* De onde o saldo saiu. Sem isto, um lançamento com pagamento
+                                anterior parece simplesmente menor, e a cascata parece ter
+                                parado no meio dele. */}
+                            {d.jaPago > 0.005 && (
+                              <span className="text-gray-600 text-[10px]"
+                                title="Total devido do lançamento menos o que já foi pago em sessões anteriores. A cascata consome o SALDO, não o total.">
+                                {' '}(de {fmt(d.total)} · {fmt(d.jaPago)} já pago)
+                              </span>
+                            )}
                             <span className="text-gray-600"> → </span>
                             <span className={
                               d.state === 'zero' ? 'text-gray-600 line-through'

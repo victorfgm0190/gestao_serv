@@ -1172,6 +1172,34 @@ dentro do mês, depois saldo desc — `#42 Bokada jan → #45 Pharmalog fev → 
 teste lia a resposta crua da API sem aplicar o comparador da tela; ao investigar ordem, o
 teste precisa usar `sortedPending`, não `data`.
 
+#### ⚠️ "A cascata parou no meio do Pharmalog" — não parou (2026-08-15)
+
+Relatado como bug de distribuição: *"paguei 8.900 e o Pharmalog ficou com 8.586,22 em vez
+de 8.795,38; faltaram 209,16, e o Bokada recebeu 209,16 a mais"*. **A conta fecha exata.**
+
+| payable | devido | pago ANTES | nesta sessão | pago | status |
+|---------|--------|-----------|--------------|------|--------|
+| #28 Pharmalog | 8.795,38 | **209,16** | 8.586,22 | 8.795,38 | **pago** |
+| #42 Bokada | 711,45 | 0 | 313,78 | 313,78 | parcial |
+
+Os 209,16 são a sessão de **10/02** (Pró-labore 186,16 + Demais despesas 23,00), cinco dias
+anterior. O Pharmalog **foi esgotado 100%** — `paid_amount = total_amount`, status `pago` —
+e o Bokada recebeu exatamente o que sobrou: `8.900 − 8.586,22 = 313,78`. A sessão inteira
+soma **8.900,00**, e o total pago aos dois é 9.109,16 — o mesmo 9.109,16 que o próprio
+relato cita como "Lucros + Pró-labore + Demais".
+
+O esperado do relato (Pharmalog 8.795,38 **nesta sessão** + Bokada 104,62) pagaria os
+209,16 **duas vezes**: 8.900 cobrindo 9.109,16.
+
+A causa é de leitura, e é a terceira vez que a mesma confusão gera um chamado: o cabeçalho
+mostrava só `Saldo: 8.586,22`, indistinguível de um lançamento que devesse isso. Agora diz
+**`(de 8.795,38 · 209,16 já pago)`** — a cascata consome o SALDO, nunca o total devido, e
+o par ao lado é o que torna isso visível sem abrir o histórico.
+
+⚠️ Ao investigar isto por SQL: as colunas são `payable_payments.payable_id` +
+`payable_type='victor'` e `amount` — **não** `payable_victor_id` nem `amount_paid`. Uma
+query com os nomes errados falha em vez de mentir, mas custa tempo.
+
 #### Lançamento quitado some do painel — e agora diz que sumiu (2026-08-12)
 
 `sortedPending` filtra `saldoOf(r) > 0`, então um pagamento que QUITA o lançamento o faz
