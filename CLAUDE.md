@@ -278,6 +278,49 @@ lucro 0,00**. As 14 competências apuradas foram reprocessadas.
 **recebendo menos**. Se a guia também for quitada com caixa (aba Pagar Victor ou /fiscal),
 o mesmo tributo sai duas vezes do bolso dele. O rastreamento agora deixa isso VISÍVEL.
 
+#### Cascata de origem ao pagar imposto — rateio → Lucro → Serviço (2026-08-15)
+
+Pagar **Honorários R$ 150** consome primeiro a fatia que a apuração rateou para cada
+cliente — Pharmalog 139,11 + Bokada 10,89, os R$ 150 exatos — e só o que passar disso desce
+para o saldo do Victor. Vale igual para DAS, INSS e Escritório.
+
+⚠️ **O consumo do rateio NÃO DEBITA O PAYABLE, e é isso que evita cobrar o imposto duas
+vezes.** Com a absorção ligada (Opção 2), o excedente do tributo JÁ foi descontado de
+lucro/serviço pela redistribuição — o payable do Pharmalog já saiu de 8.795,38 para
+8.452,95. Debitá-lo de novo aqui tiraria o mesmo imposto do bolso dele pela segunda vez.
+A linha do rateio registra "esta fatia da guia foi paga"; o saldo por cliente cai porque
+`victor-recorte` o deriva do `paid_amount` da obrigação.
+
+O **excedente** sobre o rateio é outra coisa — dinheiro sem lastro fiscal — e esse desce
+para Lucro → Serviço debitando de verdade (o passo 2 de `planejarCategoria`).
+
+Conferido em prévia contra a produção:
+
+| digitado | linhas | debita |
+|----------|--------|--------|
+| Honorários 150 | escritorio→honorarios: Pharma 139,11 + Bokada 10,89 | **0,00** |
+| Honorários 200 | as duas acima + `profit` Pharma 50,00 | **50,00** |
+| Honorários 100 | escritorio→honorarios: Pharma 100,00 (Pharmalog-first) | 0,00 |
+| DAS 632,40 | das→das: Pharma 586,50 + Bokada 45,90 | 0,00 |
+
+Três detalhes que sustentam isso:
+
+- **`sem_debito`** marca a alocação do rateio. `agruparPorPayable()` e o INSERT de
+  `fiscal_allocations` a ignoram — não há `payable_payments` a que amarrá-la —, e o
+  rastreamento a grava com `payment_id NULL`, por INSERT direto (o `INSERT … SELECT` do
+  caminho normal não casaria nada e a trilha sumiria justo no caminho novo).
+- **`quitacao_direta` = o que efetivamente saiu** (rateio + o que o fallback cobriu). Se nem
+  o fallback der conta, a guia é quitada só pela parte paga: gravar o valor cheio marcaria
+  como pago um dinheiro que não saiu.
+- **O destino é a categoria PAGA, crua**, em todas as linhas do mesmo pagamento — inclusive
+  nas que transbordaram. `DESTINO_POR_CATEGORIA` deixou de ser "o destino" e virou
+  `linhaDeSaldoDe()`: a linha de saldo que a categoria consome (`honorarios` → saldo de
+  `escritorio`). Sem isso, um pagamento de honorários apareceria repartido entre dois
+  destinos e a soma "o que saiu para os honorários" precisaria conhecer o mapa para fechar.
+
+As validações que a especificação pedia já existiam: **422** quando a guia daquela categoria
+já está quitada (`ja_quitadas`) e **422** quando o valor não cabe (`faltando`, com o motivo).
+
 #### Rastreamento da absorção (`destination_category = 'impostos'`)
 
 Cada absorção vira linha em `payment_sources`, com `payment_id NULL` (não é pagamento — é

@@ -418,6 +418,10 @@ async function pagarComRateio(sql, req, res) {
   // não teria como devolver esse pedaço.
   const ligacoes = []
   for (const a of plano.alocacoes) {
+    // `sem_debito`: a fatia do rateio foi paga sem tirar dinheiro do payable, então não há
+    // `payable_payments` a que amarrar a alocação — o SELECT abaixo não casaria nada e o
+    // INSERT gravaria zero linhas de qualquer forma. Sair aqui deixa isso explícito.
+    if (a.sem_debito) continue
     const ob = a.kind ? obPorKind.get(a.kind) : null
     if (!ob) continue  // 'demais'/'lucros' não são obrigação: viram só payable_payments
     ligacoes.push(sql`
