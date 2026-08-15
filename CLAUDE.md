@@ -312,6 +312,45 @@ debita o saldo do Victor (e continua sem quitar guia nenhuma, como sempre). É o
 usado pelo Flow B e pela **edição de sessão**, e recusar categorias fiscais ali quebraria a
 reedição de sessões antigas que as contêm. Fechar esse quarto caminho é decisão pendente.
 
+### `payment_sources` — rastreamento origem → destino (2026-08-15)
+
+De onde veio cada centavo e para onde foi. Uma linha por movimento:
+*Serviço Victor Jan/Pharmalog R$ 100 → Pró-labore R$ 50 + Escritório R$ 30 + Lucros R$ 20*
+são três linhas com a mesma origem e destinos diferentes.
+
+`id` int · **`company_id` int NOT NULL** → `companies(id)` ·
+`source_type` varchar(50) NOT NULL (`service`|`profit`|`compensation_fabricio`) ·
+`client_id` int → `clients(id)` (NULL na compensação do Fabrício) ·
+`month` int NOT NULL · `year` int NOT NULL (competência da ORIGEM) ·
+`destination_category` varchar(50) NOT NULL
+(`pro_labore`|`escritorio`|`das`|`inss`|`lucros`|`pagar_fabricio`) ·
+`amount` numeric(15,2) NOT NULL ·
+`payment_id` int → `payable_payments(id)` **ON DELETE CASCADE** ·
+`fabricio_compensation_id` int → `payables_fabricio(id)` **ON DELETE CASCADE** ·
+`notes` text · `created_at` · `updated_at` timestamp
+
+Índices: `(source_type, client_id, month, year)`, `(destination_category)`, `(payment_id)`
+e `(company_id, year, month)`.
+
+**Vazia e sem código lendo ou escrevendo nela** — é só a infraestrutura (PROMPT 1).
+
+Três decisões que diferem da especificação, todas conferidas no banco:
+
+- **`company_id` foi acrescentado.** Não estava na spec, e sem ele a tabela é inutilizável
+  pelas telas: toda tela recorta por empresa, e `client_id` é NULL justamente na compensação
+  do Fabrício — não haveria nem como inferir. É o mesmo motivo pelo qual `invoices`,
+  `payables_*` e `fiscal_obligations` o carregam.
+- **`payment_id` e `fabricio_compensation_id` ganharam FK com CASCADE.** A trilha existe POR
+  CAUSA do pagamento; estornar o pagamento e deixar a linha apontando para um id morto faria
+  o rastreamento mentir — exatamente o que `fiscal_allocations.payable_payment_id` já resolve
+  desse jeito. ⚠️ É também o que permite estornar só aquela sessão.
+- **`fabricio_compensation_id` aponta para `payables_fabricio`.** Não existe tabela de
+  compensação: ela é o par `is_compensation` bool + `compensation_notes` text naquela tabela.
+
+⚠️ **Não há CHECK nos dois vocabulários** (`source_type`, `destination_category`), seguindo
+o padrão do resto do schema. Vale a advertência de sempre: valor fora da lista não é
+rejeitado pelo banco — ele simplesmente some de todo filtro que a tela fizer.
+
 ### `monthly_closings` / `payments`
 Tabelas do fechamento mensal (modelo antigo). Pouco/ não usadas pelas telas atuais.
 
