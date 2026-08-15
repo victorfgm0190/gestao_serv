@@ -332,7 +332,41 @@ são três linhas com a mesma origem e destinos diferentes.
 Índices: `(source_type, client_id, month, year)`, `(destination_category)`, `(payment_id)`
 e `(company_id, year, month)`.
 
-**Vazia e sem código lendo ou escrevendo nela** — é só a infraestrutura (PROMPT 1).
+Populada por `lib/payment-source-tracker.js`, chamado pelos DOIS caminhos de pagamento do
+Victor (`?action=pagar-distribuido`, nos três desfechos, e `?action=pagar-com-rateio`).
+
+⚠️ **Os writes entram na MESMA `sql.transaction` do pagamento.** Trilha gravada à parte
+sobrevive a um pagamento que falhou, e a tabela criada para ser a verdade vira a única
+fonte errada.
+
+⚠️ **`payment_id` não existe na hora de montar o INSERT** — o driver do Neon não devolve
+RETURNING de dentro de transação em lote. `writesDeOrigemDestino()` resolve o id pelo mesmo
+`INSERT … SELECT … ORDER BY pp.id DESC LIMIT 1` de `fiscal_allocations`, casando o par
+(payable, `paid_at`, `notes`). O `LIMIT 1` não é enfeite: sem ele um pagamento anterior de
+mesmo par casaria duas linhas e a origem seria gravada em dobro.
+
+**A precisão do DESTINO difere entre os dois caminhos, e isso é estrutural:**
+
+| caminho | origem (cliente, competência, lucro × serviço) | destino (categoria) |
+|---------|-----------------------------------------------|---------------------|
+| `pagar-com-rateio` | exata — `planejar()` já devolve tudo | **exata** |
+| `pagar-distribuido` | exata — quebra do payable consumido | **rateada** proporcionalmente |
+
+O `pagar-distribuido` soma as categorias num pool único e a quebra sobrevive só como texto
+em `notes`; o rateio é o mesmo `proportionalCats()` que a tela já usa para ler o histórico,
+e cada linha diz isso no `notes`. Não rastrear esse fluxo deixaria o Flow B e a edição de
+sessão sem trilha — buraco é pior que fatia declaradamente proporcional.
+
+⚠️ **Categoria de imposto não gera movimento.** Sob a Opção 1 ela não consome payable
+nenhum (quita a guia com caixa), então não há origem no que a empresa deve ao Victor.
+Verificado: "DAS 586,50" produz **0 linhas**, e "Lucros 8.900" produz 3 que somam 8.900.
+
+A quebra lucro × serviço usa a hipótese ÚNICA do sistema — **o lucro é consumido primeiro**
+—, a mesma de `prepararCandidatos()`, `quebrarPago()` e `aplicarDelta()`. Divergir aqui
+faria a trilha contradizer o saldo que ela explica.
+
+**Estorno não precisa de nada**: a FK `payment_id ON DELETE CASCADE` limpa a trilha junto
+com o pagamento. Conferido em produção com gravação real e estorno.
 
 Três decisões que diferem da especificação, todas conferidas no banco:
 

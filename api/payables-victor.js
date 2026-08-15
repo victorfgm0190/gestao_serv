@@ -20,6 +20,12 @@ import { carregarRecorte } from '../lib/victor-recorte.js'
 // Tabela tabulada: rateio dos totais digitados + cascata Escritório → DAS → INSS →
 // Lucro → Serviço. Agregação sobre o breakdown, não um segundo motor.
 import { montarTabulado, CATEGORIAS_ENTRADA } from '../lib/victor-tabulado.js'
+// Rastreamento origem → destino (payment_sources). Os writes entram na MESMA transação do
+// pagamento: trilha gravada à parte pode sobreviver a um pagamento que falhou, e aí a
+// tabela criada para ser a verdade vira a única fonte errada.
+import {
+  writesDeOrigemDestino, movimentosDoPlano, movimentosDoConsumo,
+} from '../lib/payment-source-tracker.js'
 
 // Recalcula o pai de um payable_victor após alterar seus pagamentos.
 async function recalcVictorParent(sql, payable_id) {
@@ -118,8 +124,13 @@ async function pagarDistribuido(sql, req, res) {
         leftover: restante,
       })
     }
-    await sql.transaction(writes)
-    return res.status(200).json({ mode: 'geral', applied, leftover: restante })
+    // Rastreamento: origem exata (cliente, competência, lucro × serviço) e destino rateado
+    // entre as categorias digitadas — ver movimentosDoConsumo().
+    const trilha = movimentosDoConsumo({ applied, lista, despesas })
+    await sql.transaction([...writes, ...writesDeOrigemDestino(sql, {
+      company_id, movimentos: trilha, when, notes_sessao: notes,
+    })])
+    return res.status(200).json({ mode: 'geral', applied, leftover: restante, rastreado: trilha.length })
   }
 
   // FLOW B — especifico
@@ -129,9 +140,12 @@ async function pagarDistribuido(sql, req, res) {
 
   // Cabe tudo no alvo → paga normalmente e encerra
   if (total <= targetSaldo + 0.005) {
-    const { writes } = consumir(sql, total, [target], when, notes)
-    await sql.transaction(writes)
-    return res.status(200).json({ mode: 'especifico', done: true })
+    const { writes, applied } = consumir(sql, total, [target], when, notes)
+    const trilha = movimentosDoConsumo({ applied, lista: [target], despesas })
+    await sql.transaction([...writes, ...writesDeOrigemDestino(sql, {
+      company_id, movimentos: trilha, when, notes_sessao: notes,
+    })])
+    return res.status(200).json({ mode: 'especifico', done: true, rastreado: trilha.length })
   }
 
   const overflow = r2(total - targetSaldo)
@@ -169,8 +183,13 @@ async function pagarDistribuido(sql, req, res) {
     applied.push(...dist.applied)
     leftover = dist.restante
   }
-  await sql.transaction(writes)
-  return res.status(200).json({ mode: 'especifico', done: true, applied, leftover })
+  // `candidatos` cobre o alvo e o pool da sobra — movimentosDoConsumo casa cada `applied`
+  // com o seu record por id, então basta passar a lista inteira.
+  const trilha = movimentosDoConsumo({ applied, lista: candidatos, despesas })
+  await sql.transaction([...writes, ...writesDeOrigemDestino(sql, {
+    company_id, movimentos: trilha, when, notes_sessao: notes,
+  })])
+  return res.status(200).json({ mode: 'especifico', done: true, applied, leftover, rastreado: trilha.length })
 }
 
 // Saldo em aberto de uma obrigação. Cópia deliberada da de api/fiscal-obligations.js:
@@ -423,7 +442,18 @@ async function pagarComRateio(sql, req, res) {
               ? 'Guia paga pela aba Pagar Victor (caixa próprio — não abate o saldo do Victor)'
               : 'Pago com rateio por cliente (aba Pagar Victor)'})`)
 
-  await sql.transaction([...writes, ...ligacoes, ...quitacoesSql])
+  // Rastreamento origem → destino. Aqui NADA é estimado: o plano já sabe o cliente, a
+  // competência, a categoria e a quebra lucro/serviço de cada alocação.
+  //
+  // ⚠️ Categoria de imposto não gera movimento — sob a Opção 1 ela não consome payable
+  // nenhum, quita a guia com caixa. Registrar uma origem diria que o dinheiro saiu de um
+  // lançamento que continua inteiro.
+  const trilha = movimentosDoPlano(plano)
+  const trilhaSql = writesDeOrigemDestino(sql, {
+    company_id, movimentos: trilha, when, notes_sessao: notes,
+  })
+
+  await sql.transaction([...writes, ...ligacoes, ...quitacoesSql, ...trilhaSql])
   // Fora da transação: recalcularObrigacao re-soma fiscal_payments, que só existe depois
   // do commit. Nunca `paid_amount + valor` — a soma real corrige divergências em vez de
   // acumulá-las.
@@ -435,6 +465,7 @@ async function pagarComRateio(sql, req, res) {
     resumo,
     payables_afetados: porPayable,
     notes,
+    rastreado: trilha.length,
   })
 }
 
