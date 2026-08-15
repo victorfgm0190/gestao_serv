@@ -5,7 +5,7 @@ import { statusFor } from '../lib/payment-status.js'
 import { CLIENT_PHARMA, CATS, r2, ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
 // Pagamento roteado pelo rateio da apuração (?action=pagar-com-rateio).
 import {
-  CATEGORIA_KIND, buscarRateios, planejar, agruparPorPayable, quitacoesPorObrigacao, LIMIAR_FIM,
+  CATEGORIA_KIND, buscarRateios, buscarRateiosPorNotas, planejar, agruparPorPayable, quitacoesPorObrigacao, LIMIAR_FIM,
 } from '../lib/victor-rateio.js'
 // Quitar a obrigação é parte do pagamento: sem isso a guia continua devida no card de
 // Reservas enquanto o dinheiro já saiu do payable — o mesmo valor descontado duas vezes.
@@ -267,11 +267,30 @@ async function pagarComRateio(sql, req, res) {
   const [payY, payM] = when.split('-').map(Number)
   const curKey = Math.max(payM ? payY * 100 + payM : 0, ano * 100 + mes)
 
-  const [candidatos, rateios, obrigacoes] = await Promise.all([
+  // ⚠️ QUANDO OS ITENS TRAZEM NOTAS, ELAS MANDAM — não a competência recebida.
+  //
+  // `competencia_mes/ano` vem do FILTRO da tela, e ele quase nunca é a competência da
+  // apuração: as NFs de janeiro são emitidas em fevereiro, e o rateio delas mora em 02.
+  // Com o filtro em janeiro, a busca por competência voltava vazia — o pagamento não
+  // achava fatia, descia para o fallback e debitava o SERVIÇO. É a mesma âncora que abre
+  // lib/victor-rateio.js: a NOTA, não o mês.
+  //
+  // Sem `invoice_ids` (o modal "Receber" não os manda) vale a competência, como antes.
+  const notasPedidas = [...new Set(itens.flatMap((i) => i.invoice_ids || []))]
+  const [candidatos, rateios] = await Promise.all([
     candidatosDisponiveis(sql, company_id, curKey),
-    buscarRateios(sql, company_id, mes, ano),
-    sql`SELECT * FROM fiscal_obligations WHERE company_id = ${company_id} AND month = ${mes} AND year = ${ano}`,
+    notasPedidas.length
+      ? buscarRateiosPorNotas(sql, company_id, notasPedidas)
+      : buscarRateios(sql, company_id, mes, ano),
   ])
+
+  // As obrigações saem dos rateios encontrados — a guia a quitar é a que a alocação
+  // aponta, não a que o mês do filtro sugere. Cair na competência só quando não há rateio
+  // nenhum preserva o aviso `sem_obrigacao` para o mês realmente não apurado.
+  const obIds = [...new Set(rateios.map((r) => Number(r.obligation_id)).filter(Boolean))]
+  const obrigacoes = obIds.length
+    ? await sql`SELECT * FROM fiscal_obligations WHERE company_id = ${company_id} AND id = ANY(${obIds})`
+    : await sql`SELECT * FROM fiscal_obligations WHERE company_id = ${company_id} AND month = ${mes} AND year = ${ano}`
   const obPorKind = new Map(obrigacoes.map((o) => [o.kind, o]))
 
   const plano = planejar({ pagamentos: itens, rateios, candidatos })
