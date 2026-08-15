@@ -147,6 +147,16 @@ const MODO_INFO = {
   },
 }
 
+// Arredondamento para centavos. No ESCOPO DO MÓDULO de propósito.
+//
+// ⚠️ Vivia duplicado — uma cópia dentro de alocarCascataDist() e outra no meio do corpo do
+// componente, logo antes de `distPool`. Quando `impostoAbertoDe()` passou a usá-lo ~50
+// linhas ACIMA dessa segunda declaração (2026-08-15), o `const` do componente ainda estava
+// na zona morta temporal e a tela quebrou inteira: "Cannot access 'q' before
+// initialization" no bundle. Função pura não tem por que morar dentro de escopo nenhum —
+// no módulo, não há ordem que a alcance antes da hora.
+const cents = (v) => Math.round(v * 100) / 100
+
 // Aloca em cascata o que foi digitado sobre as linhas dos lançamentos. MUTA `lancamentos`
 // (reconstruídos a cada render) e devolve o que sobrou de cada entrada.
 //
@@ -163,7 +173,6 @@ const MODO_INFO = {
 // Digitar "Escritório 150" com 98,57 em aberto tira 98,57 do Escritório e 51,43 do
 // Serviço; o SUB cai 150, não 248,57.
 function alocarCascataDist(lancamentos, valores) {
-  const cents = (v) => Math.round(v * 100) / 100
   const sobras = {}
   for (const entrada of DIST_ORDEM_ENTRADA) {
     let resta = cents(parseFloat(String(valores?.[entrada] ?? '').replace(',', '.')) || 0)
@@ -1388,7 +1397,6 @@ export default function Financial() {
   const prevMonthsWithBalance = sortedPending
     .filter(r => payKey(r) < effectiveRefKey && (!receiveTarget || r.id !== receiveTarget.id))
     .map(r => ({ id: r.id, client_name: r.client_name, month: r.month, year: r.year, saldo: saldoOf(r) }))
-  const cents = (v) => Math.round(v * 100) / 100
   let distPool = cents(receiveTotal)
 
   // ESTADO INICIAL das 5 linhas trabalháveis, ANTES de alocar o que está sendo digitado.
