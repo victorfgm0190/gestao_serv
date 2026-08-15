@@ -362,8 +362,9 @@ async function pagarComRateio(sql, req, res) {
     })
   }
   // Sem alocação E sem quitação não há o que gravar. Com quitação e sem alocação há: é o
-  // caso normal da Opção 1 — pagar só DAS/INSS/Escritório não consome lançamento nenhum,
-  // e recusar aqui inviabilizaria justamente o caminho novo.
+  // caso normal do pagamento de imposto — a fatia rateada quita a guia sem debitar
+  // lançamento nenhum (o excedente do tributo já foi absorvido na redistribuição), e
+  // recusar aqui inviabilizaria justamente esse caminho.
   if (!plano.alocacoes.length && !quitacoes.length) {
     return res.status(422).json({
       error: `Nenhum lançamento disponível para consumir em ${String(mes).padStart(2, '0')}/${ano}. Só entram os que já foram recebidos do cliente e cujo mês de caixa não é posterior à data do pagamento.`,
@@ -451,9 +452,10 @@ async function pagarComRateio(sql, req, res) {
   // Rastreamento origem → destino. Aqui NADA é estimado: o plano já sabe o cliente, a
   // competência, a categoria e a quebra lucro/serviço de cada alocação.
   //
-  // ⚠️ Categoria de imposto não gera movimento — sob a Opção 1 ela não consome payable
-  // nenhum, quita a guia com caixa. Registrar uma origem diria que o dinheiro saiu de um
-  // lançamento que continua inteiro.
+  // ⚠️ Categoria de imposto GERA movimento desde a cascata de 2026-08-15 — as linhas
+  // `sem_debito`, com a linha de saldo consumida como origem (`escritorio`/`das`/`inss`) e
+  // `payment_id` NULL, porque não houve `payable_payments` a que amarrá-las. Só o
+  // transbordo sobre o rateio aparece como `profit`/`service`.
   const trilha = movimentosDoPlano(plano)
   const trilhaSql = writesDeOrigemDestino(sql, {
     company_id, movimentos: trilha, when, notes_sessao: notes,

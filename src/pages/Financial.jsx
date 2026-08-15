@@ -50,6 +50,23 @@ const EMPTY_RECEIVE_CATS = { honorarios: '', das: '', inss: '', pro_labore: '', 
 // lib/victor-rateio.js. A ordem é a da cascata: o que o Victor recebe primeiro, o que o
 // fisco leva depois.
 const BREAKDOWN_CATEGORIAS = ['lucro', 'servico', 'das', 'inss', 'escritorio']
+
+// ⚠️ A categoria do CARD não é a categoria do MOTOR — e confundi-las custou um pagamento.
+//
+// A linha "Escritório" do breakdown é o kind `honorarios` (`BREAKDOWN_KIND` em
+// lib/victor-breakdown.js): os R$ 150 da contabilidade, o único dos dois que a apuração
+// rateia por cliente. Já `escritorio`, no vocabulário do motor (`CATEGORIA_KIND` em
+// lib/victor-rateio.js), é o kind LEGADO da migração de victor_reserves — nunca entrou em
+// `KINDS_COM_RATEIO`.
+//
+// Mandar 'escritorio' cru fazia o motor procurar rateio de um kind que não tem nenhum:
+// as 150 não achavam fatia, desciam inteiras para o fallback e debitavam o SERVIÇO, sem
+// quitar guia alguma (não existe obrigação `escritorio` na competência). Conferido:
+// categoria='escritorio' → 0 alocações e restante 150; categoria='honorarios' → consome
+// os 139,11 rateados ao Pharmalog e quita a guia.
+//
+// `lucro` e `servico` não têm kind (são o saldo do próprio payable) e passam inalteradas.
+const BREAKDOWN_CATEGORIA_MOTOR = { escritorio: 'honorarios' }
 const BREAKDOWN_LABEL = {
   lucro: 'Lucro',
   servico: 'Serviço Victor',
@@ -539,7 +556,11 @@ export default function Financial() {
       for (const cat of BREAKDOWN_CATEGORIAS) {
         const valor = parseFloat(String(digitado[cat] ?? '').replace(',', '.')) || 0
         if (valor <= 0) continue
-        out.push({ categoria: cat, client_id: c.client_id, invoice_ids: c.nf.invoice_ids, valor })
+        // Traduz para o vocabulário do motor — ver BREAKDOWN_CATEGORIA_MOTOR.
+        out.push({
+          categoria: BREAKDOWN_CATEGORIA_MOTOR[cat] || cat,
+          client_id: c.client_id, invoice_ids: c.nf.invoice_ids, valor,
+        })
       }
     }
     return out
