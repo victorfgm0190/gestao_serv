@@ -1298,8 +1298,17 @@ export default function Financial() {
     // somando de volta o que foi absorvido — subtrair de novo, como a leitura intuitiva
     // sugere, descontaria o mesmo imposto duas vezes. Com isso a identidade
     // `original − absorveu = bruto` fecha em toda linha.
-    const absLucro = r.cascata ? Math.max(cents((parseFloat(r.cascata.lucro_antes_escritorio) || 0) - lucroTot), 0) : 0
-    const absServico = r.cascata && r.cascata.lucro_final < -0.005 ? cents(-r.cascata.lucro_final) : 0
+    // ⚠️ A absorção vem do BACKEND (`cascata.absorvido_*`), não é mais deduzida daqui.
+    //
+    // A dedução antiga era `lucro_antes_escritorio − profit_amount`, que só funcionava
+    // enquanto o payable estava reduzido pela cascata. Sob a Opção 1 (2026-08-14) o payable
+    // guarda o que a fatura prometeu, e a mesma subtração devolveria a PROVISÃO de 7% como
+    // se fosse absorção — R$ 684,25 de "ABSORVEU" no Pharmalog, onde o certo é zero.
+    //
+    //   antes: absLucro   = max(cascata.lucro_antes_escritorio − lucroTot, 0)
+    //          absServico = cascata.lucro_final < 0 ? −cascata.lucro_final : 0
+    const absLucro = cents(parseFloat(r.cascata?.absorvido_lucro) || 0)
+    const absServico = cents(parseFloat(r.cascata?.absorvido_servico) || 0)
     const linha = (bruto, pagos, absorveu = 0) => ({
       original: cents(bruto + absorveu),
       absorveu: cents(absorveu),

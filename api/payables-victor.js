@@ -340,7 +340,10 @@ async function pagarComRateio(sql, req, res) {
       alocacoes: alocacoesOut, resumo,
     })
   }
-  if (!plano.alocacoes.length) {
+  // Sem alocação E sem quitação não há o que gravar. Com quitação e sem alocação há: é o
+  // caso normal da Opção 1 — pagar só DAS/INSS/Escritório não consome lançamento nenhum,
+  // e recusar aqui inviabilizaria justamente o caminho novo.
+  if (!plano.alocacoes.length && !quitacoes.length) {
     return res.status(422).json({
       error: `Nenhum lançamento disponível para consumir em ${String(mes).padStart(2, '0')}/${ano}. Só entram os que já foram recebidos do cliente e cujo mês de caixa não é posterior à data do pagamento.`,
       resumo,
@@ -350,7 +353,19 @@ async function pagarComRateio(sql, req, res) {
   // Uma string de notes para a sessão inteira (não uma por categoria): é o par
   // (paid_at, notes) que identifica a sessão para a edição e o estorno, e é o formato que
   // parseNotesToReceiveCats() lê na tela. A quebra por categoria vive nas alocações.
-  const notes = montarNotes(despesas)
+  // ⚠️ Só as categorias que REALMENTE consumiram saldo entram no notes.
+  //
+  // A string é lida de volta por parseNotesToReceiveCats() (Financial.jsx) como "o que este
+  // pagamento tirou do lançamento". Sob a Opção 1, uma sessão de "Lucros 8.900 + DAS 586,50"
+  // debita 8.900 e paga a guia com caixa — gravar o DAS aqui faria a tela afirmar que o
+  // lançamento cobriu 9.486,50, e reeditar a sessão tentaria devolver um dinheiro que nunca
+  // saiu dele.
+  const despesasConsumo = {}
+  for (const c of plano.por_categoria) {
+    if (c.sem_consumo) continue
+    despesasConsumo[c.categoria] = r2((despesasConsumo[c.categoria] || 0) + c.valor)
+  }
+  const notes = montarNotes(despesasConsumo)
   const porPayable = agruparPorPayable(plano.alocacoes)
   const porId = new Map(candidatos.map((c) => [c.id, c]))
 
@@ -396,9 +411,17 @@ async function pagarComRateio(sql, req, res) {
       ORDER BY pp.id DESC LIMIT 1`)
   }
 
+  // `method` distingue os dois mundos, e não é cosmético: lib/fiscal-unlink.js desfaz os
+  // pagamentos de 'abatimento' quando o payable que os originou é estornado. Um pagamento
+  // 'direto' não nasceu de payable nenhum (Opção 1), então tem de sobreviver a esse estorno
+  // — quem o desfaz é o DELETE de /api/fiscal-payments, na tela /fiscal.
   const quitacoesSql = quitacoes.map((q) => sql`
     INSERT INTO fiscal_payments (obligation_id, amount, paid_at, method, notes)
-    VALUES (${q.obligation_id}, ${q.valor}, ${when}, 'abatimento', 'Pago com rateio por cliente (aba Pagar Victor)')`)
+    VALUES (${q.obligation_id}, ${q.valor}, ${when},
+            ${q.sem_consumo ? 'direto' : 'abatimento'},
+            ${q.sem_consumo
+              ? 'Guia paga pela aba Pagar Victor (caixa próprio — não abate o saldo do Victor)'
+              : 'Pago com rateio por cliente (aba Pagar Victor)'})`)
 
   await sql.transaction([...writes, ...ligacoes, ...quitacoesSql])
   // Fora da transação: recalcularObrigacao re-soma fiscal_payments, que só existe depois

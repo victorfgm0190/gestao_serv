@@ -7,7 +7,7 @@ import {
 import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
 import { sincronizarLinhasFiscais } from '../lib/fiscal-lines.js'
 import { ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
-import { recalcularInvoice, consolidar } from '../lib/fiscal-redistribution.js'
+import { recalcularInvoice, consolidar, ABSORVER_IMPOSTO_NO_PAYABLE } from '../lib/fiscal-redistribution.js'
 
 // Data de hoje em ISO. Isolado para o fuso: new Date() no servidor da Vercel é UTC.
 const todayISO = () => new Date().toISOString().slice(0, 10)
@@ -563,6 +563,17 @@ async function lancarGuia(sql, req, res) {
 // Grava `fiscal_allocations.payable_victor_id` em cada payable efetivamente consumido,
 // fechando o elo entre a obrigação e de quem ela foi descontada.
 async function distribuir(sql, req, res) {
+  // ⚠️ OPÇÃO 1 (2026-08-14): esta rota É a absorção do imposto no saldo do Victor, só
+  // acionada pela /fiscal em vez de pela redistribuição. Deixá-la aberta enquanto o Ponto A
+  // e o Ponto B estão desligados daria um terceiro caminho — e o mais silencioso dos três —
+  // para o imposto voltar a comer o lucro. Recusa explícita em vez de remoção: o dia em que
+  // ABSORVER_IMPOSTO_NO_PAYABLE voltar a `true`, esta rota volta com ele.
+  if (!ABSORVER_IMPOSTO_NO_PAYABLE) {
+    return res.status(422).json({
+      error: 'Abatimento nos lançamentos do Victor está desligado: o imposto não é mais descontado do que ele recebe. Quite a guia por "Registrar pagamento" aqui em /fiscal, ou pela aba Pagar Victor.',
+      absorcao_no_payable: false,
+    })
+  }
   const { company_id, month, year, paid_at, reference_month, reference_year, incluir_previsto = false } = req.body || {}
   if (!company_id || !month || !year) {
     return res.status(400).json({ error: 'company_id, month e year são obrigatórios' })
@@ -902,8 +913,6 @@ async function recalcular(sql, req, res, raw = false) {
 
     const writes = []
     for (const r of aplicaveis) {
-      const s = r.mudancas.servico_victor.depois
-      const p = r.mudancas.lucro_victor.depois
       // A cascata é gravada junto: é o registro auditável de como o lucro foi consumido
       // pelos impostos daquela NF (e de quanto saiu do capital próprio). A tela não
       // depende dela para exibir — o GET de payables-victor recalcula pela MESMA função
@@ -914,9 +923,22 @@ async function recalcular(sql, req, res, raw = false) {
       // `invoice_id` NULL e nunca chega aqui — mas se chegasse, gravaria uma cascata de
       // lucro em cima de uma linha que não tem lucro nenhum.
       const c = r.cascata
+      // ⚠️ OPÇÃO 1 (2026-08-14): as três colunas financeiras SAÍRAM deste UPDATE.
+      //
+      //     service_amount = <servico_victor.depois>,
+      //     profit_amount  = <lucro_victor.depois>,
+      //     total_amount   = <soma das duas>,
+      //
+      // Era aqui que o imposto real entrava na cascata e reduzia o que o Victor recebe.
+      // Os valores continuam sendo calculados e devolvidos em `mudancas` — o que mudou é
+      // que não são mais gravados. Ver ABSORVER_IMPOSTO_NO_PAYABLE em
+      // lib/fiscal-redistribution.js, que já os devolve iguais ao da fatura.
+      //
+      // As colunas da cascata FICAM: elas são o histórico auditável de quanto do lucro o
+      // imposto CONSUMIRIA, e a tela as usa para mostrar o peso do tributo por NF. São
+      // leitura, não desconto.
       writes.push(sql`
         UPDATE payables_victor SET
-          service_amount = ${s}, profit_amount = ${p}, total_amount = ${round2(s + p)},
           lucro_antes_escritorio = ${c.lucro_antes_escritorio},
           lucro_antes_inss       = ${c.lucro_antes_inss},
           lucro_antes_das        = ${c.lucro_antes_das},
@@ -943,6 +965,9 @@ async function recalcular(sql, req, res, raw = false) {
     success: true,
     competencia: { month: m, year: y },
     aplicado: aplicar,
+    // `false` = o imposto não é descontado do payable (Opção 1). A tela precisa disto para
+    // não anunciar um "de X para Y" que ela mesma não vai ver acontecer.
+    absorcao_no_payable: ABSORVER_IMPOSTO_NO_PAYABLE,
     simulado: simulando,
     mudancas: consolidar(resultados),
     por_fatura: resultados,
@@ -1125,7 +1150,13 @@ export default async function handler(req, res) {
           desatualizado: Math.abs(faturamentoAtual - faturamentoApurado) >= 0.01,
         }
       }
-      return res.status(200).json({ data: obligations, redistribuicao, sem_nf: semNf, calculo })
+      // `false` = Opção 1: o imposto não é descontado do que o Victor recebe. A tela usa
+      // isto para não oferecer dois botões que não fazem mais nada ("Aplicar
+      // redistribuição" e "Abater do Victor"), em vez de deixá-los levarem ao 422.
+      return res.status(200).json({
+        data: obligations, redistribuicao, sem_nf: semNf, calculo,
+        absorcao_no_payable: ABSORVER_IMPOSTO_NO_PAYABLE,
+      })
     }
 
     if (req.method === 'POST') {

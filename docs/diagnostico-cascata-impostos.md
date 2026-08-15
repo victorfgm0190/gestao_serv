@@ -2,6 +2,12 @@
 
 > 2026-08-14 · investigação, **nenhuma alteração de lógica foi feita**.
 > Conferido contra a produção (Lumen, `company_id = 1`, competência 01/2026).
+>
+> ✅ **RESOLVIDO no mesmo dia pela Opção 1.** O imposto deixou de ser absorvido pelo que o
+> Victor recebe, nos **três** pontos (A, B e o `?action=distribuir`, que este documento
+> ainda não listava como caminho independente). Os payables #28 e #42 foram restaurados.
+> Ver a seção "OPÇÃO 1" no `CLAUDE.md` para o desenho final — o que segue abaixo é o
+> diagnóstico como estava antes da correção.
 
 ---
 

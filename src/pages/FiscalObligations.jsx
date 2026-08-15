@@ -71,6 +71,11 @@ export default function FiscalObligations() {
   const [guiaModal, setGuiaModal] = useState(null)
   const [pagtoModal, setPagtoModal] = useState(null)
   const [payments, setPayments] = useState([])
+  // O imposto ainda é descontado do que o Victor recebe? Vem do backend
+  // (ABSORVER_IMPOSTO_NO_PAYABLE, lib/fiscal-redistribution.js) e não de uma constante
+  // local: duas fontes para a mesma decisão é como a tela passa a oferecer um botão que a
+  // API recusa. Default `true` só até o GET responder, para não piscar a tela nova.
+  const [absorve, setAbsorve] = useState(true)
 
   useEffect(() => { fetchObligations() }, [activeCompany, month, year])
 
@@ -83,6 +88,7 @@ export default function FiscalObligations() {
       setRedistrib(data.redistribuicao || null)
       setSemNf(data.sem_nf || [])
       setCalculo(data.calculo || null)
+      setAbsorve(data.absorcao_no_payable !== false)
     } catch (e) { console.error(e); setErro('Falha ao carregar a apuração.') }
     finally { setLoading(false) }
   }
@@ -364,8 +370,12 @@ export default function FiscalObligations() {
           {redistrib?.mudancas && (
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-6">
               <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
-                <h3 className="text-white font-semibold text-sm">Redistribuição — imposto real × provisão</h3>
-                {pendente && (
+                <h3 className="text-white font-semibold text-sm">
+                  {absorve ? 'Redistribuição — imposto real × provisão' : 'Imposto real × provisão da nota'}
+                </h3>
+                {/* Sem absorção não há o que aplicar: o backend devolve depois = antes e
+                    não grava nada. O botão sairia da tela como um clique sem efeito. */}
+                {absorve && pendente && (
                   <button onClick={aplicarRedistribuicao} disabled={!!busy}
                     className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-xs font-medium">
                     {busy === 'recalcular' ? 'Aplicando...' : 'Aplicar redistribuição'}
@@ -373,9 +383,20 @@ export default function FiscalObligations() {
                 )}
               </div>
               <p className="text-gray-600 text-[11px] mb-4">
-                A fatura desconta uma provisão de imposto; a apuração diz o valor real.
-                A diferença volta para o Victor — do lucro primeiro, do serviço só depois.
-                O Fabrício não é afetado: o percentual dele foi acordado na fatura.
+                {absorve ? (
+                  <>
+                    A fatura desconta uma provisão de imposto; a apuração diz o valor real.
+                    A diferença volta para o Victor — do lucro primeiro, do serviço só depois.
+                    O Fabrício não é afetado: o percentual dele foi acordado na fatura.
+                  </>
+                ) : (
+                  <>
+                    Comparação apenas. A fatura reteve uma provisão de imposto e a apuração diz
+                    o valor real — mas a diferença <strong>não é mais descontada</strong> do que o
+                    Victor recebe: ela fica devida ao fisco e é paga com caixa. Os lançamentos
+                    dele mantêm o valor da nota.
+                  </>
+                )}
               </p>
 
               {redistrib.desatualizado && (
@@ -521,10 +542,14 @@ export default function FiscalObligations() {
               <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
                 <h3 className="text-white font-semibold text-sm mb-1">Abater do Victor</h3>
                 <p className="text-gray-600 text-[11px] mb-3">
-                  Consome estas despesas dos lançamentos a pagar do Victor, do mês mais antigo
-                  para o mais novo. Só entram lançamentos cujo cliente já pagou.
+                  {absorve
+                    ? 'Consome estas despesas dos lançamentos a pagar do Victor, do mês mais antigo para o mais novo. Só entram lançamentos cujo cliente já pagou.'
+                    : 'Desligado: o imposto não é mais descontado do que o Victor recebe. Quite a guia em "Pagamentos", no card de cada obrigação — o saldo por cliente cai junto.'}
                 </p>
-                {distribuido ? (
+                {/* Sem absorção os dois botões abaixo levariam ao 422 do ?action=distribuir.
+                    O "Estornar abatimento" continua aparecendo quando há distribuição antiga:
+                    é justamente o que desfaz o que ficou do modelo anterior. */}
+                {!absorve && !distribuido ? null : distribuido ? (
                   <>
                     <p className="text-green-300 text-xs mb-3">✅ Já abatido neste mês.</p>
                     <button onClick={estornarDistribuicao} disabled={!!busy}

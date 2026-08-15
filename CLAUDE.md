@@ -259,6 +259,59 @@ Regras do motor:
 - **Prévia por padrão.** Nada financeiro é gravado sem `aplicar: true`; payable com
   pagamento já registrado trava a aplicação (409) até ser estornado.
 
+### ⚠️ OPÇÃO 1 — o imposto deixou de ser absorvido pelo Victor (2026-08-14)
+
+**Decisão do Victor.** A cascata acima continua existindo como CÁLCULO, mas não desconta
+mais nada: o imposto real fica devido ao fisco e é pago com caixa. O que mandava era
+`ABSORVER_IMPOSTO_NO_PAYABLE` (`lib/fiscal-redistribution.js`), hoje `false` — uma flag, e
+não código removido, porque `aplicarDelta()` segue sendo a matemática correta de "quanto o
+imposto comeria do lucro", que a cascata e a memória de cálculo exibem.
+
+Eram **três** caminhos por onde o imposto chegava ao saldo do Victor, e os três foram
+fechados juntos — fechar só um deixa os outros como porta dos fundos:
+
+| ponto | onde | o que mudou |
+|-------|------|-------------|
+| **A** | `?action=recalcular` (`api/fiscal-obligations.js`) | `service_amount`/`profit_amount`/`total_amount` saíram do UPDATE (comentados no lugar). `recalcularInvoice` usa `absorverDelta()`, então `mudou` é false e nada é gravado |
+| **B** | `?action=pagar-com-rateio` (`lib/victor-rateio.js`) | `CATEGORIAS_IMPOSTO` (das, inss, honorarios, escritorio) não passa mais pela cascata: `planejarCategoria` sai antes dos dois passos e devolve `quitacao_direta`. Zero `payable_payments`, zero `fiscal_allocations` — só `fiscal_payments` |
+| **C** | `?action=distribuir` (`api/fiscal-obligations.js`) | responde **422** enquanto a flag estiver `false`. Era o "Abater do Victor" da `/fiscal`, o caminho mais silencioso dos três |
+
+`method` do `fiscal_payments` distingue os dois mundos: **`'direto'`** (caixa próprio, novo)
+× `'abatimento'` (saiu do saldo do Victor). Não é cosmético — `lib/fiscal-unlink.js` desfaz
+só os de `'abatimento'`, e um pagamento em dinheiro não pode ser revertido pelo estorno de
+um payable com que ele nada tem a ver.
+
+Consequências que exigiram mudar a LEITURA junto, cada uma um jeito de a tela mentir:
+
+- **O "pago" do imposto por cliente mudou de fonte.** Era `fiscal_allocations`
+  (`consumo_payable`), que sob a Opção 1 nunca mais é criado — o card mostraria o imposto
+  eternamente em aberto depois de a guia ser paga. Agora é a **fatia proporcional de
+  `fiscal_obligations.paid_amount`** (`lib/victor-recorte.js`), com `Math.max` sobre o
+  abatimento histórico: somar os dois contaria duas vezes, porque todo abatimento também
+  gravava `fiscal_payments`.
+- **`a_redistribuir` é zero por definição** — nada mais é redistribuído. Sem o corte, TODA
+  nota exibiria "R$ X ainda não redistribuído" para sempre, apontando para um botão que não
+  faz mais nada. (Era, também, o bug do aviso falso: `?action=apurar` recria as linhas do
+  rateio e zera `from_service`/`from_profit`.)
+- **A absorção exibida vem do backend** (`cascata.absorvido_lucro`/`absorvido_servico`), não
+  mais deduzida na tela por `lucro_antes_escritorio − profit_amount`. Com o payable intacto,
+  aquela subtração devolveria a **provisão de 7%** como se fosse absorção — R$ 684,25 de
+  "ABSORVEU" no Pharmalog, onde o certo é zero.
+- **A decomposição da NF passa a NÃO fechar, e isso é correto.** A nota reteve 7%; o imposto
+  real é maior, e o excedente agora sai do caixa. `conferencia.excedente_fiscal` +
+  `explicado_pelo_excedente` (`lib/victor-recorte.js`) separam esse desvio de um erro de
+  conta, e ele aparece por cliente em `breakdown.clientes[].excedente_fiscal` — **dentro** de
+  `subtotal_impostos`, nunca somado a ele.
+
+**Reversão de dados:** os dois payables que já carregavam a absorção foram restaurados a
+partir da fatura (#28 Pharmalog +342,43 e #42 Bokada +26,80), com `capital_proprio` zerado e
+a trilha em `notes`. Foram os únicos — conferido por query contra `invoices`.
+
+⚠️ **`?action=pagar-distribuido` NÃO foi alterado.** Digitar "DAS" no modal "Receber" ainda
+debita o saldo do Victor (e continua sem quitar guia nenhuma, como sempre). É o pool genérico
+usado pelo Flow B e pela **edição de sessão**, e recusar categorias fiscais ali quebraria a
+reedição de sessões antigas que as contêm. Fechar esse quarto caminho é decisão pendente.
+
 ### `monthly_closings` / `payments`
 Tabelas do fechamento mensal (modelo antigo). Pouco/ não usadas pelas telas atuais.
 
