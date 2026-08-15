@@ -259,7 +259,60 @@ Regras do motor:
 - **Prévia por padrão.** Nada financeiro é gravado sem `aplicar: true`; payable com
   pagamento já registrado trava a aplicação (409) até ser estornado.
 
-### ⚠️ OPÇÃO 1 — o imposto deixou de ser absorvido pelo Victor (2026-08-14)
+### ⚠️ OPÇÃO 2 — a absorção foi REATIVADA, agora rastreada (2026-08-15)
+
+**Decisão do Victor**, revertendo a Opção 1 do dia anterior: `ABSORVER_IMPOSTO_NO_PAYABLE`
+voltou a `true`. O excedente do imposto real sobre a provisão volta a ser descontado do que
+o Victor recebe — lucro primeiro, serviço no que não couber.
+
+A flag existir foi o que tornou a volta barata: **uma linha**, e os cinco consumidores
+(gravação, cascata exibida, colunas ORIGINAL/ABSORVEU, `a_redistribuir` e a conferência da
+NF) voltaram juntos. As três colunas financeiras voltaram ao UPDATE de `?action=recalcular`;
+sob a flag `false` elas gravariam o próprio valor da fatura, então a instrução SQL é a mesma
+nos dois modos — quem decide é `absorverDelta()`.
+
+Resultado no caso do chamado (Pharmalog jan): payable #28 voltou a **serviço 8.452,95 ·
+lucro 0,00**. As 14 competências apuradas foram reprocessadas.
+
+⚠️ **O que a volta implica, e não é código:** o imposto passa a ser pago pelo Victor
+**recebendo menos**. Se a guia também for quitada com caixa (aba Pagar Victor ou /fiscal),
+o mesmo tributo sai duas vezes do bolso dele. O rastreamento agora deixa isso VISÍVEL.
+
+#### Rastreamento da absorção (`destination_category = 'impostos'`)
+
+Cada absorção vira linha em `payment_sources`, com `payment_id NULL` (não é pagamento — é
+redução do que se tem a receber) e uma linha por ORIGEM (lucro e serviço separados, porque
+é justamente essa divisão que a cascata decide).
+
+⚠️ **O registro NÃO mora dentro de `aplicarDelta()` nem de `cascataDoLucro()`**, como a
+especificação pedia. As duas são funções puras e `lib/victor-recorte.js` as chama **a cada
+GET da aba** para desenhar a cascata: um `await registrarOrigemDestino()` ali gravaria
+linhas novas toda vez que alguém abre a tela. O registro mora no ponto de gravação
+(`?action=recalcular` com `aplicar: true`), na mesma transação do UPDATE.
+
+⚠️ **`destination_category = 'impostos'`, não `das`/`inss`/`escritorio`.** O valor absorvido
+é o EXCEDENTE sobre a provisão — não pertence a um tributo específico, já que a provisão de
+7% cobre parte de cada um. Dizer "R$ 47,05 foram para o DAS" seria atribuição inventada.
+
+⚠️ **O valor pode ser NEGATIVO — é DEVOLUÇÃO, e quase se perdeu.** Quando o imposto real
+fica abaixo da provisão (o caso comum: NF reserva 7%, Simples cobra ~6%), a sobra volta para
+o lucro. Filtrar só positivos registraria os descontos e esconderia as devoluções: o payable
+#45 subiu de 377,04 para 1.250,47 de lucro e nada explicaria os R$ 873,43. No conjunto
+apurado o efeito líquido é **−942,46** — o imposto devolveu mais do que descontou.
+
+Dois cuidados que custaram uma rodada de teste cada:
+
+- **A trilha roda sobre TODOS os payables da competência, não só os que mudaram.** Ela
+  descreve o ESTADO da absorção, não o evento: um payable já ajustado antes tem
+  `mudou: false`, sai de `aplicaveis` e ficaria para sempre sem linha.
+- **O DELETE de idempotência não olha o texto de `notes`.** A primeira versão filtrava
+  `notes LIKE 'Absorção de imposto%'` e as devoluções começam com "Devolução" — não eram
+  apagadas, e cada reprocessamento somava uma cópia (14 linhas viraram 17). O que identifica
+  a linha é (destino `impostos`, sem pagamento) na competência do payable.
+
+Conferido: 3 reprocessamentos seguidos mantêm 14 linhas e os mesmos valores.
+
+### ⚠️ OPÇÃO 1 — o imposto deixou de ser absorvido pelo Victor (2026-08-14, revertida)
 
 **Decisão do Victor.** A cascata acima continua existindo como CÁLCULO, mas não desconta
 mais nada: o imposto real fica devido ao fisco e é pago com caixa. O que mandava era

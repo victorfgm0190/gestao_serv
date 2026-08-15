@@ -2091,6 +2091,10 @@ export default function Financial() {
   // prometer dinheiro que não saiu.
   function renderRastreio() {
     const realizados = rastreio.filter(r => r.payment_id != null)
+    // Absorção de imposto: saiu do Victor sem passar por pagamento nenhum (o valor foi
+    // descontado do que ele recebe). `payment_id` é NULL por isso, e sem seção própria
+    // essas linhas ficariam invisíveis — o destino e o histórico só mostram o realizado.
+    const absorcoes = rastreio.filter(r => r.payment_id == null && r.destination_category === 'impostos')
     const soma = (arr) => cents(arr.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0))
     const rotuloOrigem = (r) => (
       r.source_type === 'compensation_fabricio' ? 'Compensação Fabrício'
@@ -2163,6 +2167,43 @@ export default function Financial() {
             </div>
           )}
         </div>
+
+        {/* ── 1b · IMPOSTO ABSORVIDO ── */}
+        {absorcoes.length > 0 && (
+          <div className="bg-gray-900 border border-orange-500/20 rounded-xl p-3">
+            <p className="text-[11px] uppercase tracking-wide text-orange-400/80 font-medium mb-1">🧾 Imposto absorvido</p>
+            <p className="text-[10px] text-gray-600 mb-2 leading-tight">
+              Excedente do imposto real sobre a provisão retida na NF, descontado do que o
+              Victor recebe — do lucro primeiro, do serviço no que não coube. <strong>Não é
+              pagamento</strong>: é redução do que ele tem a receber.{' '}
+              <span className="text-amber-400/80">Se a guia também for quitada com caixa, o
+              mesmo tributo sai duas vezes.</span>
+            </p>
+            {absorcoes.map(a => {
+              // Valor negativo = a provisão da NF passou do imposto real e a sobra voltou
+              // para o Victor. É o caso comum (NF reserva 7%, Simples cobra ~6%) e aparece
+              // em verde, com o sinal invertido: "devolvido" é ganho, não desconto.
+              const v = parseFloat(a.amount) || 0
+              const devolveu = v < 0
+              return (
+                <div key={a.id} className="flex justify-between gap-2 text-xs mb-0.5">
+                  <span className="text-gray-400 truncate">
+                    {a.client_name || 'Sem cliente'}{' '}
+                    <span className="text-gray-600">{a.source_type === 'profit' ? 'lucro' : 'serviço'} · {a.month}/{a.year}</span>
+                    {devolveu && <span className="text-green-400/70"> · devolvido</span>}
+                  </span>
+                  <span className={`font-mono shrink-0 ${devolveu ? 'text-green-400' : 'text-orange-300'}`}>
+                    {devolveu ? `+ ${fmt(-v)}` : fmt(v)}
+                  </span>
+                </div>
+              )
+            })}
+            <div className="flex justify-between gap-2 text-xs border-t border-gray-800 mt-1 pt-1">
+              <span className="text-gray-500">Total absorvido</span>
+              <span className="text-orange-300 font-mono font-semibold">{fmt(soma(absorcoes))}</span>
+            </div>
+          </div>
+        )}
 
         {/* ── 2 · DESTINO ── */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">

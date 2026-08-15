@@ -8,6 +8,10 @@ import { valorDevido, recalcularObrigacao } from '../lib/fiscal-status.js'
 import { sincronizarLinhasFiscais } from '../lib/fiscal-lines.js'
 import { ordenar, consumir, candidatosDisponiveis, montarNotes } from '../lib/victor-distribution.js'
 import { recalcularInvoice, consolidar, ABSORVER_IMPOSTO_NO_PAYABLE } from '../lib/fiscal-redistribution.js'
+// Rastreamento da absorção: o excedente do imposto que saiu do lucro/serviço do Victor.
+// Fica FORA das funções puras (aplicarDelta/cascataDoLucro) porque elas rodam a cada GET
+// da aba — ver a advertência no topo de lib/payment-source-tracker.js.
+import { writesDeAbsorcao, movimentosDaAbsorcao } from '../lib/payment-source-tracker.js'
 
 // Data de hoje em ISO. Isolado para o fuso: new Date() no servidor da Vercel é UTC.
 const todayISO = () => new Date().toISOString().slice(0, 10)
@@ -911,6 +915,15 @@ async function recalcular(sql, req, res, raw = false) {
       })
     }
 
+    // Em que etapa o mês está: 3 quando a guia oficial já chegou para alguma obrigação,
+    // 2 quando só há o apurado. Mesmo critério que o GET usa para acender a etapa na
+    // /fiscal — o rastreamento da absorção grava isso no `notes` para o histórico dizer
+    // de qual momento veio cada desconto.
+    const obsDoMes = await sql`
+      SELECT amount_actual FROM fiscal_obligations
+      WHERE company_id = ${company_id} AND month = ${m} AND year = ${y}`
+    const etapaDaCompetencia = obsDoMes.some((o) => o.amount_actual !== null) ? 3 : 2
+
     const writes = []
     for (const r of aplicaveis) {
       // A cascata é gravada junto: é o registro auditável de como o lucro foi consumido
@@ -923,27 +936,30 @@ async function recalcular(sql, req, res, raw = false) {
       // `invoice_id` NULL e nunca chega aqui — mas se chegasse, gravaria uma cascata de
       // lucro em cima de uma linha que não tem lucro nenhum.
       const c = r.cascata
-      // ⚠️ OPÇÃO 1 (2026-08-14): as três colunas financeiras SAÍRAM deste UPDATE.
-      //
-      //     service_amount = <servico_victor.depois>,
-      //     profit_amount  = <lucro_victor.depois>,
-      //     total_amount   = <soma das duas>,
-      //
-      // Era aqui que o imposto real entrava na cascata e reduzia o que o Victor recebe.
-      // Os valores continuam sendo calculados e devolvidos em `mudancas` — o que mudou é
-      // que não são mais gravados. Ver ABSORVER_IMPOSTO_NO_PAYABLE em
-      // lib/fiscal-redistribution.js, que já os devolve iguais ao da fatura.
-      //
-      // As colunas da cascata FICAM: elas são o histórico auditável de quanto do lucro o
-      // imposto CONSUMIRIA, e a tela as usa para mostrar o peso do tributo por NF. São
-      // leitura, não desconto.
+      const s = r.mudancas.servico_victor.depois
+      const p = r.mudancas.lucro_victor.depois
+      // As três colunas financeiras voltaram ao UPDATE em 2026-08-15 (Opção 2 — reativação
+      // da absorção). Sob `ABSORVER_IMPOSTO_NO_PAYABLE = false` elas gravariam exatamente
+      // o valor da fatura, então a instrução é a mesma nos dois modos — quem decide é
+      // `absorverDelta()`, não este SQL. Foi por isso que a volta custou uma linha.
       writes.push(sql`
         UPDATE payables_victor SET
+          service_amount = ${s}, profit_amount = ${p}, total_amount = ${round2(s + p)},
           lucro_antes_escritorio = ${c.lucro_antes_escritorio},
           lucro_antes_inss       = ${c.lucro_antes_inss},
           lucro_antes_das        = ${c.lucro_antes_das},
           capital_proprio        = ${c.capital_proprio}
         WHERE id = ${r.payable_id} AND origin IS DISTINCT FROM 'fiscal'`)
+
+      // RASTREAMENTO DA ABSORÇÃO — o dinheiro que saiu do Victor para o fisco.
+      //
+      // Na mesma transação do UPDATE de propósito: trilha gravada à parte sobreviveria a
+      // um recálculo que falhou, e a tabela feita para ser a verdade viraria a única fonte
+      // errada. `writesDeAbsorcao` apaga as absorções anteriores deste payable antes de
+      // inserir — o recalcular é idempotente e o registro tem de ser também, senão lançar
+      // a guia depois de apurar somaria a segunda absorção sobre a primeira.
+      // `Math.abs`: delta negativo é DEVOLUÇÃO (imposto real abaixo da provisão) e também
+      // se rastreia — ver movimentosDaAbsorcao().
       // Registra em cada linha do rateio de onde o imposto daquele cliente saiu.
       // `from_service`/`from_profit` já existiam no schema e nunca haviam sido gravados.
       const totalReal = r.real
@@ -958,6 +974,41 @@ async function recalcular(sql, req, res, raw = false) {
       }
       aplicados.push(r.payable_id)
     }
+
+    // RASTREAMENTO DA ABSORÇÃO — o que saiu do Victor para o fisco, ou o que voltou.
+    //
+    // ⚠️ Roda sobre TODOS os payables da competência, não só os que mudaram nesta execução.
+    // A trilha descreve o ESTADO da absorção, não o evento: um payable já ajustado antes
+    // tem `mudou: false`, sai de `aplicaveis` e ficaria para sempre sem linha. Foi
+    // exatamente o que aconteceu com as devoluções na primeira rodada — o payable #45 subiu
+    // de 377,04 para 1.250,47 de lucro e nada explicava os R$ 873,43.
+    //
+    // Seguro reprocessar: `writesDeAbsorcao` apaga as linhas anteriores daquele payable
+    // antes de inserir. Por isso também fica FORA do laço acima — as duas passagens
+    // gravariam em dobro.
+    //
+    // `Math.abs`: delta negativo é DEVOLUÇÃO (imposto real abaixo da provisão) e vira linha
+    // com valor negativo, senão só os descontos seriam registrados.
+    for (const r of resultados.filter((x) => x.aplicavel)) {
+      const pay = payables.get(Number(r.invoice_id))
+      if (!pay) continue
+      if (Math.abs(r.from_profit) <= 0.005 && Math.abs(r.from_service) <= 0.005) continue
+      writes.push(...writesDeAbsorcao(sql, {
+        company_id,
+        payable_id: r.payable_id,
+        movimentos: movimentosDaAbsorcao({
+          payable: pay,
+          from_profit: r.from_profit,
+          from_service: r.from_service,
+          // Etapa 3 = a guia oficial já chegou para alguma obrigação do mês; 2 = só o
+          // apurado. Mesmo critério que o GET usa para acender a etapa na /fiscal.
+          etapa: etapaDaCompetencia,
+          real: r.real,
+          provisionado: r.provisionado,
+        }),
+      }))
+    }
+
     if (writes.length) await sql.transaction(writes)
   }
 
