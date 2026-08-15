@@ -1333,11 +1333,25 @@ export default function Financial() {
     }
     return [...map.values()]
   })()
+  // Imposto rateado ainda em aberto num lançamento (soma dos saldos das linhas fiscais).
+  // É o que faz um payable QUITADO continuar relevante para a distribuição.
+  const impostoAbertoDe = (r) => cents((r.fiscal?.linhas || [])
+    .reduce((s, l) => s + (l.saldo ?? l.amount ?? 0), 0))
+
   const sortedPending = [...distSource]
-    // ⚠️ É este filtro que mantém os quitados fora da distribuição. `pendingVictor` traz
-    // `pago` junto (para o card "Valores pagos" alcançar o histórico deles), e um payable
-    // quitado tem saldo zero — mesmo corte que candidatosDisponiveis() faz no backend.
-    .filter(r => saldoOf(r) > 0)
+    // Saldo do lançamento OU imposto rateado em aberto.
+    //
+    // ⚠️ O `saldoOf(r) > 0` sozinho escondia o Pharmalog: os R$ 8.900 em Lucros quitaram o
+    // #28, e a partir daí a linha dele sumiu da tabela — mas a CASCATA DO IMPOSTO continua
+    // alcançando o rateio dele. Pagar "Honorários 150" consome Pharmalog 139,11 + Bokada
+    // 10,89 no backend (o rateio não depende de saldo, ver planejarCategoria), enquanto a
+    // tela mostrava só o Bokada. Era a prévia divergindo da gravação de novo — desta vez
+    // por esconder a maior das duas parcelas.
+    //
+    // Incluí-los não muda o consumo do POOL: `distBase` faz `min(pool, saldo)` e o saldo
+    // deles é zero. Eles entram para as cinco linhas serem exibidas, e as fiscais são as
+    // únicas com valor.
+    .filter(r => saldoOf(r) > 0 || impostoAbertoDe(r) > 0.005)
     .filter(r => payKey(r) <= effectiveRefKey)  // nunca consome mês de CAIXA futuro ao período ativo
     .sort((a, b) => {
       // ⚠️ Idêntico a ordenar() em lib/victor-distribution.js — os dois TÊM de andar
@@ -1528,16 +1542,21 @@ export default function Financial() {
   // lançamento o faz sumir da distribuição no mesmo instante — correto (não há mais o que
   // consumir), mas indistinguível de "o filtro quebrou". Caso real: os R$ 8.900 em Lucros
   // quitaram o Pharmalog #28 e ele desapareceu da tela sem explicação.
-  const quitadosOcultos = distSource.filter(r => saldoOf(r) <= 0).map(r => ({
-    id: r.id, client_name: r.client_name, month: r.month, year: r.year,
-    // ⚠️ O imposto rateado da NF NÃO morre com a quitação do lançamento: o payable é o que
-    // a empresa deve ao Victor, e a guia é devida ao fisco. Um lançamento quitado pode
-    // carregar imposto em aberto que esta cascata não alcança mais — foi exatamente a
-    // leitura de "a cascata pulou o Pharmalog Jan, que tem R$ 139,11". Não pulou: aqueles
-    // R$ 139,11 são o rateio de Escritório da NF#6, e o saldo do lançamento é zero.
-    impostoAberto: Math.round((r.fiscal?.linhas || []).reduce((s, l) => s + (l.saldo ?? l.amount ?? 0), 0) * 100) / 100,
-  }))
-  const quitadosComImposto = quitadosOcultos.filter(r => r.impostoAberto > 0.005)
+  // ⚠️ Agora só os quitados SEM imposto em aberto ficam de fora — os que ainda carregam
+  // rateio entram na tabela (ver o filtro de `sortedPending`), porque a cascata do imposto
+  // os alcança. Antes esta lista incluía os dois casos e o Pharmalog, que ia ser consumido,
+  // aparecia como "escondido".
+  const quitadosOcultos = distSource
+    .filter(r => saldoOf(r) <= 0 && impostoAbertoDe(r) <= 0.005)
+    .map(r => ({ id: r.id, client_name: r.client_name, month: r.month, year: r.year, impostoAberto: 0 }))
+  // Mantido para o aviso: lançamentos quitados que seguem na tabela POR CAUSA do imposto.
+  // O rótulo mudou de "não aparecem" para "aparecem só pelo imposto".
+  const quitadosComImposto = distSource
+    .filter(r => saldoOf(r) <= 0 && impostoAbertoDe(r) > 0.005)
+    .map(r => ({
+      id: r.id, client_name: r.client_name, month: r.month, year: r.year,
+      impostoAberto: impostoAbertoDe(r),
+    }))
   // Digitado que não achou linha nenhuma onde entrar — todas as 5 já estavam zeradas.
   const distSobraCategoria = cents(Object.values(distSobras).reduce((s, v) => s + v, 0))
 
@@ -3930,25 +3949,29 @@ export default function Financial() {
                   desce para Lucro → Serviço; o cabeçalho mostra o saldo do lançamento, que é o
                   que sai do caixa. Pagar aqui não quita a guia — isso é em <strong>/fiscal</strong>.
                 </p>
-                {quitadosOcultos.length > 0 && (
+                {(quitadosOcultos.length > 0 || quitadosComImposto.length > 0) && (
                   <div className="mb-2">
-                    <p className="text-gray-600 text-[10px] leading-tight">
-                      {quitadosOcultos.length === 1 ? '1 lançamento já quitado não aparece' : `${quitadosOcultos.length} lançamentos já quitados não aparecem`}
-                      {' '}({quitadosOcultos.slice(0, 3).map(r => `${r.client_name} ${months[r.month-1]}/${r.year}`).join(', ')}
-                      {quitadosOcultos.length > 3 ? ` +${quitadosOcultos.length - 3}` : ''}) — não têm saldo a consumir.
-                      O histórico deles continua em &quot;Valores pagos&quot;, com estorno.
-                    </p>
-                    {/* O caso que gerou a investigação: o lançamento está quitado, mas a
-                        guia rateada para a NF dele continua devida — e a cascata não tem
-                        mais de onde tirar. Sem esta linha, parece que a cascata "pulou" o
-                        cliente que ainda mostra imposto em aberto no card. */}
+                    {quitadosOcultos.length > 0 && (
+                      <p className="text-gray-600 text-[10px] leading-tight">
+                        {quitadosOcultos.length === 1 ? '1 lançamento já quitado não aparece' : `${quitadosOcultos.length} lançamentos já quitados não aparecem`}
+                        {' '}({quitadosOcultos.slice(0, 3).map(r => `${r.client_name} ${months[r.month-1]}/${r.year}`).join(', ')}
+                        {quitadosOcultos.length > 3 ? ` +${quitadosOcultos.length - 3}` : ''}) — não têm saldo nem imposto a consumir.
+                        O histórico deles continua em &quot;Valores pagos&quot;, com estorno.
+                      </p>
+                    )}
+                    {/* ⚠️ Estes CONTINUAM na tabela, e é a correção de 2026-08-15: o
+                        lançamento está quitado, mas a cascata do IMPOSTO alcança o rateio
+                        dele — o backend consome Pharmalog 139,11 + Bokada 10,89 ao pagar
+                        "Honorários 150", e a tela mostrava só o Bokada. Esconder a maior das
+                        duas parcelas era a prévia divergindo da gravação. */}
                     {quitadosComImposto.length > 0 && (
                       <p className="text-amber-400/80 text-[10px] leading-tight mt-1">
-                        ⚠️ Deles, {quitadosComImposto.map(r => `${r.client_name} ${months[r.month-1]}/${r.year} (${fmt(r.impostoAberto)})`).join(', ')}
-                        {' '}ainda {quitadosComImposto.length === 1 ? 'tem imposto' : 'têm imposto'} em aberto. O imposto é devido ao
-                        fisco e não morre com a quitação do lançamento, mas esta cascata só
-                        consome saldo do Victor — estorne o pagamento em &quot;Valores pagos&quot;
-                        para alcançá-lo, ou quite a guia em <strong>/fiscal</strong>.
+                        ⚠️ {quitadosComImposto.map(r => `${r.client_name} ${months[r.month-1]}/${r.year} (${fmt(r.impostoAberto)})`).join(', ')}
+                        {' '}{quitadosComImposto.length === 1 ? 'está quitado' : 'estão quitados'}, mas
+                        {quitadosComImposto.length === 1 ? ' segue' : ' seguem'} na lista pelo imposto em
+                        aberto: o rateio é devido ao fisco e a cascata de imposto o alcança sem
+                        precisar de saldo. As linhas de Lucro e Serviço {quitadosComImposto.length === 1 ? 'dele' : 'deles'} aparecem
+                        zeradas — não há mais o que consumir ali.
                       </p>
                     )}
                   </div>
@@ -3967,6 +3990,15 @@ export default function Financial() {
                             {d.semNf && (
                               <span className="ml-1.5 px-1.5 py-0.5 bg-gray-700 text-gray-400 text-[10px] rounded-full font-sans">
                                 sem NF · consumido por último
+                              </span>
+                            )}
+                            {/* Lançamento quitado que segue na lista pelo imposto. Sem a
+                                etiqueta, "Saldo 0,00" ao lado de linhas fiscais com valor
+                                se lê como erro — é o oposto: são justamente elas que a
+                                cascata do imposto vai consumir. */}
+                            {d.saldo <= 0.005 && d.imposto.sobra > 0.005 && (
+                              <span className="ml-1.5 px-1.5 py-0.5 bg-amber-500/15 text-amber-300/90 text-[10px] rounded-full font-sans">
+                                quitado · só imposto
                               </span>
                             )}
                           </span>
