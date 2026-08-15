@@ -401,6 +401,10 @@ export default function Financial() {
   const [breakdown, setBreakdown] = useState(null)
   const [bdLoading, setBdLoading] = useState(false)
   const [bdInputs, setBdInputs] = useState({})       // { [client_id]: { servico: '12,50', das: '' } }
+  // Totais das guias rateadas, digitados uma vez e distribuídos pelos clientes.
+  const [bdTotais, setBdTotais] = useState({ escritorio: '', das: '', inss: '' })
+  const [bdDistMsg, setBdDistMsg] = useState('')
+  const [bdDistErro, setBdDistErro] = useState('')
   const [bdPaidAt, setBdPaidAt] = useState(todayBR())
   const [bdPlano, setBdPlano] = useState(null)        // prévia vinda do backend
   const [bdSaving, setBdSaving] = useState(false)
@@ -583,6 +587,65 @@ export default function Financial() {
   }
 
   const bdTotalDigitado = bdPagamentos().reduce((s, p) => s + p.valor, 0)
+
+  // ── DISTRIBUIR UMA DESPESA RATEADA ENTRE OS CLIENTES ────────────────────────────────
+  //
+  // Digitar o total da guia uma vez e deixar o rateio dizer quanto cabe a cada um —
+  // Honorários 150 vira Pharmalog 139,11 + Bokada 10,89.
+  //
+  // ⚠️ O PESO É O SALDO, NÃO O PERCENTUAL EXIBIDO. Duas razões, ambas já documentadas:
+  //
+  //   1. O percentual é arredondado a 2 casas, e `632,40 × 0,9274 = 586,49` — um centavo
+  //      abaixo do que fiscal_allocations gravou. A linha ficaria "parcial" com R$ 0,01 em
+  //      aberto e o centavo transbordaria para o Serviço (é o mesmo cuidado de
+  //      pesosDaCategoria() em lib/victor-tabulado.js).
+  //   2. Rateio sobre o DEVIDO ignoraria o que já foi pago: com o Pharmalog quitado,
+  //      digitar os 10,89 que faltam mandaria 92,74% para quem não deve mais nada. Pelo
+  //      saldo, vai tudo para o Bokada, que é quem resta.
+  //
+  // Quando o total digitado é exatamente a soma dos saldos (o caso normal — pagar a guia
+  // inteira), cada cliente recebe o PRÓPRIO saldo, sem multiplicação: assim a soma fecha no
+  // centavo por construção, em vez de depender do resíduo.
+  const CATEGORIAS_RATEADAS = ['escritorio', 'das', 'inss']
+
+  function distribuirRateado(cat) {
+    // Cliente sem NF não tem rateio de imposto (hoje só a Minas) — incluí-lo daria a ele
+    // uma fatia de uma guia que a nota dele não gerou. Mesmo corte de lib/victor-tabulado.js.
+    const alvos = (breakdown?.clientes || [])
+      .filter(c => !c.sem_nf)
+      .map(c => ({ id: c.client_id, saldo: cents(c.categorias?.[cat]?.saldo || 0), devido: cents(c.categorias?.[cat]?.devido || 0) }))
+    const base = alvos.some(a => a.saldo > 0.005) ? 'saldo' : 'devido'
+    const elegiveis = alvos.filter(a => a[base] > 0.005)
+    const soma = cents(elegiveis.reduce((s, a) => s + a[base], 0))
+    const total = cents(parseFloat(String(bdTotais[cat] ?? '').replace(',', '.')) || 0)
+
+    if (total <= 0.005) { setBdDistErro('Informe o total da guia antes de distribuir.'); return }
+    if (!elegiveis.length) { setBdDistErro(`Nenhum cliente deste recorte tem ${BREAKDOWN_LABEL[cat]} em aberto.`); return }
+
+    // Total == soma dos saldos: cada um leva o próprio saldo (exato).
+    const exato = Math.abs(total - soma) <= 0.005
+    const fatias = new Map()
+    if (exato) {
+      for (const a of elegiveis) fatias.set(a.id, a[base])
+    } else {
+      let acc = 0
+      for (const a of elegiveis) { const v = cents(total * (a[base] / soma)); fatias.set(a.id, v); acc = cents(acc + v) }
+      // Resíduo do arredondamento na MAIOR fatia — a mesma regra de ratear() na apuração.
+      const resto = cents(total - acc)
+      if (Math.abs(resto) >= 0.01) {
+        const maior = elegiveis.reduce((x, y) => (y[base] > x[base] ? y : x))
+        fatias.set(maior.id, cents(fatias.get(maior.id) + resto))
+      }
+    }
+
+    setBdInputs(prev => {
+      const next = { ...prev }
+      for (const [id, v] of fatias) next[id] = { ...(next[id] || {}), [cat]: v.toFixed(2).replace('.', ',') }
+      return next
+    })
+    setBdPlano(null); setBdDistErro('')
+    setBdDistMsg(`${BREAKDOWN_LABEL[cat]}: ${fmt(total)} distribuídos entre ${fatias.size} cliente(s)${exato ? '' : ' (proporcional ao saldo)'}${base === 'devido' ? ' — nenhum saldo em aberto, rateado pelo devido' : ''}.`)
+  }
 
   // Prévia e gravação usam O MESMO endpoint, mudando só `aplicar` — a prévia não é uma
   // cópia da cascata no browser. Prévia e gravação divergindo é exatamente o bug que o
@@ -3212,6 +3275,39 @@ export default function Financial() {
                     ligar o botão a ela faria a gravação (que abate do saldo do Victor)
                     divergir do que a tabela mostra. Ver lib/victor-tabulado.js. */}
                 <div className={`sticky bottom-2 bg-gray-900 border border-gray-700 rounded-xl p-3 space-y-2 shadow-lg ${tabView === 'tabela' ? 'hidden' : ''}`}>
+                  {/* Guias rateadas: digita-se o total UMA vez e o rateio diz quanto cabe a
+                      cada cliente. Preenche os campos dos cards — não paga sozinho, para o
+                      valor ainda poder ser conferido e ajustado antes do Pagar. */}
+                  <div className="border-b border-gray-800 pb-2">
+                    <p className="text-[11px] uppercase tracking-wider text-blue-300/80 mb-1.5">
+                      🧮 Distribuir guia pelo rateio
+                    </p>
+                    <div className="flex items-end gap-2 flex-wrap">
+                      {CATEGORIAS_RATEADAS.map(cat => (
+                        <div key={cat} className="flex flex-col gap-1">
+                          <label className="text-[10px] text-gray-500">{BREAKDOWN_LABEL[cat]} — total da guia</label>
+                          <div className="flex gap-1">
+                            <input type="number" step="0.01" placeholder="0,00"
+                              value={bdTotais[cat]}
+                              onChange={e => { setBdTotais(t => ({ ...t, [cat]: e.target.value })); setBdDistMsg(''); setBdDistErro('') }}
+                              className="w-28 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-blue-500"/>
+                            <button onClick={() => distribuirRateado(cat)}
+                              className="px-2 py-1.5 border border-blue-500/40 text-blue-300 hover:bg-blue-500/10 rounded-lg text-[11px] whitespace-nowrap">
+                              Distribuir
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {bdDistMsg && <p className="text-green-400/90 text-[11px] mt-1.5">{bdDistMsg}</p>}
+                    {bdDistErro && <p className="text-red-400 text-[11px] mt-1.5">{bdDistErro}</p>}
+                    <p className="text-gray-600 text-[10px] mt-1 leading-tight">
+                      Preenche os campos dos cards com a fatia de cada cliente — <strong>não paga</strong>.
+                      Confira e use o <strong>Pagar</strong> abaixo. O peso é o <strong>saldo em aberto</strong> de
+                      cada um, não o percentual exibido: ele é arredondado a 2 casas e deixaria um centavo para trás.
+                    </p>
+                  </div>
+
                   <div className="flex items-end gap-3 flex-wrap">
                     <div className="flex flex-col gap-1">
                       <label className="text-[11px] text-gray-400">Data do pagamento</label>

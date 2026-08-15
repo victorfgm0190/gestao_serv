@@ -278,6 +278,32 @@ lucro 0,00**. As 14 competências apuradas foram reprocessadas.
 **recebendo menos**. Se a guia também for quitada com caixa (aba Pagar Victor ou /fiscal),
 o mesmo tributo sai duas vezes do bolso dele. O rastreamento agora deixa isso VISÍVEL.
 
+#### "Distribuir guia pelo rateio" na visão Cards — 2026-08-15
+
+Digita-se o total da guia UMA vez (Escritório, DAS, INSS) e o botão **Distribuir** preenche
+o campo de cada cliente com a fatia dele: Honorários 150 → Pharmalog 139,11 + Bokada 10,89.
+Só preenche — quem grava continua sendo o **Pagar**, para o valor poder ser conferido.
+
+⚠️ **O peso é o SALDO EM ABERTO, não o percentual exibido.** Duas razões:
+- o percentual é arredondado a 2 casas, e `632,40 × 0,9274 = 586,49` — um centavo abaixo do
+  que `fiscal_allocations` gravou; a linha ficaria "parcial" com R$ 0,01 e o centavo
+  transbordaria para o Serviço (mesmo cuidado de `pesosDaCategoria()`);
+- ratear sobre o DEVIDO ignoraria o já pago: com o Pharmalog quitado, digitar os 10,89 que
+  faltam mandaria 92,74% para quem não deve mais nada.
+
+⚠️ **Total igual à soma dos saldos → cada um leva o PRÓPRIO saldo**, sem multiplicação. É o
+caso normal (pagar a guia inteira) e assim a soma fecha no centavo por construção, em vez de
+depender do resíduo. Quando o total difere, rateia proporcional e joga o resíduo na maior
+fatia — a regra de `ratear()` da apuração.
+
+Cliente **sem NF** (a Minas) fica de fora: não tem rateio, e dar-lhe uma fatia atribuiria a
+ele uma guia que a nota dele não gerou.
+
+Verificado contra a produção, 5 cenários fechando no centavo — guia inteira nas três
+categorias (dá exatamente o rateio gravado), pagamento parcial (75 de 150) e valor acima do
+devido (1.000 de 632,40). E o fluxo completo em prévia, com o filtro em **janeiro**: os 6
+itens saem como `rateio_fiscal`, quitam as três guias e debitam **R$ 0,00** de serviço.
+
 #### Cascata de origem ao pagar imposto — rateio → Lucro → Serviço (2026-08-15)
 
 Pagar **Honorários R$ 150** consome primeiro a fatia que a apuração rateou para cada
