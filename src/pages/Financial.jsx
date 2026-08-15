@@ -484,6 +484,36 @@ export default function Financial() {
   }
   useEffect(() => { fetchBreakdown() }, [tab, activeCompany, filterYear, filterMonth, mode])
 
+  // ── REFETCH DEPOIS DE GRAVAR ────────────────────────────────────────────────────────
+  //
+  // A aba tem SEIS fontes independentes — `fetchAll` (as três listas), `fetchBreakdown`
+  // (os cards por cliente), `fetchReserves` (impostos), `fetchPendingVictor` (a lista do
+  // modal e o card "Valores pagos"), `fetchTaxPreview` e `fetchRastreio` — mais a tabela
+  // tabulada, que recalcula no backend por um efeito próprio.
+  //
+  // Cada gravação chamava só `fetchAll()`. O resultado é o relato de "confirmei e a tela
+  // não mudou": as listas atualizavam, mas os CARDS — que é onde o valor é lido — ficavam
+  // com o estado anterior até se sair da aba e voltar, quando os efeitos rodam de novo.
+  //
+  // ⚠️ NÃO é `window.location.reload()`. O reload perde o filtro de mês, a visão ativa
+  // (Tabela/Cards/Rastreio), a rolagem e o scroll do modal, e recarrega o bundle inteiro —
+  // caro e, pior, com cara de aplicativo que reinicia a cada pagamento. O que faltava era
+  // recarregar o que mudou, não recomeçar.
+  const [refreshTick, setRefreshTick] = useState(0)
+  async function refreshFinancial() {
+    // A tabela tabulada é calculada no backend por um efeito com debounce próprio; ela não
+    // tem função para chamar, então acompanha o tick. É a "Opção B" — trigger de estado.
+    setRefreshTick(t => t + 1)
+    await Promise.all([
+      fetchAll(),
+      fetchBreakdown(),
+      fetchReserves(),
+      fetchPendingVictor(),
+      tab === 'victor' && activeCompany.id === 1 ? fetchTaxPreview() : null,
+      tabView === 'rastreio' ? fetchRastreio() : null,
+    ].filter(Boolean))
+  }
+
   // Limpa o que foi digitado ao mudar o recorte: os valores se referem aos clientes e
   // notas daquele mês, e mantê-los aplicaria um número pensado para outro período.
   useEffect(() => {
@@ -538,7 +568,7 @@ export default function Financial() {
       if (aplicar) {
         setBdInputs({}); setBdPlano(null)
         setBdMsg(`Pagamento de ${fmt(data.resumo?.consumido)} registrado.`)
-        await Promise.all([fetchAll(), fetchBreakdown(), fetchReserves()])
+        await refreshFinancial()
       } else {
         setBdPlano(data)
       }
@@ -568,7 +598,7 @@ export default function Financial() {
         return
       }
       closeModal()
-      fetchAll()
+      refreshFinancial()
     } catch {
       setErroModal('Erro de conexão com o servidor.')
     } finally {
@@ -593,7 +623,7 @@ export default function Financial() {
       }
       setShowPayModal(null)
       setPayForm({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_amount: '', compensation_notes: '', notes: '', status: 'pago' })
-      fetchAll()
+      refreshFinancial()
     } catch {
       setErroPay('Erro de conexão com o servidor.')
     } finally {
@@ -648,7 +678,7 @@ export default function Financial() {
       setNewPay({ amount: '', paid_at: todayBR(), notes: '' })
       setVictorCats(EMPTY_VICTOR_CATS)
       await loadPayments(showPayModal)
-      fetchAll()
+      refreshFinancial()
     } catch {
       setErroPayments('Erro de conexão com o servidor.')
     } finally {
@@ -813,7 +843,7 @@ export default function Financial() {
   // Recarrega tudo que a correção das guias mexe: apuração/reservas, previsão e os
   // payables (é a aba Pagar Victor que muda de valor).
   async function refreshFiscal() {
-    await Promise.all([fetchReserves(), fetchAll(), fetchTaxPreview()])
+    await refreshFinancial()
   }
 
   // Abre a memória de cálculo do card de previsão. Normalmente ela já está em mãos
@@ -875,7 +905,7 @@ export default function Financial() {
         avisos.push(`${data.pedidos - data.removidos} dos ${data.pedidos} pagamentos selecionados já haviam sido removidos junto com a distribuição.`)
       }
       if (avisos.length) setEstornoAviso(avisos.join(' '))
-      await Promise.all([fetchPendingVictor(), fetchReserves(), fetchAll(), fetchBreakdown()])
+      await refreshFinancial()
     } catch (e) {
       console.error(e); setErroReceive('Falha de rede ao estornar.')
     } finally { setEstornando(false) }
@@ -985,7 +1015,7 @@ export default function Financial() {
         return // mantém o modal aberto para o painel de decisão
       }
       closeReceive()
-      await fetchAll()
+      await refreshFinancial()
     } finally {
       setReceiving(false)
     }
@@ -1003,7 +1033,7 @@ export default function Financial() {
       const data = await res.json()
       if (!res.ok) { setErroReceive(data.error || 'Falha ao distribuir'); return }
       closeReceive()
-      await fetchAll()
+      await refreshFinancial()
     } finally {
       setReceiving(false)
     }
@@ -1029,7 +1059,7 @@ export default function Financial() {
       }
       setEstornoConfirm(null)
       await loadPayments(showPayModal)
-      fetchAll()
+      refreshFinancial()
     } catch {
       setErroPayments('Erro de conexão com o servidor.')
     } finally {
@@ -1047,7 +1077,7 @@ export default function Financial() {
     const data = await res.json()
     if (res.status === 400) { alert('⚠️ ' + data.error); return }
     if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao estornar')); return }
-    fetchAll()
+    refreshFinancial()
   }
 
   async function estornarPayable(item) {
@@ -1066,7 +1096,7 @@ export default function Financial() {
     if (data.compensacoes_desfeitas > 0) {
       alert(`Estornado. ${data.compensacoes_desfeitas} crédito(s) de compensação do Victor foram desfeitos junto — eles vinham deste pagamento.`)
     }
-    fetchAll()
+    refreshFinancial()
   }
 
   async function del(id) {
@@ -1082,7 +1112,7 @@ export default function Financial() {
       alert('⚠️ ' + data.error)
       return
     }
-    fetchAll()
+    refreshFinancial()
   }
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
@@ -1193,7 +1223,9 @@ export default function Financial() {
       }
     }, 500)
     return () => { cancelado = true; clearTimeout(t) }
-  }, [tab, tabView, activeCompany, filterYear, filterMonth, mode, tabInputs])
+    // `refreshTick` entra nas deps para a tabela recalcular depois de uma gravação: os
+    // valores dela saem do banco (saldo, rateio), não só do que está digitado.
+  }, [tab, tabView, activeCompany, filterYear, filterMonth, mode, tabInputs, refreshTick])
 
   // Trocar o recorte zera o que foi digitado: os valores se referem aos clientes e notas
   // daquele período, e mantê-los aplicaria um número pensado para outro mês.
@@ -1240,7 +1272,7 @@ export default function Financial() {
       })
       const data = await res.json()
       if (!res.ok) { alert(data.error || 'Não foi possível usar o crédito.'); return }
-      await Promise.all([fetchRastreio(), fetchAll()])
+      await Promise.all([fetchRastreio(), refreshFinancial()])
     } catch { alert('Erro de conexão com o servidor.') }
     finally { setPagandoComp(null) }
   }
