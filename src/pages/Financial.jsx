@@ -89,6 +89,20 @@ const RESERVA_LABEL = { das: 'DAS', inss: 'INSS', honorarios: 'Honorários', pro
 // A ordem é a mesma cascata de ORDEM_LINHAS (lib/victor-tabulado.js) e ORDEM_CATEGORIA
 // (lib/victor-rateio.js), alinhadas em 2026-08-12.
 const DIST_LINHAS = ['escritorio', 'das', 'inss', 'lucro', 'servico']
+// As 5 linhas partidas pelo SINAL do que representam. O SUB soma as duas metades, e essa
+// soma não é um saldo de ninguém:
+//
+//   A RECEBER  lucro + serviço — o que a empresa deve AO VICTOR, e o único dinheiro que o
+//              pagamento pode consumir. É este que fecha com o "Líquido" do cabeçalho.
+//   IMPOSTO    escritório + DAS + INSS — o que a empresa deve AO FISCO por conta daquela
+//              nota. Desde a Opção 1 (2026-08-14) ele nunca é consumido pelo pagamento.
+//
+// ⚠️ Somados, dão um número que não descreve nada: um lançamento quitado fica com "SUB
+// 1.026,68" ao lado de "Líquido R$ 0,00" — e o SUB ali é 100% imposto. Foi exatamente essa
+// leitura que gerou o relato de que o Líquido estava zerando errado. As duas metades
+// aparecem em linhas próprias, rotuladas pelo lado a que pertencem.
+const DIST_LINHAS_RECEBER = ['lucro', 'servico']
+const DIST_LINHAS_IMPOSTO = ['escritorio', 'das', 'inss']
 const DIST_LINHA_LABEL = {
   escritorio: 'Escritório', das: 'DAS', inss: 'INSS',
   lucro: 'Lucro', servico: 'Serviço', sub: 'SUB', fab: 'FAB',
@@ -1365,9 +1379,26 @@ export default function Financial() {
   // SUB e FAB, as duas informativas. SUB é sempre a soma das 5, então recalcula sozinho
   // quando qualquer uma muda; FAB fica de fora dele.
   const distRows = distBase.map(d => {
-    const somaCol = (campo) => cents(DIST_LINHAS.reduce((s, c) => s + d.cats[c][campo], 0))
+    const somaDe = (linhas, campo) => cents(linhas.reduce((s, c) => s + d.cats[c][campo], 0))
+    const somaCol = (campo) => somaDe(DIST_LINHAS, campo)
+    // Metade de cada sinal, nas mesmas 9 colunas do SUB. `sobra` é o `liquido` pós-alocação
+    // (o que resta depois do que está sendo digitado) — a mesma regra do SUB abaixo.
+    const parcial = (linhas) => ({
+      original: somaDe(linhas, 'original'),
+      absorveu: somaDe(linhas, 'absorveu'),
+      bruto: somaDe(linhas, 'bruto'),
+      pagos: somaDe(linhas, 'pagos'),
+      liquido: cents(somaDe(linhas, 'liquido') + somaDe(linhas, 'absorvido')),
+      direcionado: somaDe(linhas, 'direcionado'),
+      absorvido: somaDe(linhas, 'absorvido'),
+      sobra: somaDe(linhas, 'liquido'),
+    })
     return {
       ...d,
+      // O que o Victor ainda recebe deste lançamento, e o que fica devido ao fisco por ele.
+      // Separados porque têm sinais opostos — ver DIST_LINHAS_RECEBER/IMPOSTO.
+      receber: parcial(DIST_LINHAS_RECEBER),
+      imposto: parcial(DIST_LINHAS_IMPOSTO),
       // SUB é sempre a soma das 5 em TODAS as colunas — recalcula sozinho quando qualquer
       // uma muda. FAB fica de fora: sai da FATURA e é pago na aba do Fabrício.
       sub: {
@@ -3614,6 +3645,16 @@ export default function Financial() {
                               : d.state === 'partial' ? 'text-yellow-400'
                               : 'text-green-400'
                             }>Líquido: {fmt(d.liquido)}</span>
+                            {/* ⚠️ "Líquido 0,00" num lançamento que ainda carrega imposto se
+                                lê como se a linha tivesse sumido do nada — e o SUB logo
+                                abaixo mostra justamente o valor do imposto, o que convida a
+                                somar os dois. O imposto vem AQUI, rotulado e com o sinal
+                                oposto explícito: ele é devido ao fisco, não ao Victor. */}
+                            {d.imposto.sobra > 0.005 && (
+                              <span className="text-amber-400/80" title="Imposto rateado desta nota, devido ao FISCO — não é saldo do Victor. Este modal não quita guia: para isso use a visão Cards ou /fiscal.">
+                                {' · '}imposto: {fmt(d.imposto.sobra)}
+                              </span>
+                            )}
                           </span>
                         </div>
 
@@ -3697,6 +3738,35 @@ export default function Financial() {
                               <td className="text-right text-orange-300 border-t-2 border-gray-700 pt-0.5 px-1 bg-orange-500/5">{d.sub.absorvido > 0.005 ? fmt(d.sub.absorvido) : '—'}</td>
                               <td className="text-right text-white border-t-2 border-gray-700 pt-0.5 pl-1 bg-green-500/5">{fmt(d.sub.sobra)}</td>
                             </tr>
+                            {/* O SUB acima soma dois sinais opostos. Estas duas linhas dizem
+                                quanto dele é de cada lado — e é na SOBRA de "= imposto" que
+                                mora o valor que sobra num lançamento já quitado. */}
+                            {[
+                              { key: 'receber', label: '= a receber', hint: 'lucro + serviço · o que este pagamento consome', cls: 'text-green-300' },
+                              // ⚠️ O hint não diz "não é consumido": digitar Escritório/DAS/INSS
+                              // aqui REDUZ esta linha na simulação. O que não acontece é a guia
+                              // ser quitada — o ?action=pagar-distribuido não grava
+                              // fiscal_payments. É a mesma ressalva de `aDistribuirSemQuitar`.
+                              { key: 'imposto', label: '= imposto', hint: 'devido ao fisco · este modal não quita guia', cls: 'text-amber-300' },
+                            ].map(({ key, label, hint, cls }) => {
+                              const t = d[key]
+                              const opt2 = (v) => (v > 0.005 ? fmt(v) : '—')
+                              return (
+                                <tr key={key} className="text-[10px]">
+                                  <td className={`font-sans py-px pr-2 whitespace-nowrap ${cls}`}>
+                                    {label}<span className="text-gray-700"> · {hint}</span>
+                                  </td>
+                                  <td className="text-right text-gray-600 py-px px-1">{opt2(t.original)}</td>
+                                  <td className="text-right text-gray-600 py-px px-1">{opt2(t.absorveu)}</td>
+                                  <td className="text-right text-gray-500 py-px px-1">{opt2(t.bruto)}</td>
+                                  <td className="text-right text-gray-600 py-px px-1">{opt2(t.pagos)}</td>
+                                  <td className="text-right text-gray-500 py-px px-1">{opt2(t.liquido)}</td>
+                                  <td className="text-right text-gray-600 py-px px-1 bg-blue-500/5">{opt2(t.direcionado)}</td>
+                                  <td className="text-right text-gray-600 py-px px-1 bg-orange-500/5">{opt2(t.absorvido)}</td>
+                                  <td className={`text-right py-px pl-1 bg-green-500/5 font-semibold ${cls}`}>{fmt(t.sobra)}</td>
+                                </tr>
+                              )
+                            })}
                             {d.fabricio != null && (
                               <tr>
                                 <td className="font-sans text-gray-600 py-px pr-2">FAB</td>
@@ -3718,7 +3788,11 @@ export default function Financial() {
                             <strong> Líquido</strong> é consumível, e o que este pagamento leva está
                             em <strong>Será pago</strong>.{' '}
                             O SUB de <strong>Original</strong> soma o lucro bruto e o imposto que
-                            saiu dele — a coluna que fecha com a nota é <strong>Ajust. bruto</strong>.
+                            saiu dele — a coluna que fecha com a nota é <strong>Ajust. bruto</strong>.{' '}
+                            E o <strong>SUB soma dois sinais opostos</strong>: o que a empresa deve
+                            ao Victor e o que deve ao fisco. As duas linhas abaixo dele separam —
+                            só <strong>= a receber</strong> é consumível; <strong>= imposto</strong>{' '}
+                            fica devido e se quita em /fiscal ou pela visão Cards.
                             Pró-labore, Lucros e Demais despesas não têm linha própria: aparecem
                             em <strong>Digitado</strong> no Lucro, que é onde a cascata delas
                             começa, e escorrem para o Serviço.
