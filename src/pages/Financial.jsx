@@ -45,6 +45,22 @@ const RECEIVE_VICTOR_CATEGORIES = [
 ]
 const EMPTY_RECEIVE_CATS = { honorarios: '', das: '', inss: '', pro_labore: '', lucros: '', escritorio: '', demais: '' }
 
+// Quais das 7 ganham INPUT no modal "Receber" (decisão do Victor, 2026-08-15).
+//
+// `honorarios` e `das` saíram: eles são rateados por cliente, e pagá-los aqui nunca fez o
+// que o nome promete — este modal usa o `?action=pagar-distribuido`, que debita o SALDO dos
+// lançamentos e **não quita guia nenhuma**. Quem os paga é a visão Cards, pelo rateio da
+// apuração. Ter o mesmo nome nas duas telas com semânticas opostas foi o que produziu dois
+// chamados seguidos ("paguei Escritório e caiu no Serviço").
+//
+// ⚠️ A LISTA DAS 7 CONTINUA INTEIRA em RECEIVE_VICTOR_CATEGORIES, e isso não é sobra:
+// `parseNotesToReceiveCats()` reconstrói sessões antigas a partir do `notes`, e uma sessão
+// gravada com "DAS: R$586,50" lida por um vocabulário reduzido voltaria SEM essa parcela —
+// reeditá-la pagaria a menos, sem erro nenhum. É a mesma armadilha que o CLAUDE.md registra
+// para `servico`/`lucro` em CATS. Por isso o grid abaixo também mostra qualquer categoria
+// oculta que venha PREENCHIDA de uma sessão anterior.
+const RECEIVE_INPUTS = ['inss', 'pro_labore', 'lucros', 'escritorio', 'demais']
+
 // ── Breakdown por cliente (aba Pagar Victor) ────────────────────────────────────────────
 // Espelha CATEGORIAS/CATEGORIA_LABEL de lib/victor-breakdown.js e BREAKDOWN_KIND de
 // lib/victor-rateio.js. A ordem é a da cascata: o que o Victor recebe primeiro, o que o
@@ -3756,10 +3772,21 @@ export default function Financial() {
                 {RECEIVE_VICTOR_CATEGORIES.map(([key, label]) => {
                   const modo = MODO_INFO[modoDaCategoria(key)]
                   const digitou = (parseFloat(String(receiveCats[key] ?? '').replace(',', '.')) || 0) > 0
+                  // Categoria sem input (Honorários e DAS) só aparece quando vem PREENCHIDA
+                  // de uma sessão que está sendo editada — esconder um valor gravado faria a
+                  // reedição pagá-lo a menos. Ver RECEIVE_INPUTS.
+                  const oculta = !RECEIVE_INPUTS.includes(key)
+                  if (oculta && !digitou) return null
                   return (
                     <div key={key} className="flex flex-col gap-1">
                       <label className="text-xs text-gray-400 font-medium flex items-center gap-1.5">
                         {label} (R$)
+                        {oculta && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] uppercase tracking-wide bg-amber-500/15 text-amber-300/90"
+                            title="Esta categoria é rateada por cliente e se paga na visão Cards. Aparece aqui porque a sessão que você está editando já a continha — zerar o campo remove o valor da sessão.">
+                            de sessão anterior
+                          </span>
+                        )}
                         {/* O modo diz para onde o valor pode escorrer. Fica sempre visível
                             (não só ao digitar) porque a pergunta é feita ANTES de digitar:
                             "se eu puser 500 aqui, de onde sai?". */}
@@ -3773,9 +3800,17 @@ export default function Financial() {
               </div>
               <div className="flex flex-col gap-1 text-[10px] leading-tight">
                 <p className="text-orange-300/70">
-                  <strong className="uppercase">imposto</strong> (Honorários, Escritório, DAS, INSS) — consome a
+                  <strong className="uppercase">imposto</strong> (Escritório, INSS) — consome a
                   própria linha e, se faltar, desce para Lucro → Serviço. <strong>Nunca toca a linha de outro
                   imposto.</strong>
+                </p>
+                {/* Sem esta frase, procurar Honorários/DAS aqui e não achar se lê como campo
+                    que sumiu. Eles saíram porque este modal debita SALDO e não quita guia —
+                    quem os paga pelo rateio é a visão Cards. */}
+                <p className="text-gray-500">
+                  <strong>Honorários e DAS não entram aqui</strong>: eles são rateados por cliente e
+                  se pagam na visão <strong>🗂️ Cards</strong>, que consome a fatia de cada um e quita a
+                  guia. Este modal debita o saldo dos lançamentos e não quita guia nenhuma.
                 </p>
                 <p className="text-blue-300/70">
                   <strong className="uppercase">trabalho</strong> (Pró-labore, Lucros, Demais despesas) — vai
