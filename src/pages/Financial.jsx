@@ -286,7 +286,7 @@ export default function Financial() {
   const [histType, setHistType] = useState('receivables')
   const [histClient, setHistClient] = useState('')
   const [form, setForm] = useState({ client_id: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), description: '', amount: '', service_amount: '', profit_amount: '', notes: '' })
-  const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
+  const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_amount: '', compensation_notes: '', notes: '', status: 'pago' })
   const [modalPayments, setModalPayments] = useState([])
   const [newPay, setNewPay] = useState({ amount: '', paid_at: todayBR(), notes: '' })
   const [estornoConfirm, setEstornoConfirm] = useState(null)
@@ -579,7 +579,7 @@ export default function Financial() {
         return
       }
       setShowPayModal(null)
-      setPayForm({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_notes: '', notes: '', status: 'pago' })
+      setPayForm({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_amount: '', compensation_notes: '', notes: '', status: 'pago' })
       fetchAll()
     } catch {
       setErroPay('Erro de conexão com o servidor.')
@@ -1047,6 +1047,12 @@ export default function Financial() {
     })
     const data = await res.json()
     if (!res.ok) { alert('Erro: ' + (data.error || 'Falha ao estornar')); return }
+    // O estorno do Fabrício leva junto o crédito de compensação que aquele pagamento
+    // gerou. É correto — o crédito existia por causa dele —, mas silencioso se lê como
+    // crédito perdido.
+    if (data.compensacoes_desfeitas > 0) {
+      alert(`Estornado. ${data.compensacoes_desfeitas} crédito(s) de compensação do Victor foram desfeitos junto — eles vinham deste pagamento.`)
+    }
     fetchAll()
   }
 
@@ -3152,7 +3158,43 @@ export default function Financial() {
                     <input type="checkbox" checked={payForm.is_compensation} onChange={e=>setPayForm(f=>({...f,is_compensation:e.target.checked}))} className="rounded"/>
                     É uma compensação?
                   </label>
-                  {payForm.is_compensation && <textarea placeholder="Detalhe da compensação" value={payForm.compensation_notes} onChange={e=>setPayForm(f=>({...f,compensation_notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>}
+                  {/* Compensação: quanto do que foi pago vira crédito do Victor em vez de
+                      sair caixa. Em branco = tudo (o comportamento de antes). O resto é
+                      pagamento real — é o Cenário B ("compensa 900, me paga 100"). */}
+                  {payForm.is_compensation && (() => {
+                    const pago = parseFloat(String(payForm.paid_amount).replace(',', '.')) || 0
+                    const comp = payForm.compensation_amount === ''
+                      ? pago
+                      : (parseFloat(String(payForm.compensation_amount).replace(',', '.')) || 0)
+                    const dinheiro = cents(pago - comp)
+                    return (
+                      <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 flex flex-col gap-2">
+                        <p className="text-[11px] text-blue-200/80 leading-tight">
+                          O Fabrício deixa de receber e o valor vira crédito do Victor —
+                          nenhum dinheiro sai. Não cria lançamento a pagar: o crédito fica
+                          disponível para ser usado na aba Pagar Victor.
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <input type="number" step="0.01" placeholder={`Compensado (padrão: ${fmt(pago)})`}
+                            value={payForm.compensation_amount}
+                            onChange={e=>setPayForm(f=>({...f,compensation_amount:e.target.value}))}
+                            className="w-40 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                          <span className="text-[11px] text-gray-500">de {fmt(pago)} pagos</span>
+                        </div>
+                        {dinheiro > 0.005 && (
+                          <p className="text-[11px] text-amber-300/90">
+                            {fmt(comp)} compensados (sem caixa) + <strong>{fmt(dinheiro)} pagos em dinheiro</strong> (sai do caixa).
+                          </p>
+                        )}
+                        {dinheiro < -0.005 && (
+                          <p className="text-[11px] text-red-400">
+                            A compensação passa do valor pago em {fmt(-dinheiro)} — o backend vai recusar.
+                          </p>
+                        )}
+                        <textarea placeholder="Detalhe da compensação (ex: Fabrício devia R$ 900)" value={payForm.compensation_notes} onChange={e=>setPayForm(f=>({...f,compensation_notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+                      </div>
+                    )
+                  })()}
                 </>
               )}
               <select value={payForm.status} onChange={e=>setPayForm(f=>({...f,status:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">

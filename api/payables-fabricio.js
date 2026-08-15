@@ -2,6 +2,12 @@ import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { breakdownFabricio } from '../lib/fabricio-breakdown.js'
 import { mesDeCaixaOriginal } from '../lib/cash-month.js'
+// Compensação: o split do Fabrício vira crédito do Victor em vez de sair caixa.
+// Registra em `payment_sources` e NÃO cria payables_victor — ver o topo do módulo.
+import {
+  registrarCompensacao, limparCompensacao, validarCompensacao,
+  arredondar as r2, numero as num,
+} from '../lib/fabricio-compensation.js'
 
 // Colunas da fatura que explicam o valor do Fabrício, buscadas em UMA query pelos
 // invoice_id já filtrados — em vez de engordar os quatro SELECTs de payables acima
@@ -121,6 +127,11 @@ export default async function handler(req, res) {
       // payables do Victor (candidatosDisponiveis lê payables_victor, e
       // fiscal_allocations só tem payable_victor_id). Fabrício não participa.
       await sql`DELETE FROM payable_payments WHERE payable_type = 'fabricio' AND payable_id = ${id}`
+      // A compensação morre com o pagamento que a originou. A FK ON DELETE CASCADE não
+      // alcança este caso: o lançamento não é apagado, volta a `pendente` — e sem a
+      // limpeza o crédito do Victor sobreviveria ao estorno, exatamente como os
+      // `fiscal_payments` de abatimento sobreviviam antes de lib/fiscal-unlink.js existir.
+      const compensacoesDesfeitas = await limparCompensacao(sql, id)
       const motivo = req.body?.motivo || null
       // Mesmo estorno do mês de caixa feito no lado do Victor: `recalcParent()` grava
       // payment_month a partir do pagamento, e ele tem de voltar junto com o saldo.
@@ -135,11 +146,79 @@ export default async function handler(req, res) {
                   COALESCE(' (' || ${motivo}::text || ')', '')
         WHERE id = ${id} RETURNING *`
       if (!result.length) return res.status(404).json({ error: 'Registro não encontrado' })
-      return res.status(200).json({ data: result[0], action: 'estornar' })
+      return res.status(200).json({
+        data: result[0], action: 'estornar',
+        // Quantas linhas de crédito sumiram junto. A tela precisa dizer: o estorno de um
+        // pagamento levando embora um crédito do Victor é efeito colateral legítimo, mas
+        // silencioso é indistinguível de o crédito ter se perdido.
+        compensacoes_desfeitas: compensacoesDesfeitas.length,
+      })
     }
-    const { id, paid_amount, paid_at, payment_method, is_compensation, compensation_notes, status, notes } = req.body
-    const result = await sql`UPDATE payables_fabricio SET paid_amount=${paid_amount}, paid_at=${paid_at||null}, payment_method=${payment_method||null}, is_compensation=${is_compensation||false}, compensation_notes=${compensation_notes||null}, status=${status}, notes=${notes||null} WHERE id=${id} RETURNING *`
-    return res.status(200).json({ data: result[0] })
+    const {
+      id, paid_amount, paid_at, payment_method, is_compensation,
+      compensation_amount, compensation_notes, status, notes,
+    } = req.body
+
+    // Cenário B: parte compensada, parte em dinheiro. Sem valor explícito, compensar é
+    // tudo-ou-nada e o valor é o próprio pago — que é como a tela funcionava antes de
+    // existir `compensation_amount`, e continua valendo para chamadas antigas.
+    const compAmount = is_compensation
+      ? (compensation_amount === undefined || compensation_amount === null || compensation_amount === ''
+        ? r2(paid_amount)
+        : r2(compensation_amount))
+      : null
+
+    if (is_compensation) {
+      const atual = (await sql`SELECT amount FROM payables_fabricio WHERE id = ${id}`)[0]
+      if (!atual) return res.status(404).json({ error: 'Registro não encontrado' })
+      const v = validarCompensacao({
+        compensation_amount: compAmount, paid_amount, amount: atual.amount,
+      })
+      if (!v.ok) return res.status(422).json({ error: v.erro })
+    }
+
+    const result = await sql`
+      UPDATE payables_fabricio SET
+        paid_amount=${paid_amount}, paid_at=${paid_at || null},
+        payment_method=${payment_method || null},
+        is_compensation=${is_compensation || false},
+        compensation_amount=${compAmount},
+        compensation_notes=${compensation_notes || null},
+        status=${status}, notes=${notes || null}
+      WHERE id=${id} RETURNING *`
+    if (!result.length) return res.status(404).json({ error: 'Registro não encontrado' })
+
+    // Rastreamento da compensação em `payment_sources`.
+    //
+    // ⚠️ NENHUM `payables_victor` é criado aqui — ver a nota no topo de
+    // lib/fabricio-compensation.js. O crédito fica registrado com `payment_id IS NULL`
+    // (= disponível) e é a tela do Victor que o transforma em pagamento.
+    let compensacao = null
+    if (result[0].is_compensation && compAmount > 0.005) {
+      // `client_name` para a descrição da origem: `payables_fabricio` guarda só o id.
+      const cli = result[0].client_id
+        ? (await sql`SELECT name FROM clients WHERE id = ${result[0].client_id}`)[0]
+        : null
+      compensacao = await registrarCompensacao(sql, {
+        payable: { ...result[0], client_name: cli?.name },
+        compensation_amount: compAmount,
+        compensation_notes,
+      })
+    } else {
+      // Desmarcou a compensação (ou zerou o valor): o crédito deixa de existir. Sem isto,
+      // desmarcar o checkbox manteria em `payment_sources` um crédito que a tela do
+      // Fabrício já não mostra — e ele apareceria para pagamento do outro lado.
+      await limparCompensacao(sql, id)
+    }
+
+    return res.status(200).json({
+      data: result[0],
+      marcado_compensacao: !!result[0].is_compensation,
+      compensacao_amount: compAmount,
+      // Cenário B: o que NÃO foi compensado saiu de caixa de verdade.
+      pago_em_dinheiro: r2(num(paid_amount) - (compAmount || 0)),
+      origem_compensacao: compensacao?.origem || null,
+    })
   }
   if (req.method === 'DELETE') {
     const { id } = req.body

@@ -385,6 +385,61 @@ Três decisões que diferem da especificação, todas conferidas no banco:
 o padrão do resto do schema. Vale a advertência de sempre: valor fora da lista não é
 rejeitado pelo banco — ele simplesmente some de todo filtro que a tela fizer.
 
+### Compensação do Fabrício (`lib/fabricio-compensation.js`) — 2026-08-15
+
+O split de um cliente cabe ao Fabrício, mas ele deve ao Victor. Em vez de caixa nos dois
+sentidos, o valor é **compensado**: o lançamento fica quitado sem dinheiro sair e o mesmo
+valor vira crédito do Victor.
+
+`payables_fabricio` ganhou **`compensation_amount` numeric(15,2)** (`is_compensation` e
+`compensation_notes` já existiam desde sempre, e o checkbox "É uma compensação?" já estava
+na tela — o que faltava era o VALOR e o rastreamento).
+
+| cenário | `paid_amount` | `compensation_amount` | sai de caixa |
+|---------|---------------|----------------------|--------------|
+| A — "compensa tudo" | 1.000 | 1.000 | 0 |
+| B — "compensa 900, me paga 100" | 1.000 | 900 | **100** |
+
+Campo em branco = compensa tudo, que é como a tela funcionava antes de a coluna existir.
+
+⚠️ **NENHUM `payables_victor` é criado.** A compensação vira uma linha de
+`payment_sources` (`source_type='compensation_fabricio'`, `destination_category='lucros'`,
+`fabricio_compensation_id` apontando para o lançamento) com **`payment_id` NULL — que é o
+que significa "crédito disponível"**. Quem o transforma em pagamento é a tela do Victor.
+
+A especificação do PROMPT 3 pedia as duas coisas (o passo 5 esboçava um
+`criarPayableVictorCompensacao`, a nota final proibia); vale a nota, e por um motivo
+concreto: um payable criado aqui seria uma dívida da empresa que não veio de fatura
+nenhuma, e entraria em `candidatosDisponiveis()` como saldo consumível pela cascata. O
+crédito existe, mas ele é dinheiro que o Fabrício deixou de receber — não algo que a
+empresa deva. É a mesma confusão que obrigou a excluir as linhas `origin='fiscal'` da
+distribuição depois de já estarem gravadas.
+
+⚠️ **A origem NÃO sai de `fiscal_allocations`**, como a especificação sugeria: aquela
+tabela é o rateio de IMPOSTO por nota e não tem nada do Fabrício. Ela já está na própria
+linha — `payables_fabricio` tem `client_id`, `month`, `year` e `invoice_id`. Um lançamento
+é de UM cliente, então **não há rateio a inventar**: compensar três clientes são três
+linhas, cada uma com a origem exata. Ratear um total entre clientes produziria fatias que
+ninguém deve.
+
+Três guardas, cada uma cobrindo um jeito de o crédito mentir:
+
+- **`validarCompensacao`** mede contra o `paid_amount`, não contra o `amount`: compensar
+  R$ 900 de um lançamento com R$ 500 baixados registraria crédito inexistente (**422**).
+- **`registrarCompensacao` limpa antes de gravar.** O PATCH da tela é chamado de novo a
+  cada correção de valor ou nota; sem isso, cada edição somaria um crédito novo sobre o
+  anterior.
+- **`limparCompensacao` no `?action=estornar` e ao desmarcar o checkbox.** A FK
+  `ON DELETE CASCADE` só dispara quando a LINHA do Fabrício é apagada — e o caso comum é
+  outro: o estorno devolve o lançamento a `pendente` sem apagá-lo. Sem a limpeza, o crédito
+  sobreviveria ao pagamento que o originou, exatamente como os `fiscal_payments` de
+  abatimento sobreviviam antes de `lib/fiscal-unlink.js` existir. A resposta devolve
+  `compensacoes_desfeitas` e a tela avisa.
+
+Testado contra a produção (payable 27, Pharmalog 1/2026, R$ 295,38) nos dois cenários, com
+a idempotência (re-registrar mantém 1 linha), a recusa (compensar acima do pago) e o
+estorno — tudo restaurado ao final.
+
 ### `monthly_closings` / `payments`
 Tabelas do fechamento mensal (modelo antigo). Pouco/ não usadas pelas telas atuais.
 
