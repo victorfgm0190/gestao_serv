@@ -404,6 +404,9 @@ export default function Financial() {
   // Totais das guias rateadas, digitados uma vez e distribuídos pelos clientes.
   const [bdTotais, setBdTotais] = useState({ escritorio: '', das: '', inss: '' })
   const [bdDistMsg, setBdDistMsg] = useState('')
+  // Realce temporário do bloco de rateio, ligado pelo botão "Pagar despesas rateadas".
+  // Sem ele, o clique troca a visão e o usuário não sabe para onde olhar.
+  const [destaqueRateio, setDestaqueRateio] = useState(false)
   const [bdDistErro, setBdDistErro] = useState('')
   const [bdPaidAt, setBdPaidAt] = useState(todayBR())
   const [bdPlano, setBdPlano] = useState(null)        // prévia vinda do backend
@@ -2981,7 +2984,28 @@ export default function Financial() {
             </div>
           )}
           {tab === 'victor' && (
-            <button onClick={openReceive} className="ml-auto px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">Receber</button>
+            <div className="ml-auto flex gap-2">
+              {/* ⚠️ Atalho, NÃO um modal novo.
+                  A tela de despesas rateadas já existe: é a visão 🗂️ Cards, onde cada valor
+                  é digitado no cliente e na categoria a que pertence, com o bloco
+                  "Distribuir guia pelo rateio". Um segundo lugar para pagar a mesma coisa
+                  seria o problema que acabamos de resolver tirando Honorários e DAS do
+                  modal "Receber" — dois caminhos com o mesmo nome e motores diferentes.
+                  Este botão leva até lá e destaca o bloco. */}
+              <button
+                onClick={() => {
+                  setTabView('cards')
+                  setDestaqueRateio(true)
+                  setTimeout(() => {
+                    document.getElementById('bloco-distribuir-rateio')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  }, 50)
+                  setTimeout(() => setDestaqueRateio(false), 2600)
+                }}
+                title="Honorários, DAS e INSS — digite o total da guia e distribua pelo rateio de cada cliente"
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium"
+              >💰 Pagar despesas rateadas</button>
+              <button onClick={openReceive} className="px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">Receber</button>
+            </div>
           )}
         </div>
       )}
@@ -3278,7 +3302,8 @@ export default function Financial() {
                   {/* Guias rateadas: digita-se o total UMA vez e o rateio diz quanto cabe a
                       cada cliente. Preenche os campos dos cards — não paga sozinho, para o
                       valor ainda poder ser conferido e ajustado antes do Pagar. */}
-                  <div className="border-b border-gray-800 pb-2">
+                  <div id="bloco-distribuir-rateio"
+                    className={`border-b border-gray-800 pb-2 rounded-lg transition-all duration-500 ${destaqueRateio ? 'ring-2 ring-blue-400/70 bg-blue-500/5 px-2 pt-2' : ''}`}>
                     <p className="text-[11px] uppercase tracking-wider text-blue-300/80 mb-1.5">
                       🧮 Distribuir guia pelo rateio
                     </p>
