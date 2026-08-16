@@ -3284,6 +3284,26 @@ export default function Financial() {
                   : tabView === 'tabela' ? renderTabelaTabulada()
                     : breakdown.clientes.map(renderBreakdownCard)}
 
+                {/* ⚠️ A visão TABELA é a padrão da aba e esconde a barra de pagamento
+                    (`hidden`), porque a absorção dela é exibição e ligar o Pagar ali faria a
+                    gravação divergir do que ela mostra — ver lib/victor-tabulado.js.
+                    O efeito colateral: quem abre a aba não vê Cancelar, o bloco de rateio
+                    nem o Pagar, e conclui que os botões sumiram. Dizer onde eles estão custa
+                    duas linhas e evita a busca. */}
+                {tabView === 'tabela' && (
+                  <div className="bg-blue-500/5 border border-blue-500/25 rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap">
+                    <p className="text-[11px] text-blue-200/80 leading-tight">
+                      Esta visão é <strong>leitura</strong>: mostra quanto cabe a cada cliente, mas não grava.
+                      Para <strong>pagar</strong>, <strong>distribuir uma guia</strong> ou <strong>estornar</strong>,
+                      use a visão Cards.
+                    </p>
+                    <button onClick={() => setTabView('cards')}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium whitespace-nowrap">
+                      🗂️ Ir para Cards
+                    </button>
+                  </div>
+                )}
+
                 {/* MOMENTO 1 puro: trabalho apontado e contrato mensal que ainda não viraram
                     nota. Ficam FORA dos cards porque não há payable — o Victor só recebe
                     quando o cliente paga o recebível, e um input aqui gravaria em nada. */}
