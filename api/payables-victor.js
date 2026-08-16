@@ -295,6 +295,41 @@ async function pagarComRateio(sql, req, res) {
 
   const plano = planejar({ pagamentos: itens, rateios, candidatos })
 
+  // ── COMPETÊNCIA DAS LINHAS DE RATEIO ───────────────────────────────────────────────
+  //
+  // A alocação `sem_debito` aponta para a NOTA, e o payable dela pode não estar entre os
+  // candidatos — basta estar QUITADO (é o caso normal: paga-se o imposto depois de receber
+  // o serviço) ou com o recebível pendente. `planejarCategoria` tira `month`/`year` do
+  // payable disponível, então nesses casos vinham nulos.
+  //
+  // ⚠️ Isso derrubava o pagamento inteiro com 500: `payment_sources.month/year` são NOT
+  // NULL, o INSERT violava a constraint e a transação inteira ia junto — a guia não era
+  // quitada e o usuário via só "erro interno". Caso real: pagar os R$ 139,11 de Honorários
+  // do Pharmalog com o payable #28 já quitado.
+  //
+  // A competência sai do payable da nota (qualquer status) e, se a nota ainda não gerou
+  // payable, da própria fatura. O último recurso é a competência pedida — nunca nulo.
+  const semComp = plano.alocacoes.filter((a) => a.month == null || a.year == null)
+  if (semComp.length) {
+    const invIds = [...new Set(semComp.map((a) => Number(a.invoice_id)).filter(Boolean))]
+    const ctx = invIds.length
+      ? await sql`
+          SELECT i.id AS invoice_id, i.month AS inv_month, i.year AS inv_year,
+                 pv.id AS payable_id, pv.month AS pv_month, pv.year AS pv_year
+          FROM invoices i
+          LEFT JOIN payables_victor pv ON pv.invoice_id = i.id
+          WHERE i.id = ANY(${invIds})`
+      : []
+    const porInv = new Map(ctx.map((c) => [Number(c.invoice_id), c]))
+    for (const a of semComp) {
+      const c = porInv.get(Number(a.invoice_id))
+      a.month = c?.pv_month ?? c?.inv_month ?? mes
+      a.year = c?.pv_year ?? c?.inv_year ?? ano
+      // O payable serve só para a resposta: a linha não o debita (`sem_debito`).
+      if (a.payable_id == null && c?.payable_id != null) a.payable_id = c.payable_id
+    }
+  }
+
   // Nomes dos clientes para a resposta (candidatosDisponiveis traz só payables_victor.*).
   const clientIds = [...new Set(plano.alocacoes.map((a) => a.client_id).filter(Boolean))]
   const nomes = new Map()
