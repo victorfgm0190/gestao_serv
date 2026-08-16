@@ -1383,16 +1383,18 @@ export default function Financial() {
     const [y, m] = String(bdPaidAt || '').slice(0, 10).split('-').map(Number)
     if (!y || !m) { setPagosMes(null); return }
     try {
-      const res = await fetch(`/api/payables-victor?action=pagos-do-mes&company_id=${activeCompany.id}&month=${m}&year=${y}`)
+      // Manda também a COMPETÊNCIA em foco: a guia de fevereiro paga em agosto tem de
+      // aparecer nas duas leituras — ver o comentário das duas datas no endpoint.
+      const res = await fetch(`/api/payables-victor?action=pagos-do-mes&company_id=${activeCompany.id}&month=${m}&year=${y}&competencia_mes=${refMonth}&competencia_ano=${refYear}`)
       const data = await res.json()
       setPagosMes(res.ok ? data : null)
     } catch { setPagosMes(null) }
-  }, [activeCompany, bdPaidAt])
+  }, [activeCompany, bdPaidAt, refMonth, refYear])
 
   useEffect(() => {
     if (tab !== 'victor' || tabView === 'tabela') return
     fetchPagosMes()
-  }, [tab, tabView, activeCompany, bdPaidAt])
+  }, [tab, tabView, activeCompany, bdPaidAt, refMonth, refYear])
 
   // Estorna um pagamento do bloco "Valores pagos". Cada natureza tem a SUA rota:
   // guia → DELETE /api/fiscal-payments (recalcula a obrigação e, pelo CASCADE de
@@ -3509,15 +3511,24 @@ export default function Financial() {
                   {pagosMes?.guias?.length > 0 && (
                     <div className="border-t border-gray-800 pt-2 space-y-1">
                       <p className="text-[11px] uppercase tracking-wider text-gray-400">
-                        ✅ Guias pagas em {months[pagosMes.mes - 1]}/{pagosMes.ano}
-                        <span className="text-gray-600 normal-case tracking-normal"> — Escritório, DAS e INSS</span>
+                        ✅ Guias pagas
+                        <span className="text-gray-600 normal-case tracking-normal">
+                          {' '}— pagas em {months[pagosMes.mes - 1]}/{pagosMes.ano} ou da competência {months[refMonth - 1]}/{refYear}
+                        </span>
                       </p>
                       {pagosMes.guias.map(g => (
                         <div key={`g${g.id}`} className="flex items-center justify-between gap-2 text-[11px]">
                           <span className="truncate text-gray-300">
                             <span className="px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-300/90 text-[9px] uppercase mr-1.5">guia</span>
                             {CAT_LABEL[g.kind] || g.kind}
-                            <span className="text-gray-600"> · competência {g.competencia_mes}/{g.competencia_ano} · {g.method}</span>
+                            {/* As DUAS datas na linha: de que mês é a guia e quando o
+                                dinheiro saiu. Um pagamento de agosto quitando fevereiro é
+                                o normal, e sem as duas a lista parece filtrada errado. */}
+                            <span className="text-gray-600">
+                              {' '}· competência {g.competencia_mes}/{g.competencia_ano}
+                              {' '}· pago em {new Date(g.paid_at).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                              {' '}· {g.method}
+                            </span>
                           </span>
                           <span className="flex items-center gap-2 shrink-0">
                             <span className="font-mono text-gray-300">{fmt(g.amount)}</span>

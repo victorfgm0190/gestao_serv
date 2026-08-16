@@ -730,8 +730,21 @@ export default async function handler(req, res) {
       }
       const m = Number(month)
       const y = Number(year)
+      // Competência em foco na aba (opcional). Ver a explicação das DUAS datas abaixo.
+      const cm = req.query.competencia_mes ? Number(req.query.competencia_mes) : null
+      const cy = req.query.competencia_ano ? Number(req.query.competencia_ano) : null
       // Escritório na tela = kind `honorarios`; `escritorio` é o legado sem rateio.
       const KINDS_FISCAIS = ['honorarios', 'escritorio', 'das', 'inss']
+
+      // ⚠️ DUAS DATAS, e confundi-las esvaziava a lista.
+      //
+      //   paid_at              quando o dinheiro saiu     (15/08/2026)
+      //   o.month/o.year       de que mês é a guia        (competência 02/2026)
+      //
+      // Um pagamento de agosto quita uma guia de fevereiro — é o normal, não a exceção.
+      // Filtrando só por `paid_at`, quem procurava "as guias de fevereiro" via a seção
+      // vazia com o pagamento existindo. Agora entra o que foi PAGO no mês da data OU o que
+      // pertence à COMPETÊNCIA em foco, sem duplicar; cada linha diz as duas datas.
       const guias = await sql`
         SELECT fp.id, fp.amount, fp.paid_at, fp.method, fp.notes,
                o.id AS obligation_id, o.kind, o.month AS competencia_mes, o.year AS competencia_ano
@@ -739,8 +752,10 @@ export default async function handler(req, res) {
         JOIN fiscal_obligations o ON o.id = fp.obligation_id
         WHERE o.company_id = ${company_id}
           AND o.kind = ANY(${KINDS_FISCAIS})
-          AND EXTRACT(MONTH FROM fp.paid_at) = ${m}
-          AND EXTRACT(YEAR  FROM fp.paid_at) = ${y}
+          AND (
+            (EXTRACT(MONTH FROM fp.paid_at) = ${m} AND EXTRACT(YEAR FROM fp.paid_at) = ${y})
+            OR (${cm}::int IS NOT NULL AND o.month = ${cm}::int AND o.year = ${cy}::int)
+          )
         ORDER BY fp.id`
       // `lancamentos` continua na resposta, sempre vazio, para não quebrar quem já lê o
       // formato. O estorno deles vive na seção "Lançamentos com pagamento".
