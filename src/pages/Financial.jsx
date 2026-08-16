@@ -2047,8 +2047,15 @@ export default function Financial() {
                 {tab === 'victor' && item.origin === 'faturamento' && (item.status === 'pago' || item.status === 'parcial') && (item.payments?.length > 0) && (
                   <button onClick={() => openEditReceive(item)} className="px-3 py-1 border border-blue-500/60 text-blue-400 hover:bg-blue-500/10 rounded-lg text-xs">✏️ Editar</button>
                 )}
+                {/* Estorno do LANÇAMENTO: apaga os pagamentos dele e devolve a pendente.
+                    ⚠️ Não desfaz guia fiscal quitada pelo rateio — aquilo não passa por
+                    payable_payments; o caminho é /fiscal → Pagamentos. */}
                 {(item.status === 'pago' || item.status === 'parcial') && (
-                  <button onClick={() => estornarPayable(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
+                  <button onClick={() => estornarPayable(item)}
+                    title={item.status === 'pago'
+                      ? 'Desfaz os pagamentos deste lançamento e o devolve para Pendente'
+                      : 'Desfaz os pagamentos parciais deste lançamento e o devolve para Pendente'}
+                    className="px-3 py-1 bg-red-600/90 hover:bg-red-500 text-white rounded-lg text-xs font-medium">🔄 Estornar</button>
                 )}
                 {/* Sempre disponível, inclusive nas linhas que aguardam o cliente pagar
                     (essas não têm botão de Pagar e ficariam sem acesso ao demonstrativo). */}
@@ -3355,6 +3362,18 @@ export default function Financial() {
                       <p className="text-[11px] text-gray-400">Total a pagar</p>
                       <p className="text-lg font-bold text-green-400">{fmt(bdTotalDigitado)}</p>
                     </div>
+                    {/* Cancelar = descartar o que foi digitado. Não fecha nada: esta barra
+                        não é um modal, é parte da visão Cards. Sem ele, o único jeito de
+                        desfazer uma distribuição indesejada era apagar campo por campo. */}
+                    <button
+                      onClick={() => {
+                        setBdInputs({}); setBdTotais({ escritorio: '', das: '', inss: '' })
+                        setBdPlano(null); setBdErro(''); setBdMsg(''); setBdDistMsg(''); setBdDistErro('')
+                      }}
+                      disabled={bdSaving || (bdTotalDigitado <= 0 && !bdPlano)}
+                      title="Limpa os valores digitados e a prévia — nada é gravado"
+                      className="px-3 py-2 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg text-xs font-medium disabled:opacity-40"
+                    >❌ Cancelar</button>
                     <button
                       onClick={() => bdEnviar(false)}
                       disabled={bdTotalDigitado <= 0 || bdSaving}
@@ -3364,7 +3383,7 @@ export default function Financial() {
                       onClick={() => bdEnviar(true)}
                       disabled={bdTotalDigitado <= 0 || bdSaving}
                       className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-medium disabled:opacity-40"
-                    >{bdSaving ? 'Gravando...' : '💸 Pagar'}</button>
+                    >{bdSaving ? 'Gravando...' : '✅ Pagar'}</button>
                   </div>
 
                   {bdErro && <p className="text-red-400 text-xs">{bdErro}</p>}
