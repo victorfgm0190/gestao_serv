@@ -777,6 +777,25 @@ export default function Financial() {
 
   async function openPayments(item) {
     setShowPayModal(item)
+    // Pré-preenche o formulário de compensação com o estado atual do lançamento.
+    //
+    // ⚠️ Sem isto o painel abria zerado mesmo num lançamento já compensado, e salvar de
+    // novo apagaria o valor gravado. `paid_amount` parte do total devido, que é o caso
+    // normal: compensa-se o lançamento inteiro ou parte dele.
+    if (tab === 'fabricio') {
+      setPayForm(f => ({
+        ...f,
+        paid_amount: item.paid_amount > 0 ? item.paid_amount : (item.amount || ''),
+        paid_at: item.paid_at ? String(item.paid_at).slice(0, 10) : todayBR(),
+        payment_method: item.payment_method || '',
+        is_compensation: !!item.is_compensation,
+        compensation_amount: item.compensation_amount != null ? String(item.compensation_amount) : '',
+        nao_recebe_restante: false,
+        compensation_notes: item.compensation_notes || '',
+        status: item.status === 'pendente' ? 'pago' : item.status,
+      }))
+      setErroPay('')
+    }
     setNewPay({ amount: '', paid_at: todayBR(), notes: '' })
     setVictorCats(EMPTY_VICTOR_CATS)
     setBreakdownView('geral')
@@ -3891,8 +3910,44 @@ export default function Financial() {
                 <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
                 <input type="date" value={payForm.paid_at} onChange={e=>setPayForm(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
               </div>
+              <select value={payForm.status} onChange={e=>setPayForm(f=>({...f,status:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <option value="pago">Pago integralmente</option>
+                <option value="parcial">Pago parcialmente</option>
+              </select>
+              <textarea placeholder="Observações" value={payForm.notes} onChange={e=>setPayForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+            </div>
+            {erroPay && (
+              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroPay}</p>
+            )}
+            <div className="flex gap-3 mt-5">
+              <button onClick={()=>{setShowPayModal(null);setErroPay('')}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={() => pay(showPayModal)} disabled={paying} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{paying ? 'Confirmando...' : 'Confirmar'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal pagamentos — Pagar Victor/Fabrício (múltiplos pagamentos) */}
+      {showPayModal && tab !== 'receivables' && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between mb-1">
+              <h3 className="text-lg font-bold text-white">Pagamentos</h3>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[showPayModal.status] || 'bg-gray-700 text-gray-400'}`}>{showPayModal.status}</span>
+            </div>
+            <p className="text-gray-400 text-xs mb-4">
+              {showPayModal.client_name} — {months[showPayModal.month-1]}/{showPayModal.year}
+              <span className="text-gray-500"> · Total: </span>
+              <span className="text-white">{fmt(showPayModal.total_amount || showPayModal.amount)}</span>
+            </p>
+
+            {/* Demonstrativo — como a fatura chegou ao valor do Fabrício. Vem antes da
+                lista de pagamentos porque explica o total exibido logo acima. */}
+            {tab === 'fabricio' && fabricioBreakdownPanel(showPayModal)}
+
               {tab === 'fabricio' && (
-                <>
+                <div className="border border-gray-800 rounded-xl p-3 space-y-3 mb-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-blue-300/80">🤝 Compensação</p>
                   <input placeholder="Forma de pagamento" value={payForm.payment_method} onChange={e=>setPayForm(f=>({...f,payment_method:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
                   <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
                     <input type="checkbox" checked={payForm.is_compensation} onChange={e=>setPayForm(f=>({...f,is_compensation:e.target.checked}))} className="rounded"/>
@@ -3951,42 +4006,13 @@ export default function Financial() {
                       </div>
                     )
                   })()}
-                </>
+                  <button onClick={() => pay(showPayModal)} disabled={paying}
+                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">
+                    {paying ? 'Salvando...' : 'Salvar compensação'}
+                  </button>
+                  {erroPay && <p className="text-red-400 text-xs">{erroPay}</p>}
+                </div>
               )}
-              <select value={payForm.status} onChange={e=>setPayForm(f=>({...f,status:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
-                <option value="pago">Pago integralmente</option>
-                <option value="parcial">Pago parcialmente</option>
-              </select>
-              <textarea placeholder="Observações" value={payForm.notes} onChange={e=>setPayForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
-            </div>
-            {erroPay && (
-              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroPay}</p>
-            )}
-            <div className="flex gap-3 mt-5">
-              <button onClick={()=>{setShowPayModal(null);setErroPay('')}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
-              <button onClick={() => pay(showPayModal)} disabled={paying} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{paying ? 'Confirmando...' : 'Confirmar'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal pagamentos — Pagar Victor/Fabrício (múltiplos pagamentos) */}
-      {showPayModal && tab !== 'receivables' && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between mb-1">
-              <h3 className="text-lg font-bold text-white">Pagamentos</h3>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[showPayModal.status] || 'bg-gray-700 text-gray-400'}`}>{showPayModal.status}</span>
-            </div>
-            <p className="text-gray-400 text-xs mb-4">
-              {showPayModal.client_name} — {months[showPayModal.month-1]}/{showPayModal.year}
-              <span className="text-gray-500"> · Total: </span>
-              <span className="text-white">{fmt(showPayModal.total_amount || showPayModal.amount)}</span>
-            </p>
-
-            {/* Demonstrativo — como a fatura chegou ao valor do Fabrício. Vem antes da
-                lista de pagamentos porque explica o total exibido logo acima. */}
-            {tab === 'fabricio' && fabricioBreakdownPanel(showPayModal)}
 
             {/* Lista de pagamentos */}
             <div className="space-y-2 mb-5">
