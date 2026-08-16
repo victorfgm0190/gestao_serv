@@ -3506,10 +3506,11 @@ export default function Financial() {
                       da barra. As duas naturezas ficam SEPARADAS de propósito — guia
                       quitada e saldo do Victor consumido são dinheiros diferentes, e o
                       estorno de cada uma tem rota própria. */}
-                  {(pagosMes?.guias?.length > 0 || pagosMes?.lancamentos?.length > 0) && (
+                  {pagosMes?.guias?.length > 0 && (
                     <div className="border-t border-gray-800 pt-2 space-y-1">
                       <p className="text-[11px] uppercase tracking-wider text-gray-400">
-                        ✅ Valores pagos em {months[pagosMes.mes - 1]}/{pagosMes.ano}
+                        ✅ Guias pagas em {months[pagosMes.mes - 1]}/{pagosMes.ano}
+                        <span className="text-gray-600 normal-case tracking-normal"> — Escritório, DAS e INSS</span>
                       </p>
                       {pagosMes.guias.map(g => (
                         <div key={`g${g.id}`} className="flex items-center justify-between gap-2 text-[11px]">
@@ -3523,22 +3524,6 @@ export default function Financial() {
                             <button onClick={() => estornarPago('guia', g)} disabled={estornandoPago === `guia-${g.id}`}
                               className="px-2 py-0.5 border border-red-500/60 text-red-400 hover:bg-red-500/10 disabled:opacity-40 rounded text-[10px]">
                               {estornandoPago === `guia-${g.id}` ? '...' : 'Estornar'}
-                            </button>
-                          </span>
-                        </div>
-                      ))}
-                      {pagosMes.lancamentos.map(l => (
-                        <div key={`l${l.id}`} className="flex items-center justify-between gap-2 text-[11px]">
-                          <span className="truncate text-gray-300">
-                            <span className="px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-300/90 text-[9px] uppercase mr-1.5">saldo</span>
-                            {l.notes || 'distribuição geral'}
-                            <span className="text-gray-600"> · {l.client_name} {l.competencia_mes}/{l.competencia_ano}</span>
-                          </span>
-                          <span className="flex items-center gap-2 shrink-0">
-                            <span className="font-mono text-gray-300">{fmt(l.amount)}</span>
-                            <button onClick={() => estornarPago('lancamento', l)} disabled={estornandoPago === `lancamento-${l.id}`}
-                              className="px-2 py-0.5 border border-red-500/60 text-red-400 hover:bg-red-500/10 disabled:opacity-40 rounded text-[10px]">
-                              {estornandoPago === `lancamento-${l.id}` ? '...' : 'Estornar'}
                             </button>
                           </span>
                         </div>

@@ -708,17 +708,21 @@ export default async function handler(req, res) {
     // O que foi PAGO num mês/ano de caixa — as duas naturezas, com o que precisa para
     // estornar. Alimenta o bloco "Valores pagos" da barra de rateio.
     //
-    // ⚠️ São DUAS tabelas, e confundi-las é o erro fácil aqui:
-    //   `fiscal_payments`  quitação de GUIA (DAS/INSS/honorários). Não tem `company_id`,
-    //                      `kind` nem `payment_date` — os dois primeiros vêm da obrigação
-    //                      pelo JOIN, e a data é `paid_at`.
-    //   `payable_payments` o que saiu do SALDO do Victor (Pró-labore, Lucros, Demais…).
-    //                      A categoria vive só como texto em `notes`.
-    // O exemplo que motivou isto ("Pro Labore", "Lucros") é do segundo grupo, não do
-    // primeiro: buscá-los em fiscal_payments não acharia nada.
+    // ⚠️ SÓ GUIAS FISCAIS (decisão do Victor, 2026-08-16). Pró-labore e Lucros saíram —
+    // eles são `payable_payments` (saldo do Victor consumido), não quitação de obrigação, e
+    // continuam com estorno na seção "Lançamentos com pagamento" e no card do modal.
     //
-    // O filtro é a data do PAGAMENTO (`paid_at`), não a competência — é o mês que o
-    // usuário digitou na barra, e o que ele quer ver é "o que paguei neste dia/mês".
+    // ⚠️ `honorarios` ENTRA no filtro, e isso não é detalhe: a especificação pedia
+    // `kind IN ('escritorio','das','inss')` — literalmente —, e o "Escritório" da tela é o
+    // kind `honorarios` (os R$ 150 da contabilidade, o único rateado). Conferido no banco:
+    // o filtro literal devolve ZERO pagamentos; com honorarios, devolve o único que existe.
+    // O kind `escritorio` fica junto por ser o legado da migração de victor_reserves.
+    //
+    // `fiscal_payments` não tem `company_id`, `kind` nem `payment_date`: os dois primeiros
+    // vêm da obrigação pelo JOIN, e a data é `paid_at`.
+    //
+    // O filtro é a data do PAGAMENTO, não a competência — é o mês que o usuário digitou na
+    // barra, e o que ele quer ver é "o que paguei neste mês".
     if (req.query.action === 'pagos-do-mes') {
       const { company_id, month, year } = req.query
       if (!company_id || !month || !year) {
@@ -726,29 +730,21 @@ export default async function handler(req, res) {
       }
       const m = Number(month)
       const y = Number(year)
-      const [guias, lancamentos] = await Promise.all([
-        sql`
-          SELECT fp.id, fp.amount, fp.paid_at, fp.method, fp.notes,
-                 o.id AS obligation_id, o.kind, o.month AS competencia_mes, o.year AS competencia_ano
-          FROM fiscal_payments fp
-          JOIN fiscal_obligations o ON o.id = fp.obligation_id
-          WHERE o.company_id = ${company_id}
-            AND EXTRACT(MONTH FROM fp.paid_at) = ${m}
-            AND EXTRACT(YEAR  FROM fp.paid_at) = ${y}
-          ORDER BY fp.id`,
-        sql`
-          SELECT pp.id, pp.payable_id, pp.amount, pp.paid_at, pp.notes,
-                 pv.client_id, c.name AS client_name,
-                 pv.month AS competencia_mes, pv.year AS competencia_ano
-          FROM payable_payments pp
-          JOIN payables_victor pv ON pv.id = pp.payable_id
-          LEFT JOIN clients c ON c.id = pv.client_id
-          WHERE pp.payable_type = 'victor' AND pv.company_id = ${company_id}
-            AND EXTRACT(MONTH FROM pp.paid_at) = ${m}
-            AND EXTRACT(YEAR  FROM pp.paid_at) = ${y}
-          ORDER BY pp.id`,
-      ])
-      return res.status(200).json({ mes: m, ano: y, guias, lancamentos })
+      // Escritório na tela = kind `honorarios`; `escritorio` é o legado sem rateio.
+      const KINDS_FISCAIS = ['honorarios', 'escritorio', 'das', 'inss']
+      const guias = await sql`
+        SELECT fp.id, fp.amount, fp.paid_at, fp.method, fp.notes,
+               o.id AS obligation_id, o.kind, o.month AS competencia_mes, o.year AS competencia_ano
+        FROM fiscal_payments fp
+        JOIN fiscal_obligations o ON o.id = fp.obligation_id
+        WHERE o.company_id = ${company_id}
+          AND o.kind = ANY(${KINDS_FISCAIS})
+          AND EXTRACT(MONTH FROM fp.paid_at) = ${m}
+          AND EXTRACT(YEAR  FROM fp.paid_at) = ${y}
+        ORDER BY fp.id`
+      // `lancamentos` continua na resposta, sempre vazio, para não quebrar quem já lê o
+      // formato. O estorno deles vive na seção "Lançamentos com pagamento".
+      return res.status(200).json({ mes: m, ano: y, guias, lancamentos: [] })
     }
     // Info da sessão de recebimento (para edição): payables afetados + valor consumido na sessão.
     if (req.query.action === 'sessao') {
