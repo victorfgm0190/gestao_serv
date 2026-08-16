@@ -425,6 +425,7 @@ export default function Financial() {
   // (guias fiscais e lançamentos do Victor), cada uma com o seu estorno.
   const [pagosMes, setPagosMes] = useState(null)
   const [estornandoPago, setEstornandoPago] = useState(null)
+  const [verTodasGuias, setVerTodasGuias] = useState(false)
   const [bdDistErro, setBdDistErro] = useState('')
   const [bdPaidAt, setBdPaidAt] = useState(todayBR())
   const [bdPlano, setBdPlano] = useState(null)        // prévia vinda do backend
@@ -1392,9 +1393,9 @@ export default function Financial() {
   }, [activeCompany, bdPaidAt, refMonth, refYear])
 
   useEffect(() => {
-    if (tab !== 'victor' || tabView === 'tabela') return
+    if (tab !== 'victor') return
     fetchPagosMes()
-  }, [tab, tabView, activeCompany, bdPaidAt, refMonth, refYear])
+  }, [tab, activeCompany, bdPaidAt, refMonth, refYear])
 
   // Estorna um pagamento do bloco "Valores pagos". Cada natureza tem a SUA rota:
   // guia → DELETE /api/fiscal-payments (recalcula a obrigação e, pelo CASCADE de
@@ -3508,15 +3509,36 @@ export default function Financial() {
                       da barra. As duas naturezas ficam SEPARADAS de propósito — guia
                       quitada e saldo do Victor consumido são dinheiros diferentes, e o
                       estorno de cada uma tem rota própria. */}
-                  {pagosMes?.guias?.length > 0 && (
+                  {(pagosMes?.guias?.length > 0 || pagosMes?.outras?.length > 0) && (
                     <div className="border-t border-gray-800 pt-2 space-y-1">
                       <p className="text-[11px] uppercase tracking-wider text-gray-400">
                         ✅ Guias pagas
                         <span className="text-gray-600 normal-case tracking-normal">
                           {' '}— pagas em {months[pagosMes.mes - 1]}/{pagosMes.ano} ou da competência {months[refMonth - 1]}/{refYear}
                         </span>
+                        {pagosMes.outras?.length > 0 && pagosMes.guias.length > 0 && (
+                          <button onClick={() => setVerTodasGuias(v => !v)}
+                            className="ml-2 text-[10px] text-blue-300/80 hover:text-blue-200 underline decoration-dotted normal-case tracking-normal">
+                            {verTodasGuias ? 'só este recorte' : `+${pagosMes.outras.length} de outros períodos`}
+                          </button>
+                        )}
                       </p>
-                      {pagosMes.guias.map(g => (
+                      {/* Recorte vazio mas EXISTEM guias pagas: dizer onde elas estão é
+                          o que impede o "sumiu sem explicação". A combinação que gerou o
+                          relato é banal — filtro da aba em "todos os meses" faz refMonth
+                          virar o mês atual, e o recorte deixa de casar. */}
+                      {pagosMes.guias.length === 0 && pagosMes.outras.length > 0 && (
+                        <p className="text-amber-400/80 text-[10px] leading-tight">
+                          Nenhuma guia paga neste recorte, mas há {pagosMes.outras.length} em
+                          outros períodos.{' '}
+                          <button onClick={() => setVerTodasGuias(v => !v)} className="underline decoration-dotted">
+                            {verTodasGuias ? 'ocultar' : 'mostrar todas'}
+                          </button>
+                        </p>
+                      )}
+                      {(verTodasGuias || pagosMes.guias.length === 0
+                        ? [...pagosMes.guias, ...(verTodasGuias ? pagosMes.outras : [])]
+                        : pagosMes.guias).map(g => (
                         <div key={`g${g.id}`} className="flex items-center justify-between gap-2 text-[11px]">
                           <span className="truncate text-gray-300">
                             <span className="px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-300/90 text-[9px] uppercase mr-1.5">guia</span>

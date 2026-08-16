@@ -757,9 +757,31 @@ export default async function handler(req, res) {
             OR (${cm}::int IS NOT NULL AND o.month = ${cm}::int AND o.year = ${cy}::int)
           )
         ORDER BY fp.id`
+
+      // ⚠️ TODAS as outras guias pagas da empresa, fora do recorte.
+      //
+      // Sem isto a seção sumia em silêncio numa combinação banal: com o filtro da aba em
+      // "todos os meses", `refMonth` vira o MÊS ATUAL, então "data 15/02 + filtro todos"
+      // procurava (pago em fevereiro) OU (competência agosto) — e devolvia zero com o
+      // pagamento existindo. A tela precisa poder dizer "não é aqui, é ali", em vez de
+      // não mostrar nada.
+      const outras = await sql`
+        SELECT fp.id, fp.amount, fp.paid_at, fp.method,
+               o.kind, o.month AS competencia_mes, o.year AS competencia_ano
+        FROM fiscal_payments fp
+        JOIN fiscal_obligations o ON o.id = fp.obligation_id
+        WHERE o.company_id = ${company_id}
+          AND o.kind = ANY(${KINDS_FISCAIS})
+          AND NOT (
+            (EXTRACT(MONTH FROM fp.paid_at) = ${m} AND EXTRACT(YEAR FROM fp.paid_at) = ${y})
+            OR (${cm}::int IS NOT NULL AND o.month = ${cm}::int AND o.year = ${cy}::int)
+          )
+        ORDER BY fp.paid_at DESC, fp.id DESC
+        LIMIT 20`
+
       // `lancamentos` continua na resposta, sempre vazio, para não quebrar quem já lê o
       // formato. O estorno deles vive na seção "Lançamentos com pagamento".
-      return res.status(200).json({ mes: m, ano: y, guias, lancamentos: [] })
+      return res.status(200).json({ mes: m, ano: y, guias, outras, lancamentos: [] })
     }
     // Info da sessão de recebimento (para edição): payables afetados + valor consumido na sessão.
     if (req.query.action === 'sessao') {
