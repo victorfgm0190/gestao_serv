@@ -2936,6 +2936,20 @@ export default function Financial() {
   const totalAmount = totalsData.reduce((s, r) => s + (parseFloat(r.amount || r.total_amount) || 0), 0)
   const totalPaid = totalsData.reduce((s, r) => s + (parseFloat(r.paid_amount) || 0), 0)
   const totalOpen = totalAmount - totalPaid
+  // ⚠️ Quanto do "Em aberto" vem de contrato SEM NF (hoje só a Minas).
+  //
+  // O card soma TODOS os lançamentos disponíveis; a tabela tabulada exclui quem não emite
+  // nota, porque lá se rateia tributo e sem NF não há fatia de DAS/INSS/Escritório. Os dois
+  // estão certos, e a diferença é exatamente esta parcela — em jan/2026, R$ 1.494,69 no card
+  // contra R$ 28,44 na tabela, com a Minas respondendo pelos R$ 1.466,25.
+  //
+  // A Minas NÃO sai do card: ela é dinheiro que a empresa deve ao Victor e entra no caixa
+  // dele como qualquer outro (decisão registrada no CLAUDE.md — consumir saldo é origem de
+  // caixa, não incidência de tributo). O que faltava era dizer de onde vem a diferença.
+  const abertoSemNf = isPayTab && tab === 'victor'
+    ? totalsData.filter(r => r.require_nf === false)
+      .reduce((s, r) => s + ((parseFloat(r.total_amount) || 0) - (parseFloat(r.paid_amount) || 0)), 0)
+    : 0
 
   // Histórico: registros pagos do tipo selecionado
   const histSource = histType === 'receivables' ? receivables : histType === 'fabricio' ? payablesFab : payablesVictor
@@ -3009,6 +3023,15 @@ export default function Financial() {
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-1">Em aberto</p>
           <p className="text-yellow-400 text-lg font-bold">{fmt(totalOpen)}</p>
+          {/* Sem esta linha, o card e a tabela tabulada mostram números diferentes para o
+              mesmo mês e nada explica a distância. */}
+          {abertoSemNf > 0.005 && (
+            <p className="text-gray-500 text-[10px] leading-tight mt-1">
+              inclui <span className="text-gray-400">{fmt(abertoSemNf)}</span> de contrato sem NF —
+              a tabela por cliente mostra <span className="text-gray-400">{fmt(totalOpen - abertoSemNf)}</span>,
+              que exclui esses (não têm rateio de imposto).
+            </p>
+          )}
         </div>
         {previewTotal > 0 && (
           <div className="bg-gray-900/40 border border-dashed border-gray-700 rounded-xl p-4">
