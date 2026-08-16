@@ -157,6 +157,9 @@ export default async function handler(req, res) {
     const {
       id, paid_amount, paid_at, payment_method, is_compensation,
       compensation_amount, compensation_notes, status, notes,
+      // Opção 3: o Fabrício abre mão do que sobrou depois da compensação, e essa parte
+      // TAMBÉM vira crédito do Victor em vez de sair caixa.
+      nao_recebe_restante = false,
     } = req.body
 
     // Cenário B: parte compensada, parte em dinheiro. Sem valor explícito, compensar é
@@ -193,6 +196,12 @@ export default async function handler(req, res) {
     // ⚠️ NENHUM `payables_victor` é criado aqui — ver a nota no topo de
     // lib/fabricio-compensation.js. O crédito fica registrado com `payment_id IS NULL`
     // (= disponível) e é a tela do Victor que o transforma em pagamento.
+    // Quanto o Fabrício abriu mão: o que sobrou do pago depois da compensação. Só existe
+    // com o checkbox marcado — sem ele, essa diferença é pagamento em dinheiro de verdade.
+    const recusado = result[0].is_compensation && nao_recebe_restante
+      ? Math.max(r2(num(paid_amount) - (compAmount || 0)), 0)
+      : 0
+
     let compensacao = null
     if (result[0].is_compensation && compAmount > 0.005) {
       // `client_name` para a descrição da origem: `payables_fabricio` guarda só o id.
@@ -202,7 +211,10 @@ export default async function handler(req, res) {
       compensacao = await registrarCompensacao(sql, {
         payable: { ...result[0], client_name: cli?.name },
         compensation_amount: compAmount,
-        compensation_notes,
+        compensation_notes: nao_recebe_restante && recusado > 0.005
+          ? [compensation_notes, 'Pagamento recusado por Fabrício — redirecionado para Victor'].filter(Boolean).join(' | ')
+          : compensation_notes,
+        recusado,
       })
     } else {
       // Desmarcou a compensação (ou zerou o valor): o crédito deixa de existir. Sem isto,
@@ -215,8 +227,10 @@ export default async function handler(req, res) {
       data: result[0],
       marcado_compensacao: !!result[0].is_compensation,
       compensacao_amount: compAmount,
-      // Cenário B: o que NÃO foi compensado saiu de caixa de verdade.
-      pago_em_dinheiro: r2(num(paid_amount) - (compAmount || 0)),
+      // Cenário B: o que NÃO foi compensado saiu de caixa de verdade — a menos que o
+      // Fabrício tenha aberto mão dele (Opção 3), quando também vira crédito do Victor.
+      pago_em_dinheiro: r2(num(paid_amount) - (compAmount || 0) - recusado),
+      recusado_pelo_fabricio: recusado,
       origem_compensacao: compensacao?.origem || null,
     })
   }

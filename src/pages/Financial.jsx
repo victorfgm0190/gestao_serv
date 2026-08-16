@@ -328,7 +328,7 @@ export default function Financial() {
   const [histType, setHistType] = useState('receivables')
   const [histClient, setHistClient] = useState('')
   const [form, setForm] = useState({ client_id: '', month: new Date().getMonth() + 1, year: new Date().getFullYear(), description: '', amount: '', service_amount: '', profit_amount: '', notes: '' })
-  const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_amount: '', compensation_notes: '', notes: '', status: 'pago' })
+  const [payForm, setPayForm] = useState({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_amount: '', nao_recebe_restante: false, compensation_notes: '', notes: '', status: 'pago' })
   const [modalPayments, setModalPayments] = useState([])
   const [newPay, setNewPay] = useState({ amount: '', paid_at: todayBR(), notes: '' })
   const [estornoConfirm, setEstornoConfirm] = useState(null)
@@ -766,7 +766,7 @@ export default function Financial() {
         return
       }
       setShowPayModal(null)
-      setPayForm({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_amount: '', compensation_notes: '', notes: '', status: 'pago' })
+      setPayForm({ paid_amount: '', paid_at: todayBR(), payment_method: '', is_compensation: false, compensation_amount: '', nao_recebe_restante: false, compensation_notes: '', notes: '', status: 'pago' })
       refreshFinancial()
     } catch {
       setErroPay('Erro de conexão com o servidor.')
@@ -3922,9 +3922,25 @@ export default function Financial() {
                           <span className="text-[11px] text-gray-500">de {fmt(pago)} pagos</span>
                         </div>
                         {dinheiro > 0.005 && (
-                          <p className="text-[11px] text-amber-300/90">
-                            {fmt(comp)} compensados (sem caixa) + <strong>{fmt(dinheiro)} pagos em dinheiro</strong> (sai do caixa).
-                          </p>
+                          <>
+                            {/* Opção 3: o Fabrício abre mão do que sobrou, e essa parte
+                                também vira crédito do Victor. Só aparece quando HÁ sobra —
+                                sem ela o checkbox não teria sobre o que agir. */}
+                            <label className="flex items-start gap-2 text-[11px] text-gray-300 cursor-pointer">
+                              <input type="checkbox" checked={payForm.nao_recebe_restante}
+                                onChange={e=>setPayForm(f=>({...f,nao_recebe_restante:e.target.checked}))}
+                                className="rounded mt-0.5"/>
+                              <span>
+                                Fabrício <strong>não vai receber</strong> os {fmt(dinheiro)} restantes — mandar
+                                também para o Victor
+                              </span>
+                            </label>
+                            <p className={payForm.nao_recebe_restante ? 'text-[11px] text-green-300/90' : 'text-[11px] text-amber-300/90'}>
+                              {payForm.nao_recebe_restante
+                                ? <>Crédito do Victor: <strong>{fmt(comp)}</strong> de compensação + <strong>{fmt(dinheiro)}</strong> que o Fabrício abriu mão = <strong>{fmt(comp + dinheiro)}</strong>. Nada sai do caixa.</>
+                                : <>{fmt(comp)} compensados (sem caixa) + <strong>{fmt(dinheiro)} pagos em dinheiro</strong> (sai do caixa).</>}
+                            </p>
+                          </>
                         )}
                         {dinheiro < -0.005 && (
                           <p className="text-[11px] text-red-400">

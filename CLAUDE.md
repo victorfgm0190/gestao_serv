@@ -524,10 +524,25 @@ valor vira crédito do Victor.
 `compensation_notes` já existiam desde sempre, e o checkbox "É uma compensação?" já estava
 na tela — o que faltava era o VALOR e o rastreamento).
 
-| cenário | `paid_amount` | `compensation_amount` | sai de caixa |
-|---------|---------------|----------------------|--------------|
-| A — "compensa tudo" | 1.000 | 1.000 | 0 |
-| B — "compensa 900, me paga 100" | 1.000 | 900 | **100** |
+| cenário | `paid_amount` | `compensation_amount` | recusado | sai de caixa |
+|---------|---------------|----------------------|----------|--------------|
+| A — "compensa tudo" | 1.000 | 1.000 | 0 | 0 |
+| B — "compensa 900, me paga 100" | 1.000 | 900 | 0 | **100** |
+| C — "compensa 900 e não quero os 100" | 1.000 | 900 | **100** | **0** |
+
+O cenário **C** (2026-08-16) é o checkbox *"Fabrício não vai receber os R$ X restantes"*, que
+só aparece quando há sobra. Ele grava **duas linhas** de crédito, não uma soma:
+
+⚠️ **Duas linhas porque as parcelas têm naturezas diferentes.** A compensação quita uma
+dívida que o Fabrício tinha com o Victor; a recusa é dinheiro que ele tinha a receber e
+abriu mão. Somadas dariam o mesmo crédito, mas o histórico perderia a única informação que
+explica por que ele ficou sem nada — e é essa a pergunta que se faz meses depois. As duas
+mantêm `source_type='compensation_fabricio'` de propósito: ambas são crédito disponível, e
+`compensacoesDisponiveis()` tem de achar as duas; o que as distingue é o texto do `notes`.
+
+Conferido nos três cenários (payable 27, R$ 295,38): A → 1 crédito de 295,38 e 0 em caixa;
+B → 1 crédito de 265,84 e 29,54 em dinheiro; C → **2 créditos somando 295,38 e ZERO em
+caixa**.
 
 Campo em branco = compensa tudo, que é como a tela funcionava antes de a coluna existir.
 
