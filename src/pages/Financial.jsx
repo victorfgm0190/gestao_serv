@@ -3365,14 +3365,18 @@ export default function Financial() {
                     {/* Cancelar = descartar o que foi digitado. Não fecha nada: esta barra
                         não é um modal, é parte da visão Cards. Sem ele, o único jeito de
                         desfazer uma distribuição indesejada era apagar campo por campo. */}
+                    {/* ⚠️ SEM `disabled`. Ele ficava apagado (opacity-40) enquanto não
+                        houvesse nada digitado — que é exatamente quando o usuário abre a
+                        barra e procura os botões. Um botão translúcido ao lado de dois
+                        sólidos se lê como "não existe". Sem nada para limpar, o clique
+                        simplesmente não faz diferença. */}
                     <button
                       onClick={() => {
                         setBdInputs({}); setBdTotais({ escritorio: '', das: '', inss: '' })
                         setBdPlano(null); setBdErro(''); setBdMsg(''); setBdDistMsg(''); setBdDistErro('')
                       }}
-                      disabled={bdSaving || (bdTotalDigitado <= 0 && !bdPlano)}
                       title="Limpa os valores digitados e a prévia — nada é gravado"
-                      className="px-3 py-2 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg text-xs font-medium disabled:opacity-40"
+                      className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium"
                     >❌ Cancelar</button>
                     <button
                       onClick={() => bdEnviar(false)}
@@ -3425,9 +3429,51 @@ export default function Financial() {
                   )}
 
                   <p className="text-gray-600 text-[10px]">
-                    O estorno continua por lançamento (aba Histórico) e o abatimento fiscal em <strong>/fiscal</strong>.
+                    O estorno continua por lançamento (logo abaixo) e o abatimento fiscal em <strong>/fiscal</strong>.
                   </p>
                 </div>
+
+                {/* ── LANÇAMENTOS COM PAGAMENTO — o acesso ao estorno ────────────────
+                    ⚠️ A aba Pagar Victor cai no ramo dos CARDS e nunca chega ao
+                    `renderRow` do outro lado do ternário, onde mora o botão "🔄 Estornar".
+                    Resultado: o botão existia e era inalcançável — o usuário só conseguia
+                    estornar indo a outra aba.
+                    Aqui entram SÓ os que têm pagamento registrado (pago/parcial), que são
+                    os únicos com o que estornar. Repetir a lista inteira duplicaria os
+                    cards, que é a razão de ela ter sido tirada daqui. */}
+                {(() => {
+                  const comPagamento = (availableData || []).filter(r => r.status === 'pago' || r.status === 'parcial')
+                  if (!comPagamento.length) return null
+                  return (
+                    <div className="bg-gray-900/40 border border-gray-800 rounded-xl p-3 space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                        ↩️ Lançamentos com pagamento — {comPagamento.length}
+                      </p>
+                      <p className="text-gray-600 text-[10px] -mt-1 leading-tight">
+                        Estornar apaga os pagamentos do lançamento e o devolve para Pendente.
+                        Guia fiscal quitada pelo rateio não sai por aqui — isso é em <strong>/fiscal → Pagamentos</strong>.
+                      </p>
+                      {comPagamento.map(item => (
+                        <div key={item.id} className="flex items-center justify-between gap-2 flex-wrap border-t border-gray-800/60 pt-2 first:border-0 first:pt-0">
+                          <span className="text-xs text-gray-300 truncate">
+                            <span className="text-gray-500">{months[item.month - 1]}/{item.year}</span> {item.client_name}
+                            <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] ${item.status === 'pago' ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                              {item.status === 'pago' ? '✓ Pago' : '◐ Parcial'}
+                            </span>
+                            <span className="text-gray-600 font-mono ml-2">{fmt(item.paid_amount)} de {fmt(item.total_amount)}</span>
+                          </span>
+                          <span className="flex gap-2 shrink-0">
+                            <button onClick={() => openPayments(item)}
+                              className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver pagamentos</button>
+                            <button onClick={() => estornarPayable(item)}
+                              title="Desfaz os pagamentos deste lançamento e o devolve para Pendente"
+                              className="px-3 py-1 bg-red-600/90 hover:bg-red-500 text-white rounded-lg text-xs font-medium">🔄 Estornar</button>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
               </div>
             )
           ) : availableData.length > 0 && (
