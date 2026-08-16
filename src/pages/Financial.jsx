@@ -678,8 +678,20 @@ export default function Financial() {
         return
       }
       if (aplicar) {
+        // Limpa TUDO o que foi digitado — inclusive os totais das guias, que ficavam
+        // preenchidos e convidavam a clicar "Distribuir" de novo sobre um saldo que já
+        // tinha sido pago (o motor recusaria com 422, mas depois do susto).
         setBdInputs({}); setBdPlano(null)
-        setBdMsg(`Pagamento de ${fmt(data.resumo?.consumido)} registrado.`)
+        setBdTotais({ escritorio: '', das: '', inss: '' })
+        setBdDistMsg(''); setBdDistErro('')
+        // A mensagem diz o que foi QUITADO, não só quanto saiu: pagar o rateio não mexe
+        // no saldo do Victor, então "R$ 1.107,03 registrado" sozinho não explica o que
+        // mudou na tela. E aponta onde estornar — este caminho grava fiscal_payments, que
+        // o botão "↩ Estornar" da lista (que desfaz payable_payments) não alcança.
+        const guias = (data.resumo?.quitacoes || [])
+          .map(q => `${BREAKDOWN_LABEL[q.kind === 'honorarios' ? 'escritorio' : q.kind] || q.kind} ${fmt(q.valor)}`)
+          .join(' · ')
+        setBdMsg(`✅ ${fmt(data.resumo?.consumido)} registrado.${guias ? ` Guias quitadas: ${guias}.` : ''}${guias ? ' Para desfazer, use /fiscal → Pagamentos.' : ''}`)
         await refreshFinancial()
       } else {
         setBdPlano(data)

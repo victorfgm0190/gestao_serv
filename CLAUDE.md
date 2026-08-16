@@ -457,6 +457,13 @@ e `(company_id, year, month)`.
 Populada por `lib/payment-source-tracker.js`, chamado pelos DOIS caminhos de pagamento do
 Victor (`?action=pagar-distribuido`, nos três desfechos, e `?action=pagar-com-rateio`).
 
+**`fiscal_payment_id` int → `fiscal_payments(id)` ON DELETE CASCADE** (2026-08-15) liga a
+linha à quitação da guia. Sem ele, estornar um pagamento fiscal em `/fiscal` deixava a
+trilha órfã afirmando um pagamento desfeito — o mesmo tipo de mentira que a FK
+`payment_id` já evitava do lado dos payables. **Estornar a guia agora limpa a trilha
+sozinho, sem código de limpeza.** Verificado: pagar o DAS grava 2 linhas com `fp=63`; o
+DELETE em `/api/fiscal-payments` devolve a guia a `apurado` e as 2 linhas somem.
+
 ⚠️ **Os writes entram na MESMA `sql.transaction` do pagamento.** Trilha gravada à parte
 sobrevive a um pagamento que falhou, e a tabela criada para ser a verdade vira a única
 fonte errada.
