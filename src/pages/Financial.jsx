@@ -421,6 +421,10 @@ export default function Financial() {
   // (`bdTotalDigitado > 0`). Sem isso, quem digitasse num card depois de cancelar ficaria
   // com valores preenchidos e nenhum botão para gravá-los — um beco sem saída silencioso.
   const [barraFechada, setBarraFechada] = useState(false)
+  // O que já foi pago no MÊS+ANO da data digitada na barra — as duas naturezas
+  // (guias fiscais e lançamentos do Victor), cada uma com o seu estorno.
+  const [pagosMes, setPagosMes] = useState(null)
+  const [estornandoPago, setEstornandoPago] = useState(null)
   const [bdDistErro, setBdDistErro] = useState('')
   const [bdPaidAt, setBdPaidAt] = useState(todayBR())
   const [bdPlano, setBdPlano] = useState(null)        // prévia vinda do backend
@@ -1369,6 +1373,54 @@ export default function Financial() {
   // Trocar o recorte zera o que foi digitado: os valores se referem aos clientes e notas
   // daquele período, e mantê-los aplicaria um número pensado para outro mês.
   useEffect(() => { setTabInputs(EMPTY_TAB_INPUTS) }, [activeCompany, filterYear, filterMonth, mode])
+
+  // Busca o que foi pago no mês/ano da DATA digitada na barra.
+  //
+  // ⚠️ Extrai mês E ano da data — não só o mês. `15/08/2030` tem de trazer agosto de 2030,
+  // não agosto do ano do filtro: a barra é o lugar onde se paga com data retroativa, e um
+  // ano implícito mostraria os pagamentos do ano errado sem nada indicar.
+  const fetchPagosMes = useCallback(async () => {
+    const [y, m] = String(bdPaidAt || '').slice(0, 10).split('-').map(Number)
+    if (!y || !m) { setPagosMes(null); return }
+    try {
+      const res = await fetch(`/api/payables-victor?action=pagos-do-mes&company_id=${activeCompany.id}&month=${m}&year=${y}`)
+      const data = await res.json()
+      setPagosMes(res.ok ? data : null)
+    } catch { setPagosMes(null) }
+  }, [activeCompany, bdPaidAt])
+
+  useEffect(() => {
+    if (tab !== 'victor' || tabView === 'tabela') return
+    fetchPagosMes()
+  }, [tab, tabView, activeCompany, bdPaidAt])
+
+  // Estorna um pagamento do bloco "Valores pagos". Cada natureza tem a SUA rota:
+  // guia → DELETE /api/fiscal-payments (recalcula a obrigação e, pelo CASCADE de
+  // fiscal_payment_id, limpa a trilha); lançamento → DELETE /api/payable-payments (recompõe
+  // paid_amount, status, mês de caixa e desfaz o abatimento fiscal). Uma rota só para os
+  // dois nasceria sem metade disso.
+  async function estornarPago(tipo, item) {
+    const rotulo = tipo === 'guia' ? (CAT_LABEL[item.kind] || item.kind) : (item.notes || 'pagamento')
+    if (!confirm(`Estornar ${rotulo} de ${fmt(item.amount)}?`)) return
+    setEstornandoPago(`${tipo}-${item.id}`)
+    try {
+      const url = tipo === 'guia'
+        ? `/api/fiscal-payments?payment_id=${item.id}`
+        : '/api/payable-payments'
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: tipo === 'guia' ? undefined : JSON.stringify({ id: item.id, motivo: 'estorno pela barra de pagamento' }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { alert(data.error || 'Não foi possível estornar.'); return }
+      if (data.fiscal?.obrigacoes?.length) {
+        alert(`Estornado. ${data.fiscal.pagamentos_removidos} pagamento(s) de guia foram desfeitos junto — a distribuição da competência é revertida inteira.`)
+      }
+      await Promise.all([fetchPagosMes(), refreshFinancial()])
+    } catch { alert('Erro de conexão com o servidor.') }
+    finally { setEstornandoPago(null) }
+  }
 
   // Rastreamento + créditos de compensação. Duas leituras da mesma tabela, buscadas juntas
   // porque a visão mostra as duas e um fetch a menos evita o estado meio-carregado.
@@ -3448,6 +3500,51 @@ export default function Financial() {
                       className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-xs font-medium disabled:opacity-40"
                     >{bdSaving ? 'Gravando...' : '✅ Pagar'}</button>
                   </div>
+
+                  {/* ── VALORES PAGOS no mês/ano da data digitada ──────────────────
+                      Fecha o ciclo: paga, vê o que já saiu naquele mês e estorna sem sair
+                      da barra. As duas naturezas ficam SEPARADAS de propósito — guia
+                      quitada e saldo do Victor consumido são dinheiros diferentes, e o
+                      estorno de cada uma tem rota própria. */}
+                  {(pagosMes?.guias?.length > 0 || pagosMes?.lancamentos?.length > 0) && (
+                    <div className="border-t border-gray-800 pt-2 space-y-1">
+                      <p className="text-[11px] uppercase tracking-wider text-gray-400">
+                        ✅ Valores pagos em {months[pagosMes.mes - 1]}/{pagosMes.ano}
+                      </p>
+                      {pagosMes.guias.map(g => (
+                        <div key={`g${g.id}`} className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="truncate text-gray-300">
+                            <span className="px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-300/90 text-[9px] uppercase mr-1.5">guia</span>
+                            {CAT_LABEL[g.kind] || g.kind}
+                            <span className="text-gray-600"> · competência {g.competencia_mes}/{g.competencia_ano} · {g.method}</span>
+                          </span>
+                          <span className="flex items-center gap-2 shrink-0">
+                            <span className="font-mono text-gray-300">{fmt(g.amount)}</span>
+                            <button onClick={() => estornarPago('guia', g)} disabled={estornandoPago === `guia-${g.id}`}
+                              className="px-2 py-0.5 border border-red-500/60 text-red-400 hover:bg-red-500/10 disabled:opacity-40 rounded text-[10px]">
+                              {estornandoPago === `guia-${g.id}` ? '...' : 'Estornar'}
+                            </button>
+                          </span>
+                        </div>
+                      ))}
+                      {pagosMes.lancamentos.map(l => (
+                        <div key={`l${l.id}`} className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="truncate text-gray-300">
+                            <span className="px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-300/90 text-[9px] uppercase mr-1.5">saldo</span>
+                            {l.notes || 'distribuição geral'}
+                            <span className="text-gray-600"> · {l.client_name} {l.competencia_mes}/{l.competencia_ano}</span>
+                          </span>
+                          <span className="flex items-center gap-2 shrink-0">
+                            <span className="font-mono text-gray-300">{fmt(l.amount)}</span>
+                            <button onClick={() => estornarPago('lancamento', l)} disabled={estornandoPago === `lancamento-${l.id}`}
+                              className="px-2 py-0.5 border border-red-500/60 text-red-400 hover:bg-red-500/10 disabled:opacity-40 rounded text-[10px]">
+                              {estornandoPago === `lancamento-${l.id}` ? '...' : 'Estornar'}
+                            </button>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {bdErro && <p className="text-red-400 text-xs">{bdErro}</p>}
                   {bdMsg && <p className="text-green-400 text-xs">{bdMsg}</p>}
