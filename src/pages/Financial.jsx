@@ -415,6 +415,12 @@ export default function Financial() {
   // Cancelar, que antes só limpava valores, não tinha efeito visível nenhum quando não
   // havia nada digitado: "clico e não acontece nada" era literalmente verdade.
   const [mostrarRateio, setMostrarRateio] = useState(false)
+  // Barra de pagamento recolhida pelo Cancelar.
+  //
+  // ⚠️ NÃO é um `hidden` permanente: a barra volta sozinha assim que houver algo a pagar
+  // (`bdTotalDigitado > 0`). Sem isso, quem digitasse num card depois de cancelar ficaria
+  // com valores preenchidos e nenhum botão para gravá-los — um beco sem saída silencioso.
+  const [barraFechada, setBarraFechada] = useState(false)
   const [bdDistErro, setBdDistErro] = useState('')
   const [bdPaidAt, setBdPaidAt] = useState(todayBR())
   const [bdPlano, setBdPlano] = useState(null)        // prévia vinda do backend
@@ -3023,6 +3029,7 @@ export default function Financial() {
               <button
                 onClick={() => {
                   setTabView('cards')
+                  setBarraFechada(false)
                   setMostrarRateio(true)
                   setDestaqueRateio(true)
                   setTimeout(() => {
@@ -3347,7 +3354,16 @@ export default function Financial() {
                     que pertence. Na Tabela os totais são globais e a absorção é exibição —
                     ligar o botão a ela faria a gravação (que abate do saldo do Victor)
                     divergir do que a tabela mostra. Ver lib/victor-tabulado.js. */}
-                <div className={`sticky bottom-2 bg-gray-900 border border-gray-700 rounded-xl p-3 space-y-2 shadow-lg ${tabView === 'tabela' ? 'hidden' : ''}`}>
+                {/* Barra recolhida: só o convite para reabrir. `bdTotalDigitado > 0`
+                    força a barra de volta — cancelar não pode deixar valores digitados sem
+                    botão para gravá-los. */}
+                {tabView !== 'tabela' && barraFechada && bdTotalDigitado <= 0 && (
+                  <button onClick={() => setBarraFechada(false)}
+                    className="sticky bottom-2 w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-xl text-xs font-medium shadow-lg">
+                    💸 Abrir pagamento / distribuir guia
+                  </button>
+                )}
+                <div className={`sticky bottom-2 bg-gray-900 border border-gray-700 rounded-xl p-3 space-y-2 shadow-lg ${tabView === 'tabela' || (barraFechada && bdTotalDigitado <= 0) ? 'hidden' : ''}`}>
                   {/* Guias rateadas: digita-se o total UMA vez e o rateio diz quanto cabe a
                       cada cliente. Preenche os campos dos cards — não paga sozinho, para o
                       valor ainda poder ser conferido e ajustado antes do Pagar. */}
@@ -3412,9 +3428,11 @@ export default function Financial() {
                       onClick={() => {
                         setBdInputs({}); setBdTotais({ escritorio: '', das: '', inss: '' })
                         setBdPlano(null); setBdErro(''); setBdMsg(''); setBdDistMsg(''); setBdDistErro('')
-                        // Fecha o bloco de rateio: é o "sair" que faltava. Sem isto, o
-                        // clique não tinha efeito visível quando não havia nada digitado.
+                        // Fecha o bloco de rateio E recolhe a barra inteira — "a barra
+                        // deve desaparecer completamente". Ela reaparece sozinha quando
+                        // houver valor digitado, ou pelo botão de reabrir.
                         setMostrarRateio(false); setDestaqueRateio(false)
+                        setBarraFechada(true)
                       }}
                       title="Descarta os valores digitados e fecha a distribuição — nada é gravado"
                       className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium"
