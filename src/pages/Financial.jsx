@@ -407,6 +407,14 @@ export default function Financial() {
   // Realce temporário do bloco de rateio, ligado pelo botão "Pagar despesas rateadas".
   // Sem ele, o clique troca a visão e o usuário não sabe para onde olhar.
   const [destaqueRateio, setDestaqueRateio] = useState(false)
+  // O bloco de rateio ABRE pelo botão "💰 Pagar despesas rateadas" e FECHA pelo Cancelar.
+  //
+  // ⚠️ Ele nasce fechado porque a barra de pagamento serve aos dois usos da visão Cards —
+  // pagar por cliente (digitando no card) e pagar a guia inteira pelo rateio. Deixar os
+  // três campos sempre à vista fazia parecer que todo pagamento passava por eles. E o
+  // Cancelar, que antes só limpava valores, não tinha efeito visível nenhum quando não
+  // havia nada digitado: "clico e não acontece nada" era literalmente verdade.
+  const [mostrarRateio, setMostrarRateio] = useState(false)
   const [bdDistErro, setBdDistErro] = useState('')
   const [bdPaidAt, setBdPaidAt] = useState(todayBR())
   const [bdPlano, setBdPlano] = useState(null)        // prévia vinda do backend
@@ -684,6 +692,7 @@ export default function Financial() {
         setBdInputs({}); setBdPlano(null)
         setBdTotais({ escritorio: '', das: '', inss: '' })
         setBdDistMsg(''); setBdDistErro('')
+        setMostrarRateio(false)
         // A mensagem diz o que foi QUITADO, não só quanto saiu: pagar o rateio não mexe
         // no saldo do Victor, então "R$ 1.107,03 registrado" sozinho não explica o que
         // mudou na tela. E aponta onde estornar — este caminho grava fiscal_payments, que
@@ -3014,6 +3023,7 @@ export default function Financial() {
               <button
                 onClick={() => {
                   setTabView('cards')
+                  setMostrarRateio(true)
                   setDestaqueRateio(true)
                   setTimeout(() => {
                     document.getElementById('bloco-distribuir-rateio')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -3321,6 +3331,13 @@ export default function Financial() {
                   {/* Guias rateadas: digita-se o total UMA vez e o rateio diz quanto cabe a
                       cada cliente. Preenche os campos dos cards — não paga sozinho, para o
                       valor ainda poder ser conferido e ajustado antes do Pagar. */}
+                  {!mostrarRateio && (
+                    <button onClick={() => { setMostrarRateio(true); setDestaqueRateio(true); setTimeout(() => setDestaqueRateio(false), 2600) }}
+                      className="text-[11px] text-blue-300/80 hover:text-blue-200 underline decoration-dotted">
+                      🧮 Distribuir uma guia pelo rateio (Escritório, DAS, INSS)
+                    </button>
+                  )}
+                  {mostrarRateio && (
                   <div id="bloco-distribuir-rateio"
                     className={`border-b border-gray-800 pb-2 rounded-lg transition-all duration-500 ${destaqueRateio ? 'ring-2 ring-blue-400/70 bg-blue-500/5 px-2 pt-2' : ''}`}>
                     <p className="text-[11px] uppercase tracking-wider text-blue-300/80 mb-1.5">
@@ -3351,6 +3368,7 @@ export default function Financial() {
                       cada um, não o percentual exibido: ele é arredondado a 2 casas e deixaria um centavo para trás.
                     </p>
                   </div>
+                  )}
 
                   <div className="flex items-end gap-3 flex-wrap">
                     <div className="flex flex-col gap-1">
@@ -3374,8 +3392,11 @@ export default function Financial() {
                       onClick={() => {
                         setBdInputs({}); setBdTotais({ escritorio: '', das: '', inss: '' })
                         setBdPlano(null); setBdErro(''); setBdMsg(''); setBdDistMsg(''); setBdDistErro('')
+                        // Fecha o bloco de rateio: é o "sair" que faltava. Sem isto, o
+                        // clique não tinha efeito visível quando não havia nada digitado.
+                        setMostrarRateio(false); setDestaqueRateio(false)
                       }}
-                      title="Limpa os valores digitados e a prévia — nada é gravado"
+                      title="Descarta os valores digitados e fecha a distribuição — nada é gravado"
                       className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium"
                     >❌ Cancelar</button>
                     <button
