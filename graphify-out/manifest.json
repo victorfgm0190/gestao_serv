@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1787057702.5218337,
-    "ast_hash": "4e33a9852dbb9ec65a9219b347f39443",
+    "mtime": 1787060271.2104433,
+    "ast_hash": "4e796e3bb08b64b0bc1a11f1b5dd325a",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -95,9 +95,9 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1782305179.614369,
-    "ast_hash": "f9fb2e83c5c9ea2a1480f03be7917b07",
-    "semantic_hash": "f9fb2e83c5c9ea2a1480f03be7917b07"
+    "mtime": 1787059461.6211116,
+    "ast_hash": "48fe40c5ee06afb7ea4404ecca5148e5",
+    "semantic_hash": ""
   },
   "postcss.config.js": {
     "mtime": 1782237586.5944223,
@@ -502,6 +502,21 @@
   "docs/diagnostico-cascata-impostos.md": {
     "mtime": 1786754148.745449,
     "ast_hash": "0a2128f9d083d9ec313446c454fcee2a",
+    "semantic_hash": ""
+  },
+  "api/nfse-setup.js": {
+    "mtime": 1787060086.7556577,
+    "ast_hash": "dceafa42d3bf2195ba8d5f195f0607c8",
+    "semantic_hash": ""
+  },
+  "lib/nfse-cert-manager.js": {
+    "mtime": 1787060057.927801,
+    "ast_hash": "efc488b9d85eb4eec2a4b3a1a11892da",
+    "semantic_hash": ""
+  },
+  "lib/nfse-cert-manager.test.js": {
+    "mtime": 1787060128.3482535,
+    "ast_hash": "680cbcc2e5e8a37bb3522f2e1bbdedf3",
     "semantic_hash": ""
   }
 }
