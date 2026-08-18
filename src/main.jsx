@@ -17,6 +17,7 @@ import Login from './pages/Login'
 import Users from './pages/Users'
 import Settings from './pages/Settings'
 import NFSeSettings from './pages/Configuracao/NFSeSettings'
+import NFSeEmitterSettings from './pages/Configuracao/NFSeEmitterSettings'
 import NFSeEmitidas from './pages/Faturamento/NFSeEmitidas'
 import { installFetchInterceptor, isLoggedIn } from './lib/session'
 
@@ -52,6 +53,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="fiscal" element={<FiscalObligations />} />
           <Route path="settings" element={<Settings />} />
           <Route path="configuracao/nfse" element={<NFSeSettings />} />
+          <Route path="configuracao/nfse-emitente" element={<NFSeEmitterSettings />} />
           <Route path="faturamento/nfse-emitidas" element={<NFSeEmitidas />} />
           <Route path="users" element={<Users />} />
         </Route>

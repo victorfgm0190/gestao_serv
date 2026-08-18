@@ -115,8 +115,8 @@
     "semantic_hash": "d070709419d1c5e263b53059b20974e1"
   },
   "src/components/Layout.jsx": {
-    "mtime": 1787078873.3799944,
-    "ast_hash": "ca68b1eab4429ac1b191eaf818556867",
+    "mtime": 1787096805.418318,
+    "ast_hash": "a78b0fac1c59c77b956f4240ae2b91bd",
     "semantic_hash": ""
   },
   "src/hooks/useNotifications.js": {
@@ -125,8 +125,8 @@
     "semantic_hash": "cf7a0b6b5c1795a4e2a729422f79036a"
   },
   "src/main.jsx": {
-    "mtime": 1787078869.8029544,
-    "ast_hash": "a34cb59139c20c9bd14b5f0bd7cfe5b4",
+    "mtime": 1787096801.0388918,
+    "ast_hash": "bf848c799c652220907b507d86c7766d",
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "api/nfse-emit.js": {
-    "mtime": 1787095472.8646157,
-    "ast_hash": "8fad375ff92aab85fa53ff34d1c664e8",
+    "mtime": 1787096705.1097102,
+    "ast_hash": "2b91ae194dfe84ac925fac69865b71cf",
     "semantic_hash": ""
   },
   "lib/nfse-adn-client.js": {
@@ -630,8 +630,8 @@
     "semantic_hash": ""
   },
   "lib/nfse-cancel.test.js": {
-    "mtime": 1787095695.7145894,
-    "ast_hash": "142895441915b732abac5e7d78295c36",
+    "mtime": 1787097086.5451014,
+    "ast_hash": "88392e3bacdb23abef0f5027162b1235",
     "semantic_hash": ""
   },
   "lib/nfse-events.js": {
@@ -655,13 +655,38 @@
     "semantic_hash": ""
   },
   "src/components/NFSeEmitirModal.jsx": {
-    "mtime": 1787095524.1834857,
-    "ast_hash": "b777354e3b81d3756ede753fb8b0361c",
+    "mtime": 1787096830.5334625,
+    "ast_hash": "f9c351bd76019d839417ad336cb16ae5",
     "semantic_hash": ""
   },
   "src/components/NFSeTimeline.jsx": {
     "mtime": 1787095491.570131,
     "ast_hash": "c89ef5fdd7b840389aedde0cf8bb189a",
+    "semantic_hash": ""
+  },
+  "api/nfse-emitter-settings.js": {
+    "mtime": 1787096749.4677534,
+    "ast_hash": "17eb044f89fbe68d49ff998c5a5796ea",
+    "semantic_hash": ""
+  },
+  "api/nfse-validate-setup.js": {
+    "mtime": 1787096719.5972915,
+    "ast_hash": "efd19cd286aba7519193d9478a85b1d4",
+    "semantic_hash": ""
+  },
+  "lib/nfse-setup-check.js": {
+    "mtime": 1787096691.0656252,
+    "ast_hash": "905adde550f1bb0b547e86df28cbafea",
+    "semantic_hash": ""
+  },
+  "lib/nfse-setup-check.test.js": {
+    "mtime": 1787096969.3892865,
+    "ast_hash": "f66e6ce80bc8dc2f32feb18bacbe6475",
+    "semantic_hash": ""
+  },
+  "src/pages/Configuracao/NFSeEmitterSettings.jsx": {
+    "mtime": 1787096795.4332871,
+    "ast_hash": "44b71dabf377c84bdbe05c7a7cf22b2d",
     "semantic_hash": ""
   }
 }

@@ -43,8 +43,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "ref_react",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "react"
     },
     {
@@ -1099,8 +1099,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_cancel",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "nfse-cancel.js"
     },
     {
@@ -1110,8 +1110,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "api_nfse_cancel_cancelaveis",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "cancelaveis"
     },
     {
@@ -1121,8 +1121,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "api_nfse_cancel_handler",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "handler()"
     },
     {
@@ -1198,52 +1198,85 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_emit",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "nfse-emit.js"
-    },
-    {
-      "label": "CAMPOS_EMITENTE",
-      "file_type": "code",
-      "source_file": "api/nfse-emit.js",
-      "source_location": "L19",
-      "_origin": "ast",
-      "id": "api_nfse_emit_campos_emitente",
-      "community": 29,
-      "community_name": "react-dom",
-      "norm_label": "campos_emitente"
-    },
-    {
-      "label": "CAMPOS_TOMADOR",
-      "file_type": "code",
-      "source_file": "api/nfse-emit.js",
-      "source_location": "L32",
-      "_origin": "ast",
-      "id": "api_nfse_emit_campos_tomador",
-      "community": 29,
-      "community_name": "react-dom",
-      "norm_label": "campos_tomador"
-    },
-    {
-      "label": "faltantes()",
-      "file_type": "code",
-      "source_file": "api/nfse-emit.js",
-      "source_location": "L41",
-      "_origin": "ast",
-      "id": "api_nfse_emit_faltantes",
-      "community": 29,
-      "community_name": "react-dom",
-      "norm_label": "faltantes()"
     },
     {
       "label": "handler()",
       "file_type": "code",
       "source_file": "api/nfse-emit.js",
-      "source_location": "L49",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "api_nfse_emit_handler",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "handler()"
+    },
+    {
+      "label": "nfse-emitter-settings.js",
+      "file_type": "code",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_nfse_emitter_settings",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
+      "norm_label": "nfse-emitter-settings.js"
+    },
+    {
+      "label": "CAMPOS",
+      "file_type": "code",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "api_nfse_emitter_settings_campos",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
+      "norm_label": "campos"
+    },
+    {
+      "label": "soDigitos()",
+      "file_type": "code",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "api_nfse_emitter_settings_sodigitos",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
+      "norm_label": "sodigitos()"
+    },
+    {
+      "label": "texto()",
+      "file_type": "code",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "api_nfse_emitter_settings_texto",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
+      "norm_label": "texto()"
+    },
+    {
+      "label": "numero()",
+      "file_type": "code",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L29",
+      "_origin": "ast",
+      "id": "api_nfse_emitter_settings_numero",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
+      "norm_label": "numero()"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L35",
+      "_origin": "ast",
+      "id": "api_nfse_emitter_settings_handler",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "handler()"
     },
     {
@@ -1310,6 +1343,28 @@
       "id": "api_nfse_setup_handler",
       "community": 9,
       "community_name": "payable-payments.js",
+      "norm_label": "handler()"
+    },
+    {
+      "label": "nfse-validate-setup.js",
+      "file_type": "code",
+      "source_file": "api/nfse-validate-setup.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_nfse_validate_setup",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "nfse-validate-setup.js"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/nfse-validate-setup.js",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "api_nfse_validate_setup_handler",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "handler()"
     },
     {
@@ -3057,8 +3112,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "lib_fiscal_lines_ordem_kind",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "ordem_kind"
     },
     {
@@ -3486,8 +3541,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "lib_nfse_cancel_test_t",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 52,
+      "community_name": "Login.jsx",
       "norm_label": "t()"
     },
     {
@@ -3637,7 +3692,7 @@
       "label": "status()",
       "file_type": "code",
       "source_file": "lib/nfse-cancel.test.js",
-      "source_location": "L168",
+      "source_location": "L178",
       "_origin": "ast",
       "id": "lib_nfse_cancel_test_status",
       "community": 19,
@@ -3648,7 +3703,7 @@
       "label": "json()",
       "file_type": "code",
       "source_file": "lib/nfse-cancel.test.js",
-      "source_location": "L169",
+      "source_location": "L179",
       "_origin": "ast",
       "id": "lib_nfse_cancel_test_json",
       "community": 19,
@@ -4135,8 +4190,8 @@
       "source_location": "L173",
       "_origin": "ast",
       "id": "lib_nfse_emit_test_chamar",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "chamar()"
     },
     {
@@ -4193,6 +4248,149 @@
       "community": 29,
       "community_name": "react-dom",
       "norm_label": "listareventos()"
+    },
+    {
+      "label": "nfse-setup-check.js",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "nfse-setup-check.js"
+    },
+    {
+      "label": "CAMPOS_EMITENTE",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_campos_emitente",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "campos_emitente"
+    },
+    {
+      "label": "CAMPOS_TOMADOR",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L32",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_campos_tomador",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "campos_tomador"
+    },
+    {
+      "label": "vazio()",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_vazio",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "vazio()"
+    },
+    {
+      "label": "faltantes()",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L44",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_faltantes",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "faltantes()"
+    },
+    {
+      "label": "verificarSetup()",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L56",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_verificarsetup",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "verificarsetup()"
+    },
+    {
+      "label": "nfse-setup-check.test.js",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_test",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "nfse-setup-check.test.js"
+    },
+    {
+      "label": "ok()",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_test_ok",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "ok()"
+    },
+    {
+      "label": "sql",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_test_sql",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "sql"
+    },
+    {
+      "label": "token",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L25",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_test_token",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "token"
+    },
+    {
+      "label": "chamar()",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_test_chamar",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "chamar()"
+    },
+    {
+      "label": "nomes",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L46",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_test_nomes",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "nomes"
+    },
+    {
+      "label": "src",
+      "file_type": "code",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L58",
+      "_origin": "ast",
+      "id": "lib_nfse_setup_check_test_src",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "src"
     },
     {
       "label": "nfse-signer.js",
@@ -4465,8 +4663,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_xml_cancellation_builder",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "nfse-xml-cancellation-builder.js"
     },
     {
@@ -4476,8 +4674,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "lib_nfse_xml_cancellation_builder_motivos",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "motivos"
     },
     {
@@ -4487,8 +4685,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "lib_nfse_xml_cancellation_builder_motivoporcodigo",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "motivoporcodigo()"
     },
     {
@@ -4795,8 +4993,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_taxcalc",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "taxcalc.js"
     },
     {
@@ -4806,8 +5004,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "lib_taxcalc_simples_iii",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "simples_iii"
     },
     {
@@ -4817,8 +5015,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "lib_taxcalc_simples_v",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "simples_v"
     },
     {
@@ -4828,8 +5026,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "lib_taxcalc_r2",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "r2()"
     },
     {
@@ -4839,8 +5037,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "lib_taxcalc_params_padrao",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "params_padrao"
     },
     {
@@ -4850,8 +5048,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "lib_taxcalc_parametrosfiscais",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "parametrosfiscais()"
     },
     {
@@ -4861,8 +5059,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "lib_taxcalc_prolaboredomes",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "prolaboredomes()"
     },
     {
@@ -4872,8 +5070,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "lib_taxcalc_faixafor",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "faixafor()"
     },
     {
@@ -4894,8 +5092,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "lib_taxcalc_calcinss",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "calcinss()"
     },
     {
@@ -4905,8 +5103,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "lib_taxcalc_aliquotaefetiva",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "aliquotaefetiva()"
     },
     {
@@ -4916,8 +5114,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "lib_taxcalc_calcularimpostos",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "calcularimpostos()"
     },
     {
@@ -4949,8 +5147,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_victor_breakdown",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "victor-breakdown.js"
     },
     {
@@ -4960,8 +5158,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "lib_victor_breakdown_num",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "num()"
     },
     {
@@ -4971,8 +5169,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "lib_victor_breakdown_iso",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "iso()"
     },
     {
@@ -4982,8 +5180,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "lib_victor_breakdown_categorias",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "categorias"
     },
     {
@@ -4993,8 +5191,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "lib_victor_breakdown_categoria_label",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "categoria_label"
     },
     {
@@ -5004,8 +5202,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "lib_victor_breakdown_breakdown_kind",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "breakdown_kind"
     },
     {
@@ -5015,8 +5213,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "lib_victor_breakdown_kind_categoria",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "kind_categoria"
     },
     {
@@ -5026,8 +5224,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "lib_victor_breakdown_quebrarpago",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "quebrarpago()"
     },
     {
@@ -5037,8 +5235,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "lib_victor_breakdown_vazia",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "vazia()"
     },
     {
@@ -5048,8 +5246,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "lib_victor_breakdown_fechar",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "fechar()"
     },
     {
@@ -5059,8 +5257,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "lib_victor_breakdown_montarbreakdown",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "montarbreakdown()"
     },
     {
@@ -5169,8 +5367,8 @@
       "source_location": "L145",
       "_origin": "ast",
       "id": "lib_victor_distribution_parsenotes",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "parsenotes()"
     },
     {
@@ -5180,8 +5378,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_victor_momentos",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "victor-momentos.js"
     },
     {
@@ -5191,8 +5389,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "lib_victor_momentos_num",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "num()"
     },
     {
@@ -5202,8 +5400,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "lib_victor_momentos_comgrossup",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "comgrossup()"
     },
     {
@@ -5213,8 +5411,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "lib_victor_momentos_buscarfaturamentoprevisto",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "buscarfaturamentoprevisto()"
     },
     {
@@ -5224,8 +5422,8 @@
       "source_location": "L198",
       "_origin": "ast",
       "id": "lib_victor_momentos_momentoprevio",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "momentoprevio()"
     },
     {
@@ -5235,8 +5433,8 @@
       "source_location": "L266",
       "_origin": "ast",
       "id": "lib_victor_momentos_momentosdalinha",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "momentosdalinha()"
     },
     {
@@ -5444,8 +5642,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_victor_recorte",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "victor-recorte.js"
     },
     {
@@ -5455,8 +5653,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "lib_victor_recorte_carregarrecorte",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "carregarrecorte()"
     },
     {
@@ -6269,8 +6467,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_copybutton",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "copybutton.jsx"
     },
     {
@@ -6280,8 +6478,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_copybutton_copybutton",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "copybutton()"
     },
     {
@@ -6335,8 +6533,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_memoriacalculo",
-      "community": 33,
-      "community_name": "imap-simple",
+      "community": 64,
+      "community_name": "MemoriaCalculo.jsx",
       "norm_label": "memoriacalculo.jsx"
     },
     {
@@ -6346,8 +6544,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_components_memoriacalculo_fmt",
-      "community": 33,
-      "community_name": "imap-simple",
+      "community": 64,
+      "community_name": "MemoriaCalculo.jsx",
       "norm_label": "fmt()"
     },
     {
@@ -6357,8 +6555,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_memoriacalculo_passo",
-      "community": 33,
-      "community_name": "imap-simple",
+      "community": 64,
+      "community_name": "MemoriaCalculo.jsx",
       "norm_label": "passo()"
     },
     {
@@ -6368,8 +6566,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_components_memoriacalculo_memoriacalculo",
-      "community": 33,
-      "community_name": "imap-simple",
+      "community": 64,
+      "community_name": "MemoriaCalculo.jsx",
       "norm_label": "memoriacalculo()"
     },
     {
@@ -6379,8 +6577,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_nfsecancelmodal",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "nfsecancelmodal.jsx"
     },
     {
@@ -6390,8 +6588,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_components_nfsecancelmodal_motivos",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "motivos"
     },
     {
@@ -6401,8 +6599,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_components_nfsecancelmodal_nfsecancelmodal",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "nfsecancelmodal()"
     },
     {
@@ -6412,30 +6610,30 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_nfseemitirmodal",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "nfseemitirmodal.jsx"
     },
     {
       "label": "brl()",
       "file_type": "code",
       "source_file": "src/components/NFSeEmitirModal.jsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "_origin": "ast",
       "id": "src_components_nfseemitirmodal_brl",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "brl()"
     },
     {
       "label": "NFSeEmitirModal()",
       "file_type": "code",
       "source_file": "src/components/NFSeEmitirModal.jsx",
-      "source_location": "L21",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "src_components_nfseemitirmodal_nfseemitirmodal",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "nfseemitirmodal()"
     },
     {
@@ -6445,8 +6643,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_nfsetimeline",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "nfsetimeline.jsx"
     },
     {
@@ -6456,8 +6654,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_components_nfsetimeline_icones",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "icones"
     },
     {
@@ -6467,8 +6665,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_components_nfsetimeline_cores",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "cores"
     },
     {
@@ -6478,8 +6676,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_components_nfsetimeline_datahora",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "datahora()"
     },
     {
@@ -6489,8 +6687,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "src_components_nfsetimeline_nfsetimeline",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "nfsetimeline()"
     },
     {
@@ -6544,8 +6742,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_fiscallabels",
-      "community": 33,
-      "community_name": "imap-simple",
+      "community": 64,
+      "community_name": "MemoriaCalculo.jsx",
       "norm_label": "fiscallabels.js"
     },
     {
@@ -6555,8 +6753,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_lib_fiscallabels_kind_label",
-      "community": 33,
-      "community_name": "imap-simple",
+      "community": 64,
+      "community_name": "MemoriaCalculo.jsx",
       "norm_label": "kind_label"
     },
     {
@@ -6588,8 +6786,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_lib_session_settoken",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 69,
+      "community_name": "Login.jsx",
       "norm_label": "settoken()"
     },
     {
@@ -6665,7 +6863,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_main",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "main.jsx"
     },
@@ -6673,7 +6871,7 @@
       "label": "Protegido()",
       "file_type": "code",
       "source_file": "src/main.jsx",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "src_main_protegido",
       "community": 0,
@@ -6687,8 +6885,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_billing",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "billing.jsx"
     },
     {
@@ -6698,8 +6896,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_pages_billing_months",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "months"
     },
     {
@@ -6709,8 +6907,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_pages_billing_splitpct",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "splitpct()"
     },
     {
@@ -6720,8 +6918,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_pages_billing_fetchfiscalparams",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "fetchfiscalparams()"
     },
     {
@@ -6731,8 +6929,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_pages_billing_split_mode_label",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "split_mode_label"
     },
     {
@@ -6742,8 +6940,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "src_pages_billing_billing",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "billing()"
     },
     {
@@ -6753,8 +6951,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_clientes",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "clientes.jsx"
     },
     {
@@ -6764,8 +6962,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "src_pages_clientes_companies",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "companies"
     },
     {
@@ -6775,8 +6973,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_pages_clientes_emptyform",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "emptyform"
     },
     {
@@ -6786,9 +6984,53 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_pages_clientes_clientes",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "clientes()"
+    },
+    {
+      "label": "NFSeEmitterSettings.jsx",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfseemittersettings",
+      "community": 61,
+      "community_name": "main.jsx",
+      "norm_label": "nfseemittersettings.jsx"
+    },
+    {
+      "label": "CAMPOS_TEXTO",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfseemittersettings_campos_texto",
+      "community": 61,
+      "community_name": "main.jsx",
+      "norm_label": "campos_texto"
+    },
+    {
+      "label": "vazioParaCampo",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L42",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfseemittersettings_vazioparacampo",
+      "community": 61,
+      "community_name": "main.jsx",
+      "norm_label": "vazioparacampo"
+    },
+    {
+      "label": "NFSeEmitterSettings()",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L48",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfseemittersettings_nfseemittersettings",
+      "community": 61,
+      "community_name": "main.jsx",
+      "norm_label": "nfseemittersettings()"
     },
     {
       "label": "NFSeSettings.jsx",
@@ -6797,8 +7039,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 65,
+      "community_name": "NFSeSettings.jsx",
       "norm_label": "nfsesettings.jsx"
     },
     {
@@ -6808,8 +7050,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings_bufferparabase64",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 65,
+      "community_name": "NFSeSettings.jsx",
       "norm_label": "bufferparabase64()"
     },
     {
@@ -6819,8 +7061,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings_databr",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 65,
+      "community_name": "NFSeSettings.jsx",
       "norm_label": "databr()"
     },
     {
@@ -6830,8 +7072,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings_selo",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 65,
+      "community_name": "NFSeSettings.jsx",
       "norm_label": "selo()"
     },
     {
@@ -6841,8 +7083,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings_nfsesettings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 65,
+      "community_name": "NFSeSettings.jsx",
       "norm_label": "nfsesettings()"
     },
     {
@@ -6852,8 +7094,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_contracts",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 66,
+      "community_name": "Contracts.jsx",
       "norm_label": "contracts.jsx"
     },
     {
@@ -6863,8 +7105,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_contracts_months",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 66,
+      "community_name": "Contracts.jsx",
       "norm_label": "months"
     },
     {
@@ -6874,8 +7116,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_pages_contracts_empty_form",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 66,
+      "community_name": "Contracts.jsx",
       "norm_label": "empty_form"
     },
     {
@@ -6885,8 +7127,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_pages_contracts_split_mode_label",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 66,
+      "community_name": "Contracts.jsx",
       "norm_label": "split_mode_label"
     },
     {
@@ -6896,8 +7138,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_pages_contracts_contracts",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 66,
+      "community_name": "Contracts.jsx",
       "norm_label": "contracts()"
     },
     {
@@ -6907,8 +7149,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_dashboard",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "dashboard.jsx"
     },
     {
@@ -6918,8 +7160,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_dashboard_companies",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "companies"
     },
     {
@@ -6929,8 +7171,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_pages_dashboard_abertas",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "abertas"
     },
     {
@@ -6940,8 +7182,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_pages_dashboard_months",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "months"
     },
     {
@@ -6951,8 +7193,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_pages_dashboard_decimaltohhmm",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "decimaltohhmm()"
     },
     {
@@ -6962,8 +7204,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_pages_dashboard_fmt",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "fmt()"
     },
     {
@@ -6973,8 +7215,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_pages_dashboard_dashboard",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "dashboard()"
     },
     {
@@ -6984,8 +7226,8 @@
       "source_location": "L170",
       "_origin": "ast",
       "id": "src_pages_dashboard_financeblock",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "financeblock()"
     },
     {
@@ -6995,7 +7237,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_demands",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "demands.jsx"
     },
@@ -7006,7 +7248,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_demands_status_options",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "status_options"
     },
@@ -7017,7 +7259,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_pages_demands_status_colors",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "status_colors"
     },
@@ -7028,7 +7270,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_pages_demands_demands",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "demands()"
     },
@@ -7039,7 +7281,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_emailrules",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "emailrules.jsx"
     },
@@ -7050,7 +7292,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_emailrules_rule_types",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "rule_types"
     },
@@ -7061,7 +7303,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_pages_emailrules_emailrules",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "emailrules()"
     },
@@ -7072,8 +7314,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "nfseemitidas.jsx"
     },
     {
@@ -7083,8 +7325,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_cancelaveis",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "cancelaveis"
     },
     {
@@ -7094,8 +7336,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_badges",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "badges"
     },
     {
@@ -7105,8 +7347,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_brl",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "brl()"
     },
     {
@@ -7116,8 +7358,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_databr",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "databr()"
     },
     {
@@ -7127,8 +7369,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_nfseemitidas",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "nfseemitidas()"
     },
     {
@@ -7182,8 +7424,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_pages_financial_victor_categories",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 52,
+      "community_name": "Login.jsx",
       "norm_label": "victor_categories"
     },
     {
@@ -7204,8 +7446,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_pages_financial_victorcategorytotal",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 52,
+      "community_name": "Login.jsx",
       "norm_label": "victorcategorytotal()"
     },
     {
@@ -7567,7 +7809,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_financialrules",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "financialrules.jsx"
     },
@@ -7578,7 +7820,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_financialrules_financialrules",
-      "community": 0,
+      "community": 61,
       "community_name": "main.jsx",
       "norm_label": "financialrules()"
     },
@@ -7721,8 +7963,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_login",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 69,
+      "community_name": "Login.jsx",
       "norm_label": "login.jsx"
     },
     {
@@ -7732,8 +7974,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_login_login",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 69,
+      "community_name": "Login.jsx",
       "norm_label": "login()"
     },
     {
@@ -7743,8 +7985,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_settings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 68,
+      "community_name": "Settings.jsx",
       "norm_label": "settings.jsx"
     },
     {
@@ -7754,8 +7996,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_settings_regimes",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 68,
+      "community_name": "Settings.jsx",
       "norm_label": "regimes"
     },
     {
@@ -7765,8 +8007,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_pages_settings_empty",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 68,
+      "community_name": "Settings.jsx",
       "norm_label": "empty"
     },
     {
@@ -7776,8 +8018,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_pages_settings_settings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 68,
+      "community_name": "Settings.jsx",
       "norm_label": "settings()"
     },
     {
@@ -10363,6 +10605,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_clientes",
+      "target": "ref_react",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings",
       "target": "ref_react",
       "confidence_score": 1.0
     },
@@ -14935,40 +15189,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "api/nfse-emit.js",
-      "source_location": "L19",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_nfse_emit",
-      "target": "api_nfse_emit_campos_emitente",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/nfse-emit.js",
-      "source_location": "L32",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_nfse_emit",
-      "target": "api_nfse_emit_campos_tomador",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/nfse-emit.js",
-      "source_location": "L41",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "api_nfse_emit",
-      "target": "api_nfse_emit_faltantes",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "api/nfse-emit.js",
-      "source_location": "L49",
+      "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_nfse_emit",
@@ -15076,6 +15297,54 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "api/nfse-emit.js",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emit",
+      "target": "lib_nfse_setup_check",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emit.js",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emit",
+      "target": "lib_nfse_setup_check_campos_emitente",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emit.js",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emit",
+      "target": "lib_nfse_setup_check_campos_tomador",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emit.js",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emit",
+      "target": "lib_nfse_setup_check_faltantes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emit.js",
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
@@ -15132,15 +15401,15 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "calls",
-      "context": "call",
+      "relation": "imports_from",
+      "context": "import",
       "confidence": "EXTRACTED",
-      "source_file": "api/nfse-emit.js",
-      "source_location": "L117",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "api_nfse_emit_handler",
-      "target": "api_nfse_emit_faltantes",
+      "source": "lib_nfse_setup_check_test",
+      "target": "api_nfse_emit",
       "confidence_score": 1.0
     },
     {
@@ -15149,7 +15418,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "api/nfse-emit.js",
-      "source_location": "L50",
+      "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_nfse_emit_handler",
@@ -15161,7 +15430,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "api/nfse-emit.js",
-      "source_location": "L224",
+      "source_location": "L200",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_nfse_emit_handler",
@@ -15173,7 +15442,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "api/nfse-emit.js",
-      "source_location": "L249",
+      "source_location": "L225",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_nfse_emit_handler",
@@ -15185,7 +15454,19 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "api/nfse-emit.js",
-      "source_location": "L191",
+      "source_location": "L93",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emit_handler",
+      "target": "lib_nfse_setup_check_faltantes"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-emit.js",
+      "source_location": "L167",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_nfse_emit_handler",
@@ -15213,6 +15494,169 @@
       "_origin": "ast",
       "source": "lib_nfse_emit_test_chamar",
       "target": "api_nfse_emit_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "api_nfse_emit_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings",
+      "target": "api_nfse_emitter_settings_campos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L35",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings",
+      "target": "api_nfse_emitter_settings_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings",
+      "target": "api_nfse_emitter_settings_numero",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings",
+      "target": "api_nfse_emitter_settings_sodigitos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L24",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings",
+      "target": "api_nfse_emitter_settings_texto",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings",
+      "target": "lib_auth_requireauth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "api_nfse_emitter_settings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L68",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings_handler",
+      "target": "api_nfse_emitter_settings_sodigitos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L63",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings_handler",
+      "target": "api_nfse_emitter_settings_texto",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L73",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings_handler",
+      "target": "api_nfse_emitter_settings_numero",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-emitter-settings.js",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_emitter_settings_handler",
+      "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "api_nfse_emitter_settings_handler",
       "confidence_score": 1.0
     },
     {
@@ -15463,6 +15907,113 @@
       "_origin": "ast",
       "source": "api_nfse_setup_handler",
       "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-validate-setup.js",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_validate_setup",
+      "target": "api_nfse_validate_setup_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-validate-setup.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_validate_setup",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-validate-setup.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_validate_setup",
+      "target": "lib_auth_requireauth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-validate-setup.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_validate_setup",
+      "target": "lib_nfse_setup_check",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-validate-setup.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_validate_setup",
+      "target": "lib_nfse_setup_check_verificarsetup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "api_nfse_validate_setup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-validate-setup.js",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_validate_setup_handler",
+      "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-validate-setup.js",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_validate_setup_handler",
+      "target": "lib_nfse_setup_check_verificarsetup"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "api_nfse_validate_setup_handler",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -18132,6 +18683,18 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
@@ -18248,6 +18811,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_emit_test",
+      "target": "lib_auth_signtoken",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
       "target": "lib_auth_signtoken",
       "confidence_score": 1.0
     },
@@ -20973,7 +21548,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cancel.test.js",
-      "source_location": "L169",
+      "source_location": "L179",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cancel_test",
@@ -21050,7 +21625,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cancel.test.js",
-      "source_location": "L168",
+      "source_location": "L178",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cancel_test",
@@ -21252,6 +21827,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_test",
+      "target": "lib_nfse_cert_manager",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check",
       "target": "lib_nfse_cert_manager",
       "confidence_score": 1.0
     },
@@ -21871,6 +22458,199 @@
       "_origin": "ast",
       "source": "lib_nfse_events",
       "target": "lib_nfse_events_rotulos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check",
+      "target": "lib_nfse_setup_check_campos_emitente",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L32",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check",
+      "target": "lib_nfse_setup_check_campos_tomador",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L44",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check",
+      "target": "lib_nfse_setup_check_faltantes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check",
+      "target": "lib_nfse_setup_check_vazio",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L56",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check",
+      "target": "lib_nfse_setup_check_verificarsetup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check_campos_emitente",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check_campos_tomador",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L46",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_faltantes",
+      "target": "lib_nfse_setup_check_vazio",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.js",
+      "source_location": "L75",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_verificarsetup",
+      "target": "lib_nfse_setup_check_faltantes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check_verificarsetup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check_test_chamar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L46",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check_test_nomes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check_test_ok",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L24",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check_test_sql",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L58",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check_test_src",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-setup-check.test.js",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_setup_check_test",
+      "target": "lib_nfse_setup_check_test_token",
       "confidence_score": 1.0
     },
     {
@@ -26004,7 +26784,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/NFSeEmitirModal.jsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_nfseemitirmodal",
@@ -26015,7 +26795,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/NFSeEmitirModal.jsx",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_nfseemitirmodal",
@@ -26039,7 +26819,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/NFSeEmitirModal.jsx",
-      "source_location": "L96",
+      "source_location": "L129",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_nfseemitirmodal_nfseemitirmodal",
@@ -26420,7 +27200,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -26540,7 +27320,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -26552,7 +27332,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L31",
+      "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main_protegido",
@@ -26588,7 +27368,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -26599,7 +27379,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -26652,6 +27432,30 @@
       "_origin": "ast",
       "source": "src_main",
       "target": "src_pages_clientes_clientes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.jsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_main",
+      "target": "src_pages_configuracao_nfseemittersettings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.jsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_main",
+      "target": "src_pages_configuracao_nfseemittersettings_nfseemittersettings",
       "confidence_score": 1.0
     },
     {
@@ -26779,7 +27583,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -26791,7 +27595,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -27076,6 +27880,39 @@
       "_origin": "ast",
       "source": "src_pages_clientes",
       "target": "src_pages_clientes_emptyform",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings",
+      "target": "src_pages_configuracao_nfseemittersettings_campos_texto",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L48",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings",
+      "target": "src_pages_configuracao_nfseemittersettings_nfseemittersettings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L42",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings",
+      "target": "src_pages_configuracao_nfseemittersettings_vazioparacampo",
       "confidence_score": 1.0
     },
     {
@@ -30460,5 +31297,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "3a37e1f7711ae577c0239f2bca0ccf134d104dda"
+  "built_at_commit": "1482aa8682555cb2ffab05f29e6da4d80d861cb2"
 }

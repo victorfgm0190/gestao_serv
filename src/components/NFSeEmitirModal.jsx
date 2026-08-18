@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 
 // Emissão de NFS-e a partir de uma fatura.
 //
@@ -29,6 +30,22 @@ export default function NFSeEmitirModal({ invoice, onClose, onSuccess }) {
   const [erro, setErro] = useState(null)
   const [faltando, setFaltando] = useState(null)
   const [previa, setPrevia] = useState(null)
+  const [setup, setSetup] = useState(null)
+
+  // ⚠️ A checagem roda ao ABRIR, não antes de transmitir como o esboço propunha.
+  // O 422 da emissão já traz a mesma lista (as duas leem lib/nfse-setup-check.js),
+  // então validar de novo no clique só repetiria a resposta — depois de a pessoa
+  // ter escrito a descrição e a alíquota. Aparecendo na abertura, ela vê o que
+  // falta antes de digitar qualquer coisa.
+  useEffect(() => {
+    if (!invoice?.company_id) return
+    let vivo = true
+    fetch(`/api/nfse-validate-setup?company_id=${invoice.company_id}&invoice_id=${invoice.id}`)
+      .then((r) => r.json())
+      .then((d) => { if (vivo) setSetup(d) })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [invoice?.company_id, invoice?.id])
 
   const corpo = (transmitir) => ({
     invoice_id: invoice.id,
@@ -74,6 +91,22 @@ export default function NFSeEmitirModal({ invoice, onClose, onSuccess }) {
           {invoice?.client_name} · {invoice?.month}/{invoice?.year}
           {invoice?.invoice_number ? ` · NF ${invoice.invoice_number}` : ''}
         </p>
+
+        {setup && !setup.pronto && (
+          <div className="mb-4 p-3 bg-amber-900/20 border border-amber-700 rounded text-amber-200 text-sm">
+            ⚠️ {setup.mensagem}
+            <ul className="mt-2 space-y-0.5 list-disc list-inside text-xs text-amber-100">
+              {setup.campos_faltantes?.map((c, i) => <li key={i}>{c}</li>)}
+            </ul>
+            <p className="mt-2 text-xs">
+              <Link to="/configuracao/nfse-emitente" className="underline hover:text-white">
+                Configurar emitente
+              </Link>
+              {' · '}
+              <Link to="/clientes" className="underline hover:text-white">Clientes</Link>
+            </p>
+          </div>
+        )}
 
         {erro && (
           <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">

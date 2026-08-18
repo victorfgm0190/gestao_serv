@@ -152,6 +152,9 @@ export default function Layout() {
           <NavLink to="/settings" className={navClass}>
             <span>⚙️</span> Configurações
           </NavLink>
+          <NavLink to="/configuracao/nfse-emitente" className={navClass}>
+            <span>🏢</span> Emitente NFS-e
+          </NavLink>
           <NavLink to="/configuracao/nfse" className={navClass}>
             <span>🔐</span> Certificado NFS-e
           </NavLink>

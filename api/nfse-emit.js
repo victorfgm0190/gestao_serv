@@ -5,6 +5,7 @@ import { montarDPS } from '../lib/nfse-xml-builder.js'
 import { NFSeSigner } from '../lib/nfse-signer.js'
 import { NFSeADNClient } from '../lib/nfse-adn-client.js'
 import { registrarEvento, EVENTOS } from '../lib/nfse-events.js'
+import { CAMPOS_EMITENTE, CAMPOS_TOMADOR, faltantes } from '../lib/nfse-setup-check.js'
 
 // Emissão de NFS-e a partir de uma fatura.
 //
@@ -16,35 +17,10 @@ import { registrarEvento, EVENTOS } from '../lib/nfse-events.js'
 // razão é mais forte: transmitir cria um documento fiscal na Receita, e o
 // cliente do ADN ainda não foi verificado contra o serviço real.
 
-const CAMPOS_EMITENTE = [
-  ['cnpj', 'CNPJ'],
-  ['inscricao_municipal', 'Inscrição municipal'],
-  ['razao_social', 'Razão social'],
-  ['endereco', 'Logradouro'],
-  ['numero', 'Número'],
-  ['bairro', 'Bairro'],
-  ['cep', 'CEP'],
-  ['municipio_codigo', 'Código IBGE do município'],
-  ['uf', 'UF'],
-  ['item_lista_servico', 'Item da lista de serviços'],
-]
-
-const CAMPOS_TOMADOR = [
-  ['cpf_cnpj', 'CPF/CNPJ'],
-  ['endereco', 'Logradouro'],
-  ['numero', 'Número'],
-  ['bairro', 'Bairro'],
-  ['cep', 'CEP'],
-  ['municipio_codigo', 'Código IBGE do município'],
-]
-
-const faltantes = (linha, campos, prefixo) =>
-  campos
-    .filter(([col]) => {
-      const v = linha?.[col]
-      return v === null || v === undefined || String(v).trim() === ''
-    })
-    .map(([col, rotulo]) => ({ campo: `${prefixo}.${col}`, rotulo: `${prefixo}: ${rotulo}` }))
+// ⚠️ As listas moram em lib/nfse-setup-check.js e são compartilhadas com
+// /api/nfse-validate-setup. Duplicá-las aqui faria a tela de configuração e a
+// emissão discordarem sobre o que é obrigatório — o validador liberando o que a
+// emissão recusa, e vice-versa.
 
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
