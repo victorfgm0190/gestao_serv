@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1787076527.3251293,
-    "ast_hash": "1e5ab5d40dff50df330b8cedaa479b9b",
+    "mtime": 1787089051.619073,
+    "ast_hash": "9cf21b4432f2e1d028c5689eda3cc1bd",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1787076529.9456048,
-    "ast_hash": "ed044ab24ce4466bef411691c850806b",
+    "mtime": 1787078703.4281635,
+    "ast_hash": "cf2c24d1d034650e43ea450daf6613ef",
     "semantic_hash": ""
   },
   "postcss.config.js": {
@@ -115,8 +115,8 @@
     "semantic_hash": "d070709419d1c5e263b53059b20974e1"
   },
   "src/components/Layout.jsx": {
-    "mtime": 1787063152.9053648,
-    "ast_hash": "62583980da2bd8b808e49a13e8ccbaf3",
+    "mtime": 1787078873.3799944,
+    "ast_hash": "ca68b1eab4429ac1b191eaf818556867",
     "semantic_hash": ""
   },
   "src/hooks/useNotifications.js": {
@@ -125,8 +125,8 @@
     "semantic_hash": "cf7a0b6b5c1795a4e2a729422f79036a"
   },
   "src/main.jsx": {
-    "mtime": 1787063149.4960294,
-    "ast_hash": "7468b0fbca9526f63e303735b0ec229e",
+    "mtime": 1787078869.8029544,
+    "ast_hash": "a34cb59139c20c9bd14b5f0bd7cfe5b4",
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
@@ -577,6 +577,41 @@
   "sql/migration-nfse-etapa4.sql": {
     "mtime": 1787065625.7652314,
     "ast_hash": "b956eb5fc4db466b838fbf5e6982e3c0",
+    "semantic_hash": ""
+  },
+  "api/nfse-download-danfse.js": {
+    "mtime": 1787078823.6985295,
+    "ast_hash": "c953c4f3e4207a490777e15fc4b7f079",
+    "semantic_hash": ""
+  },
+  "api/nfse-download-xml.js": {
+    "mtime": 1787078806.3462512,
+    "ast_hash": "a080a7ea51cb7fcb9d96c6c359a21895",
+    "semantic_hash": ""
+  },
+  "api/nfse-list.js": {
+    "mtime": 1787078953.1995206,
+    "ast_hash": "4c595e5f3e25334ff68e27057ad149e6",
+    "semantic_hash": ""
+  },
+  "lib/danfse-generator.js": {
+    "mtime": 1787088232.795427,
+    "ast_hash": "160942c12ca50615ae2ffb712478696c",
+    "semantic_hash": ""
+  },
+  "lib/danfse-generator.test.js": {
+    "mtime": 1787088203.9876318,
+    "ast_hash": "7f79873321b226f7dc6faa9288e2004b",
+    "semantic_hash": ""
+  },
+  "lib/nfse-xml-parser.js": {
+    "mtime": 1787078725.6030974,
+    "ast_hash": "90d81bcc518ba794f0d6c240ea6bfcc0",
+    "semantic_hash": ""
+  },
+  "src/pages/Faturamento/NFSeEmitidas.jsx": {
+    "mtime": 1787078863.91726,
+    "ast_hash": "65c398a66d2954bf1e971057751231bb",
     "semantic_hash": ""
   }
 }

@@ -43,8 +43,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "ref_react",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "react"
     },
     {
@@ -307,8 +307,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_cron_sync",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "cron-sync.js"
     },
     {
@@ -318,8 +318,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "api_cron_sync_handler",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "handler()"
     },
     {
@@ -879,8 +879,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_ingest_email",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "ingest-email.js"
     },
     {
@@ -890,8 +890,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "api_ingest_email_handler",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "handler()"
     },
     {
@@ -1115,6 +1115,50 @@
       "norm_label": "handler()"
     },
     {
+      "label": "nfse-download-danfse.js",
+      "file_type": "code",
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_nfse_download_danfse",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "nfse-download-danfse.js"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "api_nfse_download_danfse_handler",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "handler()"
+    },
+    {
+      "label": "nfse-download-xml.js",
+      "file_type": "code",
+      "source_file": "api/nfse-download-xml.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_nfse_download_xml",
+      "community": 9,
+      "community_name": "payable-payments.js",
+      "norm_label": "nfse-download-xml.js"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/nfse-download-xml.js",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "api_nfse_download_xml_handler",
+      "community": 9,
+      "community_name": "payable-payments.js",
+      "norm_label": "handler()"
+    },
+    {
       "label": "nfse-emit.js",
       "file_type": "code",
       "source_file": "api/nfse-emit.js",
@@ -1167,6 +1211,28 @@
       "id": "api_nfse_emit_handler",
       "community": 17,
       "community_name": "payment-source-tracker.js",
+      "norm_label": "handler()"
+    },
+    {
+      "label": "nfse-list.js",
+      "file_type": "code",
+      "source_file": "api/nfse-list.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_nfse_list",
+      "community": 9,
+      "community_name": "payable-payments.js",
+      "norm_label": "nfse-list.js"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/nfse-list.js",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "api_nfse_list_handler",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "handler()"
     },
     {
@@ -1440,8 +1506,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_receivables",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "receivables.js"
     },
     {
@@ -1451,8 +1517,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "api_receivables_paymentperiod",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "paymentperiod()"
     },
     {
@@ -1462,8 +1528,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "api_receivables_handler",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "handler()"
     },
     {
@@ -2072,14 +2138,421 @@
       "norm_label": "adulterado"
     },
     {
+      "label": "danfse-generator.js",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_danfse_generator",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "danfse-generator.js"
+    },
+    {
+      "label": "brl()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L16",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_brl",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "brl()"
+    },
+    {
+      "label": "ou()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_ou",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "ou()"
+    },
+    {
+      "label": "formatarDocumento()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_formatardocumento",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "formatardocumento()"
+    },
+    {
+      "label": "formatarCEP()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L30",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_formatarcep",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "formatarcep()"
+    },
+    {
+      "label": "formatarData()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L38",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_formatardata",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "formatardata()"
+    },
+    {
+      "label": "formatarCompetencia()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L48",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_formatarcompetencia",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "formatarcompetencia()"
+    },
+    {
+      "label": "DANFSEGenerator",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L54",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "danfsegenerator"
+    },
+    {
+      "label": ".constructor()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L58",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_constructor",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".constructor()"
+    },
+    {
+      "label": ".gerarPDF()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L70",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_gerarpdf",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".gerarpdf()"
+    },
+    {
+      "label": ".tituloArquivo()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L97",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_tituloarquivo",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".tituloarquivo()"
+    },
+    {
+      "label": ".linha()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L102",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_linha",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".linha()"
+    },
+    {
+      "label": ".titulo()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L107",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_titulo",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".titulo()"
+    },
+    {
+      "label": ".campo()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L113",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_campo",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".campo()"
+    },
+    {
+      "label": ".cabecalho()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L118",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_cabecalho",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".cabecalho()"
+    },
+    {
+      "label": ".secaoPessoa()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L154",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_secaopessoa",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".secaopessoa()"
+    },
+    {
+      "label": ".secaoServico()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L177",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_secaoservico",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".secaoservico()"
+    },
+    {
+      "label": ".secaoValores()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L189",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_secaovalores",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".secaovalores()"
+    },
+    {
+      "label": ".rodape()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L224",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_danfsegenerator_rodape",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": ".rodape()"
+    },
+    {
+      "label": "danfse-generator.test.js",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "danfse-generator.test.js"
+    },
+    {
+      "label": "ok()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L25",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_ok",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "ok()"
+    },
+    {
+      "label": "dados",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L49",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_dados",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "dados"
+    },
+    {
+      "label": "xml",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L67",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_xml",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "xml"
+    },
+    {
+      "label": "keys",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L69",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_keys",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "keys"
+    },
+    {
+      "label": "cert",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L70",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_cert",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "cert"
+    },
+    {
+      "label": "at",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L75",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_at",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "at"
+    },
+    {
+      "label": "pfx",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L78",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_pfx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "pfx"
+    },
+    {
+      "label": "xmlAssinado",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L82",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_xmlassinado",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "xmlassinado"
+    },
+    {
+      "label": "dps",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L84",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_dps",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "dps"
+    },
+    {
+      "label": "textoDoPdf()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L114",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_textodopdf",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "textodopdf()"
+    },
+    {
+      "label": "texto",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L121",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_texto",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "texto"
+    },
+    {
+      "label": "contem()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L122",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_contem",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "contem()"
+    },
+    {
+      "label": "comChave",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L134",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_comchave",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "comchave"
+    },
+    {
+      "label": "destino",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L151",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_destino",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "destino"
+    },
+    {
+      "label": "sql",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L157",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_sql",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "sql"
+    },
+    {
+      "label": "token",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L158",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_token",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "token"
+    },
+    {
+      "label": "chamar()",
+      "file_type": "code",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L159",
+      "_origin": "ast",
+      "id": "lib_danfse_generator_test_chamar",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "chamar()"
+    },
+    {
       "label": "email-ingest.js",
       "file_type": "code",
       "source_file": "lib/email-ingest.js",
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_email_ingest",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "email-ingest.js"
     },
     {
@@ -2089,8 +2562,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "lib_email_ingest_makeimapconfig",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "makeimapconfig()"
     },
     {
@@ -2100,8 +2573,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "lib_email_ingest_classify",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "classify()"
     },
     {
@@ -2111,8 +2584,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "lib_email_ingest_fetchemailsfromaccount",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "fetchemailsfromaccount()"
     },
     {
@@ -2122,8 +2595,8 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "lib_email_ingest_ingestaccounts",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "ingestaccounts()"
     },
     {
@@ -2133,8 +2606,8 @@
       "source_location": "L132",
       "_origin": "ast",
       "id": "lib_email_ingest_imperiumaccounts",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "imperiumaccounts()"
     },
     {
@@ -3557,6 +4030,61 @@
       "norm_label": ".validar()"
     },
     {
+      "label": "nfse-xml-parser.js",
+      "file_type": "code",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_nfse_xml_parser",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "nfse-xml-parser.js"
+    },
+    {
+      "label": "parser",
+      "file_type": "code",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L12",
+      "_origin": "ast",
+      "id": "lib_nfse_xml_parser_parser",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "parser"
+    },
+    {
+      "label": "txt()",
+      "file_type": "code",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L17",
+      "_origin": "ast",
+      "id": "lib_nfse_xml_parser_txt",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "txt()"
+    },
+    {
+      "label": "num()",
+      "file_type": "code",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "lib_nfse_xml_parser_num",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "num()"
+    },
+    {
+      "label": "lerDPS()",
+      "file_type": "code",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "lib_nfse_xml_parser_lerdps",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
+      "norm_label": "lerdps()"
+    },
+    {
       "label": "payment-source-tracker.js",
       "file_type": "code",
       "source_file": "lib/payment-source-tracker.js",
@@ -4146,8 +4674,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_victor_momentos",
-      "community": 4,
-      "community_name": "6. Regras de neg\u00f3cio financeiro",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "victor-momentos.js"
     },
     {
@@ -4685,8 +5213,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "package_dependencies_neondatabase_serverless",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "@neondatabase/serverless"
     },
     {
@@ -4696,8 +5224,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "neondatabase_serverless",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "@neondatabase/serverless"
     },
     {
@@ -4751,8 +5279,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "package_dependencies_dotenv",
-      "community": 20,
-      "community_name": "dependencies",
+      "community": 55,
+      "community_name": "dotenv",
       "norm_label": "dotenv"
     },
     {
@@ -4762,8 +5290,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "dotenv",
-      "community": 20,
-      "community_name": "dependencies",
+      "community": 55,
+      "community_name": "dotenv",
       "norm_label": "dotenv"
     },
     {
@@ -4773,8 +5301,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "package_dependencies_exceljs",
-      "community": 20,
-      "community_name": "dependencies",
+      "community": 56,
+      "community_name": "exceljs",
       "norm_label": "exceljs"
     },
     {
@@ -4784,8 +5312,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "exceljs",
-      "community": 20,
-      "community_name": "dependencies",
+      "community": 56,
+      "community_name": "exceljs",
       "norm_label": "exceljs"
     },
     {
@@ -4795,8 +5323,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "package_dependencies_imap_simple",
-      "community": 33,
-      "community_name": "imap-simple",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "imap-simple"
     },
     {
@@ -4806,8 +5334,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "imap_simple",
-      "community": 33,
-      "community_name": "imap-simple",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "imap-simple"
     },
     {
@@ -4877,54 +5405,76 @@
       "norm_label": "nodemailer"
     },
     {
-      "label": "react",
+      "label": "pdfkit",
       "file_type": "code",
       "source_file": "package.json",
       "source_location": "L22",
       "_origin": "ast",
+      "id": "package_dependencies_pdfkit",
+      "community": 57,
+      "community_name": "pdfkit",
+      "norm_label": "pdfkit"
+    },
+    {
+      "label": "pdfkit",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "pdfkit",
+      "community": 57,
+      "community_name": "pdfkit",
+      "norm_label": "pdfkit"
+    },
+    {
+      "label": "react",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L23",
+      "_origin": "ast",
       "id": "package_dependencies_react",
-      "community": 20,
-      "community_name": "dependencies",
+      "community": 58,
+      "community_name": "react",
       "norm_label": "react"
     },
     {
       "label": "react",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L22",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "react",
-      "community": 20,
-      "community_name": "dependencies",
+      "community": 58,
+      "community_name": "react",
       "norm_label": "react"
     },
     {
       "label": "react-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L24",
       "_origin": "ast",
       "id": "package_dependencies_react_dom",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "react-dom"
     },
     {
       "label": "react-dom",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L24",
       "_origin": "ast",
       "id": "react_dom",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "react-dom"
     },
     {
       "label": "react-router-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "package_dependencies_react_router_dom",
       "community": 30,
@@ -4935,7 +5485,7 @@
       "label": "react-router-dom",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "react_router_dom",
       "community": 30,
@@ -4946,7 +5496,7 @@
       "label": "xlsx",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "package_dependencies_xlsx",
       "community": 20,
@@ -4957,7 +5507,7 @@
       "label": "xlsx",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "xlsx",
       "community": 20,
@@ -4968,7 +5518,7 @@
       "label": "xml-crypto",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "package_dependencies_xml_crypto",
       "community": 20,
@@ -4979,7 +5529,7 @@
       "label": "xml-crypto",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "xml_crypto",
       "community": 20,
@@ -4990,7 +5540,7 @@
       "label": "devDependencies",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L29",
       "_origin": "ast",
       "id": "package_devdependencies",
       "community": 2,
@@ -5001,7 +5551,7 @@
       "label": "@types/react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "package_devdependencies_types_react",
       "community": 2,
@@ -5012,7 +5562,7 @@
       "label": "@types/react",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "types_react",
       "community": 2,
@@ -5023,7 +5573,7 @@
       "label": "@types/react-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "_origin": "ast",
       "id": "package_devdependencies_types_react_dom",
       "community": 2,
@@ -5034,7 +5584,7 @@
       "label": "@types/react-dom",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "_origin": "ast",
       "id": "types_react_dom",
       "community": 2,
@@ -5045,7 +5595,7 @@
       "label": "@vitejs/plugin-react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "package_devdependencies_vitejs_plugin_react",
       "community": 2,
@@ -5056,7 +5606,7 @@
       "label": "@vitejs/plugin-react",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "vitejs_plugin_react",
       "community": 2,
@@ -5067,7 +5617,7 @@
       "label": "autoprefixer",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "_origin": "ast",
       "id": "package_devdependencies_autoprefixer",
       "community": 2,
@@ -5078,7 +5628,7 @@
       "label": "autoprefixer",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "_origin": "ast",
       "id": "autoprefixer",
       "community": 2,
@@ -5089,7 +5639,7 @@
       "label": "oxlint",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L34",
       "_origin": "ast",
       "id": "package_devdependencies_oxlint",
       "community": 2,
@@ -5100,7 +5650,7 @@
       "label": "oxlint",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L34",
       "_origin": "ast",
       "id": "oxlint",
       "community": 2,
@@ -5111,7 +5661,7 @@
       "label": "postcss",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L34",
+      "source_location": "L35",
       "_origin": "ast",
       "id": "package_devdependencies_postcss",
       "community": 2,
@@ -5122,7 +5672,7 @@
       "label": "postcss",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L34",
+      "source_location": "L35",
       "_origin": "ast",
       "id": "postcss",
       "community": 2,
@@ -5133,7 +5683,7 @@
       "label": "tailwindcss",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L35",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "package_devdependencies_tailwindcss",
       "community": 2,
@@ -5144,7 +5694,7 @@
       "label": "tailwindcss",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L35",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "tailwindcss",
       "community": 2,
@@ -5155,7 +5705,7 @@
       "label": "vite",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L36",
+      "source_location": "L37",
       "_origin": "ast",
       "id": "package_devdependencies_vite",
       "community": 2,
@@ -5166,7 +5716,7 @@
       "label": "vite",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L36",
+      "source_location": "L37",
       "_origin": "ast",
       "id": "vite",
       "community": 2,
@@ -5279,8 +5829,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_memoriacalculo",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "memoriacalculo.jsx"
     },
     {
@@ -5290,8 +5840,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_components_memoriacalculo_fmt",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "fmt()"
     },
     {
@@ -5301,8 +5851,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_memoriacalculo_passo",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "passo()"
     },
     {
@@ -5312,8 +5862,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_components_memoriacalculo_memoriacalculo",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "memoriacalculo()"
     },
     {
@@ -5367,8 +5917,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_fiscallabels",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "fiscallabels.js"
     },
     {
@@ -5378,8 +5928,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_lib_fiscallabels_kind_label",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "kind_label"
     },
     {
@@ -5411,8 +5961,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_lib_session_settoken",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 52,
+      "community_name": "Login.jsx",
       "norm_label": "settoken()"
     },
     {
@@ -5444,8 +5994,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_lib_session_isloggedin",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "isloggedin()"
     },
     {
@@ -5488,19 +6038,19 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_main",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "main.jsx"
     },
     {
       "label": "Protegido()",
       "file_type": "code",
       "source_file": "src/main.jsx",
-      "source_location": "L28",
+      "source_location": "L29",
       "_origin": "ast",
       "id": "src_main_protegido",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "protegido()"
     },
     {
@@ -5576,8 +6126,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_clientes",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "clientes.jsx"
     },
     {
@@ -5587,8 +6137,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "src_pages_clientes_companies",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "companies"
     },
     {
@@ -5598,8 +6148,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_pages_clientes_emptyform",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "emptyform"
     },
     {
@@ -5609,8 +6159,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_pages_clientes_clientes",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "clientes()"
     },
     {
@@ -5620,8 +6170,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "nfsesettings.jsx"
     },
     {
@@ -5631,8 +6181,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings_bufferparabase64",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "bufferparabase64()"
     },
     {
@@ -5642,8 +6192,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings_databr",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "databr()"
     },
     {
@@ -5653,8 +6203,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings_selo",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "selo()"
     },
     {
@@ -5664,8 +6214,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfsesettings_nfsesettings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "nfsesettings()"
     },
     {
@@ -5675,8 +6225,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_contracts",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 33,
+      "community_name": "imap-simple",
       "norm_label": "contracts.jsx"
     },
     {
@@ -5686,8 +6236,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_contracts_months",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 33,
+      "community_name": "imap-simple",
       "norm_label": "months"
     },
     {
@@ -5697,8 +6247,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_pages_contracts_empty_form",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 33,
+      "community_name": "imap-simple",
       "norm_label": "empty_form"
     },
     {
@@ -5708,8 +6258,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_pages_contracts_split_mode_label",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 33,
+      "community_name": "imap-simple",
       "norm_label": "split_mode_label"
     },
     {
@@ -5719,8 +6269,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_pages_contracts_contracts",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 33,
+      "community_name": "imap-simple",
       "norm_label": "contracts()"
     },
     {
@@ -5730,8 +6280,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_dashboard",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "dashboard.jsx"
     },
     {
@@ -5741,8 +6291,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_dashboard_companies",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "companies"
     },
     {
@@ -5752,8 +6302,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_pages_dashboard_abertas",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "abertas"
     },
     {
@@ -5763,8 +6313,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_pages_dashboard_months",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "months"
     },
     {
@@ -5774,8 +6324,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_pages_dashboard_decimaltohhmm",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "decimaltohhmm()"
     },
     {
@@ -5785,8 +6335,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_pages_dashboard_fmt",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "fmt()"
     },
     {
@@ -5796,8 +6346,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_pages_dashboard_dashboard",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "dashboard()"
     },
     {
@@ -5807,8 +6357,8 @@
       "source_location": "L170",
       "_origin": "ast",
       "id": "src_pages_dashboard_financeblock",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "financeblock()"
     },
     {
@@ -5818,8 +6368,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_demands",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "demands.jsx"
     },
     {
@@ -5829,8 +6379,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_demands_status_options",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "status_options"
     },
     {
@@ -5840,8 +6390,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_pages_demands_status_colors",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "status_colors"
     },
     {
@@ -5851,8 +6401,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_pages_demands_demands",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "demands()"
     },
     {
@@ -5862,8 +6412,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_emailrules",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "emailrules.jsx"
     },
     {
@@ -5873,8 +6423,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_emailrules_rule_types",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "rule_types"
     },
     {
@@ -5884,9 +6434,64 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_pages_emailrules_emailrules",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "emailrules()"
+    },
+    {
+      "label": "NFSeEmitidas.jsx",
+      "file_type": "code",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_pages_faturamento_nfseemitidas",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
+      "norm_label": "nfseemitidas.jsx"
+    },
+    {
+      "label": "badges",
+      "file_type": "code",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "src_pages_faturamento_nfseemitidas_badges",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
+      "norm_label": "badges"
+    },
+    {
+      "label": "brl()",
+      "file_type": "code",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "src_pages_faturamento_nfseemitidas_brl",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
+      "norm_label": "brl()"
+    },
+    {
+      "label": "dataBR()",
+      "file_type": "code",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L28",
+      "_origin": "ast",
+      "id": "src_pages_faturamento_nfseemitidas_databr",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
+      "norm_label": "databr()"
+    },
+    {
+      "label": "NFSeEmitidas()",
+      "file_type": "code",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L34",
+      "_origin": "ast",
+      "id": "src_pages_faturamento_nfseemitidas_nfseemitidas",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
+      "norm_label": "nfseemitidas()"
     },
     {
       "label": "Financial.jsx",
@@ -5983,8 +6588,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_pages_financial_receive_victor_categories",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "receive_victor_categories"
     },
     {
@@ -6005,8 +6610,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_pages_financial_receive_inputs",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "receive_inputs"
     },
     {
@@ -6170,8 +6775,8 @@
       "source_location": "L169",
       "_origin": "ast",
       "id": "src_pages_financial_mododacategoria",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "mododacategoria()"
     },
     {
@@ -6192,8 +6797,8 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "src_pages_financial_cents",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "cents()"
     },
     {
@@ -6203,8 +6808,8 @@
       "source_location": "L208",
       "_origin": "ast",
       "id": "src_pages_financial_alocarcascatadist",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "alocarcascatadist()"
     },
     {
@@ -6236,8 +6841,8 @@
       "source_location": "L260",
       "_origin": "ast",
       "id": "src_pages_financial_receivecategorytotal",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "receivecategorytotal()"
     },
     {
@@ -6291,8 +6896,8 @@
       "source_location": "L292",
       "_origin": "ast",
       "id": "src_pages_financial_parsenotestoamounts",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "parsenotestoamounts()"
     },
     {
@@ -6302,8 +6907,8 @@
       "source_location": "L306",
       "_origin": "ast",
       "id": "src_pages_financial_proportionalcats",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "proportionalcats()"
     },
     {
@@ -6313,8 +6918,8 @@
       "source_location": "L313",
       "_origin": "ast",
       "id": "src_pages_financial_financial",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "financial()"
     },
     {
@@ -6324,8 +6929,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_financialrules",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "financialrules.jsx"
     },
     {
@@ -6335,8 +6940,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_financialrules_financialrules",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "financialrules()"
     },
     {
@@ -6346,8 +6951,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "fiscalobligations.jsx"
     },
     {
@@ -6357,8 +6962,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_months",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "months"
     },
     {
@@ -6368,8 +6973,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_kind_icon",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "kind_icon"
     },
     {
@@ -6379,8 +6984,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_status_style",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "status_style"
     },
     {
@@ -6390,8 +6995,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_fmt",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "fmt()"
     },
     {
@@ -6401,8 +7006,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_pct",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "pct()"
     },
     {
@@ -6412,8 +7017,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_databr",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "databr()"
     },
     {
@@ -6423,8 +7028,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_etapa",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "etapa()"
     },
     {
@@ -6434,8 +7039,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_fiscalobligations",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "fiscalobligations()"
     },
     {
@@ -6445,8 +7050,8 @@
       "source_location": "L669",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_tudoquitadosemguia",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "tudoquitadosemguia()"
     },
     {
@@ -6456,8 +7061,8 @@
       "source_location": "L675",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_campo",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "campo()"
     },
     {
@@ -6467,8 +7072,8 @@
       "source_location": "L684",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_modal",
-      "community": 16,
-      "community_name": "FiscalObligations.jsx",
+      "community": 7,
+      "community_name": "Financial.jsx",
       "norm_label": "modal()"
     },
     {
@@ -6478,8 +7083,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_login",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 52,
+      "community_name": "Login.jsx",
       "norm_label": "login.jsx"
     },
     {
@@ -6489,8 +7094,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_login_login",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 52,
+      "community_name": "Login.jsx",
       "norm_label": "login()"
     },
     {
@@ -6500,8 +7105,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_settings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "settings.jsx"
     },
     {
@@ -6511,8 +7116,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_settings_regimes",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "regimes"
     },
     {
@@ -6522,8 +7127,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_pages_settings_empty",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "empty"
     },
     {
@@ -6533,8 +7138,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_pages_settings_settings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "settings()"
     },
     {
@@ -9156,6 +9761,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_emailrules",
+      "target": "ref_react",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas",
       "target": "ref_react",
       "confidence_score": 1.0
     },
@@ -13191,6 +13808,208 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_danfse",
+      "target": "api_nfse_download_danfse_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_danfse",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_danfse",
+      "target": "lib_auth_requireauth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_danfse",
+      "target": "lib_danfse_generator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_danfse",
+      "target": "lib_danfse_generator_danfsegenerator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_danfse",
+      "target": "lib_nfse_xml_parser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_danfse",
+      "target": "lib_nfse_xml_parser_lerdps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "api_nfse_download_danfse",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_danfse_handler",
+      "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-download-danfse.js",
+      "source_location": "L40",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_danfse_handler",
+      "target": "lib_nfse_xml_parser_lerdps"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "api_nfse_download_danfse_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-xml.js",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_xml",
+      "target": "api_nfse_download_xml_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-xml.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_xml",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-download-xml.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_xml",
+      "target": "lib_auth_requireauth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "api_nfse_download_xml",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-download-xml.js",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_download_xml_handler",
+      "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "api_nfse_download_xml_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "api/nfse-emit.js",
       "source_location": "L18",
       "weight": 1.0,
@@ -13422,6 +14241,77 @@
       "_origin": "ast",
       "source": "lib_nfse_emit_test_chamar",
       "target": "api_nfse_emit_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-list.js",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_list",
+      "target": "api_nfse_list_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-list.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_list",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-list.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_list",
+      "target": "lib_auth_requireauth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "api_nfse_list",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-list.js",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_list_handler",
+      "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "api_nfse_list_handler",
       "confidence_score": 1.0
     },
     {
@@ -15944,6 +16834,18 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "lib/nfse-emit.test.js",
       "source_location": "L19",
       "weight": 1.0,
@@ -16034,6 +16936,18 @@
       "_origin": "ast",
       "source": "lib_auth_verifytoken",
       "target": "lib_auth_eq",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_auth_signtoken",
       "confidence_score": 1.0
     },
     {
@@ -16405,6 +17319,847 @@
       "_origin": "ast",
       "source": "lib_crypto_manager_test",
       "target": "lib_crypto_manager_test_thumbprint",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator",
+      "target": "lib_danfse_generator_brl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L54",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator",
+      "target": "lib_danfse_generator_danfsegenerator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator",
+      "target": "lib_danfse_generator_formatarcep",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L48",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator",
+      "target": "lib_danfse_generator_formatarcompetencia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L38",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator",
+      "target": "lib_danfse_generator_formatardata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator",
+      "target": "lib_danfse_generator_formatardocumento",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator",
+      "target": "lib_danfse_generator_ou",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L196",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaovalores",
+      "target": "lib_danfse_generator_brl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L131",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_cabecalho",
+      "target": "lib_danfse_generator_ou",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L115",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_campo",
+      "target": "lib_danfse_generator_ou",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L237",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_rodape",
+      "target": "lib_danfse_generator_ou",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L164",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaopessoa",
+      "target": "lib_danfse_generator_ou",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_formatarcompetencia",
+      "target": "lib_danfse_generator_ou",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L161",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaopessoa",
+      "target": "lib_danfse_generator_formatardocumento",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_formatardocumento",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L169",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaopessoa",
+      "target": "lib_danfse_generator_formatarcep",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_formatarcep",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L132",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_cabecalho",
+      "target": "lib_danfse_generator_formatardata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_formatardata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L132",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_cabecalho",
+      "target": "lib_danfse_generator_formatarcompetencia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_formatarcompetencia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L118",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_cabecalho",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L113",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_campo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L58",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_constructor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L70",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_gerarpdf",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L102",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_linha",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L224",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_rodape",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L154",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_secaopessoa",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L177",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_secaoservico",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L189",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_secaovalores",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L107",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_titulo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L97",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator",
+      "target": "lib_danfse_generator_danfsegenerator_tituloarquivo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_danfsegenerator",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L84",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_gerarpdf",
+      "target": "lib_danfse_generator_danfsegenerator_cabecalho",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L89",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_gerarpdf",
+      "target": "lib_danfse_generator_danfsegenerator_rodape",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L85",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_gerarpdf",
+      "target": "lib_danfse_generator_danfsegenerator_secaopessoa",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L87",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_gerarpdf",
+      "target": "lib_danfse_generator_danfsegenerator_secaoservico",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L88",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_gerarpdf",
+      "target": "lib_danfse_generator_danfsegenerator_secaovalores",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L76",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_gerarpdf",
+      "target": "lib_danfse_generator_danfsegenerator_tituloarquivo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L151",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_cabecalho",
+      "target": "lib_danfse_generator_danfsegenerator_linha",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L174",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaopessoa",
+      "target": "lib_danfse_generator_danfsegenerator_linha",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L186",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaoservico",
+      "target": "lib_danfse_generator_danfsegenerator_linha",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L221",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaovalores",
+      "target": "lib_danfse_generator_danfsegenerator_linha",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L159",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaopessoa",
+      "target": "lib_danfse_generator_danfsegenerator_titulo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L179",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaoservico",
+      "target": "lib_danfse_generator_danfsegenerator_titulo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L191",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaovalores",
+      "target": "lib_danfse_generator_danfsegenerator_titulo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L160",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaopessoa",
+      "target": "lib_danfse_generator_danfsegenerator_campo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.js",
+      "source_location": "L180",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_danfsegenerator_secaoservico",
+      "target": "lib_danfse_generator_danfsegenerator_campo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/pages/Financial.jsx",
+      "source_location": "L1716",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_financial_financial",
+      "target": "lib_danfse_generator_danfsegenerator_campo"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L75",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_at",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L70",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_cert",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L159",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_chamar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L134",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_comchave",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L122",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_contem",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L49",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_dados",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L151",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_destino",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L84",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_dps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L69",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_keys",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_ok",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L78",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_pfx",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L157",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_sql",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L121",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_texto",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L114",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_textodopdf",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L158",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_token",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L67",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_xml",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L82",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_danfse_generator_test_xmlassinado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_nfse_signer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_nfse_signer_nfsesigner",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_nfse_xml_builder",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_nfse_xml_builder_montardps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_nfse_xml_parser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/danfse-generator.test.js",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_danfse_generator_test",
+      "target": "lib_nfse_xml_parser_lerdps",
       "confidence_score": 1.0
     },
     {
@@ -17539,18 +19294,6 @@
       "source": "lib_fiscal_redistribution_agregado",
       "target": "lib_fiscal_redistribution_linha",
       "confidence_score": 1.0
-    },
-    {
-      "relation": "indirect_call",
-      "context": "collection",
-      "confidence": "INFERRED",
-      "confidence_score": 0.8,
-      "source_file": "lib/victor-tabulado.js",
-      "source_location": "L231",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "lib_victor_tabulado_montartabulado",
-      "target": "lib_fiscal_redistribution_linha"
     },
     {
       "relation": "calls",
@@ -18974,6 +20717,74 @@
       "_origin": "ast",
       "source": "lib_nfse_xml_builder_nfsexmlbuilder",
       "target": "lib_nfse_xml_builder_nfsexmlbuilder_validar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L31",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_xml_parser",
+      "target": "lib_nfse_xml_parser_lerdps",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_xml_parser",
+      "target": "lib_nfse_xml_parser_num",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_xml_parser",
+      "target": "lib_nfse_xml_parser_parser",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_xml_parser",
+      "target": "lib_nfse_xml_parser_txt",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L54",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_xml_parser_lerdps",
+      "target": "lib_nfse_xml_parser_txt",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-xml-parser.js",
+      "source_location": "L73",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_xml_parser_lerdps",
+      "target": "lib_nfse_xml_parser_num",
       "confidence_score": 1.0
     },
     {
@@ -21298,7 +23109,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L29",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package",
@@ -21500,7 +23311,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_react",
+      "target": "package_dependencies_pdfkit",
       "confidence_score": 1.0
     },
     {
@@ -21511,7 +23322,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_react_dom",
+      "target": "package_dependencies_react",
       "confidence_score": 1.0
     },
     {
@@ -21522,7 +23333,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_react_router_dom",
+      "target": "package_dependencies_react_dom",
       "confidence_score": 1.0
     },
     {
@@ -21533,7 +23344,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_xlsx",
+      "target": "package_dependencies_react_router_dom",
       "confidence_score": 1.0
     },
     {
@@ -21541,6 +23352,17 @@
       "confidence": "EXTRACTED",
       "source_file": "package.json",
       "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "package_dependencies",
+      "target": "package_dependencies_xlsx",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
@@ -21674,6 +23496,18 @@
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
+      "source": "package_dependencies_pdfkit",
+      "target": "pdfkit",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L23",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast",
       "source": "package_dependencies_react",
       "target": "react",
       "confidence_score": 1.0
@@ -21682,7 +23516,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L23",
+      "source_location": "L24",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21694,7 +23528,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21706,7 +23540,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21718,7 +23552,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21730,7 +23564,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -21741,7 +23575,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L34",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -21752,7 +23586,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L34",
+      "source_location": "L35",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -21763,7 +23597,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L35",
+      "source_location": "L36",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -21774,7 +23608,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -21785,7 +23619,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -21796,7 +23630,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L36",
+      "source_location": "L37",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -21807,7 +23641,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -21818,7 +23652,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21830,7 +23664,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21842,7 +23676,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L32",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21854,7 +23688,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21866,7 +23700,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L33",
+      "source_location": "L34",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21878,7 +23712,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L34",
+      "source_location": "L35",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21890,7 +23724,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L35",
+      "source_location": "L36",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -21902,7 +23736,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L36",
+      "source_location": "L37",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -22568,7 +24402,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -22688,7 +24522,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -22700,7 +24534,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L30",
+      "source_location": "L31",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main_protegido",
@@ -22736,7 +24570,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -22747,7 +24581,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L28",
+      "source_location": "L29",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -22920,6 +24754,30 @@
       "_origin": "ast",
       "source": "src_main",
       "target": "src_pages_emailrules_emailrules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.jsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_main",
+      "target": "src_pages_faturamento_nfseemitidas",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.jsx",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_main",
+      "target": "src_pages_faturamento_nfseemitidas_nfseemitidas",
       "confidence_score": 1.0
     },
     {
@@ -23493,6 +25351,74 @@
       "_origin": "ast",
       "source": "src_pages_emailrules_emailrules",
       "target": "src_pages_emailrules_rule_types"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas",
+      "target": "src_pages_faturamento_nfseemitidas_badges",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas",
+      "target": "src_pages_faturamento_nfseemitidas_brl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas",
+      "target": "src_pages_faturamento_nfseemitidas_databr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L34",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas",
+      "target": "src_pages_faturamento_nfseemitidas_nfseemitidas",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L163",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas_nfseemitidas",
+      "target": "src_pages_faturamento_nfseemitidas_brl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L174",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas_nfseemitidas",
+      "target": "src_pages_faturamento_nfseemitidas_databr",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -26505,5 +28431,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "fa09001597b68f3aa04d8b820ad07294722ea1ff"
+  "built_at_commit": "1ffed75c6a6197141ccadc9b560ee041913a9cf0"
 }
