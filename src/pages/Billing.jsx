@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, Link } from 'react-router-dom'
 import CopyButton from '../components/CopyButton'
 import NFSeEmitirModal from '../components/NFSeEmitirModal'
 import { todayBR } from '../lib/dateUtils'
@@ -568,17 +568,31 @@ export default function Billing() {
           onClose={() => setNfseInvoice(null)}
           onSuccess={(data) => {
             setNfseInvoice(null)
-            setNfseOk(data?.emissao?.nfse_number
-              ? `NFS-e ${data.emissao.nfse_number} emitida.`
-              : 'NFS-e transmitida.')
+            setNfseOk(data?.emissao || {})
           }}
         />
       )}
 
       {nfseOk && (
-        <div className="fixed bottom-4 right-4 z-50 bg-green-900/90 border border-green-700 rounded-lg px-4 py-3 text-green-200 text-sm flex items-center gap-3">
-          ✅ {nfseOk}
-          <button onClick={() => setNfseOk(null)} className="text-xs underline hover:text-white">fechar</button>
+        <div className="fixed bottom-4 right-4 z-50 bg-green-900/90 border border-green-700 rounded-lg px-4 py-3 text-green-200 text-sm max-w-xs">
+          <p className="font-bold">✅ NFS-e transmitida</p>
+          {/* Nº e NSU só aparecem quando existem: o número é atribuído pelo ADN
+              e pode chegar depois, por webhook. "NFSe #: undefined" se lê como
+              falha da emissão que acabou de dar certo. */}
+          {nfseOk.nfse_number && <p className="text-xs mt-1">Nota nº {nfseOk.nfse_number}</p>}
+          {nfseOk.nsu && <p className="text-xs">NSU: {nfseOk.nsu}</p>}
+          {!nfseOk.nfse_number && !nfseOk.nsu && (
+            <p className="text-xs mt-1 text-green-300/80">Número e NSU chegam quando o ADN processar.</p>
+          )}
+          <div className="flex items-center gap-3 mt-2">
+            {/* ⚠️ Sem `window.location.reload()`. Nada nesta tela muda com a
+                emissão — a nota aparece na lista de NFS-e —, e o reload
+                descartaria os filtros de mês e cliente que o usuário montou. */}
+            <Link to="/faturamento/nfse-emitidas" className="text-xs underline hover:text-white">
+              ver na lista de NFS-e
+            </Link>
+            <button onClick={() => setNfseOk(null)} className="text-xs underline hover:text-white">fechar</button>
+          </div>
         </div>
       )}
 
