@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1787060271.2104433,
-    "ast_hash": "4e796e3bb08b64b0bc1a11f1b5dd325a",
+    "mtime": 1787076527.3251293,
+    "ast_hash": "1e5ab5d40dff50df330b8cedaa479b9b",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1787062998.603986,
-    "ast_hash": "1236e96f197cb8031179db5351769ef7",
+    "mtime": 1787076529.9456048,
+    "ast_hash": "ed044ab24ce4466bef411691c850806b",
     "semantic_hash": ""
   },
   "postcss.config.js": {
@@ -547,6 +547,36 @@
   "src/pages/Configuracao/NFSeSettings.jsx": {
     "mtime": 1787063144.3662603,
     "ast_hash": "2530c8bf7426367768313e11db663926",
+    "semantic_hash": ""
+  },
+  "api/nfse-emit.js": {
+    "mtime": 1787076508.0131402,
+    "ast_hash": "39b796ea71197fa083b9e5a9cd03a28b",
+    "semantic_hash": ""
+  },
+  "lib/nfse-adn-client.js": {
+    "mtime": 1787065782.4732025,
+    "ast_hash": "ca37ee42f7d2284d12ef4d2b98cb6ec1",
+    "semantic_hash": ""
+  },
+  "lib/nfse-emit.test.js": {
+    "mtime": 1787070032.3118436,
+    "ast_hash": "ad7311faef821bd6fba42b3f714c0d15",
+    "semantic_hash": ""
+  },
+  "lib/nfse-signer.js": {
+    "mtime": 1787065755.0080261,
+    "ast_hash": "8e4aec5a71d5b7182706389ae74b8460",
+    "semantic_hash": ""
+  },
+  "lib/nfse-xml-builder.js": {
+    "mtime": 1787076503.0989575,
+    "ast_hash": "24489a790d252535ed829cd471c4cdf1",
+    "semantic_hash": ""
+  },
+  "sql/migration-nfse-etapa4.sql": {
+    "mtime": 1787065625.7652314,
+    "ast_hash": "b956eb5fc4db466b838fbf5e6982e3c0",
     "semantic_hash": ""
   }
 }

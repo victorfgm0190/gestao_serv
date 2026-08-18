@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
+    "@xmldom/xmldom": "^0.9.11",
+    "axios": "^1.19.0",
     "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
     "imap-simple": "^5.1.0",
@@ -20,7 +22,8 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "xml-crypto": "^6.1.2"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
