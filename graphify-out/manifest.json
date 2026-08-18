@@ -5,8 +5,8 @@
     "semantic_hash": "cab88ff67cfd39dbb99a76ff24600518"
   },
   ".claude/settings.local.json": {
-    "mtime": 1786415867.3745663,
-    "ast_hash": "e1c0e0ddc862cec7edee20e89e0c36b4",
+    "mtime": 1787057702.5218337,
+    "ast_hash": "4e33a9852dbb9ec65a9219b347f39443",
     "semantic_hash": ""
   },
   ".oxlintrc.json": {
@@ -65,18 +65,18 @@
     "semantic_hash": ""
   },
   "api/payable-payments.js": {
-    "mtime": 1786312973.6477103,
-    "ast_hash": "4dc0e4d0aaf90901bbc47901fa001feb",
+    "mtime": 1786578714.63405,
+    "ast_hash": "644a4063bd2f4b1c68be76334d01e196",
     "semantic_hash": ""
   },
   "api/payables-fabricio.js": {
-    "mtime": 1786313012.5135074,
-    "ast_hash": "806d3d535391171fb1943bf14d14a7c7",
+    "mtime": 1786844333.833117,
+    "ast_hash": "c2816905bb089af4fc672a533a9d5a33",
     "semantic_hash": ""
   },
   "api/payables-victor.js": {
-    "mtime": 1786414916.8058655,
-    "ast_hash": "24b6f847baf2885e1cc6b52a5990c0e3",
+    "mtime": 1786842763.5521393,
+    "ast_hash": "ba44c5787afce4a64818131c6ac2b573",
     "semantic_hash": ""
   },
   "api/receivables.js": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1786416516.0072167,
-    "ast_hash": "d4c5fca5d8f09644536cbb04431f987f",
+    "mtime": 1786844775.086196,
+    "ast_hash": "3cf3851c789372798eadfdf1ea4c20bc",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1786416576.619143,
-    "ast_hash": "225c603fd512d9ccc78e75936fcb6f57",
+    "mtime": 1786844397.9073608,
+    "ast_hash": "bad63030089e31a47242c455c4eb1a0e",
     "semantic_hash": ""
   },
   "README.md": {
@@ -365,8 +365,8 @@
     "semantic_hash": ""
   },
   "api/fiscal-obligations.js": {
-    "mtime": 1785455482.271106,
-    "ast_hash": "e7cf0ee77346f80578f2e006ccb65c08",
+    "mtime": 1786804557.1197567,
+    "ast_hash": "9efb5929dcc2ab26e2867255d80dafbc",
     "semantic_hash": ""
   },
   "lib/taxCalc.js": {
@@ -385,13 +385,13 @@
     "semantic_hash": ""
   },
   "lib/victor-distribution.js": {
-    "mtime": 1786412404.971816,
-    "ast_hash": "af01df3684b6760de8e97bc02945e3eb",
+    "mtime": 1786581486.8401172,
+    "ast_hash": "b90345374489561bbbb8edb978db2093",
     "semantic_hash": ""
   },
   "src/pages/FiscalObligations.jsx": {
-    "mtime": 1785169853.3778725,
-    "ast_hash": "85a4743a3475f86e0ba164eae40eb689",
+    "mtime": 1786753995.5497575,
+    "ast_hash": "d8266e1d251277235cd575ac2679ad82",
     "semantic_hash": ""
   },
   "api/admin.js": {
@@ -400,8 +400,8 @@
     "semantic_hash": ""
   },
   "lib/fiscal-redistribution.js": {
-    "mtime": 1785455464.9173775,
-    "ast_hash": "d1e01f705fb32d4d664b7b1d08c7a2d5",
+    "mtime": 1786804196.0575216,
+    "ast_hash": "9b9e487e2f3bd908664e61e1143da848",
     "semantic_hash": ""
   },
   "lib/fiscal-unlink.js": {
@@ -445,8 +445,8 @@
     "semantic_hash": ""
   },
   "lib/victor-rateio.js": {
-    "mtime": 1786412721.2058823,
-    "ast_hash": "953dfc46dd1c1061e7e9b2029ada14e5",
+    "mtime": 1786835921.1166472,
+    "ast_hash": "3fac309a5317db724541ba89ce4b4a46",
     "semantic_hash": ""
   },
   "DIAGNOSTICO-CONTRATO-REGRA.md": {
@@ -455,8 +455,53 @@
     "semantic_hash": ""
   },
   "lib/victor-breakdown.js": {
-    "mtime": 1786416498.4250765,
-    "ast_hash": "25f6693e1333c28b1c2bdfe45121df3b",
+    "mtime": 1786753833.057107,
+    "ast_hash": "737b1be89cb34026d29458c4c69c1cfa",
+    "semantic_hash": ""
+  },
+  "lib/victor-momentos.js": {
+    "mtime": 1786500085.6054304,
+    "ast_hash": "6ed1450a0d2ab127098ce8107ab942e6",
+    "semantic_hash": ""
+  },
+  "lib/victor-recorte.js": {
+    "mtime": 1786753802.0084405,
+    "ast_hash": "153f591b70f65177b934d18315f89504",
+    "semantic_hash": ""
+  },
+  "lib/victor-tabulado.js": {
+    "mtime": 1786545221.9797451,
+    "ast_hash": "9aa7c3b89882ee2f25f20dfa7f286eb7",
+    "semantic_hash": ""
+  },
+  "lib/crypto-manager.js": {
+    "mtime": 1787058027.5890017,
+    "ast_hash": "7b85aa1dd19b4d5f4038df4d6e8bc086",
+    "semantic_hash": ""
+  },
+  "lib/crypto-manager.test.js": {
+    "mtime": 1787058044.1029937,
+    "ast_hash": "14eb4a7745a636e9c61bcf628cf4a5b2",
+    "semantic_hash": ""
+  },
+  "lib/fabricio-compensation.js": {
+    "mtime": 1786844318.669464,
+    "ast_hash": "e64e4f892674cf7bfc66ea08dbe86723",
+    "semantic_hash": ""
+  },
+  "lib/payment-source-tracker.js": {
+    "mtime": 1786839244.1326742,
+    "ast_hash": "d6dd283e7664071f6af3fe62963f9511",
+    "semantic_hash": ""
+  },
+  "sql/migration-nfse-etapa1.sql": {
+    "mtime": 1787058005.039474,
+    "ast_hash": "32322ad5d866d756f157684b07d616cf",
+    "semantic_hash": ""
+  },
+  "docs/diagnostico-cascata-impostos.md": {
+    "mtime": 1786754148.745449,
+    "ast_hash": "0a2128f9d083d9ec313446c454fcee2a",
     "semantic_hash": ""
   }
 }
