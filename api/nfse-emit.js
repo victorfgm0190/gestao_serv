@@ -4,6 +4,7 @@ import nfseCertManager from '../lib/nfse-cert-manager.js'
 import { montarDPS } from '../lib/nfse-xml-builder.js'
 import { NFSeSigner } from '../lib/nfse-signer.js'
 import { NFSeADNClient } from '../lib/nfse-adn-client.js'
+import { registrarEvento, EVENTOS } from '../lib/nfse-events.js'
 
 // Emissão de NFS-e a partir de uma fatura.
 //
@@ -238,6 +239,20 @@ export default async function handler(req, res) {
          ${dados.servico.municipioPrestacao}, ${emit.ambiente ?? 2},
          ${r.ok ? null : r.erro}, NOW())
       RETURNING id, status, nsu, protocol, nfse_number`
+
+    // A timeline começa aqui. Sem estes registros ela nasceria vazia e a tela
+    // mostraria "Nenhum evento" para uma nota que acabou de ser transmitida.
+    // O instante é distinto em cada um: o índice único é
+    // (emissão, tipo, instante), e três eventos no mesmo milissegundo fariam
+    // dois deles serem descartados pelo ON CONFLICT.
+    const t0 = Date.now()
+    await registrarEvento(sql, linha.id, EVENTOS.CRIADA,
+      { invoice_id: invoice_id, valor: valorServico }, { quando: new Date(t0) })
+    await registrarEvento(sql, linha.id, EVENTOS.ASSINADA,
+      { dps: proximo }, { quando: new Date(t0 + 1) })
+    await registrarEvento(sql, linha.id, r.ok ? EVENTOS.ENVIADA : EVENTOS.ERRO,
+      r.ok ? { nsu: r.nsu, protocolo: r.protocolo } : { erro: r.erro, http: r.status },
+      { quando: new Date(t0 + 2) })
 
     if (!r.ok) {
       return res.status(502).json({

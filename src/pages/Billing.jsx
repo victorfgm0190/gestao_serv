@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import CopyButton from '../components/CopyButton'
+import NFSeEmitirModal from '../components/NFSeEmitirModal'
 import { todayBR } from '../lib/dateUtils'
 import { PARAMS_PADRAO, parametrosFiscais, proLaboreDoMes } from '../../lib/taxCalc.js'
 
@@ -37,6 +38,9 @@ export default function Billing() {
   const [clients, setClients] = useState([])
   const [timeEntries, setTimeEntries] = useState([])
   const [loading, setLoading] = useState(true)
+  // NFS-e: a fatura escolhida abre o modal de emissão.
+  const [nfseInvoice, setNfseInvoice] = useState(null)
+  const [nfseOk, setNfseOk] = useState(null)
   const [showContractModal, setShowContractModal] = useState(false)
   const [showAgendaModal, setShowAgendaModal] = useState(false)
   const [selectedEntries, setSelectedEntries] = useState([])
@@ -545,11 +549,36 @@ export default function Billing() {
                   {inv.status==='recebido' && (
                     <button onClick={()=>estornarFatura(inv)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
                   )}
+                  {/* Contrato sem NF não emite nota — mesma regra que já tira a
+                      Minas da apuração e do rateio. O botão nem aparece. */}
+                  {inv.require_nf !== false && (
+                    <button onClick={()=>setNfseInvoice(inv)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">📄 NFS-e</button>
+                  )}
                   <button onClick={()=>deleteInvoice(inv.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {nfseInvoice && (
+        <NFSeEmitirModal
+          invoice={nfseInvoice}
+          onClose={() => setNfseInvoice(null)}
+          onSuccess={(data) => {
+            setNfseInvoice(null)
+            setNfseOk(data?.emissao?.nfse_number
+              ? `NFS-e ${data.emissao.nfse_number} emitida.`
+              : 'NFS-e transmitida.')
+          }}
+        />
+      )}
+
+      {nfseOk && (
+        <div className="fixed bottom-4 right-4 z-50 bg-green-900/90 border border-green-700 rounded-lg px-4 py-3 text-green-200 text-sm flex items-center gap-3">
+          ✅ {nfseOk}
+          <button onClick={() => setNfseOk(null)} className="text-xs underline hover:text-white">fechar</button>
         </div>
       )}
 

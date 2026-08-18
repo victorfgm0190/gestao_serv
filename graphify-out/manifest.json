@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
-    "mtime": 1785166988.2996616,
-    "ast_hash": "e0cab55041a84d515177084090d4f26f",
+    "mtime": 1787095576.5230863,
+    "ast_hash": "5fb208eb46876c338ff6316d9cd30374",
     "semantic_hash": ""
   },
   "src/pages/Clientes.jsx": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "api/nfse-emit.js": {
-    "mtime": 1787076508.0131402,
-    "ast_hash": "39b796ea71197fa083b9e5a9cd03a28b",
+    "mtime": 1787095472.8646157,
+    "ast_hash": "8fad375ff92aab85fa53ff34d1c664e8",
     "semantic_hash": ""
   },
   "lib/nfse-adn-client.js": {
@@ -565,8 +565,8 @@
     "semantic_hash": ""
   },
   "lib/nfse-signer.js": {
-    "mtime": 1787065755.0080261,
-    "ast_hash": "8e4aec5a71d5b7182706389ae74b8460",
+    "mtime": 1787095378.8212378,
+    "ast_hash": "bef4f82c15622d8ece0161209bd37acb",
     "semantic_hash": ""
   },
   "lib/nfse-xml-builder.js": {
@@ -610,8 +610,58 @@
     "semantic_hash": ""
   },
   "src/pages/Faturamento/NFSeEmitidas.jsx": {
-    "mtime": 1787078863.91726,
-    "ast_hash": "65c398a66d2954bf1e971057751231bb",
+    "mtime": 1787095623.6793354,
+    "ast_hash": "a4dbdbb0428f3906559aabd8ed219495",
+    "semantic_hash": ""
+  },
+  "api/nfse-cancel.js": {
+    "mtime": 1787095408.7311857,
+    "ast_hash": "981960f19b5cfa5c90b0a079392e6331",
+    "semantic_hash": ""
+  },
+  "api/nfse-events.js": {
+    "mtime": 1787095458.9801886,
+    "ast_hash": "9af072c6e2a22a890f2103fea9611fde",
+    "semantic_hash": ""
+  },
+  "api/nfse-webhook.js": {
+    "mtime": 1787095448.6128905,
+    "ast_hash": "019c748457703e74f7c375f0dd0976b3",
+    "semantic_hash": ""
+  },
+  "lib/nfse-cancel.test.js": {
+    "mtime": 1787095695.7145894,
+    "ast_hash": "142895441915b732abac5e7d78295c36",
+    "semantic_hash": ""
+  },
+  "lib/nfse-events.js": {
+    "mtime": 1787095342.7116685,
+    "ast_hash": "2c40548684750d5865746e6722214ef5",
+    "semantic_hash": ""
+  },
+  "lib/nfse-xml-cancellation-builder.js": {
+    "mtime": 1787095365.8599074,
+    "ast_hash": "993a79478b56ff56ee3d0cb2d0d091a8",
+    "semantic_hash": ""
+  },
+  "sql/migration-nfse-etapa6.sql": {
+    "mtime": 1787095289.9558072,
+    "ast_hash": "45514b04d56f20e93271e5bf1d19e81b",
+    "semantic_hash": ""
+  },
+  "src/components/NFSeCancelModal.jsx": {
+    "mtime": 1787095547.6855235,
+    "ast_hash": "2d64e2552a3a243b36f467a1f0592498",
+    "semantic_hash": ""
+  },
+  "src/components/NFSeEmitirModal.jsx": {
+    "mtime": 1787095524.1834857,
+    "ast_hash": "b777354e3b81d3756ede753fb8b0361c",
+    "semantic_hash": ""
+  },
+  "src/components/NFSeTimeline.jsx": {
+    "mtime": 1787095491.570131,
+    "ast_hash": "c89ef5fdd7b840389aedde0cf8bb189a",
     "semantic_hash": ""
   }
 }

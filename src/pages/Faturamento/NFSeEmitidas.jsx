@@ -1,5 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import NFSeTimeline from '../../components/NFSeTimeline'
+import NFSeCancelModal from '../../components/NFSeCancelModal'
+
+// Status em que o cancelamento faz sentido — a mesma lista de api/nfse-cancel.js.
+const CANCELAVEIS = new Set(['enviada', 'autorizada'])
 
 // Lista das NFS-e emitidas, com download do XML e do DANFSE.
 //
@@ -40,6 +45,9 @@ export default function NFSeEmitidas() {
   const [erro, setErro] = useState(null)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [aberta, setAberta] = useState(null)        // id da emissão expandida
+  const [eventos, setEventos] = useState({})        // id → eventos
+  const [cancelando, setCancelando] = useState(null)
   const limit = 20
 
   const buscar = useCallback(async () => {
@@ -66,6 +74,21 @@ export default function NFSeEmitidas() {
   // empresa ao entrar noutra que tem 1 página mostra uma lista vazia.
   useEffect(() => { setPage(1) }, [activeCompany.id])
   useEffect(() => { buscar() }, [buscar])
+
+  // Os eventos só são buscados quando a linha é aberta, e ficam em cache: uma
+  // lista de 20 notas faria 20 chamadas de histórico que ninguém pediu.
+  const alternar = async (id) => {
+    if (aberta === id) { setAberta(null); return }
+    setAberta(id)
+    if (eventos[id]) return
+    try {
+      const res = await fetch(`/api/nfse-events?emission_id=${id}`)
+      const data = await res.json()
+      if (res.ok) setEventos((e) => ({ ...e, [id]: data.events || [] }))
+    } catch (err) {
+      console.error('Erro ao buscar eventos:', err)
+    }
+  }
 
   const baixar = async (emissao, tipo) => {
     const rota = tipo === 'xml' ? 'nfse-download-xml' : 'nfse-download-danfse'
@@ -152,7 +175,10 @@ export default function NFSeEmitidas() {
                     'bg-gray-800 text-gray-400 border-gray-600', `❔ ${e.status || 'desconhecido'}`,
                   ]
                   return (
-                    <tr key={e.id} className="border-b border-gray-800 hover:bg-gray-800/60">
+                    // Fragment COM key: o elemento raiz de um map precisa de
+                    // chave, e a forma curta <> nao aceita uma.
+                    <Fragment key={e.id}>
+                    <tr className="border-b border-gray-800 hover:bg-gray-800/60">
                       <td className="px-4 py-3 font-mono text-blue-400">
                         {e.nfseNumber ? `#${e.nfseNumber}` : <span className="text-gray-500">s/ número</span>}
                         {e.ambiente === 2 && (
@@ -191,8 +217,36 @@ export default function NFSeEmitidas() {
                         >
                           {baixando === `${e.id}:pdf` ? '⏳' : '📥'} PDF
                         </button>
+                        <button
+                          onClick={() => alternar(e.id)}
+                          title="Histórico da nota"
+                          className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded transition-colors"
+                        >
+                          {aberta === e.id ? '▲' : '▼'} Histórico
+                        </button>
+                        {CANCELAVEIS.has(e.status) && (
+                          <button
+                            onClick={() => setCancelando(e)}
+                            className="px-3 py-1 bg-red-800 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                          >
+                            🚫 Cancelar
+                          </button>
+                        )}
                       </td>
                     </tr>
+                    {aberta === e.id && (
+                      <tr className="border-b border-gray-800 bg-gray-950/60">
+                        <td colSpan={6} className="px-6 py-4">
+                          <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">
+                            Histórico da nota
+                          </p>
+                          {eventos[e.id]
+                            ? <NFSeTimeline events={eventos[e.id]} />
+                            : <p className="text-gray-500 text-sm">Carregando…</p>}
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   )
                 })}
               </tbody>
@@ -224,6 +278,22 @@ export default function NFSeEmitidas() {
             </div>
           </div>
         </div>
+      )}
+
+      {cancelando && (
+        <NFSeCancelModal
+          emission={cancelando}
+          onClose={() => setCancelando(null)}
+          onSuccess={() => {
+            setCancelando(null)
+            // O histórico em cache descreve o estado ANTES do cancelamento;
+            // mantê-lo mostraria a nota como cancelada e a timeline sem o
+            // evento que a cancelou.
+            setEventos((e) => ({ ...e, [cancelando.id]: undefined }))
+            setAberta(null)
+            buscar()
+          }}
+        />
       )}
     </div>
   )
