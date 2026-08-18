@@ -95,8 +95,8 @@
     "semantic_hash": ""
   },
   "package.json": {
-    "mtime": 1787059461.6211116,
-    "ast_hash": "48fe40c5ee06afb7ea4404ecca5148e5",
+    "mtime": 1787062998.603986,
+    "ast_hash": "1236e96f197cb8031179db5351769ef7",
     "semantic_hash": ""
   },
   "postcss.config.js": {
@@ -115,8 +115,8 @@
     "semantic_hash": "d070709419d1c5e263b53059b20974e1"
   },
   "src/components/Layout.jsx": {
-    "mtime": 1784997591.2384934,
-    "ast_hash": "898806c3ad952ca5dbbaa67434ca09de",
+    "mtime": 1787063152.9053648,
+    "ast_hash": "62583980da2bd8b808e49a13e8ccbaf3",
     "semantic_hash": ""
   },
   "src/hooks/useNotifications.js": {
@@ -125,8 +125,8 @@
     "semantic_hash": "cf7a0b6b5c1795a4e2a729422f79036a"
   },
   "src/main.jsx": {
-    "mtime": 1784997587.0466094,
-    "ast_hash": "3246683a40ac866d25fc503987001cbe",
+    "mtime": 1787063149.4960294,
+    "ast_hash": "7468b0fbca9526f63e303735b0ec229e",
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
@@ -180,9 +180,9 @@
     "semantic_hash": "e8b7914a07137f80d6c7b39a91a10e79"
   },
   "vercel.json": {
-    "mtime": 1782313606.9338036,
-    "ast_hash": "45d19fe5a7382148e998f5051140d6c7",
-    "semantic_hash": "45d19fe5a7382148e998f5051140d6c7"
+    "mtime": 1787063154.663895,
+    "ast_hash": "b7a8993e74394d5d6b4884825e637d65",
+    "semantic_hash": ""
   },
   "vite.config.js": {
     "mtime": 1782237535.557944,
@@ -510,13 +510,43 @@
     "semantic_hash": ""
   },
   "lib/nfse-cert-manager.js": {
-    "mtime": 1787060057.927801,
-    "ast_hash": "efc488b9d85eb4eec2a4b3a1a11892da",
+    "mtime": 1787063025.8092175,
+    "ast_hash": "ddb2b0359e67fb2c5e8dc45b426f22b1",
     "semantic_hash": ""
   },
   "lib/nfse-cert-manager.test.js": {
     "mtime": 1787060128.3482535,
     "ast_hash": "680cbcc2e5e8a37bb3522f2e1bbdedf3",
+    "semantic_hash": ""
+  },
+  "api/cron-nfse-check.js": {
+    "mtime": 1787063079.5974066,
+    "ast_hash": "eba7a0b0acc2958057fc862ffec5e407",
+    "semantic_hash": ""
+  },
+  "api/nfse-certificate.js": {
+    "mtime": 1787063092.334823,
+    "ast_hash": "dc5a2aa5faa91e237a8ae41dd6dc39fa",
+    "semantic_hash": ""
+  },
+  "lib/cron-nfse-check.test.js": {
+    "mtime": 1787063193.7322297,
+    "ast_hash": "13bfc25db0989cd49313578f3d3a1ce8",
+    "semantic_hash": ""
+  },
+  "lib/email-sender.js": {
+    "mtime": 1787063052.0629816,
+    "ast_hash": "4585bd1a87c3dba6aad1d7bda2c7d550",
+    "semantic_hash": ""
+  },
+  "lib/nfse-cert-status.js": {
+    "mtime": 1787063012.5244527,
+    "ast_hash": "650dd7b975b59f046096e9d96e3d5a8f",
+    "semantic_hash": ""
+  },
+  "src/pages/Configuracao/NFSeSettings.jsx": {
+    "mtime": 1787063144.3662603,
+    "ast_hash": "2530c8bf7426367768313e11db663926",
     "semantic_hash": ""
   }
 }

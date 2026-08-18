@@ -16,6 +16,7 @@ import FiscalObligations from './pages/FiscalObligations'
 import Login from './pages/Login'
 import Users from './pages/Users'
 import Settings from './pages/Settings'
+import NFSeSettings from './pages/Configuracao/NFSeSettings'
 import { installFetchInterceptor, isLoggedIn } from './lib/session'
 
 // Anexa o token em toda chamada /api/ e trata 401 de forma central.
@@ -49,6 +50,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="billing" element={<Billing />} />
           <Route path="fiscal" element={<FiscalObligations />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="configuracao/nfse" element={<NFSeSettings />} />
           <Route path="users" element={<Users />} />
         </Route>
       </Routes>

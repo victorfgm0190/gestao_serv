@@ -149,6 +149,9 @@ export default function Layout() {
           <NavLink to="/settings" className={navClass}>
             <span>⚙️</span> Configurações
           </NavLink>
+          <NavLink to="/configuracao/nfse" className={navClass}>
+            <span>🔐</span> Certificado NFS-e
+          </NavLink>
           {/* Gestão de usuários: exclusiva do administrador master. */}
           {master && (
             <NavLink to="/users" className={navClass}>

@@ -6,6 +6,10 @@
     {
       "path": "/api/cron-sync",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron-nfse-check",
+      "schedule": "0 9 * * *"
     }
   ]
 }

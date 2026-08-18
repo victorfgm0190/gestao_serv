@@ -257,6 +257,50 @@
       "norm_label": "handler()"
     },
     {
+      "label": "cron-nfse-check.js",
+      "file_type": "code",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_cron_nfse_check",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "cron-nfse-check.js"
+    },
+    {
+      "label": "DESTINATARIOS",
+      "file_type": "code",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L16",
+      "_origin": "ast",
+      "id": "api_cron_nfse_check_destinatarios",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "destinatarios"
+    },
+    {
+      "label": "destinatarioDe()",
+      "file_type": "code",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L20",
+      "_origin": "ast",
+      "id": "api_cron_nfse_check_destinatariode",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "destinatariode()"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "api_cron_nfse_check_handler",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "handler()"
+    },
+    {
       "label": "cron-sync.js",
       "file_type": "code",
       "source_file": "api/cron-sync.js",
@@ -1049,6 +1093,28 @@
       "norm_label": "handler()"
     },
     {
+      "label": "nfse-certificate.js",
+      "file_type": "code",
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_nfse_certificate",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "nfse-certificate.js"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "api_nfse_certificate_handler",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "handler()"
+    },
+    {
       "label": "nfse-setup.js",
       "file_type": "code",
       "source_file": "api/nfse-setup.js",
@@ -1665,6 +1731,83 @@
       "norm_label": "mesdecaixaoriginal()"
     },
     {
+      "label": "cron-nfse-check.test.js",
+      "file_type": "code",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_cron_nfse_check_test",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "cron-nfse-check.test.js"
+    },
+    {
+      "label": "ok()",
+      "file_type": "code",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "lib_cron_nfse_check_test_ok",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "ok()"
+    },
+    {
+      "label": "chamar()",
+      "file_type": "code",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L24",
+      "_origin": "ast",
+      "id": "lib_cron_nfse_check_test_chamar",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "chamar()"
+    },
+    {
+      "label": "hoje",
+      "file_type": "code",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L35",
+      "_origin": "ast",
+      "id": "lib_cron_nfse_check_test_hoje",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "hoje"
+    },
+    {
+      "label": "emDias()",
+      "file_type": "code",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "lib_cron_nfse_check_test_emdias",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "emdias()"
+    },
+    {
+      "label": "recemVencido",
+      "file_type": "code",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L50",
+      "_origin": "ast",
+      "id": "lib_cron_nfse_check_test_recemvencido",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "recemvencido"
+    },
+    {
+      "label": "naoVigente",
+      "file_type": "code",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L53",
+      "_origin": "ast",
+      "id": "lib_cron_nfse_check_test_naovigente",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "naovigente"
+    },
+    {
       "label": "crypto-manager.js",
       "file_type": "code",
       "source_file": "lib/crypto-manager.js",
@@ -1940,6 +2083,83 @@
       "norm_label": "imperiumaccounts()"
     },
     {
+      "label": "email-sender.js",
+      "file_type": "code",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_email_sender",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "email-sender.js"
+    },
+    {
+      "label": "smtpConfigurado()",
+      "file_type": "code",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "lib_email_sender_smtpconfigurado",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "smtpconfigurado()"
+    },
+    {
+      "label": "transporter()",
+      "file_type": "code",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "lib_email_sender_transporter",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "transporter()"
+    },
+    {
+      "label": "botao()",
+      "file_type": "code",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L33",
+      "_origin": "ast",
+      "id": "lib_email_sender_botao",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "botao()"
+    },
+    {
+      "label": "montarAlerta()",
+      "file_type": "code",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L45",
+      "_origin": "ast",
+      "id": "lib_email_sender_montaralerta",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "montaralerta()"
+    },
+    {
+      "label": "sendCertificateAlert()",
+      "file_type": "code",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L91",
+      "_origin": "ast",
+      "id": "lib_email_sender_sendcertificatealert",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "sendcertificatealert()"
+    },
+    {
+      "label": "testSmtpConnection()",
+      "file_type": "code",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L130",
+      "_origin": "ast",
+      "id": "lib_email_sender_testsmtpconnection",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "testsmtpconnection()"
+    },
+    {
       "label": "fabricio-breakdown.js",
       "file_type": "code",
       "source_file": "lib/fabricio-breakdown.js",
@@ -2177,8 +2397,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "lib_fiscal_lines_ordem_kind",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "ordem_kind"
     },
     {
@@ -2452,96 +2672,96 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "nfse-cert-manager.js"
     },
     {
       "label": "NFSeCertManager",
       "file_type": "code",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L19",
+      "source_location": "L20",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_nfsecertmanager",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "nfsecertmanager"
     },
     {
       "label": ".saveCertificateToDB()",
       "file_type": "code",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L26",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_nfsecertmanager_savecertificatetodb",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": ".savecertificatetodb()"
     },
     {
       "label": ".getCertificateFromDB()",
       "file_type": "code",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L75",
+      "source_location": "L76",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_nfsecertmanager_getcertificatefromdb",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": ".getcertificatefromdb()"
     },
     {
       "label": ".getCertificateStatus()",
       "file_type": "code",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L110",
+      "source_location": "L111",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_nfsecertmanager_getcertificatestatus",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": ".getcertificatestatus()"
     },
     {
       "label": ".extractCertInfo()",
       "file_type": "code",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L126",
+      "source_location": "L127",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_nfsecertmanager_extractcertinfo",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": ".extractcertinfo()"
     },
     {
       "label": ".validateCertificate()",
       "file_type": "code",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L173",
+      "source_location": "L174",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_nfsecertmanager_validatecertificate",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": ".validatecertificate()"
     },
     {
       "label": ".deleteCertificate()",
       "file_type": "code",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L195",
+      "source_location": "L203",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_nfsecertmanager_deletecertificate",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": ".deletecertificate()"
     },
     {
       "label": "notFound()",
       "file_type": "code",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L202",
+      "source_location": "L210",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_notfound",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "notfound()"
     },
     {
@@ -2551,8 +2771,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "nfse-cert-manager.test.js"
     },
     {
@@ -2562,8 +2782,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_ok",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "ok()"
     },
     {
@@ -2573,8 +2793,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_keys",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "keys"
     },
     {
@@ -2584,8 +2804,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_cert",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "cert"
     },
     {
@@ -2595,8 +2815,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_attrs",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "attrs"
     },
     {
@@ -2606,8 +2826,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_p12der",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "p12der"
     },
     {
@@ -2617,8 +2837,8 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_pfxbuffer",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "pfxbuffer"
     },
     {
@@ -2628,9 +2848,31 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_info",
-      "community": 12,
-      "community_name": "CryptoManager",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "info"
+    },
+    {
+      "label": "nfse-cert-status.js",
+      "file_type": "code",
+      "source_file": "lib/nfse-cert-status.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_nfse_cert_status",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "nfse-cert-status.js"
+    },
+    {
+      "label": "statusDoCertificado()",
+      "file_type": "code",
+      "source_file": "lib/nfse-cert-status.js",
+      "source_location": "L20",
+      "_origin": "ast",
+      "id": "lib_nfse_cert_status_statusdocertificado",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
+      "norm_label": "statusdocertificado()"
     },
     {
       "label": "payment-source-tracker.js",
@@ -2837,8 +3079,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_taxcalc",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "taxcalc.js"
     },
     {
@@ -2848,8 +3090,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "lib_taxcalc_simples_iii",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "simples_iii"
     },
     {
@@ -2859,8 +3101,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "lib_taxcalc_simples_v",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "simples_v"
     },
     {
@@ -2870,8 +3112,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "lib_taxcalc_r2",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "r2()"
     },
     {
@@ -2881,8 +3123,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "lib_taxcalc_params_padrao",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "params_padrao"
     },
     {
@@ -2892,8 +3134,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "lib_taxcalc_parametrosfiscais",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "parametrosfiscais()"
     },
     {
@@ -2903,8 +3145,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "lib_taxcalc_prolaboredomes",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "prolaboredomes()"
     },
     {
@@ -2914,8 +3156,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "lib_taxcalc_faixafor",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "faixafor()"
     },
     {
@@ -2936,8 +3178,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "lib_taxcalc_calcinss",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "calcinss()"
     },
     {
@@ -2947,8 +3189,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "lib_taxcalc_aliquotaefetiva",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "aliquotaefetiva()"
     },
     {
@@ -2958,8 +3200,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "lib_taxcalc_calcularimpostos",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "calcularimpostos()"
     },
     {
@@ -2991,8 +3233,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_victor_breakdown",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "victor-breakdown.js"
     },
     {
@@ -3002,8 +3244,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "lib_victor_breakdown_num",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "num()"
     },
     {
@@ -3013,8 +3255,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "lib_victor_breakdown_iso",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "iso()"
     },
     {
@@ -3024,8 +3266,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "lib_victor_breakdown_categorias",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "categorias"
     },
     {
@@ -3035,8 +3277,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "lib_victor_breakdown_categoria_label",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "categoria_label"
     },
     {
@@ -3046,8 +3288,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "lib_victor_breakdown_breakdown_kind",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "breakdown_kind"
     },
     {
@@ -3057,8 +3299,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "lib_victor_breakdown_kind_categoria",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "kind_categoria"
     },
     {
@@ -3068,8 +3310,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "lib_victor_breakdown_quebrarpago",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "quebrarpago()"
     },
     {
@@ -3079,8 +3321,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "lib_victor_breakdown_vazia",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "vazia()"
     },
     {
@@ -3090,8 +3332,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "lib_victor_breakdown_fechar",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "fechar()"
     },
     {
@@ -3101,8 +3343,8 @@
       "source_location": "L106",
       "_origin": "ast",
       "id": "lib_victor_breakdown_montarbreakdown",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "montarbreakdown()"
     },
     {
@@ -3211,8 +3453,8 @@
       "source_location": "L145",
       "_origin": "ast",
       "id": "lib_victor_distribution_parsenotes",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "parsenotes()"
     },
     {
@@ -3222,8 +3464,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_victor_momentos",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "victor-momentos.js"
     },
     {
@@ -3233,8 +3475,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "lib_victor_momentos_num",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "num()"
     },
     {
@@ -3244,8 +3486,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "lib_victor_momentos_comgrossup",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "comgrossup()"
     },
     {
@@ -3255,8 +3497,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "lib_victor_momentos_buscarfaturamentoprevisto",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "buscarfaturamentoprevisto()"
     },
     {
@@ -3266,8 +3508,8 @@
       "source_location": "L198",
       "_origin": "ast",
       "id": "lib_victor_momentos_momentoprevio",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "momentoprevio()"
     },
     {
@@ -3277,8 +3519,8 @@
       "source_location": "L266",
       "_origin": "ast",
       "id": "lib_victor_momentos_momentosdalinha",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "momentosdalinha()"
     },
     {
@@ -3486,8 +3728,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_victor_recorte",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "victor-recorte.js"
     },
     {
@@ -3497,8 +3739,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "lib_victor_recorte_carregarrecorte",
-      "community": 8,
-      "community_name": "valorDevido",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "carregarrecorte()"
     },
     {
@@ -3640,8 +3882,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "package",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 25,
+      "community_name": "package.json",
       "norm_label": "package.json"
     },
     {
@@ -3651,8 +3893,8 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "package_name",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 25,
+      "community_name": "package.json",
       "norm_label": "name"
     },
     {
@@ -3662,8 +3904,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "package_private",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 25,
+      "community_name": "package.json",
       "norm_label": "private"
     },
     {
@@ -3673,8 +3915,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "package_version",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 25,
+      "community_name": "package.json",
       "norm_label": "version"
     },
     {
@@ -3684,8 +3926,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "package_type",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 25,
+      "community_name": "package.json",
       "norm_label": "type"
     },
     {
@@ -3695,8 +3937,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "package_scripts",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 26,
+      "community_name": "scripts",
       "norm_label": "scripts"
     },
     {
@@ -3706,8 +3948,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "package_scripts_dev",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 26,
+      "community_name": "scripts",
       "norm_label": "dev"
     },
     {
@@ -3717,8 +3959,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "package_scripts_build",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 26,
+      "community_name": "scripts",
       "norm_label": "build"
     },
     {
@@ -3728,8 +3970,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "package_scripts_lint",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 26,
+      "community_name": "scripts",
       "norm_label": "lint"
     },
     {
@@ -3739,8 +3981,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "package_scripts_preview",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 26,
+      "community_name": "scripts",
       "norm_label": "preview"
     },
     {
@@ -3750,8 +3992,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "package_dependencies",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "dependencies"
     },
     {
@@ -3761,8 +4003,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "package_dependencies_neondatabase_serverless",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "@neondatabase/serverless"
     },
     {
@@ -3772,8 +4014,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "neondatabase_serverless",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "@neondatabase/serverless"
     },
     {
@@ -3783,8 +4025,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "package_dependencies_dotenv",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "dotenv"
     },
     {
@@ -3794,8 +4036,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "dotenv",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "dotenv"
     },
     {
@@ -3805,8 +4047,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "package_dependencies_exceljs",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 27,
+      "community_name": "exceljs",
       "norm_label": "exceljs"
     },
     {
@@ -3816,8 +4058,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "exceljs",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 27,
+      "community_name": "exceljs",
       "norm_label": "exceljs"
     },
     {
@@ -3827,8 +4069,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "package_dependencies_imap_simple",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "imap-simple"
     },
     {
@@ -3838,8 +4080,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "imap_simple",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "imap-simple"
     },
     {
@@ -3849,8 +4091,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "package_dependencies_mailparser",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "mailparser"
     },
     {
@@ -3860,8 +4102,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "mailparser",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "mailparser"
     },
     {
@@ -3871,8 +4113,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "package_dependencies_node_forge",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 28,
+      "community_name": "node-forge",
       "norm_label": "node-forge"
     },
     {
@@ -3882,103 +4124,125 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "node_forge",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 28,
+      "community_name": "node-forge",
       "norm_label": "node-forge"
+    },
+    {
+      "label": "nodemailer",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "package_dependencies_nodemailer",
+      "community": 20,
+      "community_name": "dependencies",
+      "norm_label": "nodemailer"
+    },
+    {
+      "label": "nodemailer",
+      "file_type": "concept",
+      "source_file": "package.json",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "nodemailer",
+      "community": 20,
+      "community_name": "dependencies",
+      "norm_label": "nodemailer"
     },
     {
       "label": "react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L19",
+      "source_location": "L20",
       "_origin": "ast",
       "id": "package_dependencies_react",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "react"
     },
     {
       "label": "react",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L19",
+      "source_location": "L20",
       "_origin": "ast",
       "id": "react",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "react"
     },
     {
       "label": "react-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L21",
       "_origin": "ast",
       "id": "package_dependencies_react_dom",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "react-dom"
     },
     {
       "label": "react-dom",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L21",
       "_origin": "ast",
       "id": "react_dom",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 29,
+      "community_name": "react-dom",
       "norm_label": "react-dom"
     },
     {
       "label": "react-router-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "package_dependencies_react_router_dom",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 30,
+      "community_name": "react-router-dom",
       "norm_label": "react-router-dom"
     },
     {
       "label": "react-router-dom",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "react_router_dom",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 30,
+      "community_name": "react-router-dom",
       "norm_label": "react-router-dom"
     },
     {
       "label": "xlsx",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L22",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "package_dependencies_xlsx",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "xlsx"
     },
     {
       "label": "xlsx",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L22",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "xlsx",
-      "community": 2,
-      "community_name": "devDependencies",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "xlsx"
     },
     {
       "label": "devDependencies",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "package_devdependencies",
       "community": 2,
@@ -3989,7 +4253,7 @@
       "label": "@types/react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "package_devdependencies_types_react",
       "community": 2,
@@ -4000,7 +4264,7 @@
       "label": "@types/react",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "types_react",
       "community": 2,
@@ -4011,7 +4275,7 @@
       "label": "@types/react-dom",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "package_devdependencies_types_react_dom",
       "community": 2,
@@ -4022,7 +4286,7 @@
       "label": "@types/react-dom",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "types_react_dom",
       "community": 2,
@@ -4033,7 +4297,7 @@
       "label": "@vitejs/plugin-react",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "package_devdependencies_vitejs_plugin_react",
       "community": 2,
@@ -4044,7 +4308,7 @@
       "label": "@vitejs/plugin-react",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "vitejs_plugin_react",
       "community": 2,
@@ -4055,7 +4319,7 @@
       "label": "autoprefixer",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L29",
       "_origin": "ast",
       "id": "package_devdependencies_autoprefixer",
       "community": 2,
@@ -4066,7 +4330,7 @@
       "label": "autoprefixer",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L29",
       "_origin": "ast",
       "id": "autoprefixer",
       "community": 2,
@@ -4077,7 +4341,7 @@
       "label": "oxlint",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "package_devdependencies_oxlint",
       "community": 2,
@@ -4088,7 +4352,7 @@
       "label": "oxlint",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "oxlint",
       "community": 2,
@@ -4099,7 +4363,7 @@
       "label": "postcss",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "_origin": "ast",
       "id": "package_devdependencies_postcss",
       "community": 2,
@@ -4110,7 +4374,7 @@
       "label": "postcss",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "_origin": "ast",
       "id": "postcss",
       "community": 2,
@@ -4121,7 +4385,7 @@
       "label": "tailwindcss",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "package_devdependencies_tailwindcss",
       "community": 2,
@@ -4132,7 +4396,7 @@
       "label": "tailwindcss",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "tailwindcss",
       "community": 2,
@@ -4143,7 +4407,7 @@
       "label": "vite",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "_origin": "ast",
       "id": "package_devdependencies_vite",
       "community": 2,
@@ -4154,7 +4418,7 @@
       "label": "vite",
       "file_type": "concept",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "_origin": "ast",
       "id": "vite",
       "community": 2,
@@ -4201,8 +4465,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_copybutton",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "copybutton.jsx"
     },
     {
@@ -4212,8 +4476,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_copybutton_copybutton",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "copybutton()"
     },
     {
@@ -4267,8 +4531,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_memoriacalculo",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "memoriacalculo.jsx"
     },
     {
@@ -4278,8 +4542,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_components_memoriacalculo_fmt",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "fmt()"
     },
     {
@@ -4289,8 +4553,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_memoriacalculo_passo",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "passo()"
     },
     {
@@ -4300,8 +4564,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_components_memoriacalculo_memoriacalculo",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "memoriacalculo()"
     },
     {
@@ -4333,8 +4597,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_dateutils",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "dateutils.js"
     },
     {
@@ -4344,8 +4608,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_lib_dateutils_todaybr",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "todaybr()"
     },
     {
@@ -4355,8 +4619,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_fiscallabels",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "fiscallabels.js"
     },
     {
@@ -4366,8 +4630,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_lib_fiscallabels_kind_label",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "kind_label"
     },
     {
@@ -4484,7 +4748,7 @@
       "label": "Protegido()",
       "file_type": "code",
       "source_file": "src/main.jsx",
-      "source_location": "L27",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "src_main_protegido",
       "community": 0,
@@ -4498,8 +4762,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_billing",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "billing.jsx"
     },
     {
@@ -4509,8 +4773,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_pages_billing_months",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "months"
     },
     {
@@ -4520,8 +4784,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_pages_billing_splitpct",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "splitpct()"
     },
     {
@@ -4531,8 +4795,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_pages_billing_fetchfiscalparams",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "fetchfiscalparams()"
     },
     {
@@ -4542,8 +4806,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_pages_billing_split_mode_label",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "split_mode_label"
     },
     {
@@ -4553,8 +4817,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_pages_billing_billing",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "billing()"
     },
     {
@@ -4600,6 +4864,61 @@
       "community": 0,
       "community_name": "main.jsx",
       "norm_label": "clientes()"
+    },
+    {
+      "label": "NFSeSettings.jsx",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfsesettings",
+      "community": 0,
+      "community_name": "main.jsx",
+      "norm_label": "nfsesettings.jsx"
+    },
+    {
+      "label": "bufferParaBase64()",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfsesettings_bufferparabase64",
+      "community": 0,
+      "community_name": "main.jsx",
+      "norm_label": "bufferparabase64()"
+    },
+    {
+      "label": "dataBR()",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfsesettings_databr",
+      "community": 0,
+      "community_name": "main.jsx",
+      "norm_label": "databr()"
+    },
+    {
+      "label": "Selo()",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L33",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfsesettings_selo",
+      "community": 0,
+      "community_name": "main.jsx",
+      "norm_label": "selo()"
+    },
+    {
+      "label": "NFSeSettings()",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L51",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfsesettings_nfsesettings",
+      "community": 0,
+      "community_name": "main.jsx",
+      "norm_label": "nfsesettings()"
     },
     {
       "label": "Contracts.jsx",
@@ -4916,8 +5235,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_pages_financial_receive_victor_categories",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "receive_victor_categories"
     },
     {
@@ -4938,8 +5257,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_pages_financial_receive_inputs",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "receive_inputs"
     },
     {
@@ -5103,8 +5422,8 @@
       "source_location": "L169",
       "_origin": "ast",
       "id": "src_pages_financial_mododacategoria",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "mododacategoria()"
     },
     {
@@ -5125,8 +5444,8 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "src_pages_financial_cents",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "cents()"
     },
     {
@@ -5136,8 +5455,8 @@
       "source_location": "L208",
       "_origin": "ast",
       "id": "src_pages_financial_alocarcascatadist",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "alocarcascatadist()"
     },
     {
@@ -5169,8 +5488,8 @@
       "source_location": "L260",
       "_origin": "ast",
       "id": "src_pages_financial_receivecategorytotal",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "receivecategorytotal()"
     },
     {
@@ -5224,8 +5543,8 @@
       "source_location": "L292",
       "_origin": "ast",
       "id": "src_pages_financial_parsenotestoamounts",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "parsenotestoamounts()"
     },
     {
@@ -5235,8 +5554,8 @@
       "source_location": "L306",
       "_origin": "ast",
       "id": "src_pages_financial_proportionalcats",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "proportionalcats()"
     },
     {
@@ -5246,8 +5565,8 @@
       "source_location": "L313",
       "_origin": "ast",
       "id": "src_pages_financial_financial",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 24,
+      "community_name": "Financial",
       "norm_label": "financial()"
     },
     {
@@ -5279,8 +5598,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "fiscalobligations.jsx"
     },
     {
@@ -5290,8 +5609,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_months",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "months"
     },
     {
@@ -5301,8 +5620,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_kind_icon",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "kind_icon"
     },
     {
@@ -5312,8 +5631,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_status_style",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "status_style"
     },
     {
@@ -5323,8 +5642,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_fmt",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "fmt()"
     },
     {
@@ -5334,8 +5653,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_pct",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "pct()"
     },
     {
@@ -5345,8 +5664,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_databr",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "databr()"
     },
     {
@@ -5356,8 +5675,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_etapa",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "etapa()"
     },
     {
@@ -5367,8 +5686,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_fiscalobligations",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "fiscalobligations()"
     },
     {
@@ -5378,8 +5697,8 @@
       "source_location": "L669",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_tudoquitadosemguia",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "tudoquitadosemguia()"
     },
     {
@@ -5389,8 +5708,8 @@
       "source_location": "L675",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_campo",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "campo()"
     },
     {
@@ -5400,8 +5719,8 @@
       "source_location": "L684",
       "_origin": "ast",
       "id": "src_pages_fiscalobligations_modal",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 16,
+      "community_name": "FiscalObligations.jsx",
       "norm_label": "modal()"
     },
     {
@@ -5433,8 +5752,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_settings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "settings.jsx"
     },
     {
@@ -5444,8 +5763,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_settings_regimes",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "regimes"
     },
     {
@@ -5455,8 +5774,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_pages_settings_empty",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "empty"
     },
     {
@@ -5466,8 +5785,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_pages_settings_settings",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 23,
+      "community_name": "taxCalc.js",
       "norm_label": "settings()"
     },
     {
@@ -5477,8 +5796,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_timeentries",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "timeentries.jsx"
     },
     {
@@ -5488,8 +5807,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_pages_timeentries_splitpct",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "splitpct()"
     },
     {
@@ -5499,8 +5818,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_pages_timeentries_decimaltohhmm",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "decimaltohhmm()"
     },
     {
@@ -5510,8 +5829,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_pages_timeentries_timeentries",
-      "community": 0,
-      "community_name": "main.jsx",
+      "community": 22,
+      "community_name": "Billing.jsx",
       "norm_label": "timeentries()"
     },
     {
@@ -8036,6 +8355,18 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfsesettings",
+      "target": "ref_react",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/pages/Contracts.jsx",
       "source_location": "L1",
       "weight": 1.0,
@@ -8523,6 +8854,183 @@
       "_origin": "ast",
       "source": "api_contracts_handler",
       "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check",
+      "target": "api_cron_nfse_check_destinatariode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check",
+      "target": "api_cron_nfse_check_destinatarios",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L23",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check",
+      "target": "api_cron_nfse_check_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check",
+      "target": "lib_email_sender",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check",
+      "target": "lib_email_sender_sendcertificatealert",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check",
+      "target": "lib_email_sender_smtpconfigurado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check",
+      "target": "lib_nfse_cert_status",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check",
+      "target": "lib_nfse_cert_status_statusdocertificado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "api_cron_nfse_check",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L108",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check_handler",
+      "target": "api_cron_nfse_check_destinatariode",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L109",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check_handler",
+      "target": "lib_email_sender_sendcertificatealert"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L130",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check_handler",
+      "target": "lib_email_sender_smtpconfigurado"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/cron-nfse-check.js",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_cron_nfse_check_handler",
+      "target": "lib_nfse_cert_status_statusdocertificado"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "api_cron_nfse_check_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test_chamar",
+      "target": "api_cron_nfse_check_handler",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -11840,6 +12348,101 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_certificate",
+      "target": "api_nfse_certificate_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_certificate",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_certificate",
+      "target": "lib_auth_requireauth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_certificate",
+      "target": "lib_nfse_cert_manager",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_certificate",
+      "target": "lib_nfse_cert_status",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_certificate",
+      "target": "lib_nfse_cert_status_statusdocertificado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_certificate_handler",
+      "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-certificate.js",
+      "source_location": "L43",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_certificate_handler",
+      "target": "lib_nfse_cert_status_statusdocertificado"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "api/nfse-setup.js",
       "source_location": "L16",
       "weight": 1.0,
@@ -14498,6 +15101,96 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L24",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "lib_cron_nfse_check_test_chamar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "lib_cron_nfse_check_test_emdias",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L35",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "lib_cron_nfse_check_test_hoje",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L53",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "lib_cron_nfse_check_test_naovigente",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "lib_cron_nfse_check_test_ok",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L50",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "lib_cron_nfse_check_test_recemvencido",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "lib_nfse_cert_status",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/cron-nfse-check.test.js",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_cron_nfse_check_test",
+      "target": "lib_nfse_cert_status_statusdocertificado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "lib/crypto-manager.js",
       "source_location": "L13",
       "weight": 1.0,
@@ -14796,6 +15489,180 @@
       "source": "lib_email_ingest_ingestaccounts",
       "target": "lib_email_ingest_fetchemailsfromaccount",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender",
+      "target": "lib_email_sender_botao",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L45",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender",
+      "target": "lib_email_sender_montaralerta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L91",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender",
+      "target": "lib_email_sender_sendcertificatealert",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender",
+      "target": "lib_email_sender_smtpconfigurado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L130",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender",
+      "target": "lib_email_sender_testsmtpconnection",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender",
+      "target": "lib_email_sender_transporter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender",
+      "target": "lib_nfse_cert_status",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender",
+      "target": "lib_nfse_cert_status_statusdocertificado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L106",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender_sendcertificatealert",
+      "target": "lib_email_sender_smtpconfigurado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L131",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender_testsmtpconnection",
+      "target": "lib_email_sender_smtpconfigurado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L114",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender_sendcertificatealert",
+      "target": "lib_email_sender_transporter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L135",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender_testsmtpconnection",
+      "target": "lib_email_sender_transporter",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L56",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender_montaralerta",
+      "target": "lib_email_sender_botao",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/email-sender.js",
+      "source_location": "L96",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender_sendcertificatealert",
+      "target": "lib_email_sender_montaralerta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/email-sender.js",
+      "source_location": "L94",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_email_sender_sendcertificatealert",
+      "target": "lib_nfse_cert_status_statusdocertificado"
     },
     {
       "relation": "contains",
@@ -15842,7 +16709,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager",
@@ -15853,11 +16720,35 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L202",
+      "source_location": "L210",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager",
       "target": "lib_nfse_cert_manager_notfound",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-cert-manager.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_cert_manager",
+      "target": "lib_nfse_cert_status",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-cert-manager.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_cert_manager",
+      "target": "lib_nfse_cert_status_statusdocertificado",
       "confidence_score": 1.0
     },
     {
@@ -15876,7 +16767,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L195",
+      "source_location": "L203",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager",
@@ -15887,7 +16778,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L126",
+      "source_location": "L127",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager",
@@ -15898,7 +16789,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L75",
+      "source_location": "L76",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager",
@@ -15909,7 +16800,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L110",
+      "source_location": "L111",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager",
@@ -15920,7 +16811,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L26",
+      "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager",
@@ -15931,7 +16822,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L173",
+      "source_location": "L174",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager",
@@ -15943,7 +16834,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L28",
+      "source_location": "L29",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager_savecertificatetodb",
@@ -15955,7 +16846,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L83",
+      "source_location": "L84",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager_getcertificatefromdb",
@@ -15967,7 +16858,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L174",
+      "source_location": "L175",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager_validatecertificate",
@@ -15979,12 +16870,24 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-cert-manager.js",
-      "source_location": "L175",
+      "source_location": "L176",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_nfsecertmanager_validatecertificate",
       "target": "lib_nfse_cert_manager_notfound",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "lib/nfse-cert-manager.js",
+      "source_location": "L180",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_cert_manager_nfsecertmanager_validatecertificate",
+      "target": "lib_nfse_cert_status_statusdocertificado"
     },
     {
       "relation": "contains",
@@ -16061,6 +16964,17 @@
       "_origin": "ast",
       "source": "lib_nfse_cert_manager_test",
       "target": "lib_nfse_cert_manager_test_pfxbuffer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-cert-status.js",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_cert_status",
+      "target": "lib_nfse_cert_status_statusdocertificado",
       "confidence_score": 1.0
     },
     {
@@ -18385,7 +19299,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L24",
+      "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package",
@@ -18565,7 +19479,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_react",
+      "target": "package_dependencies_nodemailer",
       "confidence_score": 1.0
     },
     {
@@ -18576,7 +19490,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_react_dom",
+      "target": "package_dependencies_react",
       "confidence_score": 1.0
     },
     {
@@ -18587,7 +19501,7 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
-      "target": "package_dependencies_react_router_dom",
+      "target": "package_dependencies_react_dom",
       "confidence_score": 1.0
     },
     {
@@ -18595,6 +19509,17 @@
       "confidence": "EXTRACTED",
       "source_file": "package.json",
       "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "package_dependencies",
+      "target": "package_dependencies_react_router_dom",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_dependencies",
@@ -18681,6 +19606,18 @@
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
+      "source": "package_dependencies_nodemailer",
+      "target": "nodemailer",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L20",
+      "weight": 1.0,
+      "context": "import",
+      "_origin": "ast",
       "source": "package_dependencies_react",
       "target": "react",
       "confidence_score": 1.0
@@ -18689,7 +19626,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18701,7 +19638,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18713,7 +19650,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L22",
+      "source_location": "L23",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18725,7 +19662,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L29",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -18736,7 +19673,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -18747,7 +19684,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -18758,7 +19695,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -18769,7 +19706,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -18780,7 +19717,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -18791,7 +19728,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -18802,7 +19739,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L28",
       "weight": 1.0,
       "_origin": "ast",
       "source": "package_devdependencies",
@@ -18813,7 +19750,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L25",
+      "source_location": "L26",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18825,7 +19762,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L26",
+      "source_location": "L27",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18837,7 +19774,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L27",
+      "source_location": "L28",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18849,7 +19786,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L28",
+      "source_location": "L29",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18861,7 +19798,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18873,7 +19810,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L30",
+      "source_location": "L31",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18885,7 +19822,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L31",
+      "source_location": "L32",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -18897,7 +19834,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0,
       "context": "import",
       "_origin": "ast",
@@ -19563,7 +20500,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -19683,7 +20620,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -19695,7 +20632,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main_protegido",
@@ -19731,7 +20668,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -19742,7 +20679,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
-      "source_location": "L27",
+      "source_location": "L28",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_main",
@@ -19795,6 +20732,30 @@
       "_origin": "ast",
       "source": "src_main",
       "target": "src_pages_clientes_clientes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_main",
+      "target": "src_pages_configuracao_nfsesettings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/main.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_main",
+      "target": "src_pages_configuracao_nfsesettings_nfsesettings",
       "confidence_score": 1.0
     },
     {
@@ -20171,6 +21132,74 @@
       "_origin": "ast",
       "source": "src_pages_clientes",
       "target": "src_pages_clientes_emptyform",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfsesettings",
+      "target": "src_pages_configuracao_nfsesettings_bufferparabase64",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L31",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfsesettings",
+      "target": "src_pages_configuracao_nfsesettings_databr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfsesettings",
+      "target": "src_pages_configuracao_nfsesettings_nfsesettings",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfsesettings",
+      "target": "src_pages_configuracao_nfsesettings_selo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L90",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfsesettings_nfsesettings",
+      "target": "src_pages_configuracao_nfsesettings_bufferparabase64",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeSettings.jsx",
+      "source_location": "L175",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfsesettings_nfsesettings",
+      "target": "src_pages_configuracao_nfsesettings_databr",
       "confidence_score": 1.0
     },
     {
@@ -23408,5 +24437,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "5ec86aefee0ef6ef4fd0511a646f61c3faf540d6"
+  "built_at_commit": "1603cbbb83687fd33f8d55b8a54938dff87d037c"
 }
