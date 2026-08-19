@@ -120,18 +120,33 @@ export default async function handler(req, res) {
       inv.competencia || `${inv.year}-${String(inv.month || 1).padStart(2, '0')}-01`
     const aliquota = aliquota_iss ?? inv.aliquota_iss ?? emit.aliquota_iss ?? 0
 
-    // ⚠️ Contador MONOTÔNICO, não MAX(dps_number). O número da DPS é consumido
-    // no SEFIN: apagar a linha aqui não o devolve, e recontar do zero faz a
-    // próxima emissão bater em E0014 ("série + número + município + CNPJ já
-    // existe"). O UPDATE ... RETURNING é atômico, então duas emissões
-    // simultâneas nunca recebem o mesmo número.
-    const [{ proximo }] = await sql`
-      UPDATE nfse_emitter_settings SET ultimo_dps = ultimo_dps + 1
-      WHERE company_id = ${inv.company_id}
-      RETURNING ultimo_dps AS proximo`
+    // ⚠️ O ambiente precisa ser resolvido ANTES de numerar: o contador é por
+    // ambiente, e pegar o número do lado errado empurra a numeração fiscal de
+    // produção a cada teste em homologação.
+    // NFSE_AMBIENTE força o destino sem mexer no cadastro; só 'producao'
+    // explícito manda para valer.
+    const ambienteNome = process.env.NFSE_AMBIENTE
+      ? (process.env.NFSE_AMBIENTE === 'producao' ? 'producao' : 'homologacao')
+      : ((emit.ambiente ?? 2) === 1 ? 'producao' : 'homologacao')
+    const ehProducao = ambienteNome === 'producao'
+
+    // Contador MONOTÔNICO e POR AMBIENTE. O número da DPS é consumido no
+    // fisco: apagar a linha aqui não o devolve, e recontar do zero bate em
+    // E0014 ("série + número + município + CNPJ já existe"). O
+    // UPDATE ... RETURNING é atômico, então duas emissões simultâneas nunca
+    // recebem o mesmo número.
+    const [{ proximo }] = ehProducao
+      ? await sql`
+          UPDATE nfse_emitter_settings SET ultimo_dps = ultimo_dps + 1
+          WHERE company_id = ${inv.company_id}
+          RETURNING ultimo_dps AS proximo`
+      : await sql`
+          UPDATE nfse_emitter_settings SET ultimo_dps_homolog = ultimo_dps_homolog + 1
+          WHERE company_id = ${inv.company_id}
+          RETURNING ultimo_dps_homolog AS proximo`
 
     const dados = {
-      ambiente: emit.ambiente ?? 2,
+      ambiente: ehProducao ? 1 : 2,
       serie: emit.serie || '00001',
       nDPS: proximo,
       dataEmissao: inv.emission_date || new Date(),
@@ -202,9 +217,6 @@ export default async function handler(req, res) {
     // NFSE_AMBIENTE força o destino sem mexer no cadastro — válvula para testar
     // em homologação mesmo com o emitente já marcado como produção. Só
     // 'producao' explícito manda para valer; qualquer outro valor é homologação.
-    const ambienteNome = process.env.NFSE_AMBIENTE
-      ? (process.env.NFSE_AMBIENTE === 'producao' ? 'producao' : 'homologacao')
-      : ((emit.ambiente ?? 2) === 1 ? 'producao' : 'homologacao')
     const adn = new NFSeADNClient({
       ambiente: ambienteNome, pfxBuffer: cert.pfxBuffer, senhaPfx: cert.password,
     })
@@ -227,7 +239,7 @@ export default async function handler(req, res) {
          ${xmlAssinado}, ${r.nfseXml ?? null}, ${r.chaveAcesso ?? null},
          ${JSON.stringify(r.resposta ?? {})},
          ${new Date(competencia)}, ${valorServico},
-         ${dados.servico.municipioPrestacao}, ${emit.ambiente ?? 2},
+         ${dados.servico.municipioPrestacao}, ${ehProducao ? 1 : 2},
          ${r.ok ? null : r.erro}, NOW(), ${r.chaveAcesso ? new Date() : null})
       RETURNING id, status, nsu, protocol, nfse_number, chave_acesso`
 

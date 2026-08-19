@@ -6280,8 +6280,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "package_dependencies_dotenv",
-      "community": 20,
-      "community_name": "dependencies",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "dotenv"
     },
     {
@@ -6291,8 +6291,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "dotenv",
-      "community": 20,
-      "community_name": "dependencies",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "dotenv"
     },
     {
@@ -6324,8 +6324,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "package_dependencies_imap_simple",
-      "community": 67,
-      "community_name": "Clientes.jsx",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "imap-simple"
     },
     {
@@ -6335,8 +6335,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "imap_simple",
-      "community": 67,
-      "community_name": "Clientes.jsx",
+      "community": 20,
+      "community_name": "dependencies",
       "norm_label": "imap-simple"
     },
     {
@@ -16028,7 +16028,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "api/nfse-emit.js",
-      "source_location": "L211",
+      "source_location": "L223",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_nfse_emit_handler",
@@ -16040,7 +16040,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "api/nfse-emit.js",
-      "source_location": "L240",
+      "source_location": "L252",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_nfse_emit_handler",
@@ -16064,7 +16064,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "api/nfse-emit.js",
-      "source_location": "L173",
+      "source_location": "L188",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_nfse_emit_handler",
@@ -32386,5 +32386,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "57df01670e12ad32f98e84d56f88086001714c47"
+  "built_at_commit": "25ed2e8a9f905e450abb379e9736190a5c0d3f92"
 }

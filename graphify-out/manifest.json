@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "api/nfse-emit.js": {
-    "mtime": 1787102605.671629,
-    "ast_hash": "806ca96e1269896f1073b05840c6db70",
+    "mtime": 1787104189.9279127,
+    "ast_hash": "efa1a35876128bf2c4588ba8aebf30db",
     "semantic_hash": ""
   },
   "lib/nfse-adn-client.js": {
@@ -707,6 +707,11 @@
   "sql/migration-nfse-etapa9.sql": {
     "mtime": 1787102603.3198316,
     "ast_hash": "d6afd8fe662c8ea1a46dcbbda64d81cc",
+    "semantic_hash": ""
+  },
+  "sql/migration-nfse-etapa10.sql": {
+    "mtime": 1787104152.016913,
+    "ast_hash": "b22ec90e9be3b6f6fb68596ead1a0f14",
     "semantic_hash": ""
   }
 }

@@ -1,7 +1,7 @@
 # Graph Report - gestao_serv  (2026-08-18)
 
 ## Corpus Check
-- 136 files · ~192,343 words
+- 137 files · ~192,549 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `57df0167`
+- Built from commit: `25ed2e8a`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -187,7 +187,7 @@ Nodes (18): at, builder, cancAssinado, cert, { certificatePem }, CHAVE, docC, id
 
 ### Community 20 - "dependencies"
 Cohesion: 0.12
-Nodes (17): axios, dotenv, @neondatabase/serverless, node-forge, nodemailer, dependencies, axios, dotenv (+9 more)
+Nodes (17): axios, imap-simple, @neondatabase/serverless, node-forge, nodemailer, dependencies, axios, imap-simple (+9 more)
 
 ### Community 22 - "Billing.jsx"
 Cohesion: 0.15
