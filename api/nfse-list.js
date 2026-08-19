@@ -38,7 +38,11 @@ export default async function handler(req, res) {
              -- razao_social e o nome fiscal; a coluna name e apelido de tela
              -- ("Bokada(Renato) 85"). Cai no apelido so quando nao ha o fiscal.
              COALESCE(NULLIF(cl.razao_social, ''), cl.name) AS cliente,
-             (ne.xml_assinado IS NOT NULL) AS tem_xml
+             (ne.xml_assinado IS NOT NULL) AS tem_xml,
+             -- A disponibilidade do XML oficial é um dado NOSSO: ele chega
+             -- junto com a autorização. Não há portal a consultar em laço.
+             (ne.xml_nfse IS NOT NULL) AS tem_oficial,
+             ne.chave_acesso
       FROM nfse_emissions ne
       JOIN invoices i ON i.id = ne.invoice_id
       JOIN clients  cl ON cl.id = i.client_id
@@ -74,6 +78,8 @@ export default async function handler(req, res) {
         cancelledAt: e.cancelled_at,
         erro: e.error_message,
         temXml: e.tem_xml,
+        temOficial: e.tem_oficial,
+        chaveAcesso: e.chave_acesso,
       })),
       pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
     })

@@ -90,12 +90,34 @@ export default function NFSeEmitidas() {
     }
   }
 
+  // ⚠️ Sem verificação periódica de disponibilidade. Para as notas emitidas
+  // aqui, o XML oficial chega JUNTO com a autorização e já vem no `temOficial`
+  // desta lista — não há o que descobrir consultando o governo de 30 em 30
+  // segundos, por linha, em cada aba aberta. Este botão só aparece quando o
+  // oficial falta, e consulta UMA vez, a pedido.
+  const buscarNoPortal = async (emissao) => {
+    setBaixando(`${emissao.id}:portal`)
+    setErro(null)
+    try {
+      const res = await fetch(`/api/nfse-consultar?emission_id=${emissao.id}`)
+      const data = await res.json()
+      if (!res.ok) { setErro(data?.error || `Falha (HTTP ${res.status})`); return }
+      await buscar()
+    } catch (err) {
+      setErro(err.message)
+    } finally {
+      setBaixando(null)
+    }
+  }
+
   const baixar = async (emissao, tipo) => {
-    const rota = tipo === 'xml' ? 'nfse-download-xml' : 'nfse-download-danfse'
+    const url = tipo === 'danfse'
+      ? `/api/nfse-download-danfse?emission_id=${emissao.id}`
+      : `/api/nfse-download-xml?emission_id=${emissao.id}${tipo === 'dps' ? '&tipo=dps' : ''}`
     setBaixando(`${emissao.id}:${tipo}`)
     setErro(null)
     try {
-      const res = await fetch(`/api/${rota}?emission_id=${emissao.id}`)
+      const res = await fetch(url)
       if (!res.ok) {
         // O corpo do erro é JSON; ler como blob esconderia a mensagem.
         let msg = `HTTP ${res.status}`
@@ -108,18 +130,18 @@ export default function NFSeEmitidas() {
       // vem higienizado de lá.
       const cd = res.headers.get('content-disposition') || ''
       const nome = cd.match(/filename="([^"]+)"/)?.[1]
-        || `${tipo === 'xml' ? 'NFSe' : 'DANFSE'}_${emissao.id}.${tipo === 'xml' ? 'xml' : 'pdf'}`
+        || `${tipo === 'danfse' ? 'DANFSE' : tipo === 'dps' ? 'DPS' : 'NFSe'}_${emissao.id}.${tipo === 'danfse' ? 'pdf' : 'xml'}`
 
-      const url = URL.createObjectURL(blob)
+      const href = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url
+      a.href = href
       a.download = nome
       document.body.appendChild(a)
       a.click()
       a.remove()
       // Sem o revoke, cada download deixa o arquivo inteiro preso na memória
       // da aba até o reload.
-      URL.revokeObjectURL(url)
+      URL.revokeObjectURL(href)
     } catch (err) {
       setErro(`Falha ao baixar ${tipo.toUpperCase()}: ${err.message}`)
     } finally {
@@ -201,21 +223,44 @@ export default function NFSeEmitidas() {
                       <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
                         {/* Emissão sem XML não tem o que baixar — o botão diz isso
                             em vez de levar a um 404. */}
+                        {/* XML OFICIAL: a nota autorizada. Só habilita quando
+                            ela existe — a DPS tem botão próprio, porque é outro
+                            documento (o pedido, sem número nem chave). */}
                         <button
                           onClick={() => baixar(e, 'xml')}
-                          disabled={!e.temXml || baixando === `${e.id}:xml`}
-                          title={e.temXml ? 'Baixar XML assinado' : 'Sem XML nesta emissão'}
+                          disabled={!e.temOficial || baixando === `${e.id}:xml`}
+                          title={e.temOficial
+                            ? `XML oficial da NFS-e${e.chaveAcesso ? ` · chave ${e.chaveAcesso}` : ''}`
+                            : 'XML oficial ainda não guardado'}
                           className="px-3 py-1 bg-blue-700 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs rounded transition-colors"
                         >
-                          {baixando === `${e.id}:xml` ? '⏳' : '📄'} XML
+                          {baixando === `${e.id}:xml` ? '⏳' : '📄'} XML oficial
+                        </button>
+                        {!e.temOficial && e.chaveAcesso && (
+                          <button
+                            onClick={() => buscarNoPortal(e)}
+                            disabled={baixando === `${e.id}:portal`}
+                            title="Consultar o portal nacional uma vez e guardar o XML oficial"
+                            className="px-3 py-1 bg-amber-700 hover:bg-amber-600 disabled:opacity-40 text-white text-xs rounded transition-colors"
+                          >
+                            {baixando === `${e.id}:portal` ? '⏳' : '🔄'} Buscar no portal
+                          </button>
+                        )}
+                        <button
+                          onClick={() => baixar(e, 'dps')}
+                          disabled={!e.temXml || baixando === `${e.id}:dps`}
+                          title="Baixar a DPS enviada (o pedido, não a nota)"
+                          className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs rounded transition-colors"
+                        >
+                          {baixando === `${e.id}:dps` ? '⏳' : '📃'} DPS
                         </button>
                         <button
-                          onClick={() => baixar(e, 'pdf')}
-                          disabled={!e.temXml || baixando === `${e.id}:pdf`}
+                          onClick={() => baixar(e, 'danfse')}
+                          disabled={!e.temXml || baixando === `${e.id}:danfse`}
                           title={e.temXml ? 'Baixar DANFSE em PDF' : 'Sem XML nesta emissão'}
                           className="px-3 py-1 bg-green-700 hover:bg-green-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs rounded transition-colors"
                         >
-                          {baixando === `${e.id}:pdf` ? '⏳' : '📥'} PDF
+                          {baixando === `${e.id}:danfse` ? '⏳' : '📥'} PDF
                         </button>
                         <button
                           onClick={() => alternar(e.id)}

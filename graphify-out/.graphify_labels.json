@@ -66,5 +66,7 @@
   "64": "MemoriaCalculo.jsx",
   "65": "NFSeSettings.jsx",
   "66": "Contracts.jsx",
-  "67": "Clientes.jsx"
+  "67": "Clientes.jsx",
+  "68": "EmailRules.jsx",
+  "69": "imap-simple"
 }
