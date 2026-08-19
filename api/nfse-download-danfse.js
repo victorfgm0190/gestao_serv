@@ -25,19 +25,24 @@ export default async function handler(req, res) {
     const [e] = await sql`
       SELECT ne.id, ne.nfse_number, ne.nsu, ne.protocol, ne.status, ne.ambiente,
              ne.valor_servico, ne.competencia, ne.municipio_codigo,
-             ne.submitted_at, ne.cancelled_at, ne.xml_assinado, ne.json_response
+             ne.submitted_at, ne.cancelled_at, ne.xml_assinado, ne.xml_nfse,
+             ne.chave_acesso, ne.json_response
       FROM nfse_emissions ne
       WHERE ne.id = ${emissionId}`
 
     if (!e) return res.status(404).json({ error: 'Emissão não encontrada' })
-    if (!e.xml_assinado) {
+    // ⚠️ A nota AUTORIZADA tem prioridade sobre a DPS: ela traz o número, a
+    // chave e o prestador preenchidos pelo cadastro nacional — dados que a DPS
+    // não pode carregar. A DPS é o pedido; o DANFSE representa a nota.
+    const fonte = e.xml_nfse || e.xml_assinado
+    if (!fonte) {
       return res.status(404).json({
         error: 'DANFSE indisponível: esta emissão não tem XML',
         detalhe: 'A tentativa falhou antes de o documento ser montado.',
       })
     }
 
-    const dps = lerDPS(e.xml_assinado)
+    const dps = lerDPS(fonte)
     if (!dps) {
       return res.status(422).json({ error: 'O XML gravado não é uma DPS legível' })
     }
@@ -52,10 +57,10 @@ export default async function handler(req, res) {
     // resposta dele — não estão na DPS, que é o que foi ENVIADO.
     const pdf = await new DANFSEGenerator({
       ...dps,
-      numeroNfse: e.nfse_number ?? resposta.numeroNFSe ?? resposta.nNFSe ?? null,
+      numeroNfse: e.nfse_number ?? dps.numeroNfse ?? resposta.numeroNFSe ?? null,
       nsu: e.nsu ?? resposta.nsu ?? null,
       protocolo: e.protocol ?? resposta.protocolo ?? null,
-      chaveAcesso: resposta.chaveAcesso ?? resposta.chave ?? null,
+      chaveAcesso: e.chave_acesso ?? resposta.chaveAcesso ?? resposta.chave ?? null,
       // O ambiente gravado na linha manda: é o que valia na hora do envio.
       ambiente: e.ambiente ?? dps.ambiente,
       cancelada: Boolean(e.cancelled_at),

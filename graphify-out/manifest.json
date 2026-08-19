@@ -550,18 +550,18 @@
     "semantic_hash": ""
   },
   "api/nfse-emit.js": {
-    "mtime": 1787096705.1097102,
-    "ast_hash": "2b91ae194dfe84ac925fac69865b71cf",
+    "mtime": 1787102605.671629,
+    "ast_hash": "806ca96e1269896f1073b05840c6db70",
     "semantic_hash": ""
   },
   "lib/nfse-adn-client.js": {
-    "mtime": 1787065782.4732025,
-    "ast_hash": "ca37ee42f7d2284d12ef4d2b98cb6ec1",
+    "mtime": 1787102448.9785776,
+    "ast_hash": "b3ece03922a1ba0608c8693a35531c32",
     "semantic_hash": ""
   },
   "lib/nfse-emit.test.js": {
-    "mtime": 1787098192.3936636,
-    "ast_hash": "68d1a1edb29b1d17376de018b3883e49",
+    "mtime": 1787102805.7460742,
+    "ast_hash": "a9fac49fdc8c06882a41038297591ed7",
     "semantic_hash": ""
   },
   "lib/nfse-signer.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   "lib/nfse-xml-builder.js": {
-    "mtime": 1787098074.657073,
-    "ast_hash": "149d6dacac44dac7b28017ab2c492b86",
+    "mtime": 1787102286.7100172,
+    "ast_hash": "fcc94392c431a063a2e4cdad7fc76bbd",
     "semantic_hash": ""
   },
   "sql/migration-nfse-etapa4.sql": {
@@ -580,8 +580,8 @@
     "semantic_hash": ""
   },
   "api/nfse-download-danfse.js": {
-    "mtime": 1787078823.6985295,
-    "ast_hash": "c953c4f3e4207a490777e15fc4b7f079",
+    "mtime": 1787102476.7804973,
+    "ast_hash": "1c8139e6b7068d4423b19d0511e7c7b0",
     "semantic_hash": ""
   },
   "api/nfse-download-xml.js": {
@@ -600,13 +600,13 @@
     "semantic_hash": ""
   },
   "lib/danfse-generator.test.js": {
-    "mtime": 1787088203.9876318,
-    "ast_hash": "7f79873321b226f7dc6faa9288e2004b",
+    "mtime": 1787102805.75007,
+    "ast_hash": "6d61f3adfc0bd5ba693abf12e84b9d77",
     "semantic_hash": ""
   },
   "lib/nfse-xml-parser.js": {
-    "mtime": 1787078725.6030974,
-    "ast_hash": "90d81bcc518ba794f0d6c240ea6bfcc0",
+    "mtime": 1787102832.842942,
+    "ast_hash": "040c5d02593b3a3ba4a0ee02dc61d8bd",
     "semantic_hash": ""
   },
   "src/pages/Faturamento/NFSeEmitidas.jsx": {
@@ -702,6 +702,11 @@
   "src/lib/useCNPJConsulta.js": {
     "mtime": 1787099475.3748016,
     "ast_hash": "6d949cf184faf4c793b9df3771cca867",
+    "semantic_hash": ""
+  },
+  "sql/migration-nfse-etapa9.sql": {
+    "mtime": 1787102603.3198316,
+    "ast_hash": "d6afd8fe662c8ea1a46dcbbda64d81cc",
     "semantic_hash": ""
   }
 }

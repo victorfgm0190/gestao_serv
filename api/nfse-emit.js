@@ -120,9 +120,15 @@ export default async function handler(req, res) {
       inv.competencia || `${inv.year}-${String(inv.month || 1).padStart(2, '0')}-01`
     const aliquota = aliquota_iss ?? inv.aliquota_iss ?? emit.aliquota_iss ?? 0
 
+    // ⚠️ Contador MONOTÔNICO, não MAX(dps_number). O número da DPS é consumido
+    // no SEFIN: apagar a linha aqui não o devolve, e recontar do zero faz a
+    // próxima emissão bater em E0014 ("série + número + município + CNPJ já
+    // existe"). O UPDATE ... RETURNING é atômico, então duas emissões
+    // simultâneas nunca recebem o mesmo número.
     const [{ proximo }] = await sql`
-      SELECT COALESCE(MAX(dps_number), 0) + 1 AS proximo
-      FROM nfse_emissions WHERE company_id = ${inv.company_id}`
+      UPDATE nfse_emitter_settings SET ultimo_dps = ultimo_dps + 1
+      WHERE company_id = ${inv.company_id}
+      RETURNING ultimo_dps AS proximo`
 
     const dados = {
       ambiente: emit.ambiente ?? 2,
@@ -193,7 +199,12 @@ export default async function handler(req, res) {
     }
 
     // ---- transmissão ------------------------------------------------------
-    const ambienteNome = (emit.ambiente ?? 2) === 1 ? 'producao' : 'homologacao'
+    // NFSE_AMBIENTE força o destino sem mexer no cadastro — válvula para testar
+    // em homologação mesmo com o emitente já marcado como produção. Só
+    // 'producao' explícito manda para valer; qualquer outro valor é homologação.
+    const ambienteNome = process.env.NFSE_AMBIENTE
+      ? (process.env.NFSE_AMBIENTE === 'producao' ? 'producao' : 'homologacao')
+      : ((emit.ambiente ?? 2) === 1 ? 'producao' : 'homologacao')
     const adn = new NFSeADNClient({
       ambiente: ambienteNome, pfxBuffer: cert.pfxBuffer, senhaPfx: cert.password,
     })
@@ -205,16 +216,20 @@ export default async function handler(req, res) {
     const [linha] = await sql`
       INSERT INTO nfse_emissions
         (company_id, invoice_id, nsu, protocol, nfse_number, status, dps_number,
-         xml_assinado, json_response, competencia, valor_servico,
-         municipio_codigo, ambiente, error_message, submitted_at)
+         xml_assinado, xml_nfse, chave_acesso, json_response, competencia,
+         valor_servico, municipio_codigo, ambiente, error_message,
+         submitted_at, approved_at)
       VALUES
         (${inv.company_id}, ${invoice_id}, ${r.nsu ?? null}, ${r.protocolo ?? null},
-         ${r.numeroNfse ?? null}, ${r.ok ? 'enviada' : 'erro'}, ${proximo},
-         ${xmlAssinado}, ${JSON.stringify(r.resposta ?? {})},
+         ${r.numeroNfse ?? null},
+         -- Chave de acesso devolvida = nota AUTORIZADA, não apenas enviada.
+         ${r.ok ? (r.chaveAcesso ? 'autorizada' : 'enviada') : 'erro'}, ${proximo},
+         ${xmlAssinado}, ${r.nfseXml ?? null}, ${r.chaveAcesso ?? null},
+         ${JSON.stringify(r.resposta ?? {})},
          ${new Date(competencia)}, ${valorServico},
          ${dados.servico.municipioPrestacao}, ${emit.ambiente ?? 2},
-         ${r.ok ? null : r.erro}, NOW())
-      RETURNING id, status, nsu, protocol, nfse_number`
+         ${r.ok ? null : r.erro}, NOW(), ${r.chaveAcesso ? new Date() : null})
+      RETURNING id, status, nsu, protocol, nfse_number, chave_acesso`
 
     // A timeline começa aqui. Sem estes registros ela nasceria vazia e a tela
     // mostraria "Nenhum evento" para uma nota que acabou de ser transmitida.
@@ -226,14 +241,15 @@ export default async function handler(req, res) {
       { invoice_id: invoice_id, valor: valorServico }, { quando: new Date(t0) })
     await registrarEvento(sql, linha.id, EVENTOS.ASSINADA,
       { dps: proximo }, { quando: new Date(t0 + 1) })
-    await registrarEvento(sql, linha.id, r.ok ? EVENTOS.ENVIADA : EVENTOS.ERRO,
-      r.ok ? { nsu: r.nsu, protocolo: r.protocolo } : { erro: r.erro, http: r.status },
+    await registrarEvento(sql, linha.id,
+      r.ok ? (r.chaveAcesso ? EVENTOS.AUTORIZADA : EVENTOS.ENVIADA) : EVENTOS.ERRO,
+      r.ok ? { chave: r.chaveAcesso, numero: r.numeroNfse } : { erro: r.erro, http: r.status },
       { quando: new Date(t0 + 2) })
 
     if (!r.ok) {
       return res.status(502).json({
         success: false,
-        error: `O ADN recusou a emissão: ${r.erro}`,
+        error: `O SEFIN recusou a emissão: ${r.erro}`,
         emissao_id: linha.id,
         http_status: r.status,
         resposta: r.resposta,
