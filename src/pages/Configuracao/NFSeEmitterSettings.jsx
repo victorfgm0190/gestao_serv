@@ -23,7 +23,9 @@ const CAMPOS_TEXTO = [
   ['razao_social', 'Razão social', 'Como consta no CNPJ', true],
   ['nome_fantasia', 'Nome fantasia', '', false],
   ['cnpj', 'CNPJ', 'Só números ou com máscara', true],
-  ['inscricao_municipal', 'Inscrição municipal', 'Cadastro na prefeitura', true],
+  // Opcional no Emissor Nacional — mas várias prefeituras a exigem, por isso a
+  // dica diz isso em vez de só marcar o campo como dispensável.
+  ['inscricao_municipal', 'Inscrição municipal (opcional)', 'Opcional no Emissor Nacional; algumas prefeituras exigem', false],
   ['endereco', 'Logradouro', 'Rua, avenida…', true],
   ['numero', 'Número', '', true],
   ['complemento', 'Complemento', 'Sala, andar…', false],

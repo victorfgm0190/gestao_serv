@@ -560,8 +560,8 @@
     "semantic_hash": ""
   },
   "lib/nfse-emit.test.js": {
-    "mtime": 1787070032.3118436,
-    "ast_hash": "ad7311faef821bd6fba42b3f714c0d15",
+    "mtime": 1787098192.3936636,
+    "ast_hash": "68d1a1edb29b1d17376de018b3883e49",
     "semantic_hash": ""
   },
   "lib/nfse-signer.js": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   "lib/nfse-xml-builder.js": {
-    "mtime": 1787076503.0989575,
-    "ast_hash": "24489a790d252535ed829cd471c4cdf1",
+    "mtime": 1787098074.657073,
+    "ast_hash": "149d6dacac44dac7b28017ab2c492b86",
     "semantic_hash": ""
   },
   "sql/migration-nfse-etapa4.sql": {
@@ -675,18 +675,18 @@
     "semantic_hash": ""
   },
   "lib/nfse-setup-check.js": {
-    "mtime": 1787096691.0656252,
-    "ast_hash": "905adde550f1bb0b547e86df28cbafea",
+    "mtime": 1787098063.8142655,
+    "ast_hash": "d4bab2a8fb1626f9dda5d4809dcacf22",
     "semantic_hash": ""
   },
   "lib/nfse-setup-check.test.js": {
-    "mtime": 1787096969.3892865,
-    "ast_hash": "f66e6ce80bc8dc2f32feb18bacbe6475",
+    "mtime": 1787098192.3891463,
+    "ast_hash": "abceab8fe5187d5102977550274a1dd3",
     "semantic_hash": ""
   },
   "src/pages/Configuracao/NFSeEmitterSettings.jsx": {
-    "mtime": 1787096795.4332871,
-    "ast_hash": "44b71dabf377c84bdbe05c7a7cf22b2d",
+    "mtime": 1787098080.280083,
+    "ast_hash": "77668cb2d8df722f22aec14352db67a6",
     "semantic_hash": ""
   }
 }
