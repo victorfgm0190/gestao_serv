@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { registrarEvento, EVENTOS } from '../lib/nfse-events.js'
+import { registrarOperacaoLocal, OPERACOES } from '../lib/nfse-operations.js'
 
 // Registra, no sistema, um cancelamento que foi feito NO PORTAL.
 //
@@ -40,8 +41,8 @@ export default async function handler(req, res) {
     const sql = neon(process.env.DATABASE_URL)
 
     const [em] = await sql`
-      SELECT ne.id, ne.invoice_id, ne.nfse_number, ne.status, ne.cancelled_at,
-             ne.chave_acesso, ne.ambiente, i.invoice_number
+      SELECT ne.id, ne.company_id, ne.invoice_id, ne.nfse_number, ne.status,
+             ne.cancelled_at, ne.chave_acesso, ne.ambiente, i.invoice_number
       FROM nfse_emissions ne
       JOIN invoices i ON i.id = ne.invoice_id
       WHERE ne.id = ${emissionId}`
@@ -113,6 +114,14 @@ export default async function handler(req, res) {
       nfse_number: em.nfse_number,
       chave_acesso: em.chave_acesso,
     }, { origem: 'manual' })
+
+    // Sem envio e sem resposta — entra completa numa linha só, para a trilha
+    // de operações da nota não ter um buraco justamente onde o status mudou.
+    await registrarOperacaoLocal(sql, {
+      company_id: em.company_id, invoice_id: em.invoice_id, nfse_emission_id: em.id,
+      operation_type: OPERACOES.SINCRONIZACAO, ambiente: em.ambiente,
+      json_resposta: marca.sincronizacao_cancelamento,
+    })
 
     return res.status(200).json({
       success: true,

@@ -285,8 +285,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_contracts",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 73,
+      "community_name": "contracts.js",
       "norm_label": "contracts.js"
     },
     {
@@ -296,8 +296,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "api_contracts_splitpct",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 73,
+      "community_name": "contracts.js",
       "norm_label": "splitpct()"
     },
     {
@@ -307,8 +307,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "api_contracts_requernf",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 73,
+      "community_name": "contracts.js",
       "norm_label": "requernf()"
     },
     {
@@ -318,8 +318,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "api_contracts_handler",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 73,
+      "community_name": "contracts.js",
       "norm_label": "handler()"
     },
     {
@@ -1165,8 +1165,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_cancel",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 70,
+      "community_name": "nfse-events.js",
       "norm_label": "nfse-cancel.js"
     },
     {
@@ -1176,8 +1176,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "api_nfse_cancel_cancelaveis",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 70,
+      "community_name": "nfse-events.js",
       "norm_label": "cancelaveis"
     },
     {
@@ -1187,8 +1187,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "api_nfse_cancel_handler",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 70,
+      "community_name": "nfse-events.js",
       "norm_label": "handler()"
     },
     {
@@ -1220,8 +1220,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_consultar",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 70,
+      "community_name": "nfse-events.js",
       "norm_label": "nfse-consultar.js"
     },
     {
@@ -1231,8 +1231,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "api_nfse_consultar_handler",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 70,
+      "community_name": "nfse-events.js",
       "norm_label": "handler()"
     },
     {
@@ -1478,6 +1478,28 @@
       "norm_label": "handler()"
     },
     {
+      "label": "nfse-sincronizar-cancelamento.js",
+      "file_type": "code",
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_nfse_sincronizar_cancelamento",
+      "community": 70,
+      "community_name": "nfse-events.js",
+      "norm_label": "nfse-sincronizar-cancelamento.js"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L28",
+      "_origin": "ast",
+      "id": "api_nfse_sincronizar_cancelamento_handler",
+      "community": 70,
+      "community_name": "nfse-events.js",
+      "norm_label": "handler()"
+    },
+    {
       "label": "nfse-substituir.js",
       "file_type": "code",
       "source_file": "api/nfse-substituir.js",
@@ -1528,8 +1550,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_validate_setup",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "nfse-validate-setup.js"
     },
     {
@@ -1539,8 +1561,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "api_nfse_validate_setup_handler",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "handler()"
     },
     {
@@ -3750,8 +3772,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_adn_client",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "nfse-adn-client.js"
     },
     {
@@ -3761,8 +3783,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_urls_sefin",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "urls_sefin"
     },
     {
@@ -3772,8 +3794,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_urls_adn",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "urls_adn"
     },
     {
@@ -4663,8 +4685,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_events",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 70,
+      "community_name": "nfse-events.js",
       "norm_label": "nfse-events.js"
     },
     {
@@ -4674,15 +4696,15 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "lib_nfse_events_eventos",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 70,
+      "community_name": "nfse-events.js",
       "norm_label": "eventos"
     },
     {
       "label": "ROTULOS",
       "file_type": "code",
       "source_file": "lib/nfse-events.js",
-      "source_location": "L16",
+      "source_location": "L21",
       "_origin": "ast",
       "id": "lib_nfse_events_rotulos",
       "community": 70,
@@ -4693,18 +4715,18 @@
       "label": "registrarEvento()",
       "file_type": "code",
       "source_file": "lib/nfse-events.js",
-      "source_location": "L38",
+      "source_location": "L44",
       "_origin": "ast",
       "id": "lib_nfse_events_registrarevento",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 70,
+      "community_name": "nfse-events.js",
       "norm_label": "registrarevento()"
     },
     {
       "label": "listarEventos()",
       "file_type": "code",
       "source_file": "lib/nfse-events.js",
-      "source_location": "L56",
+      "source_location": "L62",
       "_origin": "ast",
       "id": "lib_nfse_events_listareventos",
       "community": 70,
@@ -4773,8 +4795,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_verificarsetup",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "verificarsetup()"
     },
     {
@@ -4784,8 +4806,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "nfse-setup-check.test.js"
     },
     {
@@ -4795,8 +4817,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_ok",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "ok()"
     },
     {
@@ -4806,8 +4828,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_sql",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "sql"
     },
     {
@@ -4817,8 +4839,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_token",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "token"
     },
     {
@@ -4828,8 +4850,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_chamar",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "chamar()"
     },
     {
@@ -4839,8 +4861,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_nomes",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "nomes"
     },
     {
@@ -4850,8 +4872,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_src",
-      "community": 55,
-      "community_name": "dotenv",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "src"
     },
     {
@@ -4861,8 +4883,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_signer",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "nfse-signer.js"
     },
     {
@@ -4883,8 +4905,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "lib_nfse_signer_nfsesigner",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": "nfsesigner"
     },
     {
@@ -4894,8 +4916,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "lib_nfse_signer_nfsesigner_constructor",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 8,
+      "community_name": "valorDevido",
       "norm_label": ".constructor()"
     },
     {
@@ -4908,6 +4930,83 @@
       "community": 8,
       "community_name": "valorDevido",
       "norm_label": ".assinarxml()"
+    },
+    {
+      "label": "nfse-sincronizar-cancelamento.test.js",
+      "file_type": "code",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_nfse_sincronizar_cancelamento_test",
+      "community": 70,
+      "community_name": "nfse-events.js",
+      "norm_label": "nfse-sincronizar-cancelamento.test.js"
+    },
+    {
+      "label": "ok()",
+      "file_type": "code",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "lib_nfse_sincronizar_cancelamento_test_ok",
+      "community": 70,
+      "community_name": "nfse-events.js",
+      "norm_label": "ok()"
+    },
+    {
+      "label": "sql",
+      "file_type": "code",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "lib_nfse_sincronizar_cancelamento_test_sql",
+      "community": 70,
+      "community_name": "nfse-events.js",
+      "norm_label": "sql"
+    },
+    {
+      "label": "TOKEN",
+      "file_type": "code",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "lib_nfse_sincronizar_cancelamento_test_token",
+      "community": 70,
+      "community_name": "nfse-events.js",
+      "norm_label": "token"
+    },
+    {
+      "label": "chamar()",
+      "file_type": "code",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L25",
+      "_origin": "ast",
+      "id": "lib_nfse_sincronizar_cancelamento_test_chamar",
+      "community": 70,
+      "community_name": "nfse-events.js",
+      "norm_label": "chamar()"
+    },
+    {
+      "label": "criados",
+      "file_type": "code",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L55",
+      "_origin": "ast",
+      "id": "lib_nfse_sincronizar_cancelamento_test_criados",
+      "community": 70,
+      "community_name": "nfse-events.js",
+      "norm_label": "criados"
+    },
+    {
+      "label": "criarEmissao()",
+      "file_type": "code",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L56",
+      "_origin": "ast",
+      "id": "lib_nfse_sincronizar_cancelamento_test_criaremissao",
+      "community": 70,
+      "community_name": "nfse-events.js",
+      "norm_label": "criaremissao()"
     },
     {
       "label": "nfse-substituir.test.js",
@@ -5279,8 +5378,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "lib_nfse_xml_cancellation_builder_motivoporcodigo",
-      "community": 40,
-      "community_name": "@neondatabase/serverless",
+      "community": 70,
+      "community_name": "nfse-events.js",
       "norm_label": "motivoporcodigo()"
     },
     {
@@ -5389,8 +5488,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_payment_source_tracker",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "payment-source-tracker.js"
     },
     {
@@ -5400,8 +5499,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_r2",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "r2()"
     },
     {
@@ -5411,8 +5510,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_num",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "num()"
     },
     {
@@ -5422,8 +5521,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_destino_por_categoria",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "destino_por_categoria"
     },
     {
@@ -5433,8 +5532,8 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_linhadesaldode",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "linhadesaldode()"
     },
     {
@@ -5444,8 +5543,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_movimento",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "movimento()"
     },
     {
@@ -5455,8 +5554,8 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_quebrarconsumo",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "quebrarconsumo()"
     },
     {
@@ -5466,8 +5565,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_movimentosdoplano",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "movimentosdoplano()"
     },
     {
@@ -5477,8 +5576,8 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_movimentosdoconsumo",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "movimentosdoconsumo()"
     },
     {
@@ -5488,8 +5587,8 @@
       "source_location": "L255",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_movimentosdaabsorcao",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "movimentosdaabsorcao()"
     },
     {
@@ -5521,8 +5620,8 @@
       "source_location": "L357",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_registrarorigemdestino",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "registrarorigemdestino()"
     },
     {
@@ -5532,8 +5631,8 @@
       "source_location": "L377",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_listarorigemdestinopagamento",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "listarorigemdestinopagamento()"
     },
     {
@@ -5543,8 +5642,8 @@
       "source_location": "L389",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_limparorigemdestinopagamento",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "limparorigemdestinopagamento()"
     },
     {
@@ -7275,6 +7374,39 @@
       "norm_label": "nfseemitirmodal()"
     },
     {
+      "label": "NFSeReemitirModal.jsx",
+      "file_type": "code",
+      "source_file": "src/components/NFSeReemitirModal.jsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_components_nfsereemitirmodal",
+      "community": 60,
+      "community_name": "react",
+      "norm_label": "nfsereemitirmodal.jsx"
+    },
+    {
+      "label": "brl()",
+      "file_type": "code",
+      "source_file": "src/components/NFSeReemitirModal.jsx",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "src_components_nfsereemitirmodal_brl",
+      "community": 60,
+      "community_name": "react",
+      "norm_label": "brl()"
+    },
+    {
+      "label": "NFSeReemitirModal()",
+      "file_type": "code",
+      "source_file": "src/components/NFSeReemitirModal.jsx",
+      "source_location": "L27",
+      "_origin": "ast",
+      "id": "src_components_nfsereemitirmodal_nfsereemitirmodal",
+      "community": 60,
+      "community_name": "react",
+      "norm_label": "nfsereemitirmodal()"
+    },
+    {
       "label": "NFSeTimeline.jsx",
       "file_type": "code",
       "source_file": "src/components/NFSeTimeline.jsx",
@@ -7300,7 +7432,7 @@
       "label": "CORES",
       "file_type": "code",
       "source_file": "src/components/NFSeTimeline.jsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "_origin": "ast",
       "id": "src_components_nfsetimeline_cores",
       "community": 60,
@@ -7311,7 +7443,7 @@
       "label": "dataHora()",
       "file_type": "code",
       "source_file": "src/components/NFSeTimeline.jsx",
-      "source_location": "L28",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_nfsetimeline_datahora",
       "community": 60,
@@ -7322,7 +7454,7 @@
       "label": "NFSeTimeline()",
       "file_type": "code",
       "source_file": "src/components/NFSeTimeline.jsx",
-      "source_location": "L34",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "src_components_nfsetimeline_nfsetimeline",
       "community": 60,
@@ -8026,7 +8158,7 @@
       "label": "ACIONAVEIS",
       "file_type": "code",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L11",
+      "source_location": "L12",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_acionaveis",
       "community": 60,
@@ -8034,10 +8166,21 @@
       "norm_label": "acionaveis"
     },
     {
+      "label": "REEMITIVEIS",
+      "file_type": "code",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "src_pages_faturamento_nfseemitidas_reemitiveis",
+      "community": 60,
+      "community_name": "react",
+      "norm_label": "reemitiveis"
+    },
+    {
       "label": "badges",
       "file_type": "code",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L22",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_badges",
       "community": 60,
@@ -8048,7 +8191,7 @@
       "label": "brl()",
       "file_type": "code",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L33",
+      "source_location": "L41",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_brl",
       "community": 60,
@@ -8059,7 +8202,7 @@
       "label": "dataBR()",
       "file_type": "code",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L38",
+      "source_location": "L46",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_databr",
       "community": 60,
@@ -8070,7 +8213,7 @@
       "label": "NFSeEmitidas()",
       "file_type": "code",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L44",
+      "source_location": "L52",
       "_origin": "ast",
       "id": "src_pages_faturamento_nfseemitidas_nfseemitidas",
       "community": 60,
@@ -11273,6 +11416,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_nfseemitirmodal",
+      "target": "ref_react",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/NFSeReemitirModal.jsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_nfsereemitirmodal",
       "target": "ref_react",
       "confidence_score": 1.0
     },
@@ -17230,6 +17385,137 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_sincronizar_cancelamento",
+      "target": "api_nfse_sincronizar_cancelamento_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_sincronizar_cancelamento",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_sincronizar_cancelamento",
+      "target": "lib_auth_requireauth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_sincronizar_cancelamento",
+      "target": "lib_nfse_events",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_sincronizar_cancelamento",
+      "target": "lib_nfse_events_eventos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_sincronizar_cancelamento",
+      "target": "lib_nfse_events_registrarevento",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "api_nfse_sincronizar_cancelamento",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_sincronizar_cancelamento_handler",
+      "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/nfse-sincronizar-cancelamento.js",
+      "source_location": "L110",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_nfse_sincronizar_cancelamento_handler",
+      "target": "lib_nfse_events_registrarevento"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "api_nfse_sincronizar_cancelamento_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L32",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test_chamar",
+      "target": "api_nfse_sincronizar_cancelamento_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "api/nfse-substituir.js",
       "source_location": "L45",
       "weight": 1.0,
@@ -20410,6 +20696,18 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "lib/nfse-substituir.test.js",
       "source_location": "L8",
       "weight": 1.0,
@@ -20571,6 +20869,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_setup_check_test",
+      "target": "lib_auth_signtoken",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
       "target": "lib_auth_signtoken",
       "confidence_score": 1.0
     },
@@ -24551,7 +24861,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-events.js",
-      "source_location": "L56",
+      "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_events",
@@ -24562,7 +24872,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-events.js",
-      "source_location": "L38",
+      "source_location": "L44",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_events",
@@ -24573,11 +24883,35 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "lib/nfse-events.js",
-      "source_location": "L16",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "lib_nfse_events",
       "target": "lib_nfse_events_rotulos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "lib_nfse_events",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "lib_nfse_events_eventos",
       "confidence_score": 1.0
     },
     {
@@ -24827,6 +25161,84 @@
       "_origin": "ast",
       "source": "lib_nfse_signer_nfsesigner",
       "target": "lib_nfse_signer_nfsesigner_constructor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "lib_nfse_sincronizar_cancelamento_test_chamar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L55",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "lib_nfse_sincronizar_cancelamento_test_criados",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L56",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "lib_nfse_sincronizar_cancelamento_test_criaremissao",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "lib_nfse_sincronizar_cancelamento_test_ok",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "lib_nfse_sincronizar_cancelamento_test_sql",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test",
+      "target": "lib_nfse_sincronizar_cancelamento_test_token",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/nfse-sincronizar-cancelamento.test.js",
+      "source_location": "L57",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_nfse_sincronizar_cancelamento_test_criaremissao",
+      "target": "lib_nfse_sincronizar_cancelamento_test_sql",
       "confidence_score": 1.0
     },
     {
@@ -29235,8 +29647,66 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "src/components/NFSeReemitirModal.jsx",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_nfsereemitirmodal",
+      "target": "src_components_nfsereemitirmodal_brl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/NFSeReemitirModal.jsx",
+      "source_location": "L27",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_nfsereemitirmodal",
+      "target": "src_components_nfsereemitirmodal_nfsereemitirmodal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas",
+      "target": "src_components_nfsereemitirmodal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/NFSeReemitirModal.jsx",
+      "source_location": "L139",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_nfsereemitirmodal_nfsereemitirmodal",
+      "target": "src_components_nfsereemitirmodal_brl",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas",
+      "target": "src_components_nfsereemitirmodal_nfsereemitirmodal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "src/components/NFSeTimeline.jsx",
-      "source_location": "L20",
+      "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_nfsetimeline",
@@ -29247,7 +29717,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/NFSeTimeline.jsx",
-      "source_location": "L28",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_nfsetimeline",
@@ -29269,7 +29739,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/NFSeTimeline.jsx",
-      "source_location": "L34",
+      "source_location": "L36",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_nfsetimeline",
@@ -29293,7 +29763,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/NFSeTimeline.jsx",
-      "source_location": "L60",
+      "source_location": "L69",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_nfsetimeline_nfsetimeline",
@@ -30768,7 +31238,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_faturamento_nfseemitidas",
@@ -30779,7 +31249,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L22",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_faturamento_nfseemitidas",
@@ -30790,7 +31260,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L33",
+      "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_faturamento_nfseemitidas",
@@ -30801,7 +31271,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L38",
+      "source_location": "L46",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_faturamento_nfseemitidas",
@@ -30812,11 +31282,22 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L44",
+      "source_location": "L52",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_faturamento_nfseemitidas",
       "target": "src_pages_faturamento_nfseemitidas_nfseemitidas",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas",
+      "target": "src_pages_faturamento_nfseemitidas_reemitiveis",
       "confidence_score": 1.0
     },
     {
@@ -30825,18 +31306,30 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L278",
+      "source_location": "L295",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_faturamento_nfseemitidas_nfseemitidas",
       "target": "src_pages_faturamento_nfseemitidas_acionaveis"
     },
     {
+      "relation": "references",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
+      "source_location": "L304",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_faturamento_nfseemitidas_nfseemitidas",
+      "target": "src_pages_faturamento_nfseemitidas_reemitiveis"
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L217",
+      "source_location": "L234",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_faturamento_nfseemitidas_nfseemitidas",
@@ -30848,7 +31341,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Faturamento/NFSeEmitidas.jsx",
-      "source_location": "L228",
+      "source_location": "L245",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_faturamento_nfseemitidas_nfseemitidas",
@@ -33866,5 +34359,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "70b131c47d14cb4b19ecade6a947188b72a553c8"
+  "built_at_commit": "13f649c622cb0551c7bbb7fecdfa0955ed9aac88"
 }

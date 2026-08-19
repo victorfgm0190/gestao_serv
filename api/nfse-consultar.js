@@ -3,6 +3,7 @@ import { requireAuth } from '../lib/auth.js'
 import nfseCertManager from '../lib/nfse-cert-manager.js'
 import { NFSeADNClient } from '../lib/nfse-adn-client.js'
 import { registrarEvento, EVENTOS } from '../lib/nfse-events.js'
+import { abrirOperacao, fecharOperacao, OPERACOES } from '../lib/nfse-operations.js'
 
 // Consulta a NFS-e no portal nacional e guarda o XML oficial se ainda não o
 // tivermos.
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL)
     const [em] = await sql`
-      SELECT id, company_id, chave_acesso, ambiente, status, nfse_number,
+      SELECT id, company_id, invoice_id, chave_acesso, ambiente, status, nfse_number,
              (xml_nfse IS NOT NULL) AS tem_oficial
       FROM nfse_emissions WHERE id = ${emissionId}`
 
@@ -64,7 +65,14 @@ export default async function handler(req, res) {
       senhaPfx: cert.password,
     })
 
+    // Consulta não envia documento — `xml_enviado` fica nulo. O que interessa
+    // aqui é a RESPOSTA: é ela que traz o XML oficial que faltava.
+    const opId = await abrirOperacao(sql, {
+      company_id: em.company_id, invoice_id: em.invoice_id, nfse_emission_id: em.id,
+      operation_type: OPERACOES.CONSULTA, ambiente: em.ambiente ?? 2,
+    })
     const r = await cliente.consultarNFSe(em.chave_acesso)
+    await fecharOperacao(sql, opId, r)
     if (!r.ok) {
       return res.status(r.status === 404 ? 404 : 502).json({
         disponivel: false,

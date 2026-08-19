@@ -19,6 +19,7 @@ import Settings from './pages/Settings'
 import NFSeSettings from './pages/Configuracao/NFSeSettings'
 import NFSeEmitterSettings from './pages/Configuracao/NFSeEmitterSettings'
 import NFSeEmitidas from './pages/Faturamento/NFSeEmitidas'
+import NFSeOperacoes from './pages/Faturamento/NFSeOperacoes'
 import { installFetchInterceptor, isLoggedIn } from './lib/session'
 
 // Anexa o token em toda chamada /api/ e trata 401 de forma central.
@@ -55,6 +56,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="configuracao/nfse" element={<NFSeSettings />} />
           <Route path="configuracao/nfse-emitente" element={<NFSeEmitterSettings />} />
           <Route path="faturamento/nfse-emitidas" element={<NFSeEmitidas />} />
+          <Route path="faturamento/nfse-operacoes" element={<NFSeOperacoes />} />
           <Route path="users" element={<Users />} />
         </Route>
       </Routes>

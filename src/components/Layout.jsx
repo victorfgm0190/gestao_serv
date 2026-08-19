@@ -146,6 +146,9 @@ export default function Layout() {
           <NavLink to="/faturamento/nfse-emitidas" className={navClass}>
             <span>📋</span> NFS-e emitidas
           </NavLink>
+          <NavLink to="/faturamento/nfse-operacoes" className={navClass}>
+            <span>🧾</span> Operações NFS-e
+          </NavLink>
           <NavLink to="/fiscal" className={navClass}>
             <span>🏛️</span> Apuração Fiscal
           </NavLink>

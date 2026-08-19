@@ -5,6 +5,7 @@ import { montarDPS, dataISO } from '../lib/nfse-xml-builder.js'
 import { NFSeSigner } from '../lib/nfse-signer.js'
 import { NFSeADNClient } from '../lib/nfse-adn-client.js'
 import { registrarEvento, EVENTOS } from '../lib/nfse-events.js'
+import { abrirOperacao, fecharOperacao, OPERACOES } from '../lib/nfse-operations.js'
 import { CAMPOS_EMITENTE, CAMPOS_TOMADOR, faltantes } from '../lib/nfse-setup-check.js'
 
 // Emissão de NFS-e a partir de uma fatura.
@@ -228,6 +229,19 @@ export default async function handler(req, res) {
     const adn = new NFSeADNClient({
       ambiente: ambienteNome, pfxBuffer: cert.pfxBuffer, senhaPfx: cert.password,
     })
+
+    // ⚠️ A operação é aberta ANTES de transmitir, e o `nfse_emission_id` fica
+    // nulo por ora: a linha de `nfse_emissions` só nasce depois da resposta (é
+    // o desfecho que decide status e número). Se a função morrer no meio da
+    // chamada, sobra a linha em 'enviado' com a DPS que saiu e o número já
+    // consumido no fisco — a única pista de que uma nota pode existir lá sem
+    // existir aqui.
+    const opId = await abrirOperacao(sql, {
+      company_id: inv.company_id, invoice_id: inv.id,
+      operation_type: OPERACOES.EMISSAO, xml_enviado: xmlAssinado,
+      ambiente: ehProducao ? 1 : 2, dps_number: proximo,
+    })
+
     const r = await adn.emitirNFSe(xmlAssinado)
 
     // A tentativa é gravada nos DOIS desfechos. Uma emissão que falhou sem
@@ -250,6 +264,9 @@ export default async function handler(req, res) {
          ${dados.servico.municipioPrestacao}, ${ehProducao ? 1 : 2},
          ${r.ok ? null : r.erro}, NOW(), ${r.chaveAcesso ? new Date() : null})
       RETURNING id, status, nsu, protocol, nfse_number, chave_acesso`
+
+    // Costura o vínculo agora que a emissão existe.
+    await fecharOperacao(sql, opId, r, { nfse_emission_id: linha.id })
 
     // A timeline começa aqui. Sem estes registros ela nasceria vazia e a tela
     // mostraria "Nenhum evento" para uma nota que acabou de ser transmitida.

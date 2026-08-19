@@ -5,6 +5,7 @@ import { NFSeSigner } from '../lib/nfse-signer.js'
 import { NFSeADNClient } from '../lib/nfse-adn-client.js'
 import { NFSeCancellationBuilder, motivoPorCodigo } from '../lib/nfse-xml-cancellation-builder.js'
 import { registrarEvento, EVENTOS } from '../lib/nfse-events.js'
+import { abrirOperacao, fecharOperacao, OPERACOES } from '../lib/nfse-operations.js'
 
 // Cancelamento de NFS-e.
 //
@@ -113,7 +114,17 @@ export default async function handler(req, res) {
     // ⚠️ O XML ASSINADO é o que vai. O esboço montava e assinava o pedido e
     // depois chamava `cancelarNFSe(numero, motivo)` — o documento assinado era
     // descartado e o ADN recebia dois campos soltos.
+    //
+    // ⚠️ E é justamente esse XML que se perdia: até aqui ele era montado,
+    // transmitido e descartado. Quando o SEFIN recusava um cancelamento, não
+    // havia como reler o que tinha sido pedido.
+    const opId = await abrirOperacao(sql, {
+      company_id: em.company_id, invoice_id: em.invoice_id, nfse_emission_id: em.id,
+      operation_type: OPERACOES.CANCELAMENTO, xml_enviado: xmlAssinado,
+      ambiente: em.ambiente ?? 2,
+    })
     const r = await adn.cancelarNFSe(chaveAcesso, xmlAssinado)
+    await fecharOperacao(sql, opId, r)
 
     // ⚠️ O banco só muda se o ADN aceitou. O esboço atualizava para 'cancelled'
     // logo depois da chamada, sem olhar o resultado: recusado o cancelamento, o

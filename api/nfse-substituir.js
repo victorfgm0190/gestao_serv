@@ -5,6 +5,7 @@ import { montarDPS, MOTIVO_MIN, dataISO } from '../lib/nfse-xml-builder.js'
 import { NFSeSigner } from '../lib/nfse-signer.js'
 import { NFSeADNClient } from '../lib/nfse-adn-client.js'
 import { registrarEvento, EVENTOS } from '../lib/nfse-events.js'
+import { abrirOperacao, fecharOperacao, OPERACOES } from '../lib/nfse-operations.js'
 import { CAMPOS_EMITENTE, CAMPOS_TOMADOR, faltantes } from '../lib/nfse-setup-check.js'
 
 // Substituição de NFS-e.
@@ -222,6 +223,14 @@ export default async function handler(req, res) {
     const adn = new NFSeADNClient({
       ambiente: ambienteNome, pfxBuffer: cert.pfxBuffer, senhaPfx: cert.password,
     })
+    // Aberta antes de transmitir; o vínculo com a emissão nova (ou com a linha
+    // de 'erro') é costurado nos dois desfechos abaixo.
+    const opId = await abrirOperacao(sql, {
+      company_id: orig.company_id, invoice_id: orig.invoice_id,
+      operation_type: OPERACOES.SUBSTITUICAO, xml_enviado: xmlAssinado,
+      ambiente: orig.ambiente ?? 2, dps_number: proximo,
+    })
+
     const r = await adn.emitirNFSe(xmlAssinado)
 
     // ⚠️ Quando o fisco ACEITA, a original é marcada ANTES de a nova entrar —
@@ -242,6 +251,7 @@ export default async function handler(req, res) {
            ${dados.servico.municipioPrestacao}, ${orig.ambiente ?? 2}, ${r.erro},
            ${orig.id}, NOW())
         RETURNING id`
+      await fecharOperacao(sql, opId, r, { nfse_emission_id: falha.id })
       await registrarEvento(sql, falha.id, EVENTOS.ERRO, { acao: 'substituicao', erro: r.erro })
       return res.status(502).json({
         success: false,
@@ -273,6 +283,8 @@ export default async function handler(req, res) {
     ])
 
     const linhaNova = Array.isArray(nova) ? nova[0] : nova
+
+    await fecharOperacao(sql, opId, r, { nfse_emission_id: linhaNova.id })
 
     // O vínculo de volta só pode ser gravado depois de a nova ter id.
     await sql`
