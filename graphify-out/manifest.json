@@ -720,8 +720,23 @@
     "semantic_hash": ""
   },
   "lib/nfse-consultar.test.js": {
-    "mtime": 1787105167.3209727,
-    "ast_hash": "4d7f681d81eb75ef67a6adecd3a21b96",
+    "mtime": 1787106211.5453749,
+    "ast_hash": "c0ef51641b7f9ff81dc769fd7723ad30",
+    "semantic_hash": ""
+  },
+  ".tmp-pdf.mjs": {
+    "mtime": 1787105924.8202395,
+    "ast_hash": "eec70a7380eccca5db842552bca9292d",
+    "semantic_hash": ""
+  },
+  ".tmp-pdf2.mjs": {
+    "mtime": 1787105971.7738383,
+    "ast_hash": "959fa2f38268ee7a5d97b6f844f68794",
+    "semantic_hash": ""
+  },
+  "api/nfse-download-pdf-oficial.js": {
+    "mtime": 1787106028.7195303,
+    "ast_hash": "3a0f1c3670aa35912216fee9b25087b9",
     "semantic_hash": ""
   }
 }
