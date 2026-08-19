@@ -68,5 +68,7 @@
   "66": "Contracts.jsx",
   "67": "Clientes.jsx",
   "68": "EmailRules.jsx",
-  "69": "imap-simple"
+  "69": "imap-simple",
+  "70": "nfse-events.js",
+  "71": "dotenv"
 }

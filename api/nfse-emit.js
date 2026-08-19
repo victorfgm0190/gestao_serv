@@ -1,7 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import nfseCertManager from '../lib/nfse-cert-manager.js'
-import { montarDPS } from '../lib/nfse-xml-builder.js'
+import { montarDPS, dataISO } from '../lib/nfse-xml-builder.js'
 import { NFSeSigner } from '../lib/nfse-signer.js'
 import { NFSeADNClient } from '../lib/nfse-adn-client.js'
 import { registrarEvento, EVENTOS } from '../lib/nfse-events.js'
@@ -116,6 +116,14 @@ export default async function handler(req, res) {
 
     // Fallback como STRING de calendário, não como Date: `Date.UTC(...)` dá
     // meia-noite UTC, que `dataISO` empurraria para o dia (e o mês) anterior.
+    //
+    // 🐞 E a competência é GRAVADA como string, via dataISO. Passar
+    // `${new Date('2026-06-01')}` ao driver grava **2026-05-31**: o valor é
+    // meia-noite UTC e o cast para `date` acontece no fuso local (UTC-3).
+    // Medido contra o banco: string → 2026-06-01, Date → 2026-05-31. O erro
+    // não afetava a nota transmitida (o XML usa dataISO), só a coluna — e a
+    // substituição, que lê a competência de volta e era recusada com E0063
+    // por "alterar" um campo que ela não alterou.
     const competencia =
       inv.competencia || `${inv.year}-${String(inv.month || 1).padStart(2, '0')}-01`
     const aliquota = aliquota_iss ?? inv.aliquota_iss ?? emit.aliquota_iss ?? 0
@@ -238,7 +246,7 @@ export default async function handler(req, res) {
          ${r.ok ? (r.chaveAcesso ? 'autorizada' : 'enviada') : 'erro'}, ${proximo},
          ${xmlAssinado}, ${r.nfseXml ?? null}, ${r.chaveAcesso ?? null},
          ${JSON.stringify(r.resposta ?? {})},
-         ${new Date(competencia)}, ${valorServico},
+         ${dataISO(competencia)}, ${valorServico},
          ${dados.servico.municipioPrestacao}, ${ehProducao ? 1 : 2},
          ${r.ok ? null : r.erro}, NOW(), ${r.chaveAcesso ? new Date() : null})
       RETURNING id, status, nsu, protocol, nfse_number, chave_acesso`

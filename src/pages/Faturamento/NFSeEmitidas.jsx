@@ -2,9 +2,13 @@ import { useState, useEffect, useCallback, Fragment } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import NFSeTimeline from '../../components/NFSeTimeline'
 import NFSeCancelModal from '../../components/NFSeCancelModal'
+import NFSeAcoesModal from '../../components/NFSeAcoesModal'
 
-// Status em que o cancelamento faz sentido — a mesma lista de api/nfse-cancel.js.
-const CANCELAVEIS = new Set(['enviada', 'autorizada'])
+// Status em que substituir/cancelar fazem sentido — as mesmas listas de
+// api/nfse-cancel.js e api/nfse-substituir.js. O botão abre o modal de ações,
+// que separa as duas: substituir corrige descrição e cadastro; cancelar é o
+// caminho para corrigir VALOR (o SEFIN proíbe mudá-lo na substituição).
+const ACIONAVEIS = new Set(['enviada', 'autorizada'])
 
 // Lista das NFS-e emitidas, com download do XML e do DANFSE.
 //
@@ -23,6 +27,7 @@ const badges = {
   autorizada: ['bg-green-900/40 text-green-300 border-green-700', '✅ Autorizada'],
   erro: ['bg-red-900/40 text-red-300 border-red-700', '❌ Erro'],
   cancelada: ['bg-gray-800 text-gray-400 border-gray-600', '🚫 Cancelada'],
+  substituida: ['bg-purple-900/40 text-purple-300 border-purple-700', '🔄 Substituída'],
 }
 
 const brl = (v) =>
@@ -48,6 +53,7 @@ export default function NFSeEmitidas() {
   const [aberta, setAberta] = useState(null)        // id da emissão expandida
   const [eventos, setEventos] = useState({})        // id → eventos
   const [cancelando, setCancelando] = useState(null)
+  const [acoesDe, setAcoesDe] = useState(null)
   const limit = 20
 
   const buscar = useCallback(async () => {
@@ -269,12 +275,13 @@ export default function NFSeEmitidas() {
                         >
                           {aberta === e.id ? '▲' : '▼'} Histórico
                         </button>
-                        {CANCELAVEIS.has(e.status) && (
+                        {ACIONAVEIS.has(e.status) && (
                           <button
-                            onClick={() => setCancelando(e)}
-                            className="px-3 py-1 bg-red-800 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                            onClick={() => setAcoesDe(e)}
+                            title="Substituir ou cancelar"
+                            className="px-3 py-1 bg-purple-800 hover:bg-purple-700 text-white text-xs rounded transition-colors"
                           >
-                            🚫 Cancelar
+                            ⚙️ Ações
                           </button>
                         )}
                       </td>
@@ -323,6 +330,22 @@ export default function NFSeEmitidas() {
             </div>
           </div>
         </div>
+      )}
+
+      {acoesDe && (
+        <NFSeAcoesModal
+          emission={acoesDe}
+          onClose={() => setAcoesDe(null)}
+          onCancelar={(em) => setCancelando(em)}
+          onSuccess={(data) => {
+            setAcoesDe(null)
+            // O histórico em cache descreve o estado ANTES da substituição.
+            setEventos((ev) => ({ ...ev, [acoesDe.id]: undefined }))
+            setAberta(null)
+            buscar()
+            if (data?.aviso) setErro(data.aviso)
+          }}
+        />
       )}
 
       {cancelando && (
