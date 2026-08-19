@@ -14,6 +14,7 @@ const ICONES = {
   'nfse.autorizada': '✅',
   'nfse.rejeitada': '⛔',
   'nfse.cancelada': '🚫',
+  'nfse.cancelamento_sincronizado': '🚫',
   'nfse.erro': '❌',
 }
 
@@ -21,6 +22,7 @@ const CORES = {
   'nfse.autorizada': 'text-green-400',
   'nfse.rejeitada': 'text-red-400',
   'nfse.cancelada': 'text-red-400',
+  'nfse.cancelamento_sincronizado': 'text-red-400',
   'nfse.erro': 'text-red-400',
   'nfse.enviada': 'text-yellow-400',
 }
@@ -55,6 +57,13 @@ export default function NFSeTimeline({ events = [] }) {
                 {ev.label || ev.event_type}
                 {ev.origem === 'webhook' && (
                   <span className="ml-2 text-[10px] font-normal text-gray-500 uppercase">via webhook</span>
+                )}
+                {/* ⚠️ 'manual' não é detalhe de origem: o fato não foi
+                    observado por nós nem entregue pelo emissor — foi declarado
+                    por uma pessoa. Sem a etiqueta, um cancelamento sincronizado
+                    lê-se como evento do fisco. */}
+                {ev.origem === 'manual' && (
+                  <span className="ml-2 text-[10px] font-normal text-amber-500 uppercase">registro manual</span>
                 )}
               </p>
               <p className="text-xs text-gray-500">{dataHora(ev.event_timestamp)}</p>

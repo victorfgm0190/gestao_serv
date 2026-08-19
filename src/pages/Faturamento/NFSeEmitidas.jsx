@@ -3,12 +3,20 @@ import { useOutletContext } from 'react-router-dom'
 import NFSeTimeline from '../../components/NFSeTimeline'
 import NFSeCancelModal from '../../components/NFSeCancelModal'
 import NFSeAcoesModal from '../../components/NFSeAcoesModal'
+import NFSeReemitirModal from '../../components/NFSeReemitirModal'
 
 // Status em que substituir/cancelar fazem sentido — as mesmas listas de
 // api/nfse-cancel.js e api/nfse-substituir.js. O botão abre o modal de ações,
 // que separa as duas: substituir corrige descrição e cadastro; cancelar é o
 // caminho para corrigir VALOR (o SEFIN proíbe mudá-lo na substituição).
 const ACIONAVEIS = new Set(['enviada', 'autorizada'])
+
+// ⚠️ Re-emitir vale também para 'cancelada', e é por isso que ele NÃO mora
+// dentro do modal de Ações: cancelada pela própria tela, a nota sai de
+// ACIONAVEIS e o ⚙️ desaparece — justamente quando emitir a substituta é o
+// próximo passo. O modal decide sozinho se precisa sincronizar (nota que o
+// sistema ainda vê como válida) ou se a fatura já está liberada.
+const REEMITIVEIS = new Set(['enviada', 'autorizada', 'cancelada'])
 
 // Lista das NFS-e emitidas, com download do XML e do DANFSE.
 //
@@ -54,6 +62,8 @@ export default function NFSeEmitidas() {
   const [eventos, setEventos] = useState({})        // id → eventos
   const [cancelando, setCancelando] = useState(null)
   const [acoesDe, setAcoesDe] = useState(null)
+  const [reemitindo, setReemitindo] = useState(null)
+  const [aviso, setAviso] = useState(null)
   const limit = 20
 
   const buscar = useCallback(async () => {
@@ -175,6 +185,13 @@ export default function NFSeEmitidas() {
         </div>
       )}
 
+      {aviso && (
+        <div className="p-3 rounded text-sm border bg-green-900/30 text-green-300 border-green-700 flex items-start gap-3">
+          <span className="flex-1">✅ {aviso}</span>
+          <button onClick={() => setAviso(null)} className="text-green-400 hover:text-green-200">✕</button>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-gray-400">Carregando…</p>
       ) : emissions.length === 0 ? (
@@ -284,6 +301,17 @@ export default function NFSeEmitidas() {
                             ⚙️ Ações
                           </button>
                         )}
+                        {REEMITIVEIS.has(e.status) && (
+                          <button
+                            onClick={() => setReemitindo(e)}
+                            title={e.status === 'cancelada'
+                              ? 'Emitir nova NFS-e para a mesma fatura'
+                              : 'Já cancelou no portal? Sincronize e emita a nova nota'}
+                            className="px-3 py-1 bg-emerald-800 hover:bg-emerald-700 text-white text-xs rounded transition-colors"
+                          >
+                            🔄 Re-emitir
+                          </button>
+                        )}
                       </td>
                     </tr>
                     {aberta === e.id && (
@@ -359,6 +387,34 @@ export default function NFSeEmitidas() {
             // evento que a cancelou.
             setEventos((e) => ({ ...e, [cancelando.id]: undefined }))
             setAberta(null)
+            buscar()
+          }}
+        />
+      )}
+
+      {reemitindo && (
+        <NFSeReemitirModal
+          emission={reemitindo}
+          onClose={() => setReemitindo(null)}
+          onSuccess={(r) => {
+            // ⚠️ Sem window.location.reload(): recarregar a página perde a
+            // empresa ativa e a paginação, e ainda descarta o aviso que acabou
+            // de ser montado. `buscar()` refaz só a lista.
+            const numero = r?.emissao?.nfse_number
+            setAviso(
+              [
+                r?.sincronizada && r?.nfse_cancelada
+                  ? `NFS-e nº ${r.nfse_cancelada} marcada como cancelada.`
+                  : null,
+                numero
+                  ? `Nova NFS-e nº ${numero} emitida${r?.ambiente ? ` (${r.ambiente})` : ''}.`
+                  : `Nova emissão registrada (${r?.emissao?.status ?? 'sem número ainda'})${r?.ambiente ? ` — ${r.ambiente}` : ''}.`,
+              ].filter(Boolean).join(' ')
+            )
+            // O histórico em cache descreve o estado ANTES da sincronização.
+            setEventos((e) => ({ ...e, [reemitindo.id]: undefined }))
+            setAberta(null)
+            setReemitindo(null)
             buscar()
           }}
         />
