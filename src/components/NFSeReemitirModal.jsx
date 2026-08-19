@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import XmlPrevia from './XmlPrevia'
+import { AvisoDeclaracao } from './NFSeSincronizarModal'
 
 // Re-emitir a nota da MESMA fatura, depois de a anterior ter sido cancelada.
 //
@@ -143,29 +144,16 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
         {!previa && (
           <div className="space-y-4">
             {precisaSincronizar ? (
-              <div className="p-3 bg-red-900/20 border border-red-700/60 rounded text-red-200 text-sm space-y-2">
-                <p>
-                  ⚠️ Esta nota consta como <strong>{emission?.status}</strong> no sistema.
-                  Re-emitir vai marcá-la como cancelada <strong>sem consultar o fisco</strong>.
-                </p>
-                <p className="text-xs text-red-300">
-                  Se ela ainda valer na prefeitura, a fatura fica liberada e o mesmo serviço
-                  passa a ter <strong>duas notas</strong>. Para cancelar de verdade, feche
-                  aqui e use ⚙️ Ações → 🚫 Cancelar.
-                </p>
-                <label className="flex items-start gap-2 pt-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={confirmado}
-                    onChange={(e) => setConfirmado(e.target.checked)}
-                    className="mt-0.5"
-                  />
-                  <span className="text-sm text-red-100">
-                    Confirmo que a NFS-e {emission?.nfseNumber ? `nº ${emission.nfseNumber}` : ''} já
-                    foi cancelada no portal.
-                  </span>
-                </label>
-              </div>
+              // ⚠️ O aviso mora no NFSeSincronizarModal e é usado pelos dois.
+              // Duas cópias do texto que explica por que isto NÃO é uma
+              // verificação divergiriam no dia em que o fisco mudasse a regra —
+              // e é esse texto que segura a decisão de emitir a segunda nota.
+              <AvisoDeclaracao
+                nfseNumber={emission?.nfseNumber}
+                status={emission?.status}
+                confirmado={confirmado}
+                onConfirmar={setConfirmado}
+              />
             ) : (
               <div className="p-3 bg-gray-800 border border-gray-700 rounded text-gray-300 text-sm">
                 🚫 Nota já cancelada no sistema — a fatura está liberada. Nada será

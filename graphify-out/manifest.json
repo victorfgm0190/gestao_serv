@@ -560,8 +560,8 @@
     "semantic_hash": ""
   },
   "lib/nfse-emit.test.js": {
-    "mtime": 1787102805.7460742,
-    "ast_hash": "a9fac49fdc8c06882a41038297591ed7",
+    "mtime": 1787154250.5614562,
+    "ast_hash": "bb36f93c9dd4b3853cf2f2a43583a0f7",
     "semantic_hash": ""
   },
   "lib/nfse-signer.js": {
@@ -650,13 +650,13 @@
     "semantic_hash": ""
   },
   "src/components/NFSeCancelModal.jsx": {
-    "mtime": 1787095547.6855235,
-    "ast_hash": "2d64e2552a3a243b36f467a1f0592498",
+    "mtime": 1787153878.3660376,
+    "ast_hash": "cfaea2d25623493c35cce58ef03ef2c7",
     "semantic_hash": ""
   },
   "src/components/NFSeEmitirModal.jsx": {
-    "mtime": 1787096830.5334625,
-    "ast_hash": "f9c351bd76019d839417ad336cb16ae5",
+    "mtime": 1787153971.0443676,
+    "ast_hash": "f5bc5dcf5881a4f765eae6de4e468043",
     "semantic_hash": ""
   },
   "src/components/NFSeTimeline.jsx": {
@@ -735,8 +735,8 @@
     "semantic_hash": ""
   },
   "lib/nfse-substituir.test.js": {
-    "mtime": 1787140250.1124833,
-    "ast_hash": "6e02ad5e0793bc01ba78d015ada246c9",
+    "mtime": 1787154278.2644346,
+    "ast_hash": "84aea8dd731cbd2b35cc186186c1bbf3",
     "semantic_hash": ""
   },
   "sql/migration-nfse-etapa11.sql": {
@@ -745,8 +745,8 @@
     "semantic_hash": ""
   },
   "src/components/NFSeAcoesModal.jsx": {
-    "mtime": 1787140475.7246082,
-    "ast_hash": "56d0b159954401b1a2a432ca614d570f",
+    "mtime": 1787153878.3660376,
+    "ast_hash": "34c773c966950c24700b95ac0ee39b5c",
     "semantic_hash": ""
   },
   "api/nfse-sincronizar-cancelamento.js": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   "src/components/NFSeReemitirModal.jsx": {
-    "mtime": 1787150645.10356,
-    "ast_hash": "48edbb3a81bd5749395c7b4a2e6fee6a",
+    "mtime": 1787153878.3660376,
+    "ast_hash": "78f4b4112c6e5cc9e91686d6100fba12",
     "semantic_hash": ""
   },
   "api/nfse-operations.js": {
@@ -787,6 +787,11 @@
   "src/pages/Faturamento/NFSeOperacoes.jsx": {
     "mtime": 1787152737.5209436,
     "ast_hash": "197e6474cd6bf240bf54525a3b9e5766",
+    "semantic_hash": ""
+  },
+  "src/components/XmlPrevia.jsx": {
+    "mtime": 1787153878.3660376,
+    "ast_hash": "b5ab52e01adf40c4e7757075970b9afd",
     "semantic_hash": ""
   }
 }

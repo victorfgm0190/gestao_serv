@@ -4,6 +4,7 @@ import NFSeTimeline from '../../components/NFSeTimeline'
 import NFSeCancelModal from '../../components/NFSeCancelModal'
 import NFSeAcoesModal from '../../components/NFSeAcoesModal'
 import NFSeReemitirModal from '../../components/NFSeReemitirModal'
+import NFSeSincronizarModal from '../../components/NFSeSincronizarModal'
 
 // Status em que substituir/cancelar fazem sentido — as mesmas listas de
 // api/nfse-cancel.js e api/nfse-substituir.js. O botão abre o modal de ações,
@@ -17,6 +18,11 @@ const ACIONAVEIS = new Set(['enviada', 'autorizada'])
 // próximo passo. O modal decide sozinho se precisa sincronizar (nota que o
 // sistema ainda vê como válida) ou se a fatura já está liberada.
 const REEMITIVEIS = new Set(['enviada', 'autorizada', 'cancelada'])
+
+// ⚠️ Sincronizar só faz sentido no que o sistema AINDA vê como válido. Numa
+// nota já 'cancelada' não há o que declarar — e o endpoint responde 200 sem
+// fazer nada, o que se leria como botão quebrado.
+const SINCRONIZAVEIS = new Set(['enviada', 'autorizada'])
 
 // Lista das NFS-e emitidas, com download do XML e do DANFSE.
 //
@@ -63,6 +69,7 @@ export default function NFSeEmitidas() {
   const [cancelando, setCancelando] = useState(null)
   const [acoesDe, setAcoesDe] = useState(null)
   const [reemitindo, setReemitindo] = useState(null)
+  const [sincronizando, setSincronizando] = useState(null)
   const [aviso, setAviso] = useState(null)
   const limit = 20
 
@@ -301,6 +308,15 @@ export default function NFSeEmitidas() {
                             ⚙️ Ações
                           </button>
                         )}
+                        {SINCRONIZAVEIS.has(e.status) && (
+                          <button
+                            onClick={() => setSincronizando(e)}
+                            title="Já cancelou no portal? Marque aqui, sem emitir outra"
+                            className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white text-xs rounded transition-colors"
+                          >
+                            🔄 Sincronizar
+                          </button>
+                        )}
                         {REEMITIVEIS.has(e.status) && (
                           <button
                             onClick={() => setReemitindo(e)}
@@ -387,6 +403,25 @@ export default function NFSeEmitidas() {
             // evento que a cancelou.
             setEventos((e) => ({ ...e, [cancelando.id]: undefined }))
             setAberta(null)
+            buscar()
+          }}
+        />
+      )}
+
+      {sincronizando && (
+        <NFSeSincronizarModal
+          emission={sincronizando}
+          onClose={() => setSincronizando(null)}
+          onSuccess={(r) => {
+            setAviso(
+              r?.ja_cancelada
+                ? `A NFS-e ${r.nfse_cancelada ? `nº ${r.nfse_cancelada}` : ''} já constava cancelada. A fatura está liberada.`
+                : `NFS-e ${r?.nfse_cancelada ? `nº ${r.nfse_cancelada}` : ''} marcada como cancelada. A fatura ${r?.invoice_number || ''} está liberada para re-emitir.`
+            )
+            // O histórico em cache descreve o estado ANTES da sincronização.
+            setEventos((ev) => ({ ...ev, [sincronizando.id]: undefined }))
+            setAberta(null)
+            setSincronizando(null)
             buscar()
           }}
         />
