@@ -15,8 +15,8 @@
     "semantic_hash": "5e6e3cea3e89137071c142dd7835b0ef"
   },
   "api/clients.js": {
-    "mtime": 1784510267.0298235,
-    "ast_hash": "d0b98cd629249c4bfa63bc8a31862afb",
+    "mtime": 1787099512.2399077,
+    "ast_hash": "ead6c7d67393470a2678c4bab737dfa8",
     "semantic_hash": ""
   },
   "api/contract-months.js": {
@@ -135,9 +135,9 @@
     "semantic_hash": ""
   },
   "src/pages/Clientes.jsx": {
-    "mtime": 1783785474.499416,
-    "ast_hash": "5cae627af56a531bca8bb7745eeae5ac",
-    "semantic_hash": "5cae627af56a531bca8bb7745eeae5ac"
+    "mtime": 1787099577.584972,
+    "ast_hash": "86d6fe9bef0424772a0ac4a2360d0d3b",
+    "semantic_hash": ""
   },
   "src/pages/Contracts.jsx": {
     "mtime": 1785166966.0818865,
@@ -685,8 +685,23 @@
     "semantic_hash": ""
   },
   "src/pages/Configuracao/NFSeEmitterSettings.jsx": {
-    "mtime": 1787098080.280083,
-    "ast_hash": "77668cb2d8df722f22aec14352db67a6",
+    "mtime": 1787099610.0275042,
+    "ast_hash": "1b1c34c90a4df11afa5fc9e774feb844",
+    "semantic_hash": ""
+  },
+  "api/consultar-cnpj.js": {
+    "mtime": 1787099458.5616324,
+    "ast_hash": "1ec606c2a12e5a6744c73f19fb1da621",
+    "semantic_hash": ""
+  },
+  "lib/consultar-cnpj.test.js": {
+    "mtime": 1787099809.6857095,
+    "ast_hash": "edb25a875c2099d7fdf48643b67e8558",
+    "semantic_hash": ""
+  },
+  "src/lib/useCNPJConsulta.js": {
+    "mtime": 1787099475.3748016,
+    "ast_hash": "6d949cf184faf4c793b9df3771cca867",
     "semantic_hash": ""
   }
 }

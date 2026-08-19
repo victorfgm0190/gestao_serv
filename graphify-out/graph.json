@@ -180,6 +180,72 @@
       "norm_label": "handler()"
     },
     {
+      "label": "consultar-cnpj.js",
+      "file_type": "code",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "api_consultar_cnpj",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "consultar-cnpj.js"
+    },
+    {
+      "label": "soDigitos()",
+      "file_type": "code",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "api_consultar_cnpj_sodigitos",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "sodigitos()"
+    },
+    {
+      "label": "ouNulo()",
+      "file_type": "code",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L22",
+      "_origin": "ast",
+      "id": "api_consultar_cnpj_ounulo",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "ounulo()"
+    },
+    {
+      "label": "cnpjValido()",
+      "file_type": "code",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L29",
+      "_origin": "ast",
+      "id": "api_consultar_cnpj_cnpjvalido",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "cnpjvalido()"
+    },
+    {
+      "label": "mapearCNPJ()",
+      "file_type": "code",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L46",
+      "_origin": "ast",
+      "id": "api_consultar_cnpj_mapearcnpj",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "mapearcnpj()"
+    },
+    {
+      "label": "handler()",
+      "file_type": "code",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L74",
+      "_origin": "ast",
+      "id": "api_consultar_cnpj_handler",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "handler()"
+    },
+    {
       "label": "contract-months.js",
       "file_type": "code",
       "source_file": "api/contract-months.js",
@@ -307,8 +373,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_cron_sync",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "cron-sync.js"
     },
     {
@@ -318,8 +384,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "api_cron_sync_handler",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "handler()"
     },
     {
@@ -692,8 +758,8 @@
       "source_location": "L569",
       "_origin": "ast",
       "id": "api_fiscal_obligations_distribuir",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "distribuir()"
     },
     {
@@ -879,8 +945,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_ingest_email",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "ingest-email.js"
     },
     {
@@ -890,8 +956,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "api_ingest_email_handler",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "handler()"
     },
     {
@@ -1099,8 +1165,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_cancel",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "nfse-cancel.js"
     },
     {
@@ -1110,8 +1176,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "api_nfse_cancel_cancelaveis",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "cancelaveis"
     },
     {
@@ -1121,8 +1187,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "api_nfse_cancel_handler",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "handler()"
     },
     {
@@ -1198,8 +1264,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_emit",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "nfse-emit.js"
     },
     {
@@ -1209,8 +1275,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "api_nfse_emit_handler",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "handler()"
     },
     {
@@ -1220,8 +1286,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings",
-      "community": 63,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "nfse-emitter-settings.js"
     },
     {
@@ -1231,8 +1297,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_campos",
-      "community": 63,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "campos"
     },
     {
@@ -1242,8 +1308,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_sodigitos",
-      "community": 63,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "sodigitos()"
     },
     {
@@ -1253,8 +1319,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_texto",
-      "community": 63,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "texto()"
     },
     {
@@ -1264,8 +1330,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_numero",
-      "community": 63,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "numero()"
     },
     {
@@ -1275,8 +1341,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_handler",
-      "community": 63,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "handler()"
     },
     {
@@ -1352,8 +1418,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_validate_setup",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "nfse-validate-setup.js"
     },
     {
@@ -1363,8 +1429,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "api_nfse_validate_setup_handler",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "handler()"
     },
     {
@@ -2037,6 +2103,160 @@
       "community": 5,
       "community_name": "payables-victor.js",
       "norm_label": "mesdecaixaoriginal()"
+    },
+    {
+      "label": "consultar-cnpj.test.js",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "consultar-cnpj.test.js"
+    },
+    {
+      "label": "ok()",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_ok",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "ok()"
+    },
+    {
+      "label": "token",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_token",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "token"
+    },
+    {
+      "label": "chamar()",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L20",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_chamar",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "chamar()"
+    },
+    {
+      "label": "respostaReal",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L33",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_respostareal",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "respostareal"
+    },
+    {
+      "label": "m",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L51",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_m",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "m"
+    },
+    {
+      "label": "vazio",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L70",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_vazio",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "vazio"
+    },
+    {
+      "label": "formulario",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L114",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_formulario",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "formulario"
+    },
+    {
+      "label": "mapa",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L117",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_mapa",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "mapa"
+    },
+    {
+      "label": "r1",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L119",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_r1",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "r1"
+    },
+    {
+      "label": "r2",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L128",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_r2",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "r2"
+    },
+    {
+      "label": "r3",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L132",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_r3",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "r3"
+    },
+    {
+      "label": "sql",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L144",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_sql",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "sql"
+    },
+    {
+      "label": "chamarClients()",
+      "file_type": "code",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L147",
+      "_origin": "ast",
+      "id": "lib_consultar_cnpj_test_chamarclients",
+      "community": 22,
+      "community_name": "Billing.jsx",
+      "norm_label": "chamarclients()"
     },
     {
       "label": "cron-nfse-check.test.js",
@@ -2738,8 +2958,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_email_ingest",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "email-ingest.js"
     },
     {
@@ -2749,8 +2969,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "lib_email_ingest_makeimapconfig",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "makeimapconfig()"
     },
     {
@@ -2760,8 +2980,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "lib_email_ingest_classify",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "classify()"
     },
     {
@@ -2771,8 +2991,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "lib_email_ingest_fetchemailsfromaccount",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "fetchemailsfromaccount()"
     },
     {
@@ -2782,8 +3002,8 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "lib_email_ingest_ingestaccounts",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "ingestaccounts()"
     },
     {
@@ -2793,8 +3013,8 @@
       "source_location": "L132",
       "_origin": "ast",
       "id": "lib_email_ingest_imperiumaccounts",
-      "community": 9,
-      "community_name": "payable-payments.js",
+      "community": 51,
+      "community_name": "Clientes.jsx",
       "norm_label": "imperiumaccounts()"
     },
     {
@@ -4212,8 +4432,8 @@
       "source_location": "L184",
       "_origin": "ast",
       "id": "lib_nfse_emit_test_chamar",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 17,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "chamar()"
     },
     {
@@ -4278,8 +4498,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_setup_check",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "nfse-setup-check.js"
     },
     {
@@ -4289,8 +4509,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_campos_emitente",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "campos_emitente"
     },
     {
@@ -4300,8 +4520,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_campos_tomador",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "campos_tomador"
     },
     {
@@ -4311,8 +4531,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_vazio",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "vazio()"
     },
     {
@@ -4322,8 +4542,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_faltantes",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "faltantes()"
     },
     {
@@ -4333,8 +4553,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_verificarsetup",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "verificarsetup()"
     },
     {
@@ -4344,8 +4564,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "nfse-setup-check.test.js"
     },
     {
@@ -4355,8 +4575,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_ok",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "ok()"
     },
     {
@@ -4366,8 +4586,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_sql",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "sql"
     },
     {
@@ -4377,8 +4597,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_token",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "token"
     },
     {
@@ -4388,8 +4608,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_chamar",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "chamar()"
     },
     {
@@ -4399,8 +4619,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_nomes",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "nomes"
     },
     {
@@ -4410,8 +4630,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "lib_nfse_setup_check_test_src",
-      "community": 22,
-      "community_name": "Billing.jsx",
+      "community": 9,
+      "community_name": "payable-payments.js",
       "norm_label": "src"
     },
     {
@@ -4685,8 +4905,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_xml_cancellation_builder",
-      "community": 24,
-      "community_name": "Financial",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "nfse-xml-cancellation-builder.js"
     },
     {
@@ -4696,8 +4916,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "lib_nfse_xml_cancellation_builder_motivos",
-      "community": 19,
-      "community_name": "email-ingest.js",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "motivos"
     },
     {
@@ -4707,8 +4927,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "lib_nfse_xml_cancellation_builder_motivoporcodigo",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 40,
+      "community_name": "@neondatabase/serverless",
       "norm_label": "motivoporcodigo()"
     },
     {
@@ -4817,8 +5037,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_payment_source_tracker",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "payment-source-tracker.js"
     },
     {
@@ -4828,8 +5048,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_r2",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "r2()"
     },
     {
@@ -4839,8 +5059,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_num",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "num()"
     },
     {
@@ -4850,8 +5070,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_destino_por_categoria",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "destino_por_categoria"
     },
     {
@@ -4861,8 +5081,8 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_linhadesaldode",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "linhadesaldode()"
     },
     {
@@ -4872,8 +5092,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_movimento",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "movimento()"
     },
     {
@@ -4883,8 +5103,8 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_quebrarconsumo",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "quebrarconsumo()"
     },
     {
@@ -4894,8 +5114,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_movimentosdoplano",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "movimentosdoplano()"
     },
     {
@@ -4905,8 +5125,8 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_movimentosdoconsumo",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "movimentosdoconsumo()"
     },
     {
@@ -4916,8 +5136,8 @@
       "source_location": "L255",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_movimentosdaabsorcao",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "movimentosdaabsorcao()"
     },
     {
@@ -4949,8 +5169,8 @@
       "source_location": "L357",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_registrarorigemdestino",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "registrarorigemdestino()"
     },
     {
@@ -4960,8 +5180,8 @@
       "source_location": "L377",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_listarorigemdestinopagamento",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "listarorigemdestinopagamento()"
     },
     {
@@ -4971,8 +5191,8 @@
       "source_location": "L389",
       "_origin": "ast",
       "id": "lib_payment_source_tracker_limparorigemdestinopagamento",
-      "community": 51,
-      "community_name": "Clientes.jsx",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "limparorigemdestinopagamento()"
     },
     {
@@ -6808,8 +7028,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_lib_session_settoken",
-      "community": 69,
-      "community_name": "Login.jsx",
+      "community": 61,
+      "community_name": "main.jsx",
       "norm_label": "settoken()"
     },
     {
@@ -6877,6 +7097,39 @@
       "community": 0,
       "community_name": "main.jsx",
       "norm_label": "installfetchinterceptor()"
+    },
+    {
+      "label": "useCNPJConsulta.js",
+      "file_type": "code",
+      "source_file": "src/lib/useCNPJConsulta.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_lib_usecnpjconsulta",
+      "community": 66,
+      "community_name": "Contracts.jsx",
+      "norm_label": "usecnpjconsulta.js"
+    },
+    {
+      "label": "useCNPJConsulta()",
+      "file_type": "code",
+      "source_file": "src/lib/useCNPJConsulta.js",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "src_lib_usecnpjconsulta_usecnpjconsulta",
+      "community": 66,
+      "community_name": "Contracts.jsx",
+      "norm_label": "usecnpjconsulta()"
+    },
+    {
+      "label": "aplicarDados()",
+      "file_type": "code",
+      "source_file": "src/lib/useCNPJConsulta.js",
+      "source_location": "L60",
+      "_origin": "ast",
+      "id": "src_lib_usecnpjconsulta_aplicardados",
+      "community": 66,
+      "community_name": "Contracts.jsx",
+      "norm_label": "aplicardados()"
     },
     {
       "label": "main.jsx",
@@ -6973,41 +7226,63 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_clientes",
-      "community": 67,
-      "community_name": "Clientes.jsx",
+      "community": 66,
+      "community_name": "Contracts.jsx",
       "norm_label": "clientes.jsx"
     },
     {
       "label": "COMPANIES",
       "file_type": "code",
       "source_file": "src/pages/Clientes.jsx",
-      "source_location": "L3",
+      "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_clientes_companies",
-      "community": 67,
-      "community_name": "Clientes.jsx",
+      "community": 66,
+      "community_name": "Contracts.jsx",
       "norm_label": "companies"
+    },
+    {
+      "label": "CAMPOS_FISCAIS",
+      "file_type": "code",
+      "source_file": "src/pages/Clientes.jsx",
+      "source_location": "L10",
+      "_origin": "ast",
+      "id": "src_pages_clientes_campos_fiscais",
+      "community": 66,
+      "community_name": "Contracts.jsx",
+      "norm_label": "campos_fiscais"
+    },
+    {
+      "label": "DE_PARA_CNPJ",
+      "file_type": "code",
+      "source_file": "src/pages/Clientes.jsx",
+      "source_location": "L25",
+      "_origin": "ast",
+      "id": "src_pages_clientes_de_para_cnpj",
+      "community": 66,
+      "community_name": "Contracts.jsx",
+      "norm_label": "de_para_cnpj"
     },
     {
       "label": "emptyForm",
       "file_type": "code",
       "source_file": "src/pages/Clientes.jsx",
-      "source_location": "L8",
+      "source_location": "L31",
       "_origin": "ast",
       "id": "src_pages_clientes_emptyform",
-      "community": 67,
-      "community_name": "Clientes.jsx",
+      "community": 66,
+      "community_name": "Contracts.jsx",
       "norm_label": "emptyform"
     },
     {
       "label": "Clientes()",
       "file_type": "code",
       "source_file": "src/pages/Clientes.jsx",
-      "source_location": "L10",
+      "source_location": "L36",
       "_origin": "ast",
       "id": "src_pages_clientes_clientes",
-      "community": 67,
-      "community_name": "Clientes.jsx",
+      "community": 66,
+      "community_name": "Contracts.jsx",
       "norm_label": "clientes()"
     },
     {
@@ -7022,10 +7297,21 @@
       "norm_label": "nfseemittersettings.jsx"
     },
     {
+      "label": "DE_PARA_CNPJ",
+      "file_type": "code",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L7",
+      "_origin": "ast",
+      "id": "src_pages_configuracao_nfseemittersettings_de_para_cnpj",
+      "community": 66,
+      "community_name": "Contracts.jsx",
+      "norm_label": "de_para_cnpj"
+    },
+    {
       "label": "CAMPOS_TEXTO",
       "file_type": "code",
       "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
-      "source_location": "L22",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfseemittersettings_campos_texto",
       "community": 66,
@@ -7036,7 +7322,7 @@
       "label": "vazioParaCampo",
       "file_type": "code",
       "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
-      "source_location": "L44",
+      "source_location": "L54",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfseemittersettings_vazioparacampo",
       "community": 66,
@@ -7047,7 +7333,7 @@
       "label": "NFSeEmitterSettings()",
       "file_type": "code",
       "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
-      "source_location": "L50",
+      "source_location": "L60",
       "_origin": "ast",
       "id": "src_pages_configuracao_nfseemittersettings_nfseemittersettings",
       "community": 66,
@@ -7116,8 +7402,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_contracts",
-      "community": 61,
-      "community_name": "main.jsx",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "contracts.jsx"
     },
     {
@@ -7127,8 +7413,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_contracts_months",
-      "community": 61,
-      "community_name": "main.jsx",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "months"
     },
     {
@@ -7138,8 +7424,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_pages_contracts_empty_form",
-      "community": 61,
-      "community_name": "main.jsx",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "empty_form"
     },
     {
@@ -7149,8 +7435,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_pages_contracts_split_mode_label",
-      "community": 61,
-      "community_name": "main.jsx",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "split_mode_label"
     },
     {
@@ -7160,8 +7446,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_pages_contracts_contracts",
-      "community": 61,
-      "community_name": "main.jsx",
+      "community": 63,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "contracts()"
     },
     {
@@ -7303,8 +7589,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_emailrules",
-      "community": 68,
-      "community_name": "Settings.jsx",
+      "community": 61,
+      "community_name": "main.jsx",
       "norm_label": "emailrules.jsx"
     },
     {
@@ -7314,8 +7600,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_emailrules_rule_types",
-      "community": 68,
-      "community_name": "Settings.jsx",
+      "community": 61,
+      "community_name": "main.jsx",
       "norm_label": "rule_types"
     },
     {
@@ -7325,8 +7611,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_pages_emailrules_emailrules",
-      "community": 68,
-      "community_name": "Settings.jsx",
+      "community": 61,
+      "community_name": "main.jsx",
       "norm_label": "emailrules()"
     },
     {
@@ -7985,8 +8271,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_login",
-      "community": 69,
-      "community_name": "Login.jsx",
+      "community": 61,
+      "community_name": "main.jsx",
       "norm_label": "login.jsx"
     },
     {
@@ -7996,8 +8282,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_login_login",
-      "community": 69,
-      "community_name": "Login.jsx",
+      "community": 61,
+      "community_name": "main.jsx",
       "norm_label": "login()"
     },
     {
@@ -8007,8 +8293,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_settings",
-      "community": 61,
-      "community_name": "main.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "settings.jsx"
     },
     {
@@ -8018,8 +8304,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_settings_regimes",
-      "community": 61,
-      "community_name": "main.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "regimes"
     },
     {
@@ -8029,8 +8315,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_pages_settings_empty",
-      "community": 61,
-      "community_name": "main.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "empty"
     },
     {
@@ -8040,8 +8326,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_pages_settings_settings",
-      "community": 61,
-      "community_name": "main.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "settings()"
     },
     {
@@ -10598,6 +10884,18 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/lib/useCNPJConsulta.js",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_lib_usecnpjconsulta",
+      "target": "ref_react",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
       "source_location": "L1",
       "weight": 1.0,
@@ -10976,7 +11274,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "api/clients.js",
-      "source_location": "L56",
+      "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
       "source": "api_clients_handler",
@@ -10994,6 +11292,229 @@
       "_origin": "ast",
       "source": "api_clients_handler",
       "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj",
+      "target": "api_consultar_cnpj_cnpjvalido",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L74",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj",
+      "target": "api_consultar_cnpj_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L46",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj",
+      "target": "api_consultar_cnpj_mapearcnpj",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj",
+      "target": "api_consultar_cnpj_ounulo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj",
+      "target": "api_consultar_cnpj_sodigitos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj",
+      "target": "lib_auth_requireauth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "api_consultar_cnpj",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L30",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj_cnpjvalido",
+      "target": "api_consultar_cnpj_sodigitos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L81",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj_handler",
+      "target": "api_consultar_cnpj_sodigitos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L48",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj_mapearcnpj",
+      "target": "api_consultar_cnpj_sodigitos",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L49",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj_mapearcnpj",
+      "target": "api_consultar_cnpj_ounulo",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L87",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj_handler",
+      "target": "api_consultar_cnpj_cnpjvalido",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "api_consultar_cnpj_cnpjvalido",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L117",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj_handler",
+      "target": "api_consultar_cnpj_mapearcnpj",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "api_consultar_cnpj_mapearcnpj",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "api/consultar-cnpj.js",
+      "source_location": "L75",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "api_consultar_cnpj_handler",
+      "target": "lib_auth_requireauth"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "api_consultar_cnpj_handler",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test_chamar",
+      "target": "api_consultar_cnpj_handler",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
@@ -18672,6 +19193,18 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "lib/danfse-generator.test.js",
       "source_location": "L13",
       "weight": 1.0,
@@ -18804,6 +19337,18 @@
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_auth_signtoken",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "lib/danfse-generator.test.js",
       "source_location": "L13",
       "weight": 1.0,
@@ -18904,6 +19449,173 @@
       "_origin": "ast",
       "source": "lib_cash_month_mesdecaixaoriginal",
       "target": "lib_cash_month_partesdedata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_chamar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L147",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_chamarclients",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L114",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_formulario",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_m",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L117",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_mapa",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_ok",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L119",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_r1",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L128",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_r2",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L132",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_r3",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L33",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_respostareal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L144",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_sql",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_token",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L70",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "lib_consultar_cnpj_test_vazio",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "src_lib_usecnpjconsulta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "lib/consultar-cnpj.test.js",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "lib_consultar_cnpj_test",
+      "target": "src_lib_usecnpjconsulta_aplicardados",
       "confidence_score": 1.0
     },
     {
@@ -27422,6 +28134,136 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "src/lib/useCNPJConsulta.js",
+      "source_location": "L60",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_lib_usecnpjconsulta",
+      "target": "src_lib_usecnpjconsulta_aplicardados",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/useCNPJConsulta.js",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_lib_usecnpjconsulta",
+      "target": "src_lib_usecnpjconsulta_usecnpjconsulta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Clientes.jsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_clientes",
+      "target": "src_lib_usecnpjconsulta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings",
+      "target": "src_lib_usecnpjconsulta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Clientes.jsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_clientes",
+      "target": "src_lib_usecnpjconsulta_usecnpjconsulta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/pages/Clientes.jsx",
+      "source_location": "L61",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_clientes_clientes",
+      "target": "src_lib_usecnpjconsulta_usecnpjconsulta"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings",
+      "target": "src_lib_usecnpjconsulta_usecnpjconsulta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L69",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings_nfseemittersettings",
+      "target": "src_lib_usecnpjconsulta_usecnpjconsulta"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Clientes.jsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_clientes",
+      "target": "src_lib_usecnpjconsulta_aplicardados",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings",
+      "target": "src_lib_usecnpjconsulta_aplicardados",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L112",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings_nfseemittersettings",
+      "target": "src_lib_usecnpjconsulta_aplicardados"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "src/main.jsx",
       "source_location": "L30",
       "weight": 1.0,
@@ -27901,6 +28743,17 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_clientes",
+      "target": "src_pages_clientes_campos_fiscais",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Clientes.jsx",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_clientes",
       "target": "src_pages_clientes_clientes",
       "confidence_score": 1.0
     },
@@ -27908,7 +28761,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Clientes.jsx",
-      "source_location": "L3",
+      "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_clientes",
@@ -27919,7 +28772,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Clientes.jsx",
-      "source_location": "L8",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_clientes",
+      "target": "src_pages_clientes_de_para_cnpj",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Clientes.jsx",
+      "source_location": "L31",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_clientes",
@@ -27930,7 +28794,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
-      "source_location": "L22",
+      "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_configuracao_nfseemittersettings",
@@ -27941,7 +28805,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
-      "source_location": "L50",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_configuracao_nfseemittersettings",
+      "target": "src_pages_configuracao_nfseemittersettings_de_para_cnpj",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
+      "source_location": "L60",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_configuracao_nfseemittersettings",
@@ -27952,7 +28827,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/Configuracao/NFSeEmitterSettings.jsx",
-      "source_location": "L44",
+      "source_location": "L54",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_configuracao_nfseemittersettings",
@@ -31341,5 +32216,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "c6801baeb34c687d76728ca44c2c7a5b1fb9ea76"
+  "built_at_commit": "0bab99c78169785b409ad073a13e15744feaa4bc"
 }

@@ -1,11 +1,37 @@
 import { useState, useEffect } from 'react'
+import { useCNPJConsulta, aplicarDados } from '../lib/useCNPJConsulta'
 
 const COMPANIES = [
   { id: 1, name: 'Lumen', badge: 'bg-blue-500/20 text-blue-300 border border-blue-500/40' },
   { id: 2, name: 'Imperium', badge: 'bg-purple-500/20 text-purple-300 border border-purple-500/40' },
 ]
 
-const emptyForm = { name: '', company_ids: [] }
+// Campos fiscais do TOMADOR — o que a NFS-e precisa saber sobre o cliente.
+const CAMPOS_FISCAIS = [
+  ['razao_social', 'Razão social', 'Como consta no CNPJ'],
+  ['endereco', 'Logradouro', 'Rua, avenida…'],
+  ['numero', 'Número', ''],
+  ['complemento', 'Complemento', 'Sala, andar…'],
+  ['bairro', 'Bairro', ''],
+  ['cep', 'CEP', '8 dígitos'],
+  ['municipio_codigo', 'Município (IBGE)', '7 dígitos'],
+  ['uf', 'UF', 'PR'],
+  ['inscricao_municipal', 'Inscrição municipal', 'Opcional'],
+  ['email', 'E-mail', ''],
+  ['telefone', 'Telefone', ''],
+]
+
+// Campo do formulário → campo devolvido por /api/consultar-cnpj.
+const DE_PARA_CNPJ = {
+  razao_social: 'razao_social', endereco: 'endereco', numero: 'numero',
+  complemento: 'complemento', bairro: 'bairro', cep: 'cep',
+  municipio_codigo: 'municipio_codigo', uf: 'uf', email: 'email', telefone: 'telefone',
+}
+
+const emptyForm = {
+  name: '', company_ids: [], cpf_cnpj: '',
+  ...Object.fromEntries(CAMPOS_FISCAIS.map(([k]) => [k, ''])),
+}
 
 export default function Clientes() {
   const [clients, setClients] = useState([])
@@ -32,17 +58,46 @@ export default function Clientes() {
     }
   }
 
+  const { consultar, loading: consultandoCnpj, erro: erroCnpj, aviso: avisoCnpj, limpar: limparCnpj } = useCNPJConsulta()
+  const [resultadoCnpj, setResultadoCnpj] = useState(null)
+  const [sobrescrever, setSobrescrever] = useState(false)
+
+  // ⚠️ Busca por BOTÃO, não por debounce enquanto se digita. O debounce do
+  // esboço dependia de `consultar` na lista de dependências do efeito — e como
+  // ele era recriado a cada render, a consulta virava laço infinito contra uma
+  // API que limita por IP. E, mesmo funcionando, sobrescreveria o que a pessoa
+  // acabou de corrigir à mão.
+  async function buscarCnpj() {
+    setResultadoCnpj(null)
+    const dados = await consultar(form.cpf_cnpj)
+    if (!dados) return
+    const r = aplicarDados(form, dados, DE_PARA_CNPJ, { sobrescrever })
+    setForm((f) => ({ ...f, ...r.form, cpf_cnpj: dados.cnpj }))
+    setResultadoCnpj({ ...r, municipio: dados.municipio })
+  }
+
   function openNew() {
     setEditing(null)
     setForm(emptyForm)
     setError('')
+    setResultadoCnpj(null)
+    limparCnpj()
     setShowModal(true)
   }
 
   function openEdit(client) {
     setEditing(client)
-    setForm({ name: client.name, company_ids: [...(client.company_ids || [])] })
+    setForm({
+      ...emptyForm,
+      name: client.name,
+      company_ids: [...(client.company_ids || [])],
+      cpf_cnpj: client.cpf_cnpj || '',
+      // Coluna nula vira '': um <input value={null}> deixa de ser controlado.
+      ...Object.fromEntries(CAMPOS_FISCAIS.map(([k]) => [k, client[k] ?? ''])),
+    })
     setError('')
+    setResultadoCnpj(null)
+    limparCnpj()
     setShowModal(true)
   }
 
@@ -66,7 +121,12 @@ export default function Clientes() {
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: form.name.trim(), company_ids: form.company_ids }),
+        body: JSON.stringify({
+          name: form.name.trim(),
+          company_ids: form.company_ids,
+          cpf_cnpj: form.cpf_cnpj,
+          ...Object.fromEntries(CAMPOS_FISCAIS.map(([k]) => [k, form[k]])),
+        }),
       })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
@@ -186,7 +246,7 @@ export default function Clientes() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-white mb-4">
               {editing ? 'Editar cliente' : 'Novo cliente'}
             </h3>
@@ -217,6 +277,72 @@ export default function Clientes() {
                   ))}
                 </div>
               </div>
+
+              {/* ---- dados fiscais (NFS-e) ---- */}
+              <div className="border-t border-gray-800 pt-4">
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
+                  Dados fiscais — usados na NFS-e
+                </p>
+
+                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">CPF / CNPJ</label>
+                <div className="flex gap-2">
+                  <input
+                    placeholder="00.000.000/0000-00"
+                    value={form.cpf_cnpj}
+                    onChange={e => setForm(f => ({ ...f, cpf_cnpj: e.target.value }))}
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                  />
+                  <button
+                    onClick={buscarCnpj}
+                    disabled={consultandoCnpj || form.cpf_cnpj.replace(/\D/g, '').length !== 14}
+                    title="Buscar dados na Receita Federal"
+                    className="px-3 py-2 bg-blue-700 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm whitespace-nowrap transition-colors"
+                  >
+                    {consultandoCnpj ? '⏳' : '🔍'} Buscar
+                  </button>
+                </div>
+
+                <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+                  <input type="checkbox" checked={sobrescrever}
+                    onChange={e => setSobrescrever(e.target.checked)}
+                    className="w-3.5 h-3.5 rounded accent-blue-500" />
+                  <span className="text-xs text-gray-400">
+                    Substituir campos já preenchidos
+                  </span>
+                </label>
+
+                {erroCnpj && <p className="text-red-400 text-xs mt-2">❌ {erroCnpj}</p>}
+                {avisoCnpj && <p className="text-amber-400 text-xs mt-2">⚠️ {avisoCnpj}</p>}
+                {resultadoCnpj && !erroCnpj && (
+                  <p className="text-xs mt-2 text-green-400">
+                    ✅ {resultadoCnpj.municipio ? `${resultadoCnpj.municipio} — ` : ''}
+                    {resultadoCnpj.preenchidos.length} campo(s) preenchido(s)
+                    {/* Dizer o que NÃO foi tocado é o ponto: sem isso, a pessoa
+                        supõe que tudo veio da Receita e não confere o que ficou. */}
+                    {resultadoCnpj.mantidos.length > 0 && (
+                      <span className="text-amber-400">
+                        {' '}· {resultadoCnpj.mantidos.length} mantido(s) com o valor que já estava
+                        ({resultadoCnpj.mantidos.join(', ')})
+                      </span>
+                    )}
+                  </p>
+                )}
+
+                <div className="grid md:grid-cols-2 gap-3 mt-4">
+                  {CAMPOS_FISCAIS.map(([k, rotulo, dica]) => (
+                    <div key={k} className={k === 'endereco' ? 'md:col-span-2' : ''}>
+                      <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">{rotulo}</label>
+                      <input
+                        placeholder={dica}
+                        value={form[k]}
+                        onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {error && <p className="text-red-400 text-xs">{error}</p>}
             </div>
             <div className="flex gap-3 mt-5">

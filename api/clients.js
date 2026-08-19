@@ -22,6 +22,9 @@ export default async function handler(req, res) {
         // retornado ainda lista TODAS as empresas do cliente).
         const clients = await sql`
           SELECT c.id, c.name, c.email_domain,
+          c.razao_social, c.cpf_cnpj, c.endereco, c.numero, c.complemento,
+          c.bairro, c.cep, c.municipio_codigo, c.uf, c.email, c.telefone,
+          c.inscricao_municipal,
             COALESCE(
               ARRAY_AGG(all_cc.company_id ORDER BY all_cc.company_id)
                 FILTER (WHERE all_cc.company_id IS NOT NULL),
@@ -30,7 +33,7 @@ export default async function handler(req, res) {
           FROM clients c
           JOIN client_companies filt ON filt.client_id = c.id AND filt.company_id = ${company_id}
           LEFT JOIN client_companies all_cc ON all_cc.client_id = c.id
-          GROUP BY c.id, c.name, c.email_domain
+          GROUP BY c.id
           ORDER BY c.name ASC
         `
         return res.status(200).json({ clients })
@@ -38,6 +41,9 @@ export default async function handler(req, res) {
 
       const clients = await sql`
         SELECT c.id, c.name, c.email_domain,
+          c.razao_social, c.cpf_cnpj, c.endereco, c.numero, c.complemento,
+          c.bairro, c.cep, c.municipio_codigo, c.uf, c.email, c.telefone,
+          c.inscricao_municipal,
           COALESCE(
             ARRAY_AGG(cc.company_id ORDER BY cc.company_id)
               FILTER (WHERE cc.company_id IS NOT NULL),
@@ -45,7 +51,7 @@ export default async function handler(req, res) {
           ) AS company_ids
         FROM clients c
         LEFT JOIN client_companies cc ON cc.client_id = c.id
-        GROUP BY c.id, c.name, c.email_domain
+        GROUP BY c.id
         ORDER BY c.name ASC
       `
       return res.status(200).json({ clients })
@@ -81,11 +87,39 @@ export default async function handler(req, res) {
       if (!name || !name.trim()) return res.status(400).json({ error: 'Nome é obrigatório' })
       if (companyIds.length === 0) return res.status(400).json({ error: 'Selecione ao menos uma empresa' })
 
-      // email_domain só é sobrescrito quando enviado (a tela de Clientes não o edita).
+      // ⚠️ Todo campo fiscal usa COALESCE com o valor atual: o PUT é chamado
+      // por telas que mandam só `name` (e antes desta etapa NENHUMA mandava os
+      // campos fiscais). Sem o COALESCE, salvar o nome de um cliente apagaria
+      // o CNPJ e o endereço dele — e a nota seguinte seria recusada por falta
+      // de dado que "estava lá ontem".
+      //
+      // Documento, CEP e código do município ficam só com dígitos: é assim que
+      // entram no XML, e guardar com máscara faria a comparação depender de
+      // como o usuário digitou.
+      const soDig = (v) => (v == null ? null : String(v).replace(/\D/g, '') || null)
+      const txt = (v) => {
+        if (v == null) return null
+        const t = String(v).trim()
+        return t === '' ? null : t
+      }
+      const f = req.body || {}
       await sql`
         UPDATE clients
         SET name = ${name.trim()},
-            email_domain = COALESCE(${email_domain ?? null}, email_domain)
+            email_domain = COALESCE(${email_domain ?? null}, email_domain),
+            razao_social = COALESCE(${txt(f.razao_social)}, razao_social),
+            cpf_cnpj = COALESCE(${soDig(f.cpf_cnpj)}, cpf_cnpj),
+            endereco = COALESCE(${txt(f.endereco)}, endereco),
+            numero = COALESCE(${txt(f.numero)}, numero),
+            complemento = COALESCE(${txt(f.complemento)}, complemento),
+            bairro = COALESCE(${txt(f.bairro)}, bairro),
+            cep = COALESCE(${soDig(f.cep)}, cep),
+            municipio_codigo = COALESCE(${soDig(f.municipio_codigo)}, municipio_codigo),
+            uf = COALESCE(${txt(f.uf)?.toUpperCase().slice(0, 2) ?? null}, uf),
+            email = COALESCE(${txt(f.email)}, email),
+            telefone = COALESCE(${soDig(f.telefone)}, telefone),
+            inscricao_municipal = COALESCE(${txt(f.inscricao_municipal)}, inscricao_municipal),
+            updated_at = NOW()
         WHERE id = ${id}
       `
       await sql`DELETE FROM client_companies WHERE client_id = ${id}`

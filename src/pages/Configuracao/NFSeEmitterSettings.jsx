@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useOutletContext, Link } from 'react-router-dom'
+import { useCNPJConsulta, aplicarDados } from '../../lib/useCNPJConsulta'
+
+// Campo do formulário → campo devolvido por /api/consultar-cnpj.
+// `municipio_codigo` vem do IBGE (ver a advertência em api/consultar-cnpj.js).
+const DE_PARA_CNPJ = {
+  razao_social: 'razao_social', nome_fantasia: 'nome_fantasia',
+  endereco: 'endereco', numero: 'numero', complemento: 'complemento',
+  bairro: 'bairro', cep: 'cep', municipio_codigo: 'municipio_codigo',
+  uf: 'uf', email: 'email', telefone: 'telefone',
+}
 
 // Dados do emitente da NFS-e.
 //
@@ -56,6 +66,9 @@ export default function NFSeEmitterSettings() {
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState(null)
   const [okMsg, setOkMsg] = useState(null)
+  const { consultar, loading: consultandoCnpj, erro: erroCnpj, aviso: avisoCnpj } = useCNPJConsulta()
+  const [resultadoCnpj, setResultadoCnpj] = useState(null)
+  const [sobrescrever, setSobrescrever] = useState(false)
 
   const validar = useCallback(async () => {
     try {
@@ -90,6 +103,16 @@ export default function NFSeEmitterSettings() {
   useEffect(() => { carregar(); validar() }, [carregar, validar])
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  // Busca por botão, não por debounce — ver a advertência em useCNPJConsulta.js.
+  const buscarCnpj = async () => {
+    setResultadoCnpj(null)
+    const dados = await consultar(form.cnpj)
+    if (!dados) return
+    const r = aplicarDados(form, dados, DE_PARA_CNPJ, { sobrescrever })
+    setForm((f) => ({ ...f, ...r.form, cnpj: dados.cnpj }))
+    setResultadoCnpj({ ...r, municipio: dados.municipio })
+  }
 
   const salvar = async () => {
     setSalvando(true); setErro(null); setOkMsg(null)
@@ -151,6 +174,47 @@ export default function NFSeEmitterSettings() {
         <p className="text-gray-400">Carregando…</p>
       ) : (
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-4">
+          {/* Busca por CNPJ — preenche razão social, endereço e o código IBGE
+              do município, que é o campo mais fácil de errar digitando. */}
+          <div className="p-3 bg-gray-800/60 border border-gray-700 rounded-lg">
+            <span className="text-sm font-semibold text-gray-300 mb-1 block">
+              Buscar dados pelo CNPJ
+            </span>
+            <div className="flex gap-2">
+              <input
+                type="text" value={form.cnpj} onChange={set('cnpj')}
+                placeholder="00.000.000/0000-00"
+                className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-600 focus:border-blue-500 focus:outline-none"
+              />
+              <button
+                onClick={buscarCnpj}
+                disabled={consultandoCnpj || String(form.cnpj).replace(/\D/g, '').length !== 14}
+                className="px-4 py-2 bg-blue-700 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded text-sm whitespace-nowrap transition-colors"
+              >
+                {consultandoCnpj ? '⏳' : '🔍'} Buscar
+              </button>
+            </div>
+            <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+              <input type="checkbox" checked={sobrescrever}
+                onChange={(e) => setSobrescrever(e.target.checked)}
+                className="w-3.5 h-3.5 rounded accent-blue-500" />
+              <span className="text-xs text-gray-400">Substituir campos já preenchidos</span>
+            </label>
+            {erroCnpj && <p className="text-red-400 text-xs mt-2">❌ {erroCnpj}</p>}
+            {avisoCnpj && <p className="text-amber-400 text-xs mt-2">⚠️ {avisoCnpj}</p>}
+            {resultadoCnpj && !erroCnpj && (
+              <p className="text-xs mt-2 text-green-400">
+                ✅ {resultadoCnpj.municipio ? `${resultadoCnpj.municipio} — ` : ''}
+                {resultadoCnpj.preenchidos.length} campo(s) preenchido(s)
+                {resultadoCnpj.mantidos.length > 0 && (
+                  <span className="text-amber-400">
+                    {' '}· {resultadoCnpj.mantidos.length} mantido(s): {resultadoCnpj.mantidos.join(', ')}
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4">
             {CAMPOS_TEXTO.map(([k, rotulo, dica, obrigatorio]) => (
               <label key={k} className={`block ${k === 'endereco' || k === 'item_lista_servico' ? 'md:col-span-2' : ''}`}>
