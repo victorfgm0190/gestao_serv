@@ -6,3 +6,6 @@ dist
 # backups datados e marcador local do graphify
 graphify-out/20*/
 graphify-out/.graphify_root
+
+# scripts temporarios de sondagem/diagnostico
+.tmp-*
