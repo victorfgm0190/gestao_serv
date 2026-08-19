@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { MOTIVOS } from '../../lib/nfse-xml-cancellation-builder.js'
+import XmlPrevia from './XmlPrevia'
 
 // Cancelamento de NFS-e. Duas etapas, pelo mesmo motivo da emissão: o backend
 // é prévia-por-padrão e cancelar é irreversível do lado do fisco.
@@ -6,13 +8,13 @@ import { useState } from 'react'
 // ⚠️ Os motivos têm CÓDIGO, não só texto. O ADN classifica o cancelamento pelo
 // código (`cMotivo`); mandar apenas a frase livre, como no esboço, deixa o
 // evento sem classificação.
-
-const MOTIVOS = [
-  { codigo: '1', texto: 'Erro na emissão' },
-  { codigo: '2', texto: 'Serviço não prestado' },
-  { codigo: '3', texto: 'Duplicidade da nota' },
-  { codigo: '9', texto: 'Outro' },
-]
+//
+// ⚠️ A lista de motivos é IMPORTADA do builder, não copiada. Ela era uma cópia
+// e o esboço propôs uma terceira versão com "4 — Outro": o código 4 não existe
+// no e101101 (Outro é o 9), então `motivoPorCodigo('4')` devolve null e o XML
+// sairia com um cMotivo que o SEFIN não classifica. Com um dono só, o erro não
+// tem onde nascer. O builder é importável no browser porque só depende de
+// lib/nfse-xml-builder.js, que não importa nada.
 
 export default function NFSeCancelModal({ emission, onClose, onSuccess }) {
   const [codigo, setCodigo] = useState(MOTIVOS[0].codigo)
@@ -77,6 +79,7 @@ export default function NFSeCancelModal({ emission, onClose, onSuccess }) {
               ⚠️ Nada foi transmitido ainda. Confirme para cancelar de verdade.
             </div>
             <div className="p-3 bg-gray-800 rounded text-sm text-gray-300 space-y-1">
+              <p><strong>Nota:</strong> {previa.resumo?.nfse_number ? `nº ${previa.resumo.nfse_number}` : `emissão ${previa.resumo?.emission_id}`}</p>
               <p><strong>Motivo:</strong> {previa.resumo?.motivo}</p>
               <p><strong>Código:</strong> {previa.resumo?.codigo_motivo}</p>
               <p><strong>Ambiente:</strong>{' '}
@@ -85,6 +88,22 @@ export default function NFSeCancelModal({ emission, onClose, onSuccess }) {
                 </span>
               </p>
             </div>
+
+            {/* ⚠️ Este é o pedido de evento e101101 ASSINADO — o mesmo que a
+                confirmação transmite, não uma reconstrução para exibição. Ele
+                vem do próprio /api/nfse-cancel com transmitir: false. */}
+            <XmlPrevia
+              xml={previa.xml_assinado}
+              nome={`cancelamento_${previa.resumo?.nfse_number || `emissao${emission?.id}`}`}
+              titulo="Ver o pedido de cancelamento assinado"
+              contexto={[
+                `Pedido de cancelamento — emissão ${emission?.id}`,
+                previa.resumo?.nfse_number ? `NFS-e nº ${previa.resumo.nfse_number}` : null,
+                `Motivo: ${previa.resumo?.codigo_motivo} — ${previa.resumo?.motivo}`,
+                `Ambiente: ${previa.resumo?.ambiente}`,
+              ]}
+            />
+
             <div className="flex gap-3">
               <button onClick={() => setPrevia(null)} disabled={loading}
                 className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded transition-colors">

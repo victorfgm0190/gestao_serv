@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import XmlPrevia from './XmlPrevia'
 
 // Ações sobre uma NFS-e já autorizada: substituir ou cancelar.
 //
@@ -193,6 +194,20 @@ export default function NFSeAcoesModal({ emission, onClose, onCancelar, onSucces
                 </span>
               </p>
             </div>
+
+            <XmlPrevia
+              xml={previa.xml_assinado}
+              nome={`substituta_DPS_${previa.resumo?.dps_number || emission?.id}`}
+              titulo="Ver a DPS substituta assinada"
+              contexto={[
+                `DPS substituta nº ${previa.resumo?.dps_number}`,
+                `Substitui a nota nº ${previa.resumo?.substitui?.nfse_number}`,
+                `Valor: ${previa.resumo?.valor} · Competência: ${previa.resumo?.competencia}`,
+                `Motivo: ${previa.resumo?.codigo_motivo} — ${previa.resumo?.motivo}`,
+                `Ambiente: ${previa.ambiente}`,
+              ]}
+            />
+
             {erro && (
               <div className="p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">
                 ❌ {erro}

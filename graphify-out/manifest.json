@@ -115,8 +115,8 @@
     "semantic_hash": "d070709419d1c5e263b53059b20974e1"
   },
   "src/components/Layout.jsx": {
-    "mtime": 1787096805.418318,
-    "ast_hash": "a78b0fac1c59c77b956f4240ae2b91bd",
+    "mtime": 1787152533.383796,
+    "ast_hash": "5a4cf4081723ca4e95b8bafc0c68cb03",
     "semantic_hash": ""
   },
   "src/hooks/useNotifications.js": {
@@ -125,8 +125,8 @@
     "semantic_hash": "cf7a0b6b5c1795a4e2a729422f79036a"
   },
   "src/main.jsx": {
-    "mtime": 1787096801.0388918,
-    "ast_hash": "bf848c799c652220907b507d86c7766d",
+    "mtime": 1787152533.383796,
+    "ast_hash": "c589d3ca00164b109a3481af413e183e",
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "api/nfse-emit.js": {
-    "mtime": 1787140383.5542817,
-    "ast_hash": "58c4c6a7a04a8433b1ff13ba91133730",
+    "mtime": 1787152217.2096648,
+    "ast_hash": "d89590d0b2695f99d2b704771049199e",
     "semantic_hash": ""
   },
   "lib/nfse-adn-client.js": {
@@ -615,8 +615,8 @@
     "semantic_hash": ""
   },
   "api/nfse-cancel.js": {
-    "mtime": 1787095408.7311857,
-    "ast_hash": "981960f19b5cfa5c90b0a079392e6331",
+    "mtime": 1787152244.6425786,
+    "ast_hash": "1f3b293738a88487d0afd051067186b8",
     "semantic_hash": ""
   },
   "api/nfse-events.js": {
@@ -715,8 +715,8 @@
     "semantic_hash": ""
   },
   "api/nfse-consultar.js": {
-    "mtime": 1787105047.2099771,
-    "ast_hash": "bae7b371261d681737a2f0f9f5c33c48",
+    "mtime": 1787152268.236368,
+    "ast_hash": "494b755905d1a9fb5187e31b92469e0f",
     "semantic_hash": ""
   },
   "lib/nfse-consultar.test.js": {
@@ -730,8 +730,8 @@
     "semantic_hash": ""
   },
   "api/nfse-substituir.js": {
-    "mtime": 1787140420.2830257,
-    "ast_hash": "f38e48c21bf44fc46983cd502b879bb0",
+    "mtime": 1787152244.6493955,
+    "ast_hash": "bdbb022b4c828c5eb7539b60d59c4816",
     "semantic_hash": ""
   },
   "lib/nfse-substituir.test.js": {
@@ -750,18 +750,43 @@
     "semantic_hash": ""
   },
   "api/nfse-sincronizar-cancelamento.js": {
-    "mtime": 1787150517.4488137,
-    "ast_hash": "79b36abf795d8cc3f937ea67aa2d74b7",
+    "mtime": 1787152268.2383802,
+    "ast_hash": "e278dfc473ad9b5588d7a3e99b04f64d",
     "semantic_hash": ""
   },
   "lib/nfse-sincronizar-cancelamento.test.js": {
-    "mtime": 1787150772.1596398,
-    "ast_hash": "1a124b800438daf2efa78ca3519e55d2",
+    "mtime": 1787152679.0279202,
+    "ast_hash": "cc0a27701629303ae6650fda150a84be",
     "semantic_hash": ""
   },
   "src/components/NFSeReemitirModal.jsx": {
     "mtime": 1787150645.10356,
     "ast_hash": "48edbb3a81bd5749395c7b4a2e6fee6a",
+    "semantic_hash": ""
+  },
+  "api/nfse-operations.js": {
+    "mtime": 1787152429.7922413,
+    "ast_hash": "39126738a55a4188fbe9270c7a7f7fe3",
+    "semantic_hash": ""
+  },
+  "lib/nfse-operations.js": {
+    "mtime": 1787152598.3063028,
+    "ast_hash": "64b284295498128c81eb504a960dc65c",
+    "semantic_hash": ""
+  },
+  "lib/nfse-operations.test.js": {
+    "mtime": 1787152577.573767,
+    "ast_hash": "fe9fcf33a1bf96407a5cea0e97c665a8",
+    "semantic_hash": ""
+  },
+  "sql/migration-nfse-operations.sql": {
+    "mtime": 1787152158.2680364,
+    "ast_hash": "7ccb1088b8e3e9281471101749047cc6",
+    "semantic_hash": ""
+  },
+  "src/pages/Faturamento/NFSeOperacoes.jsx": {
+    "mtime": 1787152737.5209436,
+    "ast_hash": "197e6474cd6bf240bf54525a3b9e5766",
     "semantic_hash": ""
   }
 }

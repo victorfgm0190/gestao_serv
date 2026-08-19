@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import XmlPrevia from './XmlPrevia'
 
 // Re-emitir a nota da MESMA fatura, depois de a anterior ter sido cancelada.
 //
@@ -274,6 +275,19 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
                 </span>
               </p>
             </div>
+
+            <XmlPrevia
+              xml={previa.xml_assinado}
+              nome={`DPS_${previa.resumo?.dps_number || emission?.invoiceId}`}
+              titulo="Ver a DPS assinada"
+              contexto={[
+                `DPS nº ${previa.resumo?.dps_number} — re-emissão da fatura ${emission?.invoiceId}`,
+                `Substitui a NFS-e cancelada nº ${emission?.nfseNumber}`,
+                `Cliente: ${previa.resumo?.cliente}`,
+                `Valor: ${previa.resumo?.valor_servico} · ISS ${previa.resumo?.aliquota_iss}%`,
+                `Competência: ${previa.resumo?.competencia} · Ambiente: ${previa.ambiente}`,
+              ]}
+            />
 
             {erro && (
               <div className="p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">

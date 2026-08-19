@@ -1,16 +1,16 @@
 # Graph Report - gestao_serv  (2026-08-19)
 
 ## Corpus Check
-- 147 files · ~203,122 words
+- 152 files · ~209,274 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1027 nodes · 1993 edges · 74 communities (59 shown, 15 thin omitted)
-- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 8 edges (avg confidence: 0.73)
+- 1053 nodes · 2068 edges · 74 communities (60 shown, 14 thin omitted)
+- Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 9 edges (avg confidence: 0.73)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `13f649c6`
+- Built from commit: `c899fa63`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -87,9 +87,9 @@
 - contracts.js
 
 ## God Nodes (most connected - your core abstractions)
-1. `requireAuth()` - 76 edges
+1. `requireAuth()` - 78 edges
 2. `r2()` - 31 edges
-3. `react` - 26 edges
+3. `react` - 27 edges
 4. `6. Regras de negócio financeiro` - 25 edges
 5. `3. Banco de dados — tabelas, colunas e tipos` - 24 edges
 6. `montarDPS()` - 19 edges
@@ -113,7 +113,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (74 total, 15 thin omitted)
+## Communities (74 total, 14 thin omitted)
 
 ### Community 0 - "main.jsx"
 Cohesion: 0.21
@@ -132,12 +132,12 @@ Cohesion: 0.05
 Nodes (44): 6. Regras de negócio financeiro, ⚠️ "A cascata parou no meio do Pharmalog" — não parou (2026-08-15), 🐞 A regra financeira vinha do cliente, sorteada pela heap — corrigido 2026-08-10, ⚠️ ABSORVEU não é consumo — o lucro que o imposto comeu, Breakdown por cliente na aba Pagar Victor (`lib/victor-breakdown.js`) — 2026-08-10, Cascata do lucro persistida — 2026-07-30, Composição fiscal na aba Pagar Victor — 2026-07-28, Contrato fixo (`billing_type = 'contract'` ou `'mensal'`) (+36 more)
 
 ### Community 4 - "6. Regras de negócio financeiro"
-Cohesion: 0.13
-Nodes (43): acumular12(), apurar(), brl(), calcularApuracao(), chaveCompetencia(), chaveOrdinal(), contextoRedistribuicao(), corrigirEscritorio() (+35 more)
+Cohesion: 0.09
+Nodes (60): acumular12(), apurar(), brl(), calcularApuracao(), chaveCompetencia(), chaveOrdinal(), contextoRedistribuicao(), corrigirEscritorio() (+52 more)
 
 ### Community 5 - "payables-victor.js"
-Cohesion: 0.08
-Nodes (59): handler(), periodFromDate(), recalcParent(), TABLES, calcularDistribuicao(), estornarSessao(), handler(), pagarCompensacao() (+51 more)
+Cohesion: 0.06
+Nodes (79): handler(), periodFromDate(), recalcParent(), TABLES, calcularDistribuicao(), estornarSessao(), handler(), pagarCompensacao() (+71 more)
 
 ### Community 6 - ".oxlintrc.json"
 Cohesion: 0.25
@@ -148,12 +148,12 @@ Cohesion: 0.07
 Nodes (25): ALL_VICTOR_CATEGORIES, BREAKDOWN_CATEGORIA_MOTOR, BREAKDOWN_CATEGORIAS, BREAKDOWN_LABEL, CAT_LABEL, DIST_ENTRADA_LINHA, DIST_KIND_LINHA, DIST_LINHA_LABEL (+17 more)
 
 ### Community 8 - "valorDevido"
-Cohesion: 0.22
-Nodes (7): buscar(), handler(), HOSTS, URLS_ADN, URLS_SEFIN, extrairChaves(), NFSeSigner
+Cohesion: 0.17
+Nodes (8): buscar(), handler(), HOSTS, NFSeADNClient, URLS_ADN, URLS_SEFIN, extrairChaves(), NFSeSigner
 
 ### Community 9 - "payable-payments.js"
-Cohesion: 0.12
-Nodes (15): handler(), parseCompanyIds(), handler(), splitPct(), handler(), handler(), handler(), handler() (+7 more)
+Cohesion: 0.11
+Nodes (18): handler(), parseCompanyIds(), handler(), splitPct(), handler(), requerNf(), splitPct(), handler() (+10 more)
 
 ### Community 10 - "time-entries.js"
 Cohesion: 0.14
@@ -181,7 +181,7 @@ Nodes (28): handler(), brl(), DANFSEGenerator, formatarCEP(), formatarCompetenci
 
 ### Community 17 - "payment-source-tracker.js"
 Cohesion: 0.05
-Nodes (46): adulterado, assinado, attrs, cert, { certificatePem }, chamar(), comCpf, doc (+38 more)
+Nodes (45): adulterado, assinado, attrs, cert, { certificatePem }, chamar(), comCpf, doc (+37 more)
 
 ### Community 18 - "Diagnóstico — "a cascata está zerando o saldo do Pharmalog com os impostos""
 Cohesion: 0.18
@@ -189,7 +189,7 @@ Nodes (10): 1. Em qual arquivo/função os impostos entram na cascata?, 2. Qual 
 
 ### Community 19 - "email-ingest.js"
 Cohesion: 0.08
-Nodes (23): assinaturaConfere(), config, EVENTO_DE, handler(), lerCorpoCru(), MAPA_STATUS, at, builder (+15 more)
+Nodes (24): assinaturaConfere(), config, EVENTO_DE, handler(), lerCorpoCru(), MAPA_STATUS, at, builder (+16 more)
 
 ### Community 20 - "dependencies"
 Cohesion: 0.12
@@ -240,8 +240,8 @@ Cohesion: 0.15
 Nodes (12): 10. Pendências conhecidas, 1. Visão geral, 5. Telas (`/src/pages/`), 7. Contratos existentes no banco, 9. APIs legadas / mortas, CLAUDE.md — Contexto do Projeto gestao_serv, Dependências principais, graphify (+4 more)
 
 ### Community 40 - "@neondatabase/serverless"
-Cohesion: 0.19
-Nodes (15): handler(), handler(), SIMPLES_TRAVADO, SUBSTITUIVEIS, handler(), CAMPOS_EMITENTE, CAMPOS_TOMADOR, faltantes() (+7 more)
+Cohesion: 0.22
+Nodes (10): handler(), CAMPOS_EMITENTE, CAMPOS_TOMADOR, faltantes(), nomes, sql, src, token (+2 more)
 
 ### Community 41 - "What You Must Do When Invoked"
 Cohesion: 0.07
@@ -280,12 +280,12 @@ Cohesion: 0.20
 Nodes (12): t(), alocarCascataDist(), cents(), Financial(), modoDaCategoria(), parseNotesToAmounts(), proportionalCats(), RECEIVE_INPUTS (+4 more)
 
 ### Community 55 - "dotenv"
-Cohesion: 0.53
-Nodes (5): CAMPOS, handler(), numero(), soDigitos(), texto()
+Cohesion: 0.18
+Nodes (13): CAMPOS, handler(), numero(), soDigitos(), texto(), BADGES, dataHora(), ICONES (+5 more)
 
 ### Community 58 - "react"
-Cohesion: 0.11
-Nodes (37): ORDEM_KIND, absorverDelta(), agregado(), aplicarDelta(), cascataDoLucro(), consolidar(), linha(), num() (+29 more)
+Cohesion: 0.24
+Nodes (8): baixar(), handler(), ROTULOS_OPERACAO, STATUS_OPERACAO, chamar(), criados, sql, TOKEN
 
 ### Community 59 - "todayBR"
 Cohesion: 0.25
@@ -319,38 +319,42 @@ Nodes (3): bufferParaBase64(), dataBR(), NFSeSettings()
 Cohesion: 0.22
 Nodes (11): aplicarDados(), useCNPJConsulta(), CAMPOS_FISCAIS, Clientes(), COMPANIES, DE_PARA_CNPJ, emptyForm, CAMPOS_TEXTO (+3 more)
 
+### Community 67 - "Clientes.jsx"
+Cohesion: 0.32
+Nodes (6): handler(), chamar(), criados, criarEmissao(), sql, TOKEN
+
 ### Community 69 - "imap-simple"
 Cohesion: 0.53
 Nodes (4): fmt(), MemoriaCalculo(), Passo(), KIND_LABEL
 
 ### Community 70 - "nfse-events.js"
-Cohesion: 0.17
-Nodes (15): CANCELAVEIS, handler(), handler(), handler(), handler(), EVENTOS, listarEventos(), registrarEvento() (+7 more)
+Cohesion: 0.27
+Nodes (16): CANCELAVEIS, handler(), handler(), handler(), handler(), SIMPLES_TRAVADO, SUBSTITUIVEIS, EVENTOS (+8 more)
 
 ### Community 72 - "payment-source-tracker.js"
 Cohesion: 0.31
 Nodes (10): DESTINO_POR_CATEGORIA, linhaDeSaldoDe(), movimento(), movimentosDaAbsorcao(), movimentosDoConsumo(), movimentosDoPlano(), num(), quebrarConsumo() (+2 more)
 
 ### Community 73 - "contracts.js"
-Cohesion: 0.83
-Nodes (3): handler(), requerNf(), splitPct()
+Cohesion: 0.67
+Nodes (3): handler(), listarEventos(), ROTULOS
 
 ## Knowledge Gaps
-- **371 isolated node(s):** `$schema`, `oxc`, `react/rules-of-hooks`, `warn`, `DESTINATARIOS` (+366 more)
+- **378 isolated node(s):** `$schema`, `oxc`, `react/rules-of-hooks`, `warn`, `DESTINATARIOS` (+373 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **14 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `requireAuth()` connect `payable-payments.js` to `6. Regras de negócio financeiro`, `payables-victor.js`, `nfse-events.js`, `valorDevido`, `contracts.js`, `time-entries.js`, `@neondatabase/serverless`, `export-payables-fabricio.js`, `cron-nfse-check.test.js`, `FiscalObligations.jsx`, `Clientes.jsx`, `Billing.jsx`, `dotenv`, `Financial`, `react-dom`?**
-  _High betweenness centrality (0.112) - this node is a cross-community bridge._
-- **Why does `react` connect `MemoriaCalculo.jsx` to `main.jsx`, `NFSeSettings.jsx`, `Contracts.jsx`, `imap-simple`, `.oxlintrc.json`, `Financial.jsx`, `react`, `main.jsx`, `Dashboard.jsx`, `nfse-emitter-settings.js`?**
+- **Why does `requireAuth()` connect `payable-payments.js` to `Clientes.jsx`, `6. Regras de negócio financeiro`, `payables-victor.js`, `nfse-events.js`, `valorDevido`, `contracts.js`, `time-entries.js`, `@neondatabase/serverless`, `export-payables-fabricio.js`, `cron-nfse-check.test.js`, `FiscalObligations.jsx`, `Clientes.jsx`, `Billing.jsx`, `dotenv`, `Financial`, `react`, `react-dom`?**
+  _High betweenness centrality (0.130) - this node is a cross-community bridge._
+- **Why does `react` connect `MemoriaCalculo.jsx` to `main.jsx`, `NFSeSettings.jsx`, `Contracts.jsx`, `imap-simple`, `.oxlintrc.json`, `Financial.jsx`, `dotenv`, `react`, `main.jsx`, `Dashboard.jsx`, `nfse-emitter-settings.js`?**
   _High betweenness centrality (0.067) - this node is a cross-community bridge._
-- **Why does `Financial()` connect `Login.jsx` to `MemoriaCalculo.jsx`, `imap-simple`, `Financial.jsx`, `FiscalObligations.jsx`, `react`, `main.jsx`, `nfse-emitter-settings.js`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+- **Why does `Financial()` connect `Login.jsx` to `MemoriaCalculo.jsx`, `6. Regras de negócio financeiro`, `imap-simple`, `Financial.jsx`, `FiscalObligations.jsx`, `main.jsx`, `nfse-emitter-settings.js`?**
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
 - **What connects `$schema`, `oxc`, `react/rules-of-hooks` to the rest of the system?**
-  _371 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _378 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `dependencies` be split into smaller, more focused modules?**
   _Cohesion score 0.06451612903225806 - nodes in this community are weakly interconnected._
 - **Should `devDependencies` be split into smaller, more focused modules?**

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import XmlPrevia from './XmlPrevia'
 
 // Emissão de NFS-e a partir de uma fatura.
 //
@@ -135,12 +136,17 @@ export default function NFSeEmitirModal({ invoice, onClose, onSuccess }) {
                 </span>
               </p>
             </div>
-            <details className="text-xs">
-              <summary className="cursor-pointer text-gray-400 hover:text-gray-200">Ver XML assinado</summary>
-              <pre className="mt-2 p-2 bg-gray-950 border border-gray-800 rounded max-h-48 overflow-auto text-[10px] text-gray-400 whitespace-pre-wrap break-all">
-                {previa.xml_assinado}
-              </pre>
-            </details>
+            <XmlPrevia
+              xml={previa.xml_assinado}
+              nome={`DPS_${previa.resumo?.dps_number || previa.resumo?.invoice_id}`}
+              titulo="Ver a DPS assinada"
+              contexto={[
+                `DPS nº ${previa.resumo?.dps_number} — fatura ${previa.resumo?.invoice_number || previa.resumo?.invoice_id}`,
+                `Cliente: ${previa.resumo?.cliente}`,
+                `Valor: ${previa.resumo?.valor_servico} · ISS ${previa.resumo?.aliquota_iss}%`,
+                `Competência: ${previa.resumo?.competencia} · Ambiente: ${previa.ambiente}`,
+              ]}
+            />
             <div className="flex gap-3">
               <button onClick={() => setPrevia(null)} disabled={loading}
                 className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded transition-colors">
