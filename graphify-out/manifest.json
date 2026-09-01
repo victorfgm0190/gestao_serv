@@ -610,8 +610,8 @@
     "semantic_hash": ""
   },
   "src/pages/Faturamento/NFSeEmitidas.jsx": {
-    "mtime": 1787150690.8549688,
-    "ast_hash": "53d116c0f3b81b7dbc52e6b3c2243dbc",
+    "mtime": 1787157013.0457094,
+    "ast_hash": "400529449eafc2fa06a2191cbd3c146d",
     "semantic_hash": ""
   },
   "api/nfse-cancel.js": {
@@ -725,8 +725,8 @@
     "semantic_hash": ""
   },
   "api/nfse-download-pdf-oficial.js": {
-    "mtime": 1787106028.7195303,
-    "ast_hash": "3a0f1c3670aa35912216fee9b25087b9",
+    "mtime": 1788300400.6877308,
+    "ast_hash": "878d605b538164147c374a651c4e860a",
     "semantic_hash": ""
   },
   "api/nfse-substituir.js": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   "src/components/NFSeReemitirModal.jsx": {
-    "mtime": 1787153878.3660376,
-    "ast_hash": "78f4b4112c6e5cc9e91686d6100fba12",
+    "mtime": 1787157013.032477,
+    "ast_hash": "b999241791e8188aefb1d75f8f7da9ee",
     "semantic_hash": ""
   },
   "api/nfse-operations.js": {
@@ -792,6 +792,31 @@
   "src/components/XmlPrevia.jsx": {
     "mtime": 1787153878.3660376,
     "ast_hash": "b5ab52e01adf40c4e7757075970b9afd",
+    "semantic_hash": ""
+  },
+  "src/components/NFSeSincronizarModal.jsx": {
+    "mtime": 1787156978.4141102,
+    "ast_hash": "677637b522efe9111679db199ebf0feb",
+    "semantic_hash": ""
+  },
+  "api/nfse-download-oficial.js": {
+    "mtime": 1788300405.4522183,
+    "ast_hash": "6fd53be337c200c33ba04661fa5f2f1b",
+    "semantic_hash": ""
+  },
+  "api/nfse-download-xml-oficial.js": {
+    "mtime": 1788300314.1661153,
+    "ast_hash": "c4e6161252a60525dc58dfce427a52f8",
+    "semantic_hash": ""
+  },
+  "lib/nfse-download-oficial.test.js": {
+    "mtime": 1788300465.0900462,
+    "ast_hash": "ca8e57e4ed8cd7ffd9f7e1a7453ce5cd",
+    "semantic_hash": ""
+  },
+  "lib/nfse-resolve.js": {
+    "mtime": 1788300261.7054052,
+    "ast_hash": "ee5b0e3e81feece31540df71ac404db8",
     "semantic_hash": ""
   }
 }
