@@ -37,8 +37,15 @@ export default async function handler(req, res) {
     // `JOIN companies comp ON comp.id = ${company_id}` — um produto cartesiano
     // com uma constante, não uma relação: a fatura de uma empresa podia ser
     // emitida sob o CNPJ da outra sem nada acusar.
+    // ⚠️ O tomador pode não ser o cliente do serviço: `invoice_client_id` é
+    // herdado do contrato e congelado na fatura, e quando preenchido é ELE quem
+    // recebe a nota. O COALESCE é a regra inteira, e está escrito igual em
+    // api/nfse-emit.js, api/nfse-substituir.js e lib/nfse-setup-check.js — o
+    // driver do Neon não compõe fragmentos, então o JOIN é repetido por extenso.
+    // Divergir num deles faria a validação aprovar o cadastro de um cliente e a
+    // emissão usar o de outro.
     const [inv] = await sql`
-      SELECT i.id, i.company_id, i.client_id, i.invoice_value, i.contract_value,
+      SELECT i.id, i.company_id, i.client_id, i.invoice_client_id, i.invoice_value, i.contract_value,
              i.month, i.year, i.emission_date, i.require_nf, i.competencia,
              i.descricao_nfse, i.aliquota_iss, i.municipio_codigo AS invoice_municipio,
              i.invoice_number,
@@ -47,7 +54,7 @@ export default async function handler(req, res) {
              cl.municipio_codigo, cl.uf, cl.email, cl.telefone,
              cl.inscricao_municipal AS client_im
       FROM invoices i
-      JOIN clients cl ON cl.id = i.client_id
+      JOIN clients cl ON cl.id = COALESCE(i.invoice_client_id, i.client_id)
       WHERE i.id = ${invoice_id}`
     if (!inv) return res.status(404).json({ error: 'Fatura não encontrada' })
 

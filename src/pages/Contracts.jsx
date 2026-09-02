@@ -10,6 +10,9 @@ const EMPTY_FORM = {
   // Emite NF? Desmarcado tira o contrato da apuração fiscal (DAS/INSS/Fator R e rateio);
   // o faturamento e o "A Receber" seguem iguais. Padrão marcado.
   require_nf: true,
+  // Tomador da NF quando não é o cliente do contrato. Vazio = emite para o cliente
+  // base. Não muda rateio, regra financeira nem apuração — só para quem a nota sai.
+  invoice_client_id: '',
   deslocamento_tipo: 'nao_cobrado', deslocamento_valor_hora: '', displacement_hours: '', financial_rule_id: '',
   projeto_split_mode: 'direct_split', projeto_victor_pct: '', projeto_victor_fixed: '', projeto_expenses: '',
 }
@@ -38,6 +41,11 @@ export default function Contracts() {
   const [installments, setInstallments] = useState([])
   const [deletedInstallments, setDeletedInstallments] = useState([])
   const [savingContract, setSavingContract] = useState(false)
+  // "Não" marcado com o select ainda vazio é um estado legítimo da TELA que não tem
+  // representação no form (lá vazio é "usar o cliente base"). Por isso o radio tem
+  // estado próprio — derivá-lo de `invoice_client_id` fecharia o select no primeiro
+  // clique, antes de haver o que escolher.
+  const [tomadorOutro, setTomadorOutro] = useState(false)
   const [monthForm, setMonthForm] = useState({
     contract_id: '', client_id: '', month: new Date().getMonth() + 1,
     year: new Date().getFullYear(), invoice_value: '', notes: '',
@@ -73,6 +81,7 @@ export default function Contracts() {
   function openNew() {
     setEditContract(null)
     setForm(EMPTY_FORM)
+    setTomadorOutro(false)
     setClientRules([])
     setInstallments([])
     setDeletedInstallments([])
@@ -135,6 +144,12 @@ export default function Contracts() {
 
   async function saveContract() {
     if (!form.client_id || !form.name || !form.financial_rule_id) return
+    // "Não" sem cliente escolhido gravaria NULL — a tela diria "outro tomador" e a
+    // nota sairia para o cliente base, em silêncio.
+    if (tomadorOutro && !form.invoice_client_id) {
+      alert('Selecione o cliente para quem a NFS-e será emitida.')
+      return
+    }
     const isProjeto = form.billing_type === 'por_projeto'
     // Por projeto: o valor vem da soma das parcelas, então exige ao menos uma.
     if (isProjeto ? installments.length === 0 : !form.contract_value) return
@@ -189,10 +204,11 @@ export default function Contracts() {
 
   function openEdit(c) {
     setEditContract(c)
+    setTomadorOutro(!!c.invoice_client_id)
     const base = parseFloat(c.contract_value) || 0
     const pct = parseFloat(c.tax_client_percent) || 0
     const nf = base > 0 && pct > 0 && pct < 100 ? (base / (1 - pct / 100)).toFixed(2) : ''
-    setForm({ client_id: c.client_id, name: c.name, cnpj: c.cnpj || '', billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, require_nf: c.require_nf !== false, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', tax_client_percent: c.tax_client_percent || '', tax_client_nf: nf, notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', displacement_hours: c.displacement_hours || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '', projeto_split_mode: c.projeto_split_mode || 'direct_split', projeto_victor_pct: c.projeto_victor_pct || '', projeto_victor_fixed: c.projeto_victor_fixed || '', projeto_expenses: c.projeto_expenses || '' })
+    setForm({ client_id: c.client_id, name: c.name, cnpj: c.cnpj || '', billing_type: c.billing_type || 'mensal', contract_value: c.contract_value, victor_fixed: c.victor_fixed, remainder_victor_pct: c.remainder_victor_pct, remainder_fabricio_pct: c.remainder_fabricio_pct, require_nf: c.require_nf !== false, has_tax: c.has_tax, tax_percentage: c.tax_percentage || '', tax_client_percent: c.tax_client_percent || '', tax_client_nf: nf, notes: c.notes || '', deslocamento_tipo: c.deslocamento_tipo || 'nao_cobrado', deslocamento_valor_hora: c.deslocamento_valor_hora || '', displacement_hours: c.displacement_hours || '', financial_rule_id: c.financial_rule_id ? String(c.financial_rule_id) : '', invoice_client_id: c.invoice_client_id ? String(c.invoice_client_id) : '', projeto_split_mode: c.projeto_split_mode || 'direct_split', projeto_victor_pct: c.projeto_victor_pct || '', projeto_victor_fixed: c.projeto_victor_fixed || '', projeto_expenses: c.projeto_expenses || '' })
     loadRulesForClient(c.client_id)
     setDeletedInstallments([])
     if ((c.billing_type || 'mensal') === 'por_projeto') loadInstallments(c.id)
@@ -282,6 +298,7 @@ export default function Contracts() {
                   <span>Restante: <span className="text-green-400">{c.remainder_victor_pct}% V / {c.remainder_fabricio_pct}% F</span></span>
                   {c.has_tax && <span>Imposto: <span className="text-red-400">{c.tax_percentage}%</span></span>}
                   {c.require_nf === false && <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">Sem NF — fora da apuração</span>}
+                  {c.invoice_client_name && <span className="px-1.5 py-0.5 rounded bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">NF para: {c.invoice_client_name}</span>}
                   <span>Deslocamento: <span className="text-gray-300">{DESLOC_LABEL[c.deslocamento_tipo] || DESLOC_LABEL.nao_cobrado}{(c.deslocamento_tipo === 'hora' || c.deslocamento_tipo === 'hora_despesas') && parseFloat(c.deslocamento_valor_hora) > 0 ? ` (${fmt(c.deslocamento_valor_hora)}/h)` : ''}</span></span>
                 </div>
                 {parseFloat(c.tax_client_percent) > 0 && (() => {
@@ -383,6 +400,46 @@ export default function Contracts() {
                 {form.client_id && !rulesLoading && clientRules.length === 0 && (
                   <p className="text-amber-400 text-xs">Este cliente não possui regra financeira. Cadastre uma antes de criar o contrato.</p>
                 )}
+              </div>
+
+              {/* Tomador da NFS-e. Só o destinatário do documento fiscal muda: o
+                  serviço continua sendo do cliente do contrato, e com ele o rateio
+                  Victor/Fabrício, a regra financeira, o recebível e a apuração. */}
+              <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Tomador da NFS-e</p>
+                <p className="text-gray-300 text-sm">A nota fiscal será emitida para o cliente do contrato?</p>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+                    <input type="radio" name="tomador_nfse" checked={!tomadorOutro}
+                      onChange={()=>{ setTomadorOutro(false); setForm(f=>({...f, invoice_client_id: ''})) }} className="accent-blue-500"/>
+                    Sim (usar o cliente do contrato)
+                  </label>
+                  <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+                    <input type="radio" name="tomador_nfse" checked={tomadorOutro}
+                      onChange={()=>setTomadorOutro(true)} className="accent-blue-500"/>
+                    Não (emitir para outro)
+                  </label>
+                </div>
+                {tomadorOutro && (() => {
+                  const outros = clients.filter(c => String(c.id) !== String(form.client_id))
+                  const alvo = outros.find(c => String(c.id) === String(form.invoice_client_id))
+                  return (
+                    <div className="flex flex-col gap-1">
+                      <select value={form.invoice_client_id} onChange={e=>setForm(f=>({...f, invoice_client_id: e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                        <option value="">Selecione o cliente para emissão da NFS-e</option>
+                        {outros.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}{c.cpf_cnpj ? ` — ${c.cpf_cnpj}` : ' — sem CNPJ'}</option>
+                        ))}
+                      </select>
+                      {alvo && !alvo.cpf_cnpj && (
+                        <p className="text-amber-400 text-xs">Este cliente está sem CNPJ e sem endereço fiscal — a emissão será recusada até o cadastro ser completado em Clientes.</p>
+                      )}
+                      <p className="text-gray-500 text-[11px]">
+                        A nota sai no CNPJ deste cliente. O rateio Victor/Fabrício, o recebível e a apuração continuam no cliente do contrato.
+                      </p>
+                    </div>
+                  )
+                })()}
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Nome do contrato</label>

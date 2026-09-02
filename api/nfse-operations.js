@@ -78,7 +78,9 @@ export default async function handler(req, res) {
              length(o.xml_resposta) AS xml_resposta_tamanho
       FROM nfse_operations o
       LEFT JOIN invoices i ON i.id = o.invoice_id
-      LEFT JOIN clients  cl ON cl.id = i.client_id
+      -- O histórico é do documento FISCAL: o cliente exibido é o tomador da nota
+      -- (mesmo COALESCE de api/nfse-emit.js), não o dono do serviço.
+      LEFT JOIN clients  cl ON cl.id = COALESCE(i.invoice_client_id, i.client_id)
       LEFT JOIN nfse_emissions ne ON ne.id = o.nfse_emission_id
       WHERE o.company_id = ${companyId}
         AND (${filtroInvoice}::int IS NULL OR o.invoice_id = ${filtroInvoice}::int)

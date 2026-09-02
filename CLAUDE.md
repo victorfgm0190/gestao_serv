@@ -123,7 +123,10 @@ ORDER BY table_name, ordinal_position;
 `victor_fixed` numeric · `remainder_victor_pct` numeric · `remainder_fabricio_pct` numeric ·
 `has_tax` bool · `tax_percentage` numeric · `is_active` bool · `notes` text · `created_at` timestamp ·
 `deslocamento_tipo` varchar (`nao_cobrado`|`hora`|`hora_despesas`) · `deslocamento_valor_hora` numeric ·
-`financial_rule_id` int · `tax_client_percent` numeric · `require_nf` bool NOT NULL default true
+`financial_rule_id` int · `tax_client_percent` numeric · `require_nf` bool NOT NULL default true ·
+`invoice_client_id` int FK → `clients(id)` ON DELETE SET NULL
+> Tomador da NF quando ele **não** é o cliente do contrato. NULL (ou igual ao próprio
+> `client_id`) = emite para o cliente do contrato — ver "Tomador condicional" na seção 6.
 
 ### `contract_months`
 `id` int · `contract_id` int · `company_id` int · `client_id` int · `month` int · `year` int ·
@@ -145,7 +148,8 @@ ORDER BY table_name, ordinal_position;
 `victor_tax_diff` numeric (diff NF → Victor) · `victor_total` numeric · `fabricio_total` numeric ·
 `billing_type` varchar (`contract`|`agenda`) · `time_entry_ids` int[] · `receivable_id` int ·
 `status` varchar (`pendente`|`recebido`) · `notes` text · `created_at` timestamp ·
-`require_nf` bool NOT NULL default true
+`require_nf` bool NOT NULL default true · `invoice_client_id` int FK → `clients(id)` ON DELETE SET NULL
+> Tomador **congelado** na emissão da fatura, herdado de `contracts.invoice_client_id`.
 
 ### `receivables`
 `id` int · `company_id` int · `client_id` int · `month` int · `year` int · `description` varchar ·
@@ -1897,6 +1901,54 @@ erro de rateio, não como recorte diferente. Mesma razão pela qual `montarBreak
 linhas prontas em vez de ir ao banco. A extração foi conferida byte a byte contra a versão
 anterior em 7 recortes (as 3 visões de data, com e sem mês, com `include_preview`, as duas
 empresas): saída idêntica, exceto os campos novos `require_nf` e `sem_nf`.
+
+### Tomador condicional da NFS-e (`invoice_client_id`) — 2026-09-01
+
+Há cliente que contrata o serviço e pede a nota **em outro CNPJ** (a holding, uma
+coligada). `contracts.invoice_client_id` diz para quem a nota sai; NULL — ou o próprio
+`client_id` — é "emite para o cliente do contrato". O radio Sim/Não do formulário de
+contratos escreve essa coluna.
+
+⚠️ **Muda SÓ o destinatário do documento fiscal.** `client_id` continua sendo o dono do
+serviço, e com ele o rateio Victor/Fabrício, a regra financeira (que sai do contrato — ver
+`lib/financial-rule.js`), o recebível, os payables e a apuração. Ratear pelo tomador faria
+o custo do serviço de um cliente aparecer no card de outro; é a mesma separação que já
+existe entre "de quem é o imposto" e "de quem é o saldo".
+
+⚠️ **A fatura CONGELA o tomador**, como já fazia com `require_nf`: `invoices.invoice_client_id`
+é gravado na emissão (POST) e reescrito enquanto a fatura estiver pendente (PUT, que é o
+único momento em que ela ainda é editável). Sem congelar, apontar o contrato para outra
+empresa hoje reescreveria para quem uma nota **já transmitida** foi endereçada — e a
+substituição, que relê a fatura, emitiria a substituta para outra pessoa.
+
+A regra inteira é um COALESCE, e ele está escrito por extenso em **cinco** lugares porque o
+driver do Neon não compõe fragmentos de SQL (mesmo motivo da trilha de auditoria em `notes`):
+
+| arquivo | o que quebraria ao divergir |
+|---------|------------------------------|
+| `api/nfse-emit.js` | a nota sairia no CNPJ errado |
+| `api/nfse-substituir.js` | a substituta trocaria de tomador no meio |
+| `lib/nfse-setup-check.js` | a validação aprovaria o cadastro de um cliente e a emissão usaria o de outro |
+| `api/nfse-list.js` | a lista de notas discordaria da nota transmitida |
+| `api/nfse-operations.js` | o histórico fiscal nomearia o cliente errado |
+
+⚠️ **A validação (`nfse-validate-setup`) tinha de mudar junto, não depois.** Ela é quem diz
+"pronto para emitir": olhando o cliente do contrato, ela liberaria a emissão com base num
+cadastro que a nota não usa — e a recusa por CNPJ/endereço faltando só apareceria na hora
+de transmitir, apontando para a tela errada.
+
+O dropdown do formulário **exclui o cliente base** e mostra o CNPJ de cada opção, avisando em
+âmbar quando o escolhido está sem CNPJ (a emissão o recusaria com 422). O radio tem estado
+próprio na tela (`tomadorOutro`): "Não" com o select ainda vazio é um estado legítimo da
+interface que não tem representação no form, onde vazio significa "usar o cliente base" —
+derivá-lo da coluna fecharia o select no primeiro clique. Salvar nesse estado é **recusado**,
+senão a tela diria "outro tomador" e a nota sairia para o cliente base em silêncio.
+
+Teste ponta a ponta em `lib/tomador-nfse.test.js`, contra a produção e em prévia: grava o
+tomador, normaliza o caso "igual ao cliente base" para NULL, confere que o split
+Victor/Fabrício não se mexe, e lê o **CNPJ dentro do `<toma>` do XML assinado**. A fatura de
+teste usa a competência 01/2020 (vazia) e o `finally` apaga também a apuração que o POST
+dispara — fatura, recebível, `fiscal_obligations` e as linhas `origin='fiscal'`.
 
 ### Contrato sem NF (`require_nf = false`) — 2026-07-27
 

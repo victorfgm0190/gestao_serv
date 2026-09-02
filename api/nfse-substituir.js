@@ -63,6 +63,10 @@ export default async function handler(req, res) {
   try {
     const sql = neon(process.env.DATABASE_URL)
 
+    // ⚠️ Mesmo COALESCE de api/nfse-emit.js: a substituta vai para o mesmo tomador
+    // que a fatura congelou. Ler o cliente do serviço aqui trocaria o destinatário
+    // no meio da substituição, e o ADN recusa (ou pior, autoriza) uma nota para
+    // outra pessoa.
     const [orig] = await sql`
       SELECT ne.id, ne.company_id, ne.invoice_id, ne.chave_acesso, ne.status,
              ne.ambiente, ne.nfse_number, ne.valor_servico, ne.competencia,
@@ -75,7 +79,7 @@ export default async function handler(req, res) {
              cl.inscricao_municipal AS client_im
       FROM nfse_emissions ne
       JOIN invoices i ON i.id = ne.invoice_id
-      JOIN clients cl ON cl.id = i.client_id
+      JOIN clients cl ON cl.id = COALESCE(i.invoice_client_id, i.client_id)
       WHERE ne.id = ${parseInt(emission_id, 10)}`
 
     if (!orig) return res.status(404).json({ error: 'Emissão não encontrada' })

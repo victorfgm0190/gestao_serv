@@ -25,8 +25,8 @@
     "semantic_hash": ""
   },
   "api/contracts.js": {
-    "mtime": 1785166807.6425853,
-    "ast_hash": "528a4520bf51755c1e653fb490ae638c",
+    "mtime": 1788309249.5290556,
+    "ast_hash": "ad2ecc44fbd6e33d572c3e4b857977d3",
     "semantic_hash": ""
   },
   "api/cron-sync.js": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "api/invoices.js": {
-    "mtime": 1786388698.0099108,
-    "ast_hash": "b1d26528147f39b5c64d66f2a0f7ab5d",
+    "mtime": 1788309276.7441819,
+    "ast_hash": "924c57ee86b632d3107eeb4f65971025",
     "semantic_hash": ""
   },
   "api/payable-payments.js": {
@@ -140,8 +140,8 @@
     "semantic_hash": ""
   },
   "src/pages/Contracts.jsx": {
-    "mtime": 1785166966.0818865,
-    "ast_hash": "19c064871e25be2bdc9909f81c3f9615",
+    "mtime": 1788309395.7497811,
+    "ast_hash": "b01a2c663fd1b115515060707df380a5",
     "semantic_hash": ""
   },
   "src/pages/Dashboard.jsx": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1786844397.9073608,
-    "ast_hash": "bad63030089e31a47242c455c4eb1a0e",
+    "mtime": 1788309639.2797341,
+    "ast_hash": "3b77fddbbc1b51ff4cc30139e2ecbc04",
     "semantic_hash": ""
   },
   "README.md": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "api/nfse-emit.js": {
-    "mtime": 1787152217.2096648,
-    "ast_hash": "d89590d0b2695f99d2b704771049199e",
+    "mtime": 1788309292.45444,
+    "ast_hash": "8fc9f346c649ad1c2c7ccd0af560d376",
     "semantic_hash": ""
   },
   "lib/nfse-adn-client.js": {
@@ -590,8 +590,8 @@
     "semantic_hash": ""
   },
   "api/nfse-list.js": {
-    "mtime": 1787105074.089942,
-    "ast_hash": "10aeaf94b0bb07019961bdec61c83918",
+    "mtime": 1788309326.4056554,
+    "ast_hash": "c16e6170cf7b2947f2a50a753c651900",
     "semantic_hash": ""
   },
   "lib/danfse-generator.js": {
@@ -675,8 +675,8 @@
     "semantic_hash": ""
   },
   "lib/nfse-setup-check.js": {
-    "mtime": 1787098063.8142655,
-    "ast_hash": "d4bab2a8fb1626f9dda5d4809dcacf22",
+    "mtime": 1788309292.458432,
+    "ast_hash": "5c685f8d0e4c92bdd9c4dab18ab8e85b",
     "semantic_hash": ""
   },
   "lib/nfse-setup-check.test.js": {
@@ -730,13 +730,13 @@
     "semantic_hash": ""
   },
   "api/nfse-substituir.js": {
-    "mtime": 1787152244.6493955,
-    "ast_hash": "bdbb022b4c828c5eb7539b60d59c4816",
+    "mtime": 1788309303.98585,
+    "ast_hash": "4c59cd6df7a56abc21d1fb88f93cad97",
     "semantic_hash": ""
   },
   "lib/nfse-substituir.test.js": {
-    "mtime": 1787154278.2644346,
-    "ast_hash": "84aea8dd731cbd2b35cc186186c1bbf3",
+    "mtime": 1788309326.4065928,
+    "ast_hash": "241896ad401d1d283faa652a00041380",
     "semantic_hash": ""
   },
   "sql/migration-nfse-etapa11.sql": {
@@ -765,8 +765,8 @@
     "semantic_hash": ""
   },
   "api/nfse-operations.js": {
-    "mtime": 1787152429.7922413,
-    "ast_hash": "39126738a55a4188fbe9270c7a7f7fe3",
+    "mtime": 1788309339.5237288,
+    "ast_hash": "30f366668817104fc4e1ebd8e1b2669a",
     "semantic_hash": ""
   },
   "lib/nfse-operations.js": {
@@ -817,6 +817,11 @@
   "lib/nfse-resolve.js": {
     "mtime": 1788300261.7054052,
     "ast_hash": "ee5b0e3e81feece31540df71ac404db8",
+    "semantic_hash": ""
+  },
+  "lib/tomador-nfse.test.js": {
+    "mtime": 1788309543.0891995,
+    "ast_hash": "aa7c61f03676d947f6c195122602f110",
     "semantic_hash": ""
   }
 }

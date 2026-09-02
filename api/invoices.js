@@ -187,6 +187,28 @@ async function requireNfDoContrato(sql, contract, contract_id) {
   return rows[0]?.require_nf !== false
 }
 
+// Tomador da NF, herdado do contrato e CONGELADO na fatura — pela mesma razão de
+// `require_nf` logo acima: trocar o tomador do contrato hoje não pode reescrever
+// para quem uma nota já emitida foi endereçada.
+//
+// NULL significa "emitir para o próprio `client_id` da fatura", inclusive quando o
+// contrato aponta para ele — um jeito só de escrever a mesma coisa. Quem lê isto é a
+// emissão (api/nfse-emit.js, api/nfse-substituir.js e lib/nfse-setup-check.js),
+// sempre por COALESCE(i.invoice_client_id, i.client_id).
+//
+// ⚠️ Muda SÓ o tomador do documento fiscal. O `client_id` da fatura segue sendo o
+// dono do serviço: rateio Victor/Fabrício, regra financeira, recebível, payables e
+// apuração continuam todos por ele.
+async function tomadorDoContrato(sql, contrato, contract_id, client_id) {
+  let alvo = contrato ? contrato.invoice_client_id : null
+  if (!contrato && contract_id) {
+    const rows = await sql`SELECT invoice_client_id FROM contracts WHERE id = ${contract_id} LIMIT 1`
+    alvo = rows[0]?.invoice_client_id ?? null
+  }
+  if (!alvo) return null
+  return Number(alvo) === Number(client_id) ? null : Number(alvo)
+}
+
 // Carrega contrato + parcela para uma fatura por projeto. Retorna { error } se algo falhar.
 async function loadProjeto(sql, contract_id, installment_id) {
   if (!installment_id) return { error: 'Selecione a parcela a faturar.' }
@@ -246,6 +268,7 @@ export default async function handler(req, res) {
       }
 
       const require_nf = await requireNfDoContrato(sql, contrato, contratoId)
+      const invoiceClientId = await tomadorDoContrato(sql, contrato, contratoId, client_id)
       const { pmonth, pyear } = paymentPeriod(payment_date, month, year)
 
       // Os ids são reservados antes das escritas. Motivo: a fatura precisa do
@@ -263,8 +286,8 @@ export default async function handler(req, res) {
 
       const writes = [
         sql`
-          INSERT INTO invoices (id, company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date, emission_date, receivable_id, require_nf)
-          VALUES (${invId}, ${company_id}, ${client_id}, ${contratoId}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null}, ${emission_date||null}, ${recId}, ${require_nf})
+          INSERT INTO invoices (id, company_id, client_id, contract_id, month, year, invoice_number, invoice_value, contract_value, tax_amount, victor_service, victor_profit, victor_tax_diff, victor_total, fabricio_total, billing_type, time_entry_ids, notes, payment_date, emission_date, receivable_id, require_nf, invoice_client_id)
+          VALUES (${invId}, ${company_id}, ${client_id}, ${contratoId}, ${month}, ${year}, ${invoice_number||null}, ${calc.invoice_value}, ${calc.contract_value}, ${calc.tax_amount}, ${calc.victor_service}, ${calc.victor_profit}, ${calc.victor_tax_diff}, ${calc.victor_total}, ${calc.fabricio_total}, ${billing_type||'contract'}, ${time_entry_ids||null}, ${notes||null}, ${payment_date||null}, ${emission_date||null}, ${recId}, ${require_nf}, ${invoiceClientId})
           RETURNING *
         `,
         sql`
@@ -432,11 +455,13 @@ export default async function handler(req, res) {
       // A fatura só é editável enquanto pendente, então reler o contrato aqui é a
       // última chance de a nota pegar a regra de NF vigente antes de virar histórico.
       const require_nf = await requireNfDoContrato(sql, contrato, contratoId)
+      const invoiceClientId = await tomadorDoContrato(sql, contrato, contratoId, inv.client_id)
 
       const updated = await sql`
         UPDATE invoices SET
           invoice_number = ${invoice_number || null},
           require_nf = ${require_nf},
+          invoice_client_id = ${invoiceClientId},
           -- Persiste o contrato resolvido: se ele veio dos apontamentos, deixar a
           -- coluna nula faria a próxima edição derivá-lo de novo do zero.
           contract_id = ${contratoId},

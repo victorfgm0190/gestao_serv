@@ -45,7 +45,10 @@ export default async function handler(req, res) {
              ne.chave_acesso
       FROM nfse_emissions ne
       JOIN invoices i ON i.id = ne.invoice_id
-      JOIN clients  cl ON cl.id = i.client_id
+      -- O nome exibido é o de quem RECEBEU a nota, não o dono do serviço: mesmo
+      -- COALESCE de api/nfse-emit.js. Listar o cliente do contrato aqui faria a
+      -- lista de notas discordar da nota que foi transmitida.
+      JOIN clients  cl ON cl.id = COALESCE(i.invoice_client_id, i.client_id)
       WHERE ne.company_id = ${companyId}
         AND (${filtroInvoice}::int IS NULL OR ne.invoice_id = ${filtroInvoice}::int)
       ORDER BY ne.submitted_at DESC NULLS LAST, ne.id DESC
