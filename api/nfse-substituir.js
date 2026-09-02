@@ -147,6 +147,16 @@ export default async function handler(req, res) {
       RETURNING CASE WHEN ${orig.ambiente === 1} THEN ultimo_dps ELSE ultimo_dps_homolog END AS proximo`
 
     // A competência é a da nota ORIGINAL: alterá-la é o mesmo E0063.
+    //
+    // ⚠️ Foi pedido (2026-09-02) que a substituta usasse o dia da transmissão, como
+    // a emissão passou a fazer. NÃO foi aplicado, e a razão está no cabeçalho deste
+    // arquivo: o SEFIN recusa com E0063 — verificado em homologação com o
+    // certificado da empresa — quando o emitente é Simples ME/EPP (opSimpNac 2 ou 3,
+    // que é o caso da Lumen) e a substituta altera dCompet, tomador ou valor. Como a
+    // substituição acontece em outro dia por definição, mudar aqui faria TODA
+    // substituição ser recusada, e o erro só apareceria depois de a DPS já ter
+    // consumido um número no fisco.
+    //
     // dataISO trata o Date que vem de coluna `date` (chega com o offset
     // embutido) sem deslocar o dia — `toISOString()` cru devolveria a véspera.
     const competencia = orig.competencia

@@ -217,6 +217,11 @@ export default function NFSeEmitidas() {
                   <th className="px-4 py-3 text-left">Cliente</th>
                   <th className="px-4 py-3 text-right">Valor</th>
                   <th className="px-4 py-3 text-left">Status</th>
+                  {/* Competência (dCompet) é o que FOI TRANSMITIDO na nota; "Envio" é
+                      quando ela saiu. As duas coincidem nas notas emitidas a partir de
+                      2026-09-02 — antes disso a competência era o 1º do mês de
+                      referência, e é essa diferença que a coluna deixa ver. */}
+                  <th className="px-4 py-3 text-left">Competência</th>
                   <th className="px-4 py-3 text-left">Envio</th>
                   <th className="px-4 py-3 text-right">Ações</th>
                 </tr>
@@ -249,6 +254,7 @@ export default function NFSeEmitidas() {
                           </p>
                         )}
                       </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{dataBR(e.competencia)}</td>
                       <td className="px-4 py-3 text-xs text-gray-400">{dataBR(e.emittedAt)}</td>
                       <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
                         {/* Emissão sem XML não tem o que baixar — o botão diz isso
@@ -332,7 +338,7 @@ export default function NFSeEmitidas() {
                     </tr>
                     {aberta === e.id && (
                       <tr className="border-b border-gray-800 bg-gray-950/60">
-                        <td colSpan={6} className="px-6 py-4">
+                        <td colSpan={7} className="px-6 py-4">
                           <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">
                             Histórico da nota
                           </p>

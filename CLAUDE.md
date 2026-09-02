@@ -148,8 +148,13 @@ ORDER BY table_name, ordinal_position;
 `victor_tax_diff` numeric (diff NF → Victor) · `victor_total` numeric · `fabricio_total` numeric ·
 `billing_type` varchar (`contract`|`agenda`) · `time_entry_ids` int[] · `receivable_id` int ·
 `status` varchar (`pendente`|`recebido`) · `notes` text · `created_at` timestamp ·
-`require_nf` bool NOT NULL default true · `invoice_client_id` int FK → `clients(id)` ON DELETE SET NULL
-> Tomador **congelado** na emissão da fatura, herdado de `contracts.invoice_client_id`.
+`require_nf` bool NOT NULL default true · `invoice_client_id` int FK → `clients(id)` ON DELETE SET NULL ·
+`emission_date` date · `competencia` date
+> `invoice_client_id`: tomador **congelado** na emissão da fatura, herdado de
+> `contracts.invoice_client_id`.
+> `emission_date` é a competência **fiscal** (DAS, RBT12, visão fiscal); `competencia` é o
+> `dCompet` que **foi transmitido** na última NFS-e — registro, não fonte. Ver
+> "`dCompet` = dia da transmissão" na seção 6.
 
 ### `receivables`
 `id` int · `company_id` int · `client_id` int · `month` int · `year` int · `description` varchar ·
@@ -1901,6 +1906,63 @@ erro de rateio, não como recorte diferente. Mesma razão pela qual `montarBreak
 linhas prontas em vez de ir ao banco. A extração foi conferida byte a byte contra a versão
 anterior em 7 recortes (as 3 visões de data, com e sem mês, com `include_preview`, as duas
 empresas): saída idêntica, exceto os campos novos `require_nf` e `sem_nf`.
+
+### `dCompet` = dia da transmissão (`invoices.competencia`) — 2026-09-02
+
+**Decisão do Victor.** A competência da NFS-e passa a ser o dia em que a nota é
+**transmitida**, não o mês de referência da fatura nem a `emission_date` dela.
+
+O bug era mudo: `invoices.competencia` existia mas **nunca havia sido gravada** (NULL nas
+41 faturas), então o `dCompet` caía sempre no fallback `${year}-${month}-01`. As notas 29,
+30 e 31, transmitidas em 01 e 02/09, saíram com **2026-08-01**.
+
+| momento | fonte | vale para |
+|---------|-------|-----------|
+| `dCompet` da nota | `dataISO(new Date())` na transmissão | o documento fiscal |
+| competência FISCAL | `invoices.emission_date` | DAS, RBT12, Fator R, rateio, visão fiscal |
+
+As duas continuam **independentes**: transmitir hoje uma fatura de agosto emite a nota com
+`dCompet` de hoje e mantém a apuração em agosto. Há teste sobre isso.
+
+⚠️ **`dhEmi` teve de mudar junto, e só o SEFIN contou o porquê.** Ele saía de
+`inv.emission_date`; com `dCompet` = hoje, a primeira transmissão real em homologação
+voltou **E0015**: *"a data de competência informada na DPS não pode ser posterior à data de
+emissão (dhEmi) da DPS"*. Toda fatura criada antes do dia da transmissão seria recusada —
+que é o caso normal. `dhEmi` agora é `new Date()`, o instante em que a DPS é emitida, o que
+também é o que ele significa (a `emission_date` é dado interno, não a emissão do documento).
+
+⚠️ **`dataISO`, nunca `toISOString().slice(0,10)`.** `dataISO` desloca para o fuso de São
+Paulo. Das 21h à meia-noite BRT o UTC já virou o dia: o `dCompet` sairia AMANHÃ e cairia no
+mesmo E0015 — todo dia, por três horas.
+
+⚠️ **`invoices.competencia` é REGISTRO, não fonte.** Gravada com `UPDATE` depois do sucesso
+da transmissão (nunca antes: gravar ao montar o XML marcaria como transmitida uma nota que
+o SEFIN recusou). Ela deixou de ser lida na emissão de propósito — reler faria uma segunda
+emissão da mesma fatura, depois de um cancelamento, repetir a data da primeira. O histórico
+por nota continua em `nfse_emissions.competencia`, que é onde ele tem de estar: uma fatura
+tem várias emissões e agora elas têm datas diferentes.
+
+⚠️ **`invoices.status` NÃO é tocada.** Foi pedido gravar `'ENVIADO'`/`'SUBSTITUIDA'` ali; o
+vocabulário da coluna é `pendente|recebido` e é o que move "A Receber", o estorno e a
+geração de payables — a armadilha inteira de "Não existe status estornado". O estado do
+documento fiscal já tem dono: `nfse_emissions.status`.
+
+⚠️ **A substituição continua com a competência da ORIGINAL.** Foi pedido que ela também
+usasse o dia da transmissão; não foi aplicado porque o SEFIN recusa com **E0063** quando o
+emitente é Simples ME/EPP (`opSimpNac` 2 ou 3 — o caso da Lumen) e a substituta altera
+`dCompet`, tomador ou valor. Verificado em homologação com o certificado da empresa, e já
+era a razão da trava de valor em `SIMPLES_TRAVADO`. Como substituir acontece noutro dia por
+definição, mudar ali faria **toda** substituição ser recusada — depois de a DPS já ter
+consumido um número no fisco.
+
+A lista de NFS-e ganhou a coluna **Competência** ao lado de "Envio": nas notas novas as duas
+coincidem, e é nas antigas que a diferença aparece.
+
+Teste em `lib/nfse-competencia.test.js`, com **transmissão real em homologação** de uma
+fatura com `emission_date` de 2020 — o cenário que o E0015 derrubava. Confere o `dCompet` no
+XML que saiu, a gravação em `invoices.competencia`, que a prévia não grava nada, que a
+apuração segue em 01/2020 e o corte de fuso das 22h30. Limpa emissões, operações, fatura,
+recebível e a apuração.
 
 ### Tomador condicional da NFS-e (`invoice_client_id`) — 2026-09-01
 

@@ -33,6 +33,7 @@
   "31": "8. Workflow de desenvolvimento",
   "32": "Visão 🔎 Rastreio e uso do crédito de compensação — 2026-08-15",
   "33": "imap-simple",
+  "34": "payment-source-tracker.js",
   "35": "App.jsx",
   "36": "postcss.config.js",
   "37": "tailwind.config.js",
@@ -67,7 +68,9 @@
   "66": "Contracts.jsx",
   "67": "Clientes.jsx",
   "68": "EmailRules.jsx",
+  "69": "EmailRules.jsx",
   "70": "nfse-events.js",
   "71": "dotenv",
-  "72": "payment-source-tracker.js"
+  "72": "payment-source-tracker.js",
+  "73": "mailparser"
 }

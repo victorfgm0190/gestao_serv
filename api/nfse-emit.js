@@ -46,7 +46,7 @@ export default async function handler(req, res) {
     // emissão usar o de outro.
     const [inv] = await sql`
       SELECT i.id, i.company_id, i.client_id, i.invoice_client_id, i.invoice_value, i.contract_value,
-             i.month, i.year, i.emission_date, i.require_nf, i.competencia,
+             i.month, i.year, i.emission_date, i.require_nf,
              i.descricao_nfse, i.aliquota_iss, i.municipio_codigo AS invoice_municipio,
              i.invoice_number,
              cl.name AS client_name, cl.razao_social AS client_razao, cl.cpf_cnpj,
@@ -122,18 +122,27 @@ export default async function handler(req, res) {
       })
     }
 
-    // Fallback como STRING de calendário, não como Date: `Date.UTC(...)` dá
-    // meia-noite UTC, que `dataISO` empurraria para o dia (e o mês) anterior.
+    // A competência é o DIA DA TRANSMISSÃO (decisão do Victor, 2026-09-02).
     //
-    // 🐞 E a competência é GRAVADA como string, via dataISO. Passar
-    // `${new Date('2026-06-01')}` ao driver grava **2026-05-31**: o valor é
-    // meia-noite UTC e o cast para `date` acontece no fuso local (UTC-3).
-    // Medido contra o banco: string → 2026-06-01, Date → 2026-05-31. O erro
-    // não afetava a nota transmitida (o XML usa dataISO), só a coluna — e a
-    // substituição, que lê a competência de volta e era recusada com E0063
-    // por "alterar" um campo que ela não alterou.
-    const competencia =
-      inv.competencia || `${inv.year}-${String(inv.month || 1).padStart(2, '0')}-01`
+    // Antes saía de `inv.competencia || ${year}-${month}-01`, e como a coluna
+    // NUNCA foi gravada (NULL nas 41 faturas), o que valia era sempre o fallback:
+    // o dia 1º do mês de REFERÊNCIA. As notas 29, 30 e 31, transmitidas em 01 e
+    // 02/09, saíram com dCompet 2026-08-01.
+    //
+    // ⚠️ `inv.competencia` saiu de cena como FONTE, e não por descuido: ela passou
+    // a ser o registro do que foi transmitido (gravado após o sucesso, mais abaixo).
+    // Lê-la de volta faria uma segunda emissão da mesma fatura — depois de um
+    // cancelamento — repetir a competência da primeira, que é justamente a data que
+    // se quer atualizada.
+    //
+    // ⚠️ dataISO, não `toISOString().slice(0,10)`: ele desloca para o fuso de São
+    // Paulo. Das 21h à meia-noite BRT, o UTC já virou o dia — o dCompet sairia
+    // AMANHÃ e o SEFIN recusa competência futura (E0015). Todo dia, por três horas.
+    //
+    // ⚠️ String de calendário, nunca Date. Passar `${new Date('2026-06-01')}` ao
+    // driver grava **2026-05-31**: meia-noite UTC, cast para `date` no fuso local.
+    // Medido contra o banco.
+    const competencia = dataISO(new Date())
     const aliquota = aliquota_iss ?? inv.aliquota_iss ?? emit.aliquota_iss ?? 0
 
     // ⚠️ O ambiente precisa ser resolvido ANTES de numerar: o contador é por
@@ -165,7 +174,15 @@ export default async function handler(req, res) {
       ambiente: ehProducao ? 1 : 2,
       serie: emit.serie || '00001',
       nDPS: proximo,
-      dataEmissao: inv.emission_date || new Date(),
+      // ⚠️ dhEmi é o instante em que a DPS é EMITIDA — agora —, não a
+      // `emission_date` da fatura (que é dado interno e governa a apuração fiscal).
+      //
+      // Não é cosmético: o SEFIN recusa com **E0015** ("a data de competência não
+      // pode ser posterior à data de emissão (dhEmi) da DPS"). Com dCompet = hoje e
+      // dhEmi = a data da fatura, TODA fatura criada antes do dia da transmissão
+      // seria recusada — e é o caso normal (criar hoje, transmitir depois).
+      // Reproduzido contra o SEFIN em homologação antes desta linha existir.
+      dataEmissao: new Date(),
       emitente: {
         cnpj: emit.cnpj,
         inscricaoMunicipal: emit.inscricao_municipal,
@@ -289,6 +306,24 @@ export default async function handler(req, res) {
       r.ok ? (r.chaveAcesso ? EVENTOS.AUTORIZADA : EVENTOS.ENVIADA) : EVENTOS.ERRO,
       r.ok ? { chave: r.chaveAcesso, numero: r.numeroNfse } : { erro: r.erro, http: r.status },
       { quando: new Date(t0 + 2) })
+
+    // A data transmitida fica registrada na fatura — DEPOIS do sucesso, nunca antes:
+    // gravá-la ao montar o XML marcaria como transmitida uma nota que o SEFIN recusou.
+    //
+    // ⚠️ É registro, não fonte (ver o comentário da competência acima). O histórico
+    // por nota vive em `nfse_emissions.competencia`, que é onde ele tem de estar: uma
+    // fatura pode ter várias emissões, e com a competência acompanhando o dia da
+    // transmissão elas passam a ter datas DIFERENTES — a coluna da fatura guarda só a
+    // da última.
+    //
+    // ⚠️ E `invoices.status` NÃO é tocada. O vocabulário dela é `pendente|recebido` e
+    // é o que move "A Receber", o estorno e a geração de payables; gravar 'ENVIADO' ali
+    // faria a fatura sumir de todos os filtros das telas financeiras — a armadilha já
+    // documentada em "Não existe status estornado". O estado do documento fiscal tem
+    // dono próprio: `nfse_emissions.status` (enviada|autorizada|cancelada|erro).
+    if (r.ok) {
+      await sql`UPDATE invoices SET competencia = ${competencia} WHERE id = ${invoice_id}`
+    }
 
     if (!r.ok) {
       return res.status(502).json({

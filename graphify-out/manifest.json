@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1788309639.2797341,
-    "ast_hash": "3b77fddbbc1b51ff4cc30139e2ecbc04",
+    "mtime": 1788311036.0820107,
+    "ast_hash": "66e1966386b49f0641bd77b93696cfc5",
     "semantic_hash": ""
   },
   "README.md": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   "api/nfse-emit.js": {
-    "mtime": 1788309292.45444,
-    "ast_hash": "8fc9f346c649ad1c2c7ccd0af560d376",
+    "mtime": 1788310952.9234042,
+    "ast_hash": "ac98d0b52dab9a551ce0fcfbfbeb4718",
     "semantic_hash": ""
   },
   "lib/nfse-adn-client.js": {
@@ -610,8 +610,8 @@
     "semantic_hash": ""
   },
   "src/pages/Faturamento/NFSeEmitidas.jsx": {
-    "mtime": 1787157013.0457094,
-    "ast_hash": "400529449eafc2fa06a2191cbd3c146d",
+    "mtime": 1788310876.3648818,
+    "ast_hash": "a85788b6b1e1c6bb61f07781537606e6",
     "semantic_hash": ""
   },
   "api/nfse-cancel.js": {
@@ -730,8 +730,8 @@
     "semantic_hash": ""
   },
   "api/nfse-substituir.js": {
-    "mtime": 1788309303.98585,
-    "ast_hash": "4c59cd6df7a56abc21d1fb88f93cad97",
+    "mtime": 1788310822.788303,
+    "ast_hash": "23e78c0c2ebe930f720f5839c0de69ae",
     "semantic_hash": ""
   },
   "lib/nfse-substituir.test.js": {
@@ -822,6 +822,11 @@
   "lib/tomador-nfse.test.js": {
     "mtime": 1788309543.0891995,
     "ast_hash": "aa7c61f03676d947f6c195122602f110",
+    "semantic_hash": ""
+  },
+  "lib/nfse-competencia.test.js": {
+    "mtime": 1788310911.7165177,
+    "ast_hash": "d215e9dc80bd481bd9ead81ada3e75bd",
     "semantic_hash": ""
   }
 }
