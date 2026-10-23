@@ -1,16 +1,16 @@
 # Graph Report - gestao_serv  (2026-10-23)
 
 ## Corpus Check
-- 162 files · ~223,607 words
+- 162 files · ~223,783 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1110 nodes · 2267 edges · 71 communities (56 shown, 15 thin omitted)
+- 1111 nodes · 2271 edges · 71 communities (56 shown, 15 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 11 edges (avg confidence: 0.75)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d40c5020`
+- Built from commit: `f3c17091`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -89,7 +89,7 @@
 3. `react` - 29 edges
 4. `6. Regras de negócio financeiro` - 28 edges
 5. `3. Banco de dados — tabelas, colunas e tipos` - 24 edges
-6. `tipoDaRegra()` - 19 edges
+6. `tipoDaRegra()` - 20 edges
 7. `montarDPS()` - 19 edges
 8. `signToken()` - 17 edges
 9. `valorDevido()` - 17 edges
@@ -129,8 +129,8 @@ Cohesion: 0.04
 Nodes (47): 6. Regras de negócio financeiro, ⚠️ "A cascata parou no meio do Pharmalog" — não parou (2026-08-15), 🐞 A regra financeira vinha do cliente, sorteada pela heap — corrigido 2026-08-10, ⚠️ ABSORVEU não é consumo — o lucro que o imposto comeu, Breakdown por cliente na aba Pagar Victor (`lib/victor-breakdown.js`) — 2026-08-10, Cascata do lucro persistida — 2026-07-30, Composição fiscal na aba Pagar Victor — 2026-07-28, Contrato fixo (`billing_type = 'contract'` ou `'mensal'`) (+39 more)
 
 ### Community 4 - "6. Regras de negócio financeiro"
-Cohesion: 0.08
-Nodes (68): acumular12(), apurar(), brl(), calcularApuracao(), chaveCompetencia(), chaveOrdinal(), contextoRedistribuicao(), corrigirEscritorio() (+60 more)
+Cohesion: 0.09
+Nodes (62): acumular12(), apurar(), brl(), calcularApuracao(), chaveCompetencia(), chaveOrdinal(), contextoRedistribuicao(), corrigirEscritorio() (+54 more)
 
 ### Community 5 - "payables-victor.js"
 Cohesion: 0.19
@@ -150,7 +150,7 @@ Nodes (16): handler(), parseCompanyIds(), handler(), splitPct(), handler(), hand
 
 ### Community 10 - "time-entries.js"
 Cohesion: 0.08
-Nodes (51): estornarPeriodo(), handler(), migrateBillingType(), num(), handler(), camposDaRegra(), handler(), numOrNull() (+43 more)
+Nodes (52): estornarPeriodo(), handler(), migrateBillingType(), num(), handler(), camposDaRegra(), handler(), numOrNull() (+44 more)
 
 ### Community 11 - "taxCalc.js"
 Cohesion: 0.10
@@ -306,7 +306,7 @@ Nodes (11): aplicarDados(), useCNPJConsulta(), CAMPOS_FISCAIS, Clientes(), COMPA
 
 ### Community 67 - "Clientes.jsx"
 Cohesion: 0.05
-Nodes (81): handler(), periodFromDate(), recalcParent(), TABLES, calcularDistribuicao(), estornarSessao(), handler(), pagarCompensacao() (+73 more)
+Nodes (87): handler(), periodFromDate(), recalcParent(), TABLES, calcularDistribuicao(), estornarSessao(), handler(), pagarCompensacao() (+79 more)
 
 ### Community 69 - "EmailRules.jsx"
 Cohesion: 0.18
@@ -329,9 +329,9 @@ Nodes (6): attrs, cert, info, keys, p12Der, pfxBuffer
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `requireAuth()` connect `payable-payments.js` to `Clientes.jsx`, `6. Regras de negócio financeiro`, `payables-victor.js`, `nfse-events.js`, `@neondatabase/serverless`, `time-entries.js`, `export-payables-fabricio.js`, `cron-nfse-check.test.js`, `FiscalObligations.jsx`, `Clientes.jsx`, `Billing.jsx`, `dotenv`, `Financial`, `react`, `react-dom`?**
-  _High betweenness centrality (0.120) - this node is a cross-community bridge._
+  _High betweenness centrality (0.106) - this node is a cross-community bridge._
 - **Why does `react` connect `MemoriaCalculo.jsx` to `main.jsx`, `NFSeSettings.jsx`, `Contracts.jsx`, `EmailRules.jsx`, `.oxlintrc.json`, `Financial.jsx`, `time-entries.js`, `dotenv`, `react`, `Dashboard.jsx`, `nfse-emitter-settings.js`?**
-  _High betweenness centrality (0.072) - this node is a cross-community bridge._
+  _High betweenness centrality (0.074) - this node is a cross-community bridge._
 - **Why does `signToken()` connect `Financial` to `imap-simple`, `nfse-events.js`, `@neondatabase/serverless`, `payable-payments.js`, `FiscalObligations.jsx`, `payment-source-tracker.js`, `email-ingest.js`, `Billing.jsx`, `react`, `react-dom`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._
 - **What connects `$schema`, `oxc`, `react/rules-of-hooks` to the rest of the system?**
