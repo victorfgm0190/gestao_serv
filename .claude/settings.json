@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:\\Users\\victo\\AppData\\Roaming\\Python\\Python313\\Scripts\\graphify.EXE hook-guard search"
+            "command": "\"C:/Users/victo/AppData/Roaming/Python/Python313/Scripts/graphify.exe\" hook-guard search"
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "C:\\Users\\victo\\AppData\\Roaming\\Python\\Python313\\Scripts\\graphify.EXE hook-guard read"
+            "command": "\"C:/Users/victo/AppData/Roaming/Python/Python313/Scripts/graphify.exe\" hook-guard read"
           }
         ]
       }

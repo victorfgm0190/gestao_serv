@@ -755,9 +755,12 @@ cota 0 (a diária daquela data já foi cobrada).
 
 **Faturamento** (`calcPorUnidade` em `api/invoices.js`, via `calcAgenda`): diária conta as
 datas distintas das OS selecionadas **menos as já cobradas noutra fatura do mesmo
-contrato**; projeto recusa com **409** uma segunda fatura do mesmo contrato na mesma
-competência (venha a primeira por "Contrato" ou por "Agenda"). ⚠️ A recíproca não está
-travada: faturar por "Contrato" depois de já ter faturado o fixo pela agenda passa.
+contrato**; projeto recusa com **409** ("Fixo mensal de MM/AAAA já faturado na fatura #X")
+uma segunda fatura do mesmo contrato na mesma competência — em **todos** os caminhos:
+agenda, Contrato, prévia e PUT (que ignora a própria fatura). Dono único:
+`fixoMensalJaFaturado()` em `api/invoices.js`. Fatura estornada continua contando (volta a
+`pendente`, não existe status estornado); só o DELETE libera a competência. O modo
+"projeto" de parcelas (`project_installments`) tem trava própria por parcela e não passa por ela.
 
 **Valor líquido (`is_net_value`, só diária/projeto).** O valor informado é o líquido e base
 do split; NF = líquido ÷ (1 − imposto%) e a diferença vai 100% ao Victor (estrutura do

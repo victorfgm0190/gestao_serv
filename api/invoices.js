@@ -307,6 +307,25 @@ async function loadProjeto(sql, contract_id, installment_id) {
   return { installment: inst[0], contract: contracts[0] }
 }
 
+// O fixo mensal (regra `projeto`) é cobrado UMA vez por contrato e competência, venha a
+// fatura por "Contrato" ou por "Agenda", no POST ou no PUT. Dono único da checagem: antes
+// ela só existia na agenda, e gerar pelo modo Contrato depois cobrava o fixo de novo.
+// Não há status "estornado" — estornar devolve a fatura a `pendente` e ela continua
+// sendo a cobrança do mês; só o DELETE a tira daqui. → { status, error } | null
+async function fixoMensalJaFaturado(sql, contrato, month, year, ignorarInvoiceId = null) {
+  if (!contrato?.financial_rule_id || !month || !year) return null
+  const regras = await sql`SELECT * FROM financial_rules WHERE id = ${contrato.financial_rule_id} LIMIT 1`
+  if (!regras.length || tipoDaRegra(regras[0]) !== 'projeto') return null
+  const ja = await sql`
+    SELECT id FROM invoices
+    WHERE contract_id = ${contrato.id} AND month = ${month} AND year = ${year}
+      AND id IS DISTINCT FROM ${ignorarInvoiceId}
+    ORDER BY id LIMIT 1`
+  if (!ja.length) return null
+  const mm = String(month).padStart(2, '0')
+  return { status: 409, error: `Fixo mensal de ${mm}/${year} já faturado na fatura #${ja[0].id}.` }
+}
+
 // Fatura por agenda: resolve contrato + regra e calcula. Compartilhado por POST, PUT e
 // pela prévia (`?action=preview`), para que o demonstrativo da tela seja o MESMO
 // cálculo que é gravado.
@@ -337,17 +356,9 @@ async function calcularFaturaAgenda(sql, { company_id, contract_id, time_entry_i
     datasJaFaturadas = new Set(rows.map((r) => chaveData(r.entry_date)))
   }
 
-  if (tipo === 'projeto' && month && year) {
-    // O fixo mensal é cobrado UMA vez por competência, venha ele por "Contrato" ou por
-    // "Agenda". Sem isto, faturar as OS do mês por agenda cobraria o fixo de novo.
-    const ja = await sql`
-      SELECT id, invoice_number FROM invoices
-      WHERE contract_id = ${contrato.id} AND month = ${month} AND year = ${year}
-        AND id IS DISTINCT FROM ${ignorarInvoiceId}
-      LIMIT 1`
-    if (ja.length) {
-      return { status: 409, error: `O fixo mensal de ${month}/${year} deste contrato já foi faturado (fatura ${ja[0].invoice_number || '#' + ja[0].id}).` }
-    }
+  if (tipo === 'projeto') {
+    const dup = await fixoMensalJaFaturado(sql, contrato, month, year, ignorarInvoiceId)
+    if (dup) return dup
   }
 
   const calc = calcAgenda(entries, rule, { tax_percentage_used, tax_client_percent_used, contrato, datasJaFaturadas })
@@ -404,6 +415,8 @@ export default async function handler(req, res) {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
         contrato = contracts[0]
+        const dup = await fixoMensalJaFaturado(sql, contrato, month, year)
+        if (dup) return res.status(dup.status).json({ error: dup.error })
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
         const r = await calcularFaturaAgenda(sql, { company_id, contract_id: contratoId, time_entry_ids, month, year, tax_percentage_used, tax_client_percent_used })
@@ -579,6 +592,9 @@ export default async function handler(req, res) {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contratoId} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
         contrato = contracts[0]
+        // A própria fatura não conta como duplicata.
+        const dup = await fixoMensalJaFaturado(sql, contrato, inv.month, inv.year, inv.id)
+        if (dup) return res.status(dup.status).json({ error: dup.error })
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
         // Mesma resolução do POST; a própria fatura não conta como "já faturada".
