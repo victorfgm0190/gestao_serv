@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* O fundo escuro mora no documento inteiro, não só no container do Layout: se qualquer
+   coisa transbordar a viewport (sidebar mais alto que a tela, overscroll do navegador),
+   o que aparece por trás é escuro — nunca branco. Mesma cor do <main> (gray-950). */
+html, body, #root {
+  height: 100%;
+  min-height: 100%;
+}
+html, body {
+  background-color: #030712;
+  color-scheme: dark;
+}
+
+/* Scrollbar discreta para áreas com rolagem própria (lista de menus do sidebar). */
+.scrollbar-discreta {
+  scrollbar-width: thin;
+  scrollbar-color: #374151 transparent;
+}
+.scrollbar-discreta::-webkit-scrollbar { width: 6px; }
+.scrollbar-discreta::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-discreta::-webkit-scrollbar-thumb { background-color: #374151; border-radius: 3px; }
+.scrollbar-discreta::-webkit-scrollbar-thumb:hover { background-color: #4b5563; }

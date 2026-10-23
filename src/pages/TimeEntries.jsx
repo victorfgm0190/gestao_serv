@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { todayBR } from '../lib/dateUtils'
+import { calcular } from '../../lib/time-entry-calc.js'
+import { tipoDaRegra, valoresDaRegra, chaveData, dividirEmCotas, ROTULO_COBRANCA } from '../../lib/billing-type.js'
 
-// Split cadastrado. Não usar `|| 50`: um split legítimo de 0% (cliente 100/0)
-// é falsy e viraria 50%, divergindo do cálculo do backend.
-const splitPct = (value, fallback) => {
-  const n = parseFloat(value)
-  return isNaN(n) ? fallback : n
+const BADGE_COBRANCA = {
+  hora: 'bg-blue-500/20 text-blue-400',
+  diaria: 'bg-emerald-500/20 text-emerald-400',
+  projeto: 'bg-amber-500/20 text-amber-400',
 }
 
 function decimalToHHMM(decimal) {
@@ -125,67 +126,43 @@ export default function TimeEntries() {
     return rule || null
   }
 
+  // Preview pela MESMA função que o backend grava (lib/time-entry-calc.js). Antes a
+  // fórmula era copiada aqui e só batia com o backend por disciplina.
   function calcPreview(f) {
     const contrato = contratoSelecionado(f)
     const rule = regraDoContrato(contrato)
     const hours = calcHoras(f)
     if (!rule || !hours) { setPreview(null); return }
-    const h = hours
-    const hd = parseFloat(f.hours_fuel) || 0
-    const despesas = parseFloat(f.despesas_deslocamento) || 0
-    const valor_hora = parseFloat(rule.hourly_rate) || 0
-    const imposto_pct = rule.has_tax ? (parseFloat(rule.tax_percentage) || 0) / 100 : 0
-    const victor_fixo = parseFloat(rule.victor_fixed_per_hour) || 0
-    const victor_pct = splitPct(rule.remainder_victor_pct, 50)
-    const fabricio_pct = splitPct(rule.remainder_fabricio_pct, 50)
+    const tipo = tipoDaRegra(rule)
 
-    const deslocamento_tipo = contrato?.deslocamento_tipo || 'nao_cobrado'
-    const deslocamento_valor_hora = parseFloat(contrato?.deslocamento_valor_hora) || 0
-    const valor_hora_desloc = deslocamento_valor_hora || valor_hora
-
-    // Gross: deslocamento cobrado entra no gross quando o contrato cobra
-    let gross, gross_desloc
-    if (deslocamento_tipo === 'nao_cobrado') {
-      gross = h * valor_hora
-      gross_desloc = 0
-    } else {
-      gross = h * valor_hora
-      gross_desloc = hd * valor_hora_desloc
-    }
-    const gross_total = gross + gross_desloc
-    const tax = gross_total * imposto_pct
-    const net = gross_total - tax
-    const valor_hora_liq = valor_hora * (1 - imposto_pct)
-    const valor_hora_desloc_liq = valor_hora_desloc * (1 - imposto_pct)
-
-    let v_desloc = 0
-    let v_desloc_despesas = 0
-    if (deslocamento_tipo === 'nao_cobrado') {
-      v_desloc = hd * valor_hora_liq
-    } else if (deslocamento_tipo === 'hora') {
-      v_desloc = hd * valor_hora_desloc_liq
-    } else if (deslocamento_tipo === 'hora_despesas') {
-      v_desloc = hd * valor_hora_desloc_liq
-      v_desloc_despesas = despesas
+    // Diária: a cota desta OS depende das irmãs da mesma data (no mês carregado).
+    let cota = null
+    let osNoDia = 1
+    if (tipo === 'diaria') {
+      const irmas = entries.filter(e => String(e.contract_id) === String(f.contract_id)
+        && chaveData(e.entry_date) === f.entry_date && (!editEntry || e.id !== editEntry.id))
+      osNoDia = irmas.length + 1
+      const { unitario, victor_fixo } = valoresDaRegra(rule)
+      cota = { bruto: dividirEmCotas(unitario, osNoDia).at(-1), victor_fixo: dividirEmCotas(victor_fixo, osNoDia).at(-1) }
     }
 
-    // Split só sobre o líquido das horas de trabalho
-    const net_trabalho = gross * (1 - imposto_pct)
-    // Fixo sobre a hora bruta, limitado ao líquido do trabalho (mesma regra do backend).
-    const v_serv = Math.min(h * victor_fixo, Math.max(net_trabalho, 0))
-    const restante = Math.max(net_trabalho - v_serv, 0)
-    const v_lucro = restante * (victor_pct / 100)
-    const fab = restante * (fabricio_pct / 100)
+    const c = calcular(hours, rule, f.hours_fuel, contrato, f.despesas_deslocamento, cota)
+    const deslocTipo = contrato?.deslocamento_tipo || 'nao_cobrado'
+    const despesas = deslocTipo === 'hora_despesas' ? (parseFloat(f.despesas_deslocamento) || 0) : 0
     setPreview({
-      hours: h.toFixed(2),
-      gross: gross_total.toFixed(2),
-      tax: tax.toFixed(2),
-      net: net.toFixed(2),
-      desloc: (v_desloc + v_desloc_despesas).toFixed(2),
-      despesas: v_desloc_despesas.toFixed(2),
-      cobrado: deslocamento_tipo !== 'nao_cobrado',
-      victor: (v_desloc + v_desloc_despesas + v_serv + v_lucro).toFixed(2),
-      fabricio: fab.toFixed(2),
+      hours: hours.toFixed(2),
+      tipo,
+      liquido: tipo !== 'hora' && !!rule.is_net_value,
+      osNoDia,
+      unitario: valoresDaRegra(rule).unitario,
+      gross: c.gross_value.toFixed(2),
+      tax: c.tax_amount.toFixed(2),
+      net: c.net_value.toFixed(2),
+      desloc: c.valor_deslocamento.toFixed(2),
+      despesas: despesas.toFixed(2),
+      cobrado: deslocTipo !== 'nao_cobrado',
+      victor: c.victor_share.toFixed(2),
+      fabricio: c.fabricio_share.toFixed(2),
     })
   }
 
@@ -341,14 +318,30 @@ export default function TimeEntries() {
   // lucro (restante do victor_share). O fixo/hora sai da regra do CONTRATO do
   // lançamento — pela regra do cliente, uma linha do Bokada por hora era decomposta
   // com o fixo de R$ 800 da regra de projeto e o "lucro" saía negativo.
-  const breakdown = filteredEntries.reduce((acc, e) => {
+  // Regra de cobrança de um apontamento (via contrato) e quantas OS dividem a data.
+  const regraDaEntrada = (e) => {
     const ct = contracts.find(c => String(c.id) === String(e.contract_id))
-    const rule = ct ? rules.find(r => String(r.id) === String(ct.financial_rule_id)) : null
+    return ct ? rules.find(r => String(r.id) === String(ct.financial_rule_id)) || null : null
+  }
+  const osPorDia = entries.reduce((m, e) => {
+    const k = `${e.contract_id}|${chaveData(e.entry_date)}`
+    m.set(k, (m.get(k) || 0) + 1)
+    return m
+  }, new Map())
+  const breakdown = filteredEntries.reduce((acc, e) => {
+    const rule = regraDaEntrada(e)
+    const tipo = rule ? tipoDaRegra(rule) : 'hora'
     const hours = parseFloat(e.hours) || 0
     const victorTotal = parseFloat(e.victor_share) || 0
     const valorDesloc = parseFloat(e.valor_deslocamento) || 0
-    const victorFixoHora = rule ? (parseFloat(rule.victor_fixed_per_hour) || 0) : 0
-    const victorServico = hours * victorFixoHora
+    // Fixo do Victor: por hora = horas × fixo/h; diária = a fração da diária desta OS;
+    // projeto = 0 (o fixo mensal está na fatura, não na OS). Imposto por fora (valor
+    // líquido) também entra no victor_share e fica dentro de "lucro" aqui.
+    const n = osPorDia.get(`${e.contract_id}|${chaveData(e.entry_date)}`) || 1
+    const victorServico = !rule ? 0
+      : tipo === 'hora' ? hours * (parseFloat(rule.victor_fixed_per_hour) || 0)
+      : tipo === 'diaria' && parseFloat(e.gross_value) > 0 ? (parseFloat(rule.victor_fixed_daily) || 0) / n
+      : 0
     acc.desloc += valorDesloc
     acc.servico += victorServico
     acc.lucro += victorTotal - valorDesloc - victorServico
@@ -477,8 +470,26 @@ export default function TimeEntries() {
                     <p className="text-gray-500 text-xs mb-1">📄 {e.contract_name}</p>
                   )}
                   <p className="text-white text-sm">{e.description}</p>
+                  {(() => {
+                    // Por diária/projeto as horas são só demonstrativo: o valor segue a regra.
+                    const rule = regraDaEntrada(e)
+                    const tipo = rule ? tipoDaRegra(rule) : 'hora'
+                    if (tipo === 'hora') return null
+                    const n = osPorDia.get(`${e.contract_id}|${chaveData(e.entry_date)}`) || 1
+                    const nota = tipo === 'projeto'
+                      ? 'incluso no fixo mensal'
+                      : parseFloat(e.gross_value) > 0
+                        ? (n > 1 ? `1 diária na data, dividida entre ${n} OS` : '1 diária')
+                        : 'diária da data já cobrada'
+                    return (
+                      <div className="flex items-center gap-2 mt-1 text-xs">
+                        <span className={`px-2 py-0.5 rounded-full font-medium ${BADGE_COBRANCA[tipo]}`}>{ROTULO_COBRANCA[tipo]}</span>
+                        <span className="text-gray-500">horas informativas · {nota}</span>
+                      </div>
+                    )
+                  })()}
                   <div className="flex gap-4 mt-2 text-xs">
-                    <span className="text-gray-500">Bruto: <span className="text-gray-300">{fmt(e.gross_value)}</span></span>
+                    <span className="text-gray-500">{regraDaEntrada(e)?.is_net_value && tipoDaRegra(regraDaEntrada(e)) !== 'hora' ? 'NF' : 'Bruto'}: <span className="text-gray-300">{fmt(e.gross_value)}</span></span>
                     {parseFloat(e.tax_amount) > 0 && <span className="text-gray-500">Imposto: <span className="text-red-400">-{fmt(e.tax_amount)}</span></span>}
                     <span className="text-gray-500">Victor: <span className="text-blue-400">{fmt(e.victor_share)}</span></span>
                     <span className="text-gray-500">Fab: <span className="text-purple-400">{fmt(e.fabricio_share)}</span></span>
@@ -508,7 +519,7 @@ export default function TimeEntries() {
                   <option value="">{contractsLoading ? 'Carregando contratos...' : 'Selecione o contrato'}</option>
                   {clientContracts.map(ct => (
                     <option key={ct.id} value={ct.id}>
-                      {ct.name} — {ct.billing_type === 'hora' ? 'Por hora' : ct.billing_type === 'dia' ? 'Por dia' : 'Fixo/Mensal'}
+                      {ct.name} — {(() => { const r = regraDoContrato(ct); return r ? ROTULO_COBRANCA[tipoDaRegra(r)] : (ct.billing_type === 'hora' ? 'Por hora' : ct.billing_type === 'dia' ? 'Por dia' : 'Fixo/Mensal') })()}
                     </option>
                   ))}
                 </select>
@@ -559,8 +570,16 @@ export default function TimeEntries() {
               {preview && (
                 <div className="bg-gray-800 rounded-xl p-4 space-y-2 text-sm">
                   <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">Preview do cálculo</p>
-                  <div className="flex justify-between"><span className="text-gray-400">Bruto</span><span className="text-white">R$ {preview.gross}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Imposto</span><span className="text-red-400">-R$ {preview.tax}</span></div>
+                  {preview.tipo === 'diaria' && (
+                    <p className="text-emerald-400 text-xs">
+                      Por diária: horas só informativas. {preview.osNoDia > 1
+                        ? `Já há ${preview.osNoDia - 1} OS neste contrato nesta data — a diária (${fmt(preview.unitario)}) é dividida entre as ${preview.osNoDia}.`
+                        : `1 diária = ${fmt(preview.unitario)}${preview.liquido ? ' líquido' : ''}.`}
+                    </p>
+                  )}
+                  {preview.tipo === 'projeto' && <p className="text-amber-400 text-xs">Por projeto: OS só demonstrativa — o valor está no fixo mensal da fatura.</p>}
+                  <div className="flex justify-between"><span className="text-gray-400">{preview.liquido ? 'NF (líquido + imposto por fora)' : 'Bruto'}</span><span className="text-white">R$ {preview.gross}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-400">{preview.liquido ? 'Imposto (por fora, → Victor)' : 'Imposto'}</span><span className="text-red-400">{preview.liquido ? '' : '-'}R$ {preview.tax}</span></div>
                   <div className="flex justify-between"><span className="text-gray-400">Líquido</span><span className="text-white">R$ {preview.net}</span></div>
                   {parseFloat(preview.desloc) > 0 && <div className="flex justify-between"><span className="text-gray-400">{preview.cobrado ? 'Deslocamento cobrado' : 'Deslocamento (Victor)'}{parseFloat(preview.despesas) > 0 ? ' + despesas' : ''}</span><span className="text-yellow-400">R$ {preview.desloc}</span></div>}
                   <div className="border-t border-gray-700 pt-2 mt-2">

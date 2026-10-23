@@ -21,16 +21,20 @@ export default function Layout() {
   useNotifications(activeCompany)
 
   return (
-    <div className="flex h-screen bg-gray-950 text-white">
+    // Viewport travada (h-screen + overflow-hidden): quem rola é o <main> e a lista de
+    // menus, cada um por conta própria. Antes o <aside> não tinha rolagem e, com a lista
+    // de menus maior que a tela, o rodapé (empresa + Sair) vazava para fora do container
+    // e aparecia sobre o fundo branco do body.
+    <div className="flex h-screen overflow-hidden bg-gray-950 text-white">
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
+      <aside className="w-64 shrink-0 h-screen sticky top-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
         {/* Logo */}
-        <div className="p-6 border-b border-gray-800">
+        <div className="p-6 border-b border-gray-800 shrink-0">
           <h1 className="text-xl font-bold text-white">Gestão Serv</h1>
         </div>
 
         {/* Company Switcher */}
-        <div className="p-4 border-b border-gray-800">
+        <div className="p-4 border-b border-gray-800 shrink-0">
           <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Empresa</p>
           <div className="flex gap-2">
             {companies.map(c => (
@@ -51,7 +55,8 @@ export default function Layout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
+        {/* min-h-0 é o que deixa o flex-1 encolher abaixo do conteúdo e rolar. */}
+        <nav className="flex-1 min-h-0 overflow-y-auto scrollbar-discreta p-4 space-y-1">
           <NavLink
             to="/"
             end
@@ -170,7 +175,7 @@ export default function Layout() {
         </nav>
 
         {/* Usuário logado + empresa ativa */}
-        <div className="p-4 border-t border-gray-800 space-y-3">
+        <div className="p-4 border-t border-gray-800 space-y-3 shrink-0 bg-gray-900">
           <div className="flex items-center gap-2">
             <div
               className="w-2 h-2 rounded-full"
@@ -196,7 +201,7 @@ export default function Layout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-gray-950">
         <Outlet context={{ activeCompany }} />
       </main>
     </div>

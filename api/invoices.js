@@ -3,6 +3,7 @@ import { requireAuth } from '../lib/auth.js'
 import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 import { contratoComRegra, contratoDosApontamentos } from '../lib/financial-rule.js'
 import { apurarCompetencia } from './fiscal-obligations.js'
+import { tipoDaRegra, valoresDaRegra, chaveData, deslocamentoBruto, ROTULO_COBRANCA } from '../lib/billing-type.js'
 
 // Competência fiscal de uma fatura: a data de EMISSÃO da nota, não o mês de referência.
 // Mesmo critério de chaveCompetencia() em api/fiscal-obligations.js — uma NF de dezembro
@@ -73,7 +74,9 @@ export function calcContrato(contract, opts = {}) {
 }
 
 // CONTRATO POR HORA (billing_type = 'hora' / 'agenda')
+// Regra por diária ou por projeto desvia para calcPorUnidade: as horas viram demonstrativo.
 export function calcAgenda(entries, rule, opts = {}) {
+  if (tipoDaRegra(rule) !== 'hora') return calcPorUnidade(entries, rule, opts)
   const total_hours = entries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
   const valor_hora = parseFloat(rule.hourly_rate) || 0
   const victor_fixo_hora = parseFloat(rule.victor_fixed_per_hour) || 0
@@ -123,6 +126,91 @@ export function calcAgenda(entries, rule, opts = {}) {
     displacement_value: round(displacement_value),
     displacement_net: round(displacement_net),
     total_hours,
+  }
+}
+
+// AGENDA COM REGRA POR DIÁRIA OU POR PROJETO (fixo mensal).
+//
+//   diaria  → unidades = datas DISTINTAS das OS selecionadas, menos as datas que já
+//             foram cobradas noutra fatura do mesmo contrato (`opts.datasJaFaturadas`).
+//             Três OS em duas datas = 2 diárias.
+//   projeto → 1 unidade: o fixo mensal. As OS são só demonstrativo.
+//
+// Deslocamento cobrado continua somado por fora, 100% Victor, como na regra por hora.
+//
+// Dois modos de imposto, conforme `rule.is_net_value`:
+//   false (bruto) → o imposto sai do valor, antes do split — a cascata de calcAgenda;
+//   true (líquido, "imposto por fora") → o valor informado é o líquido e base do split;
+//             NF = líquido ÷ (1 − imposto%) e a diferença vai 100% ao Victor, para
+//             pagar a guia. É a estrutura de calcContrato (SteelDek), com o % de imposto
+//             da regra fazendo o gross-up — por isso `tax_client_percent` não se soma.
+export function calcPorUnidade(entries, rule, opts = {}) {
+  const { tipo, unitario, victor_fixo } = valoresDaRegra(rule)
+  const victor_pct = splitPct(rule.remainder_victor_pct, 50)
+  const fab_pct = splitPct(rule.remainder_fabricio_pct, 50)
+  const taxReal = resolvePct(opts.tax_percentage_used, rule.has_tax ? rule.tax_percentage : 0)
+  const liquido = !!rule.is_net_value
+  const taxClient = liquido ? 0 : resolvePct(opts.tax_client_percent_used, 0)
+  const total_hours = entries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
+
+  const jaFaturadas = opts.datasJaFaturadas || new Set()
+  const todasDatas = [...new Set(entries.map((e) => chaveData(e.entry_date)))].sort()
+  const datas = tipo === 'diaria' ? todasDatas.filter((d) => !jaFaturadas.has(d)) : []
+  const unidades = tipo === 'diaria' ? datas.length : 1
+
+  const service_value = unidades * unitario
+  const victor_fixo_total = unidades * victor_fixo
+  const displacement_value = entries.reduce((s, e) => s + deslocamentoBruto(e, opts.contrato), 0)
+  const base = service_value + displacement_value
+
+  let nf, tax, victor_servico, displacement_net, restante
+  if (liquido) {
+    nf = taxReal > 0 && taxReal < 100 ? base / (1 - taxReal / 100) : base
+    tax = nf - base
+    displacement_net = displacement_value
+    victor_servico = Math.min(victor_fixo_total, service_value)
+    restante = Math.max(service_value - victor_servico, 0)
+  } else {
+    tax = base * (taxReal / 100)
+    const net = base - tax
+    displacement_net = displacement_value * (1 - taxReal / 100)
+    victor_servico = Math.min(victor_fixo_total, Math.max(net - displacement_net, 0))
+    restante = Math.max(net - victor_servico - displacement_net, 0)
+    nf = taxClient > 0 && taxClient < 100 ? base / (1 - taxClient / 100) : base
+  }
+  const victor_lucro = restante * (victor_pct / 100)
+  const fabricio = restante * (fab_pct / 100)
+  // Diferença NF → Victor: no modo líquido é o próprio imposto; no bruto, o gross-up
+  // do imposto do cliente (zero quando ele não é cobrado).
+  const diff_nf = Math.max(nf - base, 0)
+  const victor_total = victor_servico + displacement_net + victor_lucro + diff_nf
+
+  return {
+    invoice_value: round(nf),
+    contract_value: round(base),
+    tax_amount: round(tax),
+    tax_percentage_used: taxReal,
+    tax_client_percent_used: taxClient,
+    victor_service: round(victor_servico),
+    victor_profit: round(victor_lucro + displacement_net),
+    victor_tax_diff: round(diff_nf),
+    victor_total: round(victor_total),
+    fabricio_total: round(fabricio),
+    displacement_value: round(displacement_value),
+    displacement_net: round(displacement_net),
+    total_hours,
+    cobranca: {
+      tipo,
+      rotulo: ROTULO_COBRANCA[tipo],
+      valor_liquido: liquido,
+      unidades,
+      valor_unitario: round(unitario),
+      nf_unitaria: round(liquido && taxReal > 0 && taxReal < 100 ? unitario / (1 - taxReal / 100) : unitario),
+      servico: round(service_value),
+      datas,
+      datas_ja_faturadas: todasDatas.filter((d) => jaFaturadas.has(d)),
+      os: entries.length,
+    },
   }
 }
 
@@ -219,6 +307,56 @@ async function loadProjeto(sql, contract_id, installment_id) {
   return { installment: inst[0], contract: contracts[0] }
 }
 
+// Fatura por agenda: resolve contrato + regra e calcula. Compartilhado por POST, PUT e
+// pela prévia (`?action=preview`), para que o demonstrativo da tela seja o MESMO
+// cálculo que é gravado.
+// → { calc, contrato } | { status, error }
+async function calcularFaturaAgenda(sql, { company_id, contract_id, time_entry_ids, month, year, ignorarInvoiceId = null, tax_percentage_used, tax_client_percent_used }) {
+  // A regra sai do contrato, nunca do cliente — ver lib/financial-rule.js.
+  const ids = (time_entry_ids || []).map(Number).filter(Boolean)
+  const entries = ids.length ? await sql`SELECT * FROM time_entries WHERE id = ANY(${ids}::int[])` : []
+  const alvo = contract_id ? { contract_id } : contratoDosApontamentos(entries)
+  if (alvo.error) return { status: 422, error: alvo.error }
+  const resolvido = await contratoComRegra(sql, alvo.contract_id, { company_id })
+  if (resolvido.error) return { status: 422, error: resolvido.error }
+  const { contrato, rule } = resolvido
+  const tipo = tipoDaRegra(rule)
+
+  if (tipo === 'hora' && !entries.length) return { status: 422, error: 'Selecione ao menos um apontamento.' }
+
+  let datasJaFaturadas = new Set()
+  if (tipo === 'diaria') {
+    // Uma data = uma diária, inclusive ENTRE faturas: a OS esquecida de um dia que já
+    // foi cobrado não pode gerar uma segunda diária na fatura seguinte.
+    const rows = await sql`
+      SELECT DISTINCT te.entry_date
+      FROM invoices i
+      JOIN time_entries te ON te.id = ANY(i.time_entry_ids)
+      WHERE te.contract_id = ${contrato.id}
+        AND i.id IS DISTINCT FROM ${ignorarInvoiceId}`
+    datasJaFaturadas = new Set(rows.map((r) => chaveData(r.entry_date)))
+  }
+
+  if (tipo === 'projeto' && month && year) {
+    // O fixo mensal é cobrado UMA vez por competência, venha ele por "Contrato" ou por
+    // "Agenda". Sem isto, faturar as OS do mês por agenda cobraria o fixo de novo.
+    const ja = await sql`
+      SELECT id, invoice_number FROM invoices
+      WHERE contract_id = ${contrato.id} AND month = ${month} AND year = ${year}
+        AND id IS DISTINCT FROM ${ignorarInvoiceId}
+      LIMIT 1`
+    if (ja.length) {
+      return { status: 409, error: `O fixo mensal de ${month}/${year} deste contrato já foi faturado (fatura ${ja[0].invoice_number || '#' + ja[0].id}).` }
+    }
+  }
+
+  const calc = calcAgenda(entries, rule, { tax_percentage_used, tax_client_percent_used, contrato, datasJaFaturadas })
+  if (tipo === 'diaria' && calc.cobranca.unidades === 0) {
+    return { status: 422, error: 'Todas as datas das OS selecionadas já foram cobradas em outra fatura deste contrato.' }
+  }
+  return { calc, contrato }
+}
+
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -229,6 +367,18 @@ export default async function handler(req, res) {
       ? await sql`SELECT i.*, c.name as client_name, ct.name as contract_name FROM invoices i LEFT JOIN clients c ON c.id = i.client_id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE i.company_id = ${company_id} AND i.client_id = ${client_id} ORDER BY i.year DESC, i.month DESC`
       : await sql`SELECT i.*, c.name as client_name, ct.name as contract_name FROM invoices i LEFT JOIN clients c ON c.id = i.client_id LEFT JOIN contracts ct ON ct.id = i.contract_id WHERE i.company_id = ${company_id} AND i.year = ${year||new Date().getFullYear()} ORDER BY i.month DESC, c.name ASC`
     return res.status(200).json({ invoices })
+  }
+
+  if (req.method === 'POST' && req.query.action === 'preview') {
+    // Prévia do demonstrativo de uma fatura por agenda. Não grava nada.
+    const { id, company_id, contract_id, month, year, time_entry_ids, tax_percentage_used, tax_client_percent_used } = req.body || {}
+    try {
+      const r = await calcularFaturaAgenda(sql, { company_id, contract_id, time_entry_ids, month, year, ignorarInvoiceId: id || null, tax_percentage_used, tax_client_percent_used })
+      if (r.error) return res.status(r.status).json({ error: r.error })
+      return res.status(200).json({ breakdown: r.calc })
+    } catch (error) {
+      return res.status(500).json({ error: error.message })
+    }
   }
 
   if (req.method === 'POST') {
@@ -256,15 +406,11 @@ export default async function handler(req, res) {
         contrato = contracts[0]
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
-        // A regra sai do contrato, nunca do cliente — ver lib/financial-rule.js.
-        const entries = await sql`SELECT * FROM time_entries WHERE id = ANY(${time_entry_ids}::int[])`
-        const alvo = contratoId ? { contract_id: contratoId } : contratoDosApontamentos(entries)
-        if (alvo.error) return res.status(422).json({ error: alvo.error })
-        const resolvido = await contratoComRegra(sql, alvo.contract_id, { company_id })
-        if (resolvido.error) return res.status(422).json({ error: resolvido.error })
-        contrato = resolvido.contrato
-        contratoId = resolvido.contrato.id
-        calc = calcAgenda(entries, resolvido.rule, { tax_percentage_used, tax_client_percent_used })
+        const r = await calcularFaturaAgenda(sql, { company_id, contract_id: contratoId, time_entry_ids, month, year, tax_percentage_used, tax_client_percent_used })
+        if (r.error) return res.status(r.status).json({ error: r.error })
+        contrato = r.contrato
+        contratoId = r.contrato.id
+        calc = r.calc
       }
 
       const require_nf = await requireNfDoContrato(sql, contrato, contratoId)
@@ -435,16 +581,17 @@ export default async function handler(req, res) {
         contrato = contracts[0]
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
       } else {
-        // Mesma resolução do POST: a regra sai do contrato, nunca do cliente.
-        const ids = time_entry_ids || inv.time_entry_ids
-        const entries = await sql`SELECT * FROM time_entries WHERE id = ANY(${ids}::int[])`
-        const alvo = contratoId ? { contract_id: contratoId } : contratoDosApontamentos(entries)
-        if (alvo.error) return res.status(422).json({ error: alvo.error })
-        const resolvido = await contratoComRegra(sql, alvo.contract_id, { company_id: inv.company_id })
-        if (resolvido.error) return res.status(422).json({ error: resolvido.error })
-        contrato = resolvido.contrato
-        contratoId = resolvido.contrato.id
-        calc = calcAgenda(entries, resolvido.rule, { tax_percentage_used, tax_client_percent_used })
+        // Mesma resolução do POST; a própria fatura não conta como "já faturada".
+        const r = await calcularFaturaAgenda(sql, {
+          company_id: inv.company_id, contract_id: contratoId,
+          time_entry_ids: time_entry_ids || inv.time_entry_ids,
+          month: inv.month, year: inv.year, ignorarInvoiceId: inv.id,
+          tax_percentage_used, tax_client_percent_used,
+        })
+        if (r.error) return res.status(r.status).json({ error: r.error })
+        contrato = r.contrato
+        contratoId = r.contrato.id
+        calc = r.calc
       }
 
       // payment_date: usa o enviado; se a chave não veio no body, mantém o atual.

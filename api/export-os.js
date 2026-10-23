@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import ExcelJS from 'exceljs'
+import { tipoDaRegra, ROTULO_COBRANCA } from '../lib/billing-type.js'
 
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
@@ -13,9 +14,12 @@ export default async function handler(req, res) {
 
   const entries = client_id
     ? await sql`
-        SELECT te.*, c.name as client_name
+        SELECT te.*, c.name as client_name,
+               fr.billing_type AS rule_billing_type, fr.tipo AS rule_tipo
         FROM time_entries te
         LEFT JOIN clients c ON c.id = te.client_id
+        LEFT JOIN contracts ct ON ct.id = te.contract_id
+        LEFT JOIN financial_rules fr ON fr.id = ct.financial_rule_id
         WHERE te.company_id = ${company_id}
           AND EXTRACT(MONTH FROM te.entry_date) = ${month}
           AND EXTRACT(YEAR FROM te.entry_date) = ${year}
@@ -23,9 +27,12 @@ export default async function handler(req, res) {
         ORDER BY te.entry_date ASC
       `
     : await sql`
-        SELECT te.*, c.name as client_name
+        SELECT te.*, c.name as client_name,
+               fr.billing_type AS rule_billing_type, fr.tipo AS rule_tipo
         FROM time_entries te
         LEFT JOIN clients c ON c.id = te.client_id
+        LEFT JOIN contracts ct ON ct.id = te.contract_id
+        LEFT JOIN financial_rules fr ON fr.id = ct.financial_rule_id
         WHERE te.company_id = ${company_id}
           AND EXTRACT(MONTH FROM te.entry_date) = ${month}
           AND EXTRACT(YEAR FROM te.entry_date) = ${year}
@@ -52,12 +59,15 @@ export default async function handler(req, res) {
     { key: 'I', width: 14 },
     { key: 'J', width: 13 },
     { key: 'K', width: 14 },
+    { key: 'L', width: 16 },
+    { key: 'M', width: 22 },
   ]
 
   // Merge título A1:H3
   ws.mergeCells('A1:H3')
   ws.mergeCells('I1:I3')
   ws.mergeCells('K1:K3')
+  ws.mergeCells('L1:L3')
 
   // Título
   const titleCell = ws.getCell('A1')
@@ -78,6 +88,13 @@ export default async function handler(req, res) {
   totalGeralCell.numFmt = '[h]:mm:ss'
   totalGeralCell.font = { name: 'Aptos Narrow', bold: true, size: 11 }
   totalGeralCell.alignment = { horizontal: 'center', vertical: 'middle' }
+
+  // Total do VALOR no L1 — só as linhas numéricas somam (projeto é texto).
+  const totalValorCell = ws.getCell('L1')
+  totalValorCell.value = { formula: 'SUBTOTAL(9,L5:L1048576)' }
+  totalValorCell.numFmt = '"R$" #,##0.00'
+  totalValorCell.font = { name: 'Aptos Narrow', bold: true, size: 11 }
+  totalValorCell.alignment = { horizontal: 'center', vertical: 'middle' }
 
   // Altura das linhas 1-3
   ws.getRow(1).height = 28.8
@@ -102,9 +119,11 @@ export default async function handler(req, res) {
     { col: 'I', label: 'TOTAL' },
     { col: 'J', label: 'DESLOCAMENTO' },
     { col: 'K', label: 'TOTAL GERAL' },
+    { col: 'L', label: 'VALOR' },
+    { col: 'M', label: 'COBRANÇA' },
   ]
-  // Preenche fill em todas as células do cabeçalho (A-K)
-  for (let c = 1; c <= 11; c++) {
+  // Preenche fill em todas as células do cabeçalho (A-M)
+  for (let c = 1; c <= 13; c++) {
     const cell = ws.getCell(4, c)
     cell.fill = headerFill
     cell.font = headerFont
@@ -225,6 +244,26 @@ export default async function handler(req, res) {
     kCell.numFmt = '[h]:mm:ss'
     kCell.font = dataFont
     kCell.alignment = centerAlign
+
+    // VALOR conforme a regra: as horas acima são sempre demonstrativas para
+    // diária/projeto. Por hora e por diária é o valor gravado na OS (na diária, a
+    // fração da diária da data — várias OS no mesmo dia somam 1 diária); por projeto
+    // a OS não tem valor próprio, está no fixo mensal.
+    const tipo = tipoDaRegra({ billing_type: entry.rule_billing_type, tipo: entry.rule_tipo })
+    const lCell = ws.getCell(rowNum, 12)
+    if (tipo === 'projeto') {
+      lCell.value = 'Incluso no fixo mensal'
+    } else if (entry.gross_value != null) {
+      lCell.value = parseFloat(entry.gross_value) || 0
+      lCell.numFmt = '"R$" #,##0.00'
+    }
+    lCell.font = dataFont
+    lCell.alignment = centerAlign
+
+    const mCell = ws.getCell(rowNum, 13)
+    mCell.value = ROTULO_COBRANCA[tipo]
+    mCell.font = dataFont
+    mCell.alignment = centerAlign
   })
 
   // Nome do arquivo reflete o filtro de cliente

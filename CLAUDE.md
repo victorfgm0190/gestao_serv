@@ -115,7 +115,13 @@ ORDER BY table_name, ordinal_position;
 `id` int · `project_id` int (legado) · `client_id` int · `hourly_rate` numeric ·
 `has_tax` bool · `tax_percentage` numeric · `victor_fixed_per_hour` numeric ·
 `has_fuel` bool · `fuel_value` numeric · `remainder_victor_pct` numeric ·
-`remainder_fabricio_pct` numeric · `created_at` timestamp
+`remainder_fabricio_pct` numeric · `created_at` timestamp ·
+`billing_type` varchar NOT NULL default `'hora'` (`hora`|`diaria`|`projeto`) ·
+`daily_rate` · `victor_fixed_daily` · `monthly_fixed_value` · `victor_fixed_monthly` numeric ·
+`is_net_value` bool default false · `tipo` varchar (legado, espelho de `billing_type`)
+> Tipo de cobrança — ver "Tipo de cobrança da regra" na seção 6. `tipo` ('hora'|'por_projeto')
+> continua sendo gravado em espelho por `api/financial-rules.js`, mas **ninguém lê**:
+> a fonte é `billing_type`, interpretado por `tipoDaRegra()` (`lib/billing-type.js`).
 
 ### `contracts`
 `id` int · `company_id` int · `client_id` int · `name` varchar ·
@@ -722,6 +728,52 @@ Hook: `src/hooks/useNotifications` (notificações; usado no Layout).
 ---
 
 ## 6. Regras de negócio financeiro
+
+### Tipo de cobrança da regra: hora / diária / projeto (`lib/billing-type.js`) — 2026-10-23
+
+`financial_rules.billing_type` define como uma OS vira dinheiro. Migrado de `tipo` por
+`POST /api/admin?action=migrate-billing-type` (idempotente): `por_projeto` → `projeto`, o
+resto → `hora`; o fixo mensal da regra de projeto (Bokada #12) foi **copiado** de
+`hourly_rate`/`victor_fixed_per_hour` para as colunas novas, sem apagar as antigas.
+
+| tipo | valor | horas da OS | Victor fixo |
+|------|-------|-------------|-------------|
+| `hora` | horas × `hourly_rate` (inalterado) | base do valor | `victor_fixed_per_hour` × horas |
+| `diaria` | `daily_rate` × **datas distintas** | informativas | `victor_fixed_daily` × datas |
+| `projeto` | `monthly_fixed_value`, 1× por competência | informativas | `victor_fixed_monthly` |
+
+`hourly_rate` **não** é reaproveitado como diária/fixo: colunas próprias por tipo.
+
+**Diária no apontamento — rateio por data.** Cada OS grava a sua **cota** da diária: duas OS
+do mesmo contrato na mesma data ficam com ½ cada (resíduo de centavo na de menor id,
+`dividirEmCotas`). Assim todo consumidor que soma `time_entries.gross_value` (dashboard,
+previsão de `victor-momentos`, totais da tela) continua certo sem cobrar duas diárias.
+⚠️ Por isso uma OS de diária **acopla as irmãs**: `recalcularDia()` (`api/time-entries.js`)
+regrava a data inteira em todo POST/PUT/DELETE — inclusive o dia de origem quando a OS muda
+de data. OS já faturadas não são reescritas, e uma OS nova numa data já faturada fica com
+cota 0 (a diária daquela data já foi cobrada).
+
+**Faturamento** (`calcPorUnidade` em `api/invoices.js`, via `calcAgenda`): diária conta as
+datas distintas das OS selecionadas **menos as já cobradas noutra fatura do mesmo
+contrato**; projeto recusa com **409** uma segunda fatura do mesmo contrato na mesma
+competência (venha a primeira por "Contrato" ou por "Agenda"). ⚠️ A recíproca não está
+travada: faturar por "Contrato" depois de já ter faturado o fixo pela agenda passa.
+
+**Valor líquido (`is_net_value`, só diária/projeto).** O valor informado é o líquido e base
+do split; NF = líquido ÷ (1 − imposto%) e a diferença vai 100% ao Victor (estrutura do
+SteelDek / `calcContrato`). `tax_client_percent` não se soma nesse modo. A fatura não guarda
+o modo: `lib/fabricio-breakdown.js` o reconhece porque `tax_amount ≈ victor_tax_diff ≈ NF − base`.
+
+**Uma fórmula só.** `calcular()` saiu de `api/time-entries.js` para `lib/time-entry-calc.js`
+(puro, sem `neon`) e o preview de `/time-entries` passou a importá-lo — fim da cópia no
+browser. Conferido: os 106 apontamentos por hora do banco dão resultado idêntico ao da
+versão anterior. O demonstrativo da fatura por agenda em `/billing` também deixou de ter
+fórmula própria: vem de `POST /api/invoices?action=preview` (mesmo `calcularFaturaAgenda`
+do POST/PUT, sem gravar). Junto saiu o `rules[0]` do cliente que escolhia a regra da
+agenda — o sorteio do Bokada de novo; a regra agora é a do contrato efetivo.
+
+Deslocamento em diária/projeto: só existe se o contrato tiver `deslocamento_valor_hora`
+(não há "valor hora" do qual cair; dividir a diária por 8 seria inventar tarifa).
 
 ### Memória de cálculo da apuração — 2026-07-27
 

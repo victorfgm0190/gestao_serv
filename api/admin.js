@@ -1,5 +1,6 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAdmin } from '../lib/admin-auth.js'
+import { recalcularDia } from './time-entries.js'
 
 // OPERAÇÕES ADMINISTRATIVAS EM MASSA.
 //
@@ -8,6 +9,7 @@ import { requireAdmin } from '../lib/admin-auth.js'
 // sessão comum logada na tela.
 //
 // POST ?action=estornar-periodo  { company_id, year, month_from, month_to, dry_run }
+// POST ?action=migrate-billing-type   (idempotente — tipo de cobrança da regra financeira)
 //
 // ── Por que estornar e não marcar status='estornado' ────────────────────────────────
 // Nenhuma destas tabelas tem 'estornado' no vocabulário de status:
@@ -222,6 +224,81 @@ async function estornarPeriodo(sql, req, res) {
   })
 }
 
+
+// Tipo de cobrança da regra financeira: 'hora' | 'diaria' | 'projeto' (lib/billing-type.js).
+// Idempotente — rodar de novo não altera nada que já esteja migrado.
+async function migrateBillingType(sql, req, res) {
+  // 1. Colunas. `billing_type` nasce SEM default para que o passo 2 enxergue quais
+  //    linhas ainda não foram mapeadas (um DEFAULT 'hora' preencheria todas na hora,
+  //    inclusive a regra por projeto do Bokada).
+  await sql`ALTER TABLE financial_rules ADD COLUMN IF NOT EXISTS billing_type VARCHAR(20)`
+  await sql`ALTER TABLE financial_rules ADD COLUMN IF NOT EXISTS daily_rate NUMERIC(10,2)`
+  await sql`ALTER TABLE financial_rules ADD COLUMN IF NOT EXISTS victor_fixed_daily NUMERIC(10,2)`
+  await sql`ALTER TABLE financial_rules ADD COLUMN IF NOT EXISTS monthly_fixed_value NUMERIC(10,2)`
+  await sql`ALTER TABLE financial_rules ADD COLUMN IF NOT EXISTS victor_fixed_monthly NUMERIC(10,2)`
+  await sql`ALTER TABLE financial_rules ADD COLUMN IF NOT EXISTS is_net_value BOOLEAN DEFAULT false`
+
+  // 2. Mapeia o `tipo` antigo. 'por_projeto' → 'projeto'; o resto era por hora.
+  const mapeadas = await sql`
+    UPDATE financial_rules
+    SET billing_type = CASE WHEN tipo = 'por_projeto' THEN 'projeto' ELSE 'hora' END
+    WHERE billing_type IS NULL
+    RETURNING id, billing_type`
+  await sql`ALTER TABLE financial_rules ALTER COLUMN billing_type SET DEFAULT 'hora'`
+  await sql`ALTER TABLE financial_rules ALTER COLUMN billing_type SET NOT NULL`
+  await sql`UPDATE financial_rules SET is_net_value = false WHERE is_net_value IS NULL`
+
+  // 3. Regra por projeto: o fixo mensal morava em hourly_rate/victor_fixed_per_hour
+  //    (Bokada #12: 1.500 / 800, os mesmos do contrato 10). Copia — não move: as
+  //    colunas antigas ficam intactas, nenhum valor existente é perdido.
+  const projetos = await sql`
+    UPDATE financial_rules SET
+      monthly_fixed_value = COALESCE(monthly_fixed_value, hourly_rate),
+      victor_fixed_monthly = COALESCE(victor_fixed_monthly, victor_fixed_per_hour)
+    WHERE billing_type = 'projeto'
+      AND (monthly_fixed_value IS NULL OR victor_fixed_monthly IS NULL)
+    RETURNING id, monthly_fixed_value, victor_fixed_monthly`
+
+  // 4. Romaneli (regra 21, contrato 15 já cadastrado como 'dia'): decisão do Victor —
+  //    diária de R$ 1.500 LÍQUIDA, imposto 9,2% por fora, 100% Victor. Estava como
+  //    "por hora" a R$ 1.500/h. Só converte se ainda estiver por hora (idempotente).
+  const romaneli = await sql`
+    UPDATE financial_rules fr SET
+      billing_type = 'diaria', tipo = 'diaria',
+      daily_rate = 1500,
+      victor_fixed_daily = COALESCE(fr.victor_fixed_daily, fr.victor_fixed_per_hour),
+      is_net_value = true, has_tax = true, tax_percentage = 9.2,
+      remainder_victor_pct = 100, remainder_fabricio_pct = 0
+    FROM clients c
+    WHERE fr.id = 21 AND c.id = fr.client_id AND c.name ILIKE 'ROMANELI%'
+      AND fr.billing_type = 'hora'
+    RETURNING fr.*`
+
+  // 5. Apontamentos em aberto de regras por diária: valor rateado por data.
+  //    Os já faturados ficam como estão (recalcularDia os pula).
+  const dias = await sql`
+    SELECT DISTINCT te.contract_id, te.entry_date
+    FROM time_entries te
+    JOIN contracts ct ON ct.id = te.contract_id
+    JOIN financial_rules fr ON fr.id = ct.financial_rule_id
+    WHERE fr.billing_type = 'diaria'`
+  for (const d of dias) await recalcularDia(sql, d.contract_id, d.entry_date)
+
+  const regras = await sql`
+    SELECT fr.id, c.name AS cliente, fr.billing_type, fr.tipo, fr.hourly_rate, fr.daily_rate,
+           fr.monthly_fixed_value, fr.is_net_value, fr.tax_percentage
+    FROM financial_rules fr JOIN clients c ON c.id = fr.client_id ORDER BY fr.id`
+
+  return res.status(200).json({
+    success: true,
+    mapeadas: mapeadas.length,
+    projetos_copiados: projetos,
+    romaneli: romaneli[0] || 'já migrada',
+    dias_recalculados: dias.length,
+    regras,
+  })
+}
+
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -229,7 +306,8 @@ export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
     if (req.query.action === 'estornar-periodo') return estornarPeriodo(sql, req, res)
-    return res.status(400).json({ error: 'action inválida. Use ?action=estornar-periodo' })
+    if (req.query.action === 'migrate-billing-type') return migrateBillingType(sql, req, res)
+    return res.status(400).json({ error: 'action inválida. Use ?action=estornar-periodo ou ?action=migrate-billing-type' })
   } catch (error) {
     console.error('admin:', error)
     return res.status(500).json({ error: error.message })

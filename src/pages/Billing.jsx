@@ -48,7 +48,9 @@ export default function Billing() {
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1)
   const [filterClient, setFilterClient] = useState('')
   const [editInvoice, setEditInvoice] = useState(null)
-  const [agendaRule, setAgendaRule] = useState(null)
+  // Regras do cliente da agenda; a que vale é a do CONTRATO efetivo (ver agendaRule).
+  const [agendaRules, setAgendaRules] = useState([])
+  const [agendaPreview, setAgendaPreview] = useState({ breakdown: null, error: '', loading: false })
   const [installments, setInstallments] = useState([])
   const [selectedInstallment, setSelectedInstallment] = useState('')
   const [contractForm, setContractForm] = useState({ contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_value:'', invoice_number:'', emission_date: todayBR(), payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'' })
@@ -84,11 +86,55 @@ export default function Billing() {
     const teData = await teRes.json()
     const frData = await frRes.json()
     setTimeEntries((teData.entries||[]).filter(e => String(e.client_id) === String(client_id)))
-    const rule = (frData.rules||[])[0] || null
-    setAgendaRule(rule)
-    setAgendaForm(f => ({ ...f, tax_percentage_used: rule && rule.has_tax ? String(rule.tax_percentage ?? '') : '0', tax_client_percent_used: f.tax_client_percent_used || '0' }))
+    // Antes: `rules[0]` do cliente — o mesmo sorteio corrigido no backend em
+    // lib/financial-rule.js (o Bokada tem duas regras). A regra agora é resolvida pelo
+    // contrato, em agendaRule abaixo.
+    setAgendaRules(frData.rules || [])
+    setAgendaForm(f => ({ ...f, tax_client_percent_used: f.tax_client_percent_used || '0' }))
     setSelectedEntries([])
   }
+
+  // Contrato efetivo da agenda: o escolhido no modal ou, sem ele, o único contrato dos
+  // apontamentos selecionados — a mesma derivação de contratoDosApontamentos no backend.
+  const agendaContractId = (() => {
+    if (agendaForm.contract_id) return String(agendaForm.contract_id)
+    const ids = [...new Set(timeEntries.filter(e => selectedEntries.includes(e.id)).map(e => e.contract_id).filter(Boolean))]
+    return ids.length === 1 ? String(ids[0]) : ''
+  })()
+  const agendaContract = contracts.find(c => String(c.id) === agendaContractId) || null
+  const agendaRule = agendaContract ? agendaRules.find(r => String(r.id) === String(agendaContract.financial_rule_id)) || null : null
+
+  // % de imposto padrão = o da regra do contrato, quando ele muda.
+  useEffect(() => {
+    if (!agendaRule) return
+    setAgendaForm(f => ({ ...f, tax_percentage_used: agendaRule.has_tax ? String(agendaRule.tax_percentage ?? '') : '0' }))
+  }, [agendaRule?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Prévia do demonstrativo, calculada no backend (debounce para não disparar a cada tecla).
+  useEffect(() => {
+    if (!showAgendaModal || selectedEntries.length === 0) { setAgendaPreview({ breakdown: null, error: '', loading: false }); return }
+    let cancel = false
+    setAgendaPreview(p => ({ ...p, loading: true }))
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/invoices?action=preview', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editInvoice?.id || null, company_id: activeCompany.id,
+            contract_id: agendaForm.contract_id || null, month: agendaForm.month, year: agendaForm.year,
+            time_entry_ids: selectedEntries,
+            tax_percentage_used: agendaForm.tax_percentage_used, tax_client_percent_used: agendaForm.tax_client_percent_used,
+          }),
+        })
+        const d = await res.json().catch(() => ({}))
+        if (cancel) return
+        setAgendaPreview(res.ok ? { breakdown: d.breakdown, error: '', loading: false } : { breakdown: null, error: d.error || 'Não foi possível calcular a prévia.', loading: false })
+      } catch {
+        if (!cancel) setAgendaPreview({ breakdown: null, error: 'Erro de conexão com o servidor.', loading: false })
+      }
+    }, 300)
+    return () => { cancel = true; clearTimeout(t) }
+  }, [showAgendaModal, selectedEntries, agendaForm.contract_id, agendaForm.month, agendaForm.year, agendaForm.tax_percentage_used, agendaForm.tax_client_percent_used, editInvoice?.id, activeCompany.id])
 
   function toggleEntry(id) {
     setSelectedEntries(p => p.includes(id) ? p.filter(x=>x!==id) : [...p,id])
@@ -309,7 +355,8 @@ export default function Billing() {
       autoUpdateFiscalSettings(agendaForm.emission_date)
       if (data.breakdown) {
         const b = data.breakdown
-        alert(`Fatura ${isEdit ? 'atualizada' : 'gerada'}!\n\nTotal horas: ${b.total_hours?.toFixed(2)}h\nBruto: R$ ${parseFloat(b.invoice_value).toFixed(2)}\nImposto: R$ ${parseFloat(b.tax_amount).toFixed(2)}\n\nVictor serviço: R$ ${parseFloat(b.victor_service).toFixed(2)}\nVictor lucro: R$ ${parseFloat(b.victor_profit).toFixed(2)}\nVictor TOTAL: R$ ${parseFloat(b.victor_total).toFixed(2)}\nFabrício TOTAL: R$ ${parseFloat(b.fabricio_total).toFixed(2)}`)
+        const unid = b.cobranca?.tipo === 'diaria' ? `\nDiárias: ${b.cobranca.unidades} × R$ ${parseFloat(b.cobranca.valor_unitario).toFixed(2)}` : b.cobranca?.tipo === 'projeto' ? '\nFixo mensal' : ''
+        alert(`Fatura ${isEdit ? 'atualizada' : 'gerada'}!\n\nTotal horas: ${b.total_hours?.toFixed(2)}h${unid}\nNF: R$ ${parseFloat(b.invoice_value).toFixed(2)}\nImposto: R$ ${parseFloat(b.tax_amount).toFixed(2)}\n\nVictor serviço: R$ ${parseFloat(b.victor_service).toFixed(2)}\nVictor lucro: R$ ${parseFloat(b.victor_profit).toFixed(2)}\nVictor TOTAL: R$ ${parseFloat(b.victor_total).toFixed(2)}\nFabrício TOTAL: R$ ${parseFloat(b.fabricio_total).toFixed(2)}`)
       }
     } else {
       alert('Erro: ' + (data.error || 'Falha'))
@@ -412,7 +459,7 @@ export default function Billing() {
 
   function openAgendaModal() {
     setEditInvoice(null)
-    setAgendaRule(null)
+    setAgendaRules([])
     setTimeEntries([])
     setSelectedEntries([])
     setAgendaForm({ client_id:'', contract_id:'', month: new Date().getMonth()+1, year: new Date().getFullYear(), invoice_number:'', emission_date: todayBR(), payment_date:'', notes:'', tax_percentage_used:'', tax_client_percent_used:'0' })
@@ -866,143 +913,101 @@ export default function Billing() {
                   {selectedEntries.length > 0 && (() => {
                     const selected = timeEntries.filter(e => selectedEntries.includes(e.id))
                     const totalHours = selected.reduce((s,e) => s + (parseFloat(e.hours)||0), 0)
-                    const hourlyRate = parseFloat(selected.find(e=>e.hourly_rate)?.hourly_rate) || 0
-                    const deslocHours = selected.reduce((s,e) => s + (parseFloat(e.horas_deslocamento)||0), 0)
-                    const serviceGross = totalHours * hourlyRate
-                    const fmtH = h => (h % 1 === 0 ? String(h) : h.toFixed(1)) + 'h'
-                    const grossTotal = selected.reduce((s,e) => s + (parseFloat(e.gross_value)||0), 0)
-                    // Deslocamento faturado = o que o backend incluiu no bruto (0 quando "nao_cobrado")
-                    const deslocGross = Math.max(grossTotal - serviceGross, 0)
-                    const taxTotal = selected.reduce((s,e) => s + (parseFloat(e.tax_amount)||0), 0)
-                    const victorTotal = selected.reduce((s,e) => s + (parseFloat(e.victor_share)||0), 0)
-                    const fabricioTotal = selected.reduce((s,e) => s + (parseFloat(e.fabricio_share)||0), 0)
-                    const fmt = v => `R$ ${parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
+                    const datas = new Set(selected.map(e => String(e.entry_date).slice(0,10))).size
                     return (
-                      <div className="bg-gray-700/50 rounded-xl p-3 mt-2 space-y-2 text-xs">
-                        <p className="text-blue-400 font-medium">{selectedEntries.length} agenda(s) selecionada(s)</p>
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Horas de serviço</span>
-                            <span className="text-white">{fmtH(totalHours)}{hourlyRate > 0 ? ` × ${fmt(hourlyRate)} = ${fmt(serviceGross)}` : ''}</span>
-                          </div>
-                          {deslocGross > 0.005 && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-400">Horas deslocamento</span>
-                              <span className="text-white">{fmtH(deslocHours)}{hourlyRate > 0 ? ` × ${fmt(hourlyRate)} = ${fmt(deslocGross)}` : ''}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between">
-                            <span className="text-gray-400">Total bruto</span>
-                            <span className="text-white font-bold">{fmt(grossTotal)}</span>
-                          </div>
-                          {taxTotal > 0 && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-400">Imposto ({((taxTotal/grossTotal)*100).toFixed(1)}%)</span>
-                              <span className="text-red-400">-{fmt(taxTotal)}</span>
-                            </div>
-                          )}
-                          <div className="border-t border-gray-600 pt-1.5 space-y-1">
-                            <div className="flex justify-between">
-                              <span className="text-gray-400">Victor</span>
-                              <span className="text-blue-400 font-medium">{fmt(victorTotal)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-400">Fabrício</span>
-                              <span className="text-purple-400 font-medium">{fmt(fabricioTotal)}</span>
-                            </div>
-                          </div>
-                          <div className="flex justify-between border-t border-gray-600 pt-1.5">
-                            <span className="text-white font-semibold">TOTAL A FATURAR</span>
-                            <span className="text-green-400 font-bold text-sm">{fmt(grossTotal)}</span>
-                          </div>
-                        </div>
-                      </div>
+                      <p className="text-blue-400 text-xs font-medium mt-2">
+                        {selectedEntries.length} agenda(s) selecionada(s) · {totalHours.toFixed(2)}h · {datas} data(s) distinta(s)
+                      </p>
                     )
                   })()}
                 </div>
               )}
-              {selectedEntries.length > 0 && agendaRule && (() => {
-                const selected = timeEntries.filter(e => selectedEntries.includes(e.id))
-                const totalHours = selected.reduce((s,e)=>s+(parseFloat(e.hours)||0),0)
-                const hourlyRate = parseFloat(agendaRule.hourly_rate) || parseFloat(selected.find(e=>e.hourly_rate)?.hourly_rate) || 0
-                const victorFixoHora = parseFloat(agendaRule.victor_fixed_per_hour) || 0
-                const victorPct = splitPct(agendaRule.remainder_victor_pct, 50)
-                const fabPct = splitPct(agendaRule.remainder_fabricio_pct, 50)
-                const taxReal = parseFloat(agendaForm.tax_percentage_used) || 0
-                const taxClient = parseFloat(agendaForm.tax_client_percent_used) || 0
-                // Serviço × deslocamento (gross_value já inclui o deslocamento faturado).
-                const serviceValue = selected.reduce((s,e) => s + (parseFloat(e.hours)||0)*hourlyRate, 0)
-                const bruto = selected.reduce((s,e) => { const g = parseFloat(e.gross_value); return s + (isNaN(g) ? (parseFloat(e.hours)||0)*hourlyRate : g) }, 0)
-                const deslocValue = Math.max(bruto - serviceValue, 0)
-                const impostoReal = bruto * taxReal / 100
-                const net = bruto - impostoReal
-                // Deslocamento: 100% Victor, fora do split, com imposto proporcional deduzido.
-                const deslocNet = deslocValue * (1 - taxReal / 100)
-                // Fixo sobre a hora bruta, limitado ao líquido disponível (mesma regra do backend).
-                const victorServico = Math.min(totalHours * victorFixoHora, Math.max(net - deslocNet, 0))
-                const restante = Math.max(net - victorServico - deslocNet, 0)
-                const victorLucro = restante * victorPct / 100
-                const fabricio = restante * fabPct / 100
-                const nf = taxClient > 0 && taxClient < 100 ? bruto / (1 - taxClient / 100) : bruto
-                const diffNf = Math.max(nf - bruto, 0)
-                const victorDesloc = deslocNet
-                const victorTotal = victorServico + victorDesloc + victorLucro + diffNf
+              {selectedEntries.length > 0 && (() => {
+                // Demonstrativo e impostos saem do BACKEND (`?action=preview`), o mesmo
+                // calcAgenda que grava a fatura. A cópia da fórmula que vivia aqui não
+                // conhecia diária nem fixo mensal, e prévia divergindo da gravação é o
+                // bug clássico desta tela.
+                const b = agendaPreview.breakdown
+                const fmt = v => `R$ ${parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`
+                const cob = b?.cobranca
+                const liquido = !!cob?.valor_liquido
+                const bruto = parseFloat(b?.contract_value) || 0
                 const onPct = (v) => { setAgendaForm(f=>({...f,tax_client_percent_used:v})) }
                 const onNf = (v) => { const nfv=parseFloat(v); let p=''; if(!isNaN(nfv)&&nfv>0&&bruto>0) p=((nfv-bruto)/nfv*100).toFixed(2); setAgendaForm(f=>({...f,tax_client_percent_used:p})) }
+                const fmtD = d => d.split('-').reverse().join('/')
                 return (
                   <>
                     <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
                       <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Impostos</p>
                       <div className="flex gap-3">
                         <div className="flex flex-col gap-1 flex-1">
-                          <label className="text-xs text-gray-400 font-medium">% Imposto real (Victor)</label>
+                          <label className="text-xs text-gray-400 font-medium">{liquido ? '% Imposto (por fora)' : '% Imposto real (Victor)'}</label>
                           <input type="number" step="0.01" value={agendaForm.tax_percentage_used} onChange={e=>setAgendaForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
                         </div>
-                        <div className="flex flex-col gap-1 flex-1">
-                          <label className="text-xs text-gray-400 font-medium">% Imposto cliente</label>
-                          <input type="number" step="0.01" value={agendaForm.tax_client_percent_used} onChange={e=>onPct(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                        {!liquido && (
+                          <div className="flex flex-col gap-1 flex-1">
+                            <label className="text-xs text-gray-400 font-medium">% Imposto cliente</label>
+                            <input type="number" step="0.01" value={agendaForm.tax_client_percent_used} onChange={e=>onPct(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                          </div>
+                        )}
+                      </div>
+                      {!liquido && b && (
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-gray-400 font-medium">Valor NF (bruto)</label>
+                          <input type="number" step="0.01" value={b.invoice_value ? parseFloat(b.invoice_value).toFixed(2) : ''} onChange={e=>onNf(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
                         </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-xs text-gray-400 font-medium">Valor NF (bruto)</label>
-                        <input type="number" step="0.01" value={nf ? nf.toFixed(2) : ''} onChange={e=>onNf(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-400">Imposto estimado:</span>
-                        <span className="text-red-400 font-medium">{fmt(impostoReal)}</span>
-                      </div>
+                      )}
+                      {liquido && <p className="text-gray-500 text-xs">Regra de valor líquido: a NF é o líquido ÷ (1 − imposto%), e a diferença vai 100% para o Victor.</p>}
                     </div>
 
-                    <div className="bg-gray-800 rounded-xl p-3 space-y-1 text-xs">
-                      <p className="text-gray-400 font-medium uppercase tracking-wider mb-1">Demonstrativo</p>
-                      <div className="flex justify-between"><span className="text-gray-400">Total de horas</span><span className="text-white">{totalHours.toFixed(2)}h</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">Horas de serviço</span><span className="text-white">{fmt(serviceValue)}</span></div>
-                      {deslocValue > 0.005 && (
-                        <div className="flex justify-between"><span className="text-gray-400">Horas de deslocamento <span className="text-blue-300">(100% Victor)</span></span><span className="text-white">{fmt(deslocValue)}</span></div>
-                      )}
-                      <div className="flex justify-between"><span className="text-gray-400">Total bruto</span><span className="text-white font-medium">{fmt(bruto)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">% Imposto cobrado</span><span className="text-white">{taxClient.toFixed(2).replace('.',',')}%</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(nf)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(impostoReal)}</span></div>
-                      {deslocValue > 0.005 && (
-                        <div className="flex justify-between"><span className="text-gray-400">Horas de deslocamento <span className="text-blue-300">(100% Victor, líq.)</span></span><span className="text-white">{fmt(deslocNet)}</span></div>
-                      )}
-                      <div className="flex justify-between"><span className="text-gray-400">Líquido p/ split</span><span className="text-white">{fmt(restante)}</span></div>
-                      {diffNf > 0.005 && (
-                        <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(diffNf)}</span></div>
-                      )}
-                      <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
-                        {victorServico > 0.005 && (
-                          <div className="flex justify-between"><span className="text-gray-400">Victor fixo</span><span className="text-blue-300">+{fmt(victorServico)}</span></div>
+                    {agendaPreview.loading && !b && <p className="text-gray-500 text-xs">Calculando…</p>}
+                    {agendaPreview.error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{agendaPreview.error}</p>}
+                    {b && (
+                      <div className={`bg-gray-800 rounded-xl p-3 space-y-1 text-xs ${agendaPreview.loading ? 'opacity-60' : ''}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-gray-400 font-medium uppercase tracking-wider">Demonstrativo</p>
+                          {cob && <span className="px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">{cob.rotulo}{liquido ? ' · valor líquido' : ''}</span>}
+                        </div>
+                        <div className="flex justify-between"><span className="text-gray-400">OS / horas{cob ? ' (informativo)' : ''}</span><span className="text-white">{selectedEntries.length} OS · {parseFloat(b.total_hours||0).toFixed(2)}h</span></div>
+                        {cob?.tipo === 'diaria' && (
+                          <>
+                            <div className="flex justify-between"><span className="text-gray-400">{cob.unidades} diária(s) × {fmt(cob.valor_unitario)}{liquido ? ' (líquido)' : ''}</span><span className="text-white">{fmt(cob.servico)}</span></div>
+                            <p className="text-gray-500">Datas: {cob.datas.map(fmtD).join(', ')}{cob.os > cob.unidades ? ` — ${cob.os} OS em ${cob.unidades} data(s), 1 diária por data` : ''}</p>
+                            {cob.datas_ja_faturadas.length > 0 && <p className="text-amber-400">Já cobradas em outra fatura (sem nova diária): {cob.datas_ja_faturadas.map(fmtD).join(', ')}</p>}
+                          </>
                         )}
-                        <div className="flex justify-between"><span className="text-gray-400">Victor lucro</span><span className="text-blue-300">+{fmt(victorLucro)}</span></div>
-                        {deslocValue > 0.005 && (
-                          <div className="flex justify-between"><span className="text-gray-400">Victor deslocamento</span><span className="text-blue-300">+{fmt(victorDesloc)}</span></div>
+                        {cob?.tipo === 'projeto' && (
+                          <div className="flex justify-between"><span className="text-gray-400">Fixo mensal{liquido ? ' (líquido)' : ''} — OS só demonstrativo</span><span className="text-white">{fmt(cob.servico)}</span></div>
                         )}
-                        <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor total</span><span className="text-blue-400">{fmt(victorTotal)}</span></div>
+                        {!cob && (
+                          <div className="flex justify-between"><span className="text-gray-400">Horas de serviço</span><span className="text-white">{fmt(bruto - (parseFloat(b.displacement_value)||0))}</span></div>
+                        )}
+                        {parseFloat(b.displacement_value) > 0.005 && (
+                          <div className="flex justify-between"><span className="text-gray-400">Deslocamento <span className="text-blue-300">(100% Victor)</span></span><span className="text-white">{fmt(b.displacement_value)}</span></div>
+                        )}
+                        <div className="flex justify-between"><span className="text-gray-400">{liquido ? 'Total líquido' : 'Total bruto'}</span><span className="text-white font-medium">{fmt(bruto)}</span></div>
+                        {liquido ? (
+                          <>
+                            <div className="flex justify-between"><span className="text-gray-400">Valor NF (bruto) = líquido ÷ (1 − {parseFloat(b.tax_percentage_used).toFixed(2).replace('.',',')}%)</span><span className="text-white font-medium">{fmt(b.invoice_value)}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-400">Diferença NF − líquido → Victor (imposto)</span><span className="text-orange-400">+{fmt(b.victor_tax_diff)}</span></div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(b.invoice_value)}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({parseFloat(b.tax_percentage_used||0).toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(b.tax_amount)}</span></div>
+                            {parseFloat(b.victor_tax_diff) > 0.005 && <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(b.victor_tax_diff)}</span></div>}
+                          </>
+                        )}
+                        <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
+                          {parseFloat(b.victor_service) > 0.005 && <div className="flex justify-between"><span className="text-gray-400">Victor fixo</span><span className="text-blue-300">+{fmt(b.victor_service)}</span></div>}
+                          <div className="flex justify-between"><span className="text-gray-400">Victor lucro{parseFloat(b.displacement_net) > 0.005 ? ' + deslocamento' : ''}</span><span className="text-blue-300">+{fmt(b.victor_profit)}</span></div>
+                          {parseFloat(b.victor_tax_diff) > 0.005 && <div className="flex justify-between"><span className="text-gray-400">Victor {liquido ? 'imposto (NF − líquido)' : 'diff NF'}</span><span className="text-blue-300">+{fmt(b.victor_tax_diff)}</span></div>}
+                          <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor total</span><span className="text-blue-400">{fmt(b.victor_total)}</span></div>
+                        </div>
+                        <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício total</span><span className="text-purple-400">{fmt(b.fabricio_total)}</span></div>
+                        <div className="flex justify-between border-t border-gray-600 pt-1.5"><span className="text-white font-semibold">TOTAL A FATURAR (NF)</span><span className="text-green-400 font-bold text-sm">{fmt(b.invoice_value)}</span></div>
                       </div>
-                      <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício total</span><span className="text-purple-400">{fmt(fabricio)}</span></div>
-                    </div>
+                    )}
                   </>
                 )
               })()}

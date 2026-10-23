@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless'
 import { calcular } from './time-entries.js'
 import { requireAdmin } from '../lib/admin-auth.js'
 import { contratoComRegra } from '../lib/financial-rule.js'
+import { tipoDaRegra, cotasDeDiaria } from '../lib/billing-type.js'
 
 // Reprocessa victor_share/fabricio_share de lançamentos já gravados usando a
 // regra financeira e o contrato atuais. Necessário porque os valores são
@@ -52,6 +53,9 @@ export default async function handler(req, res) {
     // Cache por CONTRATO — contrato e regra vêm do mesmo lugar agora, então um cache
     // só basta (antes eram três, e o de regra era chaveado por cliente).
     const porContrato = new Map()
+    // Cotas de diária por contrato, sobre TODOS os apontamentos do período daquele
+    // contrato — a cota de uma OS depende das irmãs da mesma data (ver recalcularDia).
+    const cotasPorContrato = new Map()
 
     const changes = []
     const skipped = []
@@ -88,11 +92,21 @@ export default async function handler(req, res) {
         continue
       }
 
+      let cota = null
+      if (tipoDaRegra(regra) === 'diaria') {
+        if (!cotasPorContrato.has(e.contract_id)) {
+          const doContrato = entries.filter(x => Number(x.contract_id) === Number(e.contract_id))
+          cotasPorContrato.set(e.contract_id, cotasDeDiaria(doContrato, regra, invoicedIds))
+        }
+        cota = cotasPorContrato.get(e.contract_id).get(Number(e.id))
+      }
+
       const calc = calcular(
         hours, regra,
         parseFloat(e.horas_deslocamento) || 0,
         contrato,
         parseFloat(e.despesas_deslocamento) || 0,
+        cota,
       )
 
       const before = {

@@ -1,5 +1,34 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
+import { tipoDaRegra, ROTULO_COBRANCA } from '../../lib/billing-type.js'
+
+const FORM_VAZIO = {
+  client_id: '', billing_type: 'hora',
+  hourly_rate: '', victor_fixed_per_hour: '',
+  daily_rate: '', victor_fixed_daily: '',
+  monthly_fixed_value: '', victor_fixed_monthly: '',
+  is_net_value: false,
+  has_tax: false, tax_percentage: '',
+  has_fuel: false, fuel_value: '',
+  remainder_victor_pct: '50', remainder_fabricio_pct: '50',
+}
+
+// Rótulos dos dois campos de valor, por tipo. Todo input tem label visível — antes os
+// dois valores do modal só tinham placeholder e, preenchidos, viravam "1500,00" e
+// "1500,00" sem dizer qual era qual.
+const CAMPOS_VALOR = {
+  hora: [['hourly_rate', 'Valor hora (R$)'], ['victor_fixed_per_hour', 'Victor fixo por hora (R$)']],
+  diaria: [['daily_rate', 'Valor da diária (R$)'], ['victor_fixed_daily', 'Victor fixo por diária (R$)']],
+  projeto: [['monthly_fixed_value', 'Valor fixo mensal (R$)'], ['victor_fixed_monthly', 'Victor fixo mensal (R$)']],
+}
+
+const BADGE_COBRANCA = {
+  hora: 'bg-blue-500/20 text-blue-400',
+  diaria: 'bg-emerald-500/20 text-emerald-400',
+  projeto: 'bg-amber-500/20 text-amber-400',
+}
+
+const inputCls = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500'
 
 export default function FinancialRules() {
   const { activeCompany } = useOutletContext()
@@ -11,18 +40,8 @@ export default function FinancialRules() {
   const [showClientModal, setShowClientModal] = useState(false)
   const [clientForm, setClientForm] = useState({ name: '', company_id: '1' })
   const [savingClient, setSavingClient] = useState(false)
-  const [form, setForm] = useState({
-    client_id: '',
-    tipo: 'hora',
-    hourly_rate: '',
-    has_tax: false,
-    tax_percentage: '',
-    victor_fixed_per_hour: '',
-    has_fuel: false,
-    fuel_value: '',
-    remainder_victor_pct: '50',
-    remainder_fabricio_pct: '50',
-  })
+  const [form, setForm] = useState(FORM_VAZIO)
+  const [erro, setErro] = useState('')
 
   useEffect(() => { fetchAll() }, [activeCompany])
 
@@ -42,18 +61,25 @@ export default function FinancialRules() {
   }
 
   function resetForm() {
-    setForm({ client_id: '', tipo: 'hora', hourly_rate: '', has_tax: false, tax_percentage: '', victor_fixed_per_hour: '', has_fuel: false, fuel_value: '', remainder_victor_pct: '50', remainder_fabricio_pct: '50' })
+    setForm(FORM_VAZIO)
+    setErro('')
   }
 
   function openEdit(r) {
     setEditRule(r)
+    setErro('')
     setForm({
       client_id: r.client_id ?? '',
-      tipo: r.tipo ?? 'hora',
+      billing_type: tipoDaRegra(r),
       hourly_rate: r.hourly_rate ?? '',
+      victor_fixed_per_hour: r.victor_fixed_per_hour ?? '',
+      daily_rate: r.daily_rate ?? '',
+      victor_fixed_daily: r.victor_fixed_daily ?? '',
+      monthly_fixed_value: r.monthly_fixed_value ?? '',
+      victor_fixed_monthly: r.victor_fixed_monthly ?? '',
+      is_net_value: !!r.is_net_value,
       has_tax: r.has_tax ?? false,
       tax_percentage: r.tax_percentage ?? '',
-      victor_fixed_per_hour: r.victor_fixed_per_hour ?? '',
       has_fuel: r.has_fuel ?? false,
       fuel_value: r.fuel_value ?? '',
       remainder_victor_pct: r.remainder_victor_pct ?? '50',
@@ -68,22 +94,33 @@ export default function FinancialRules() {
     resetForm()
   }
 
+  const somaSplit = (parseFloat(form.remainder_victor_pct) || 0) + (parseFloat(form.remainder_fabricio_pct) || 0)
+  const splitOk = Math.abs(somaSplit - 100) < 0.001
+
   async function save() {
-    // Por projeto não tem valor/hora — os valores vêm das parcelas do contrato.
-    if (!form.client_id) return
-    if (form.tipo === 'hora' && !form.hourly_rate) return
+    setErro('')
+    if (!form.client_id) { setErro('Selecione o cliente.'); return }
+    const [campoValor, rotuloValor] = CAMPOS_VALOR[form.billing_type][0]
+    if (!(parseFloat(form[campoValor]) > 0)) { setErro(`${rotuloValor.replace(' (R$)', '')} é obrigatório.`); return }
+    if (!splitOk) { setErro(`% Victor + % Fabrício precisa somar 100% (está ${somaSplit}%).`); return }
     try {
       const url = editRule ? `/api/financial-rules?id=${editRule.id}` : '/api/financial-rules'
-      await fetch(url, {
+      const res = await fetch(url, {
         method: editRule ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
+      // O status não pode ser ignorado: um 422 fecharia o modal como se tivesse salvo.
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setErro(d.error || 'Não foi possível salvar a regra.')
+        return
+      }
       setShowModal(false)
       setEditRule(null)
       resetForm()
       fetchAll()
-    } catch(e) { console.error(e) }
+    } catch { setErro('Erro de conexão com o servidor.') }
   }
 
   async function saveClient() {
@@ -141,12 +178,23 @@ export default function FinancialRules() {
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-white font-semibold text-lg">{r.client_name}</p>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.tipo === 'por_projeto' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400'}`}>{r.tipo === 'por_projeto' ? 'Por projeto' : 'Por hora'}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${BADGE_COBRANCA[tipoDaRegra(r)]}`}>{ROTULO_COBRANCA[tipoDaRegra(r)]}</span>
+                    {r.is_net_value && tipoDaRegra(r) !== 'hora' && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">Valor líquido</span>}
                   </div>
                   <div className="flex flex-wrap gap-4 mt-3 text-sm">
-                    {r.tipo !== 'por_projeto' && <span className="text-gray-400">Hora: <span className="text-white">{fmt(r.hourly_rate)}</span></span>}
-                    {r.has_tax && <span className="text-gray-400">Imposto: <span className="text-red-400">{r.tax_percentage}%</span></span>}
-                    {r.tipo !== 'por_projeto' && <span className="text-gray-400">Victor/h: <span className="text-blue-400">{fmt(r.victor_fixed_per_hour)}</span></span>}
+                    {tipoDaRegra(r) === 'hora' && <>
+                      <span className="text-gray-400">Hora: <span className="text-white">{fmt(r.hourly_rate)}</span></span>
+                      <span className="text-gray-400">Victor/h: <span className="text-blue-400">{fmt(r.victor_fixed_per_hour)}</span></span>
+                    </>}
+                    {tipoDaRegra(r) === 'diaria' && <>
+                      <span className="text-gray-400">Diária: <span className="text-white">{fmt(r.daily_rate)}</span></span>
+                      {parseFloat(r.victor_fixed_daily) > 0 && <span className="text-gray-400">Victor/diária: <span className="text-blue-400">{fmt(r.victor_fixed_daily)}</span></span>}
+                    </>}
+                    {tipoDaRegra(r) === 'projeto' && <>
+                      <span className="text-gray-400">Fixo mensal: <span className="text-white">{fmt(r.monthly_fixed_value)}</span></span>
+                      {parseFloat(r.victor_fixed_monthly) > 0 && <span className="text-gray-400">Victor/mês: <span className="text-blue-400">{fmt(r.victor_fixed_monthly)}</span></span>}
+                    </>}
+                    {r.has_tax && <span className="text-gray-400">Imposto: <span className="text-red-400">{r.tax_percentage}%{r.is_net_value && tipoDaRegra(r) !== 'hora' ? ' (por fora)' : ''}</span></span>}
                     {r.has_fuel && <span className="text-gray-400">Combustível: <span className="text-yellow-400">{fmt(r.fuel_value)}</span></span>}
                     <span className="text-gray-400">Restante: <span className="text-green-400">{r.remainder_victor_pct}% Victor / {r.remainder_fabricio_pct}% Fab</span></span>
                   </div>
@@ -166,46 +214,86 @@ export default function FinancialRules() {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-bold text-white mb-4">{editRule ? 'Editar regra financeira' : 'Nova regra financeira'}</h3>
             <div className="space-y-3">
-              <select value={form.client_id} onChange={e => setForm(f=>({...f,client_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
-                <option value="">Selecione o cliente</option>
-                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Tipo</label>
-                <select value={form.tipo} onChange={e=>setForm(f=>({...f,tipo:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
-                  <option value="hora">Por hora</option>
-                  <option value="por_projeto">Por projeto</option>
+                <label className="text-xs text-gray-400 font-medium">Cliente</label>
+                <select value={form.client_id} onChange={e => setForm(f=>({...f,client_id:e.target.value}))} className={inputCls}>
+                  <option value="">Selecione o cliente</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
-              {form.tipo === 'hora' && (
-                <>
-                  <input placeholder="Valor hora bruto (R$)" type="number" value={form.hourly_rate} onChange={e=>setForm(f=>({...f,hourly_rate:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                  <input placeholder="Valor fixo Victor por hora (R$)" type="number" value={form.victor_fixed_per_hour} onChange={e=>setForm(f=>({...f,victor_fixed_per_hour:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                </>
-              )}
-              {form.tipo === 'por_projeto' && (
-                <p className="text-gray-500 text-xs bg-gray-800/50 rounded-lg px-3 py-2">Os valores vêm das parcelas cadastradas no contrato. Aqui defina só imposto, split e deslocamento.</p>
-              )}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-400 font-medium">Tipo de cobrança</label>
+                <select value={form.billing_type} onChange={e=>setForm(f=>({...f,billing_type:e.target.value}))} className={inputCls}>
+                  <option value="hora">Por hora</option>
+                  <option value="diaria">Por diária</option>
+                  <option value="projeto">Por projeto (fixo mensal)</option>
+                </select>
+                {form.billing_type === 'diaria' && <p className="text-gray-500 text-xs">Cobra 1 diária por data trabalhada. Várias OS na mesma data = 1 diária; as horas são só demonstrativo.</p>}
+                {form.billing_type === 'projeto' && <p className="text-gray-500 text-xs">Cobra o fixo mensal 1× por competência. As OS do mês são só demonstrativo.</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {CAMPOS_VALOR[form.billing_type].map(([campo, rotulo]) => (
+                  <div key={campo} className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-400 font-medium">{rotulo}</label>
+                    <input type="number" step="0.01" placeholder="0,00" value={form[campo]} onChange={e=>setForm(f=>({...f,[campo]:e.target.value}))} className={inputCls}/>
+                  </div>
+                ))}
+              </div>
+              {form.billing_type !== 'hora' && (() => {
+                const liq = parseFloat(form[CAMPOS_VALOR[form.billing_type][0][0]]) || 0
+                const pct = form.has_tax ? (parseFloat(form.tax_percentage) || 0) : 0
+                const nf = pct > 0 && pct < 100 ? liq / (1 - pct / 100) : liq
+                const un = form.billing_type === 'diaria' ? 'por diária' : 'por mês'
+                return (
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+                      <input type="checkbox" checked={form.is_net_value} onChange={e=>setForm(f=>({...f,is_net_value:e.target.checked}))} className="rounded"/>
+                      Valor informado é líquido (imposto por fora)
+                    </label>
+                    {form.is_net_value && liq > 0 && (
+                      <p className="text-xs bg-gray-800/60 rounded-lg px-3 py-2 text-gray-300">
+                        NF {un}: <span className="text-white font-medium">{fmt(nf)}</span>
+                        <span className="text-gray-600"> | </span>Líquido: <span className="text-green-400">{fmt(liq)}</span>
+                        <span className="text-gray-600"> | </span>Imposto (Victor): <span className="text-orange-400">{fmt(nf - liq)}</span>
+                        {!form.has_tax && <span className="block text-gray-500 mt-1">Sem imposto marcado: a NF é o próprio valor líquido.</span>}
+                      </p>
+                    )}
+                    {!form.is_net_value && <p className="text-gray-500 text-xs">Desmarcado: o valor é bruto e o imposto é descontado dele antes do split.</p>}
+                  </div>
+                )
+              })()}
               <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.has_tax} onChange={e=>setForm(f=>({...f,has_tax:e.target.checked}))} className="rounded"/>
                 Tem imposto?
               </label>
-              {form.has_tax && <input placeholder="% de imposto (ex: 7)" type="number" value={form.tax_percentage} onChange={e=>setForm(f=>({...f,tax_percentage:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>}
+              {form.has_tax && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-400 font-medium">% Imposto</label>
+                  <input placeholder="ex: 7" type="number" step="0.01" value={form.tax_percentage} onChange={e=>setForm(f=>({...f,tax_percentage:e.target.value}))} className={inputCls}/>
+                </div>
+              )}
               <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.has_fuel} onChange={e=>setForm(f=>({...f,has_fuel:e.target.checked}))} className="rounded"/>
                 Tem deslocamento/combustível?
               </label>
-              {form.has_fuel && <input placeholder="Valor combustível (R$)" type="number" value={form.fuel_value} onChange={e=>setForm(f=>({...f,fuel_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>}
+              {form.has_fuel && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-400 font-medium">Valor combustível (R$)</label>
+                  <input placeholder="0,00" type="number" step="0.01" value={form.fuel_value} onChange={e=>setForm(f=>({...f,fuel_value:e.target.value}))} className={inputCls}/>
+                </div>
+              )}
               <div className="flex gap-3">
                 <div className="flex flex-col gap-1 flex-1">
                   <label className="text-xs text-gray-400 font-medium">% Victor</label>
-                  <input placeholder="% restante Victor" type="number" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <input type="number" step="0.01" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className={inputCls}/>
                 </div>
                 <div className="flex flex-col gap-1 flex-1">
                   <label className="text-xs text-gray-400 font-medium">% Fabrício</label>
-                  <input placeholder="% restante Fabrício" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <input type="number" step="0.01" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className={inputCls}/>
                 </div>
               </div>
+              {!splitOk && <p className="text-amber-400 text-xs">% Victor + % Fabrício somam {somaSplit}% — precisam somar 100%.</p>}
+              {erro && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erro}</p>}
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={closeModal} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>

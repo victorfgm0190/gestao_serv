@@ -1,13 +1,11 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
 import { contratoComRegra } from '../lib/financial-rule.js'
+import { tipoDaRegra, cotasDeDiaria, chaveData } from '../lib/billing-type.js'
+import { calcular } from '../lib/time-entry-calc.js'
 
-// Split cadastrado. Não usar `|| 50`: um split legítimo de 0% (cliente 100/0)
-// é falsy e viraria 50%, pagando Fabrício indevidamente.
-function splitPct(value, fallback) {
-  const n = parseFloat(value)
-  return isNaN(n) ? fallback : n
-}
+// Reexportado: recalc-time-entries e testes importam daqui.
+export { calcular }
 
 function timeToDecimal(time) {
   if (!time) return 0
@@ -27,66 +25,57 @@ function calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final
   return Math.max(parseFloat(total.toFixed(4)), 0)
 }
 
-export function calcular(horas, regra, horas_deslocamento = 0, contrato = null, despesas_deslocamento = 0) {
-  const hours = parseFloat(horas) || 0  // horas de trabalho (sem deslocamento)
-  const horas_desloc = parseFloat(horas_deslocamento) || 0
-  const despesas_desloc = parseFloat(despesas_deslocamento) || 0
-  const valor_hora = parseFloat(regra.hourly_rate) || 0
-  const imposto_pct = regra.has_tax ? (parseFloat(regra.tax_percentage) || 0) / 100 : 0
+// Recalcula e grava os apontamentos de um contrato numa data.
+//
+// Por hora e por projeto o valor de um apontamento só depende dele mesmo. Na diária,
+// não: a diária da data é rateada entre as OS daquela data (ver cotasDeDiaria), então
+// incluir, mover ou excluir uma OS muda o valor das irmãs. POST/PUT/DELETE chamam
+// aqui depois de gravar, e o valor final de uma OS por diária é sempre o daqui.
+//
+// Apontamentos já FATURADOS não são reescritos: os valores deles estão congelados com
+// a fatura. Uma OS nova numa data já faturada fica com cota 0 (a diária já foi cobrada).
+export async function recalcularDia(sql, contract_id, entry_date) {
+  if (!contract_id || !entry_date) return
+  const resolvido = await contratoComRegra(sql, contract_id)
+  if (resolvido.error) return
+  const { contrato, rule: regra } = resolvido
+  // Só a diária acopla os apontamentos de uma data. Nas outras regras, reescrever as
+  // irmãs recalcularia com a regra ATUAL valores que estavam congelados de propósito.
+  if (tipoDaRegra(regra) !== 'diaria') return
+  const dia = chaveData(entry_date)
 
-  const deslocamento_tipo = contrato?.deslocamento_tipo || 'nao_cobrado'
-  const deslocamento_valor_hora = parseFloat(contrato?.deslocamento_valor_hora) || 0
-  const valor_hora_desloc = deslocamento_valor_hora || valor_hora
+  const doDia = await sql`
+    SELECT te.*,
+           EXISTS (SELECT 1 FROM invoices i WHERE te.id = ANY(i.time_entry_ids)) AS faturado
+    FROM time_entries te
+    WHERE te.contract_id = ${contract_id} AND te.entry_date = ${dia}::date
+    ORDER BY te.id ASC`
+  if (!doDia.length) return
 
-  // Gross: se deslocamento é cobrado, cliente paga as horas de deslocamento também
-  let gross, gross_desloc
-  if (deslocamento_tipo === 'nao_cobrado') {
-    gross = hours * valor_hora  // cliente não paga deslocamento
-    gross_desloc = 0
-  } else {
-    gross = hours * valor_hora  // horas de trabalho
-    gross_desloc = horas_desloc * valor_hora_desloc  // horas de deslocamento cobradas
+  const faturados = new Set(doDia.filter(e => e.faturado).map(e => Number(e.id)))
+  const cotas = tipoDaRegra(regra) === 'diaria' ? cotasDeDiaria(doDia, regra, faturados) : new Map()
+
+  const writes = []
+  for (const e of doDia) {
+    if (e.faturado) continue
+    const hours = parseFloat(e.hours) || 0
+    let calc = { gross_value: null, tax_amount: null, net_value: null, victor_share: null, fabricio_share: null, fuel_cost: null, valor_deslocamento: 0 }
+    if (hours > 0) {
+      calc = calcular(hours, regra, e.horas_deslocamento, contrato, e.despesas_deslocamento, cotas.get(Number(e.id)))
+    }
+    writes.push(sql`
+      UPDATE time_entries SET
+        hourly_rate = ${tipoDaRegra(regra) === 'hora' ? (regra.hourly_rate || null) : null},
+        gross_value = ${calc.gross_value},
+        tax_amount = ${calc.tax_amount},
+        net_value = ${calc.net_value},
+        victor_share = ${calc.victor_share},
+        fabricio_share = ${calc.fabricio_share},
+        fuel_cost = ${calc.fuel_cost},
+        valor_deslocamento = ${calc.valor_deslocamento || 0}
+      WHERE id = ${e.id}`)
   }
-  const gross_total = gross + gross_desloc
-
-  const tax = gross_total * imposto_pct
-  const net = gross_total - tax
-  const valor_hora_liq = valor_hora * (1 - imposto_pct)
-  const valor_hora_desloc_liq = valor_hora_desloc * (1 - imposto_pct)
-
-  // Deslocamento vai 100% pro Victor (fora do split)
-  let victor_desloc = 0
-  let victor_desloc_despesas = 0
-  if (deslocamento_tipo === 'nao_cobrado') {
-    victor_desloc = horas_desloc * valor_hora_liq
-  } else if (deslocamento_tipo === 'hora') {
-    victor_desloc = horas_desloc * valor_hora_desloc_liq
-  } else if (deslocamento_tipo === 'hora_despesas') {
-    victor_desloc = horas_desloc * valor_hora_desloc_liq
-    victor_desloc_despesas = despesas_desloc
-  }
-
-  // Split só sobre horas de trabalho líquido
-  const net_trabalho = gross * (1 - imposto_pct)
-  const victor_fixo = parseFloat(regra.victor_fixed_per_hour) || 0
-  // Fixo do Victor sobre a hora BRUTA, limitado ao líquido do trabalho. Sem o teto,
-  // quando o fixo iguala o valor/hora Victor levaria o bruto cheio de um valor do
-  // qual o imposto já saiu, deixando-o sem lastro.
-  const victor_servico = Math.min(hours * victor_fixo, Math.max(net_trabalho, 0))
-  const restante = Math.max(net_trabalho - victor_servico, 0)
-  const victor_lucro = restante * splitPct(regra.remainder_victor_pct, 50) / 100
-  const fabricio = restante * splitPct(regra.remainder_fabricio_pct, 50) / 100
-  const victor_total = victor_desloc + victor_desloc_despesas + victor_servico + victor_lucro
-
-  return {
-    gross_value: parseFloat(gross_total.toFixed(2)),
-    tax_amount: parseFloat(tax.toFixed(2)),
-    net_value: parseFloat(net.toFixed(2)),
-    victor_share: parseFloat(victor_total.toFixed(2)),
-    fabricio_share: parseFloat(fabricio.toFixed(2)),
-    fuel_cost: 0,
-    valor_deslocamento: parseFloat((victor_desloc + victor_desloc_despesas).toFixed(2)),
-  }
+  if (writes.length) await sql.transaction(writes)
 }
 
 export default async function handler(req, res) {
@@ -148,7 +137,7 @@ export default async function handler(req, res) {
       calc = calcular(hours, regra, horas_desloc, contrato, despesas_desloc)
     }
 
-    const hourly_rate = regra.hourly_rate || null
+    const hourly_rate = tipoDaRegra(regra) === 'hora' ? (regra.hourly_rate || null) : null
 
     const result = await sql`
       INSERT INTO time_entries (
@@ -167,7 +156,10 @@ export default async function handler(req, res) {
         ${horas_desloc}, ${calc.valor_deslocamento || 0}, ${despesas_desloc}
       ) RETURNING *
     `
-    return res.status(201).json({ entry: result[0], hours_calculated: hours })
+    // Diária: a OS nova muda a cota das irmãs da mesma data (e a dela mesma).
+    await recalcularDia(sql, contrato.id, entry_date)
+    const [entry] = await sql`SELECT * FROM time_entries WHERE id = ${result[0].id}`
+    return res.status(201).json({ entry, hours_calculated: hours })
   }
 
   if (req.method === 'PUT') {
@@ -178,6 +170,9 @@ export default async function handler(req, res) {
     } = req.body
 
     const hours = calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final)
+    // Data/contrato ANTES da edição: mover uma OS de dia (ou de contrato) muda a cota
+    // das que ficaram no dia de origem.
+    const [antes] = await sql`SELECT contract_id, entry_date FROM time_entries WHERE id = ${id}`
     // Mesma resolução do POST. Sem company_id aqui: o body do PUT não o traz, e o
     // `id` do contrato já é chave — o filtro por empresa é defesa, não identificação.
     const resolvido = await contratoComRegra(sql, contract_id)
@@ -192,7 +187,7 @@ export default async function handler(req, res) {
       calc = calcular(hours, regra, horas_desloc, contrato, despesas_desloc)
     }
 
-    const hourly_rate = regra.hourly_rate || null
+    const hourly_rate = tipoDaRegra(regra) === 'hora' ? (regra.hourly_rate || null) : null
 
     const result = await sql`
       UPDATE time_entries SET
@@ -219,12 +214,19 @@ export default async function handler(req, res) {
       WHERE id = ${id}
       RETURNING *
     `
-    return res.status(200).json({ entry: result[0] })
+    await recalcularDia(sql, contrato.id, entry_date)
+    if (antes && (Number(antes.contract_id) !== Number(contrato.id) || chaveData(antes.entry_date) !== chaveData(entry_date))) {
+      await recalcularDia(sql, antes.contract_id, antes.entry_date)
+    }
+    const [entry] = await sql`SELECT * FROM time_entries WHERE id = ${id}`
+    return res.status(200).json({ entry: entry || result[0] })
   }
 
   if (req.method === 'DELETE') {
     const { id } = req.body
-    await sql`DELETE FROM time_entries WHERE id = ${id}`
+    const apagados = await sql`DELETE FROM time_entries WHERE id = ${id} RETURNING contract_id, entry_date`
+    // A diária que esta OS dividia volta inteira para as que ficaram na data.
+    if (apagados[0]) await recalcularDia(sql, apagados[0].contract_id, apagados[0].entry_date)
     return res.status(200).json({ success: true })
   }
 
