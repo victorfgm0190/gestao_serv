@@ -45,13 +45,13 @@
     "semantic_hash": ""
   },
   "api/export-os.js": {
-    "mtime": 1784510267.9329076,
-    "ast_hash": "fd44c0c9f7afb58ed5c30fdc42311183",
+    "mtime": 1792768850.2926884,
+    "ast_hash": "9291f486bc4a9ba0ab43b1807493cdd5",
     "semantic_hash": ""
   },
   "api/financial-rules.js": {
-    "mtime": 1784510268.1227453,
-    "ast_hash": "a18404c241b98b72f76c1b8455cf515c",
+    "mtime": 1792768549.1314216,
+    "ast_hash": "b3899d730689919ed1dd1bf3c0ac2420",
     "semantic_hash": ""
   },
   "api/ingest-email.js": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "api/invoices.js": {
-    "mtime": 1788309276.7441819,
-    "ast_hash": "924c57ee86b632d3107eeb4f65971025",
+    "mtime": 1792768512.827636,
+    "ast_hash": "5faf9eafc7f6967e58369e209464ae07",
     "semantic_hash": ""
   },
   "api/payable-payments.js": {
@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "api/time-entries.js": {
-    "mtime": 1786388438.1357906,
-    "ast_hash": "49a0526fe2f02d104eb13dd1b800cd64",
+    "mtime": 1792768791.7667525,
+    "ast_hash": "dbdba7aa371b29c26a0114845b227215",
     "semantic_hash": ""
   },
   "package.json": {
@@ -115,8 +115,8 @@
     "semantic_hash": "d070709419d1c5e263b53059b20974e1"
   },
   "src/components/Layout.jsx": {
-    "mtime": 1787152533.383796,
-    "ast_hash": "5a4cf4081723ca4e95b8bafc0c68cb03",
+    "mtime": 1792768867.1405518,
+    "ast_hash": "0e5ebd437233783895a69ebb926c79f9",
     "semantic_hash": ""
   },
   "src/hooks/useNotifications.js": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
-    "mtime": 1787096364.4184196,
-    "ast_hash": "070390bf45d94b390712e433e66763e3",
+    "mtime": 1792768759.1877358,
+    "ast_hash": "490d453713ffa91fc1a6527c0a810518",
     "semantic_hash": ""
   },
   "src/pages/Clientes.jsx": {
@@ -165,13 +165,13 @@
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
-    "mtime": 1784506613.8419485,
-    "ast_hash": "63f89ddd60863ecbbe2d349064a1d9fe",
+    "mtime": 1792768678.591045,
+    "ast_hash": "720705ec9739d63d3a530c115f5f6dbb",
     "semantic_hash": ""
   },
   "src/pages/TimeEntries.jsx": {
-    "mtime": 1786408925.4223144,
-    "ast_hash": "76e07edd4c74fc9afa3976db150b9cae",
+    "mtime": 1792768835.0946295,
+    "ast_hash": "92078622ebe05542000c93bb81a4ad7c",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1788311036.0820107,
-    "ast_hash": "66e1966386b49f0641bd77b93696cfc5",
+    "mtime": 1792768921.9003198,
+    "ast_hash": "2c075dfd0dbca12838f8bd6484cecb88",
     "semantic_hash": ""
   },
   "README.md": {
@@ -290,8 +290,8 @@
     "semantic_hash": ""
   },
   "api/recalc-time-entries.js": {
-    "mtime": 1786388458.0534475,
-    "ast_hash": "c4a4b8547eaf8ac29174e44db0d9659b",
+    "mtime": 1792768467.4834828,
+    "ast_hash": "97deecf3b95abc7194138047f258806a",
     "semantic_hash": ""
   },
   "lib/admin-auth.js": {
@@ -395,8 +395,8 @@
     "semantic_hash": ""
   },
   "api/admin.js": {
-    "mtime": 1785254893.9632883,
-    "ast_hash": "91b2697d7a55ff8d85ed62c3ee38076e",
+    "mtime": 1792768581.7682076,
+    "ast_hash": "871235e5687ed99753938d8a0e3fb9c0",
     "semantic_hash": ""
   },
   "lib/fiscal-redistribution.js": {
@@ -430,8 +430,8 @@
     "semantic_hash": ""
   },
   "lib/fabricio-breakdown.js": {
-    "mtime": 1785932483.661452,
-    "ast_hash": "ebe44b82debee3e7b3bb30288b467ed5",
+    "mtime": 1792768527.1089523,
+    "ast_hash": "42c05dcbf8efdeab68adeac81ac052eb",
     "semantic_hash": ""
   },
   "lib/cash-month.js": {
@@ -827,6 +827,16 @@
   "lib/nfse-competencia.test.js": {
     "mtime": 1788310911.7165177,
     "ast_hash": "d215e9dc80bd481bd9ead81ada3e75bd",
+    "semantic_hash": ""
+  },
+  "lib/billing-type.js": {
+    "mtime": 1792768382.8790402,
+    "ast_hash": "8fe68ab350331ef826ae68eb51ab8e5b",
+    "semantic_hash": ""
+  },
+  "lib/time-entry-calc.js": {
+    "mtime": 1792768778.5636008,
+    "ast_hash": "d5bd4a3deae140bdc90dea2ade6cf8a4",
     "semantic_hash": ""
   }
 }
