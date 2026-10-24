@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useOutletContext } from 'react-router-dom'
+import { useOutletContext, Link } from 'react-router-dom'
+import { rotuloDaRegra, camposDaRegra, divergenciasDaRegra, faturaPelaAgenda, brl } from '../../lib/contract-rule.js'
+import { valoresDaRegra, nfOverride, nfAutomatica, tipoDaRegra } from '../../lib/billing-type.js'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -73,7 +75,7 @@ export default function Contracts() {
     setRulesLoading(true)
     try {
       const r = await fetch(`/api/financial-rules?client_id=${clientId}`)
-      setClientRules((await r.json()).rules || [])
+      setClientRules(((await r.json()).rules || []).sort((a, b) => a.id - b.id))
     } catch(e) { console.error(e); setClientRules([]) }
     finally { setRulesLoading(false) }
   }
@@ -152,13 +154,15 @@ export default function Contracts() {
     }
     const isProjeto = form.billing_type === 'por_projeto'
     // Por projeto: o valor vem da soma das parcelas, então exige ao menos uma.
-    if (isProjeto ? installments.length === 0 : !form.contract_value) return
+    if (isProjeto ? installments.length === 0 : !(modoAgenda || form.contract_value)) return
     if (savingContract) return
     setSavingContract(true)
     try {
+      // Faturado pela Agenda: valor, fixo, split e imposto são os da regra — gravar o
+      // que estiver no form deixaria o 50/50 padrão num contrato de regra 100/0.
       const payload = isProjeto
         ? { ...form, contract_value: installmentsTotal, victor_fixed: 0 }
-        : form
+        : modoAgenda ? { ...form, ...camposDaRegra(regraSelecionada, form), billing_type: form.billing_type } : form
       const method = editContract ? 'PATCH' : 'POST'
       const body = editContract ? { id: editContract.id, ...payload, is_active: true } : { ...payload, company_id: activeCompany.id }
       const res = await fetch('/api/contracts', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
@@ -251,6 +255,28 @@ export default function Contracts() {
 
   const fmt = (v) => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.', ',')}` : '-'
   const isProjeto = form.billing_type === 'por_projeto'
+  const regraSelecionada = clientRules.find(r => String(r.id) === String(form.financial_rule_id)) || null
+  // Contrato por hora/dia é faturado pela Agenda, que lê tudo da regra: os campos de
+  // valor ficam somente leitura. Nos fixos/projeto o contrato é a fonte e só avisamos
+  // quando ele diverge da regra. Ver lib/contract-rule.js.
+  const modoAgenda = !!regraSelecionada && faturaPelaAgenda(form)
+  const diverge = !modoAgenda ? divergenciasDaRegra(form, regraSelecionada) : {}
+  const avisoRegra = (campo) => diverge[campo]
+    ? <p className="text-amber-400 text-xs">Diferente da regra (regra: {diverge[campo]})</p>
+    : null
+
+  // Escolher a regra (no contrato novo ou trocando na edição) preenche o contrato com ela.
+  function onSelectRule(id) {
+    const r = clientRules.find(x => String(x.id) === String(id))
+    setForm(f => {
+      if (!r) return { ...f, financial_rule_id: id }
+      const novo = { ...f, financial_rule_id: id, ...camposDaRegra(r, f) }
+      const base = parseFloat(novo.contract_value) || 0
+      const pct = parseFloat(novo.tax_client_percent) || 0
+      novo.tax_client_nf = base > 0 && pct > 0 && pct < 100 ? (base / (1 - pct / 100)).toFixed(2) : ''
+      return novo
+    })
+  }
   const installmentsTotal = installments.reduce((s, it) => s + (parseFloat(it.value) || 0), 0)
   const valuePlaceholder = form.billing_type === 'hora' ? 'Valor por hora (R$)' : form.billing_type === 'dia' ? 'Valor por dia (R$)' : 'Valor do contrato líquido (R$)'
   const victorPlaceholder = form.billing_type === 'hora' ? 'Valor fixo Victor por hora (R$)' : form.billing_type === 'dia' ? 'Valor fixo Victor por dia (R$)' : 'Valor fixo Victor (R$)'
@@ -389,11 +415,11 @@ export default function Contracts() {
               )}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Regra Financeira</label>
-                <select value={form.financial_rule_id} onChange={e=>setForm(f=>({...f,financial_rule_id:e.target.value}))} disabled={!form.client_id || rulesLoading || clientRules.length === 0} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
+                <select value={form.financial_rule_id} onChange={e=>onSelectRule(e.target.value)} disabled={!form.client_id || rulesLoading || clientRules.length === 0} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
                   <option value="">{rulesLoading ? 'Carregando regras...' : 'Selecione a regra financeira'}</option>
                   {clientRules.map(r => (
                     <option key={r.id} value={r.id}>
-                      {r.client_name} — {r.hourly_rate ? `${fmt(r.hourly_rate)}/h` : `${fmt(r.victor_fixed_per_hour)} fixo`}
+                      {rotuloDaRegra(r)}
                     </option>
                   ))}
                 </select>
@@ -454,7 +480,9 @@ export default function Contracts() {
                 <option value="hora">Por hora</option>
                 <option value="dia">Por dia</option>
                 <option value="por_projeto">Por projeto (parcelas)</option>
+                {form.billing_type === 'contract' && <option value="contract">Contrato fixo</option>}
               </select>
+              {avisoRegra('billing_type')}
 
               <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
                 <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Deslocamento</p>
@@ -476,15 +504,41 @@ export default function Contracts() {
                   </div>
                 )}
               </div>
-              {!isProjeto && (
+              {modoAgenda && (() => {
+                const { tipo, unitario, victor_fixo } = valoresDaRegra(regraSelecionada)
+                const un = tipo === 'diaria' ? 'por diária' : tipo === 'projeto' ? 'mensal' : 'por hora'
+                const pct = regraSelecionada.has_tax ? (parseFloat(regraSelecionada.tax_percentage) || 0) : 0
+                const liquido = tipo !== 'hora' && regraSelecionada.is_net_value
+                const nfManual = nfOverride(regraSelecionada)
+                const linha = (rotulo, valor) => (
+                  <div className="flex justify-between text-sm"><span className="text-gray-400">{rotulo}</span><span className="text-white">{valor}</span></div>
+                )
+                return (
+                  <div className="bg-gray-800/50 rounded-xl p-3 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Valores da regra financeira</p>
+                      <Link to="/financial-rules" className="text-xs text-blue-400 hover:text-blue-300">Editar na regra financeira</Link>
+                    </div>
+                    {linha(`Valor ${un}${liquido ? ' (líquido)' : ''}`, brl(unitario))}
+                    {linha(`Victor fixo ${un}`, brl(victor_fixo))}
+                    {linha('Split Victor / Fabrício', `${parseFloat(regraSelecionada.remainder_victor_pct)}% / ${parseFloat(regraSelecionada.remainder_fabricio_pct)}%`)}
+                    {linha('Imposto', regraSelecionada.has_tax ? `${pct}%${liquido ? ' por fora' : ' (sai do bruto)'}` : 'sem imposto')}
+                    {liquido && linha(`NF ${un}`, nfManual != null ? `${brl(nfManual)} (manual)` : brl(nfAutomatica(unitario, pct)))}
+                    <p className="text-gray-500 text-[11px] pt-1">Contrato {tipoDaRegra(regraSelecionada) === 'hora' ? 'por hora' : 'por dia'} é faturado pela Agenda, que calcula tudo pela regra. Aqui só o deslocamento, o tomador e a NF são do contrato.</p>
+                  </div>
+                )
+              })()}
+              {!isProjeto && !modoAgenda && (
                 <>
                   <div className="flex flex-col gap-1">
                     <label className="text-xs text-gray-400 font-medium">Valor do contrato líquido</label>
                     <input placeholder={valuePlaceholder} type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                    {avisoRegra('contract_value')}
                   </div>
                   <div className="flex flex-col gap-1">
                     <label className="text-xs text-gray-400 font-medium">Valor fixo Victor</label>
                     <input placeholder={victorPlaceholder} type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                    {avisoRegra('victor_fixed')}
                   </div>
                 </>
               )}
@@ -570,6 +624,7 @@ export default function Contracts() {
                   </div>
                 </>
               )}
+              {!modoAgenda && <>
               <div className="flex gap-3">
                 <div className="flex flex-col gap-1 flex-1">
                   <label className="text-xs text-gray-400 font-medium">% Victor</label>
@@ -580,6 +635,8 @@ export default function Contracts() {
                   <input placeholder="% Fabrício restante" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
                 </div>
               </div>
+              {avisoRegra('split')}
+              </>}
               <div className="bg-gray-800/50 rounded-xl p-3">
                 <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
                   <input type="checkbox" checked={form.require_nf} onChange={e=>setForm(f=>({...f,require_nf:e.target.checked}))} className="rounded"/>
@@ -591,10 +648,12 @@ export default function Contracts() {
                     : 'Sem NF: fica FORA da apuração fiscal — não entra no DAS, no INSS, no Fator R nem no rateio. Continua faturando e aparecendo em A Receber.'}
                 </p>
               </div>
+              {!modoAgenda && <>
               <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.has_tax} onChange={e=>setForm(f=>({...f,has_tax:e.target.checked}))} className="rounded"/>
                 Tem imposto sobre a nota?
               </label>
+              {avisoRegra('imposto')}
               {form.has_tax && <input placeholder="% imposto" type="number" value={form.tax_percentage} onChange={e=>setForm(f=>({...f,tax_percentage:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>}
               {form.has_tax && (() => {
                 const base = taxBase()
@@ -624,6 +683,7 @@ export default function Contracts() {
                   </div>
                 )
               })()}
+              </>}
               <div className="flex flex-col gap-1">
                 <label className="text-xs text-gray-400 font-medium">Observações</label>
                 <textarea placeholder="Observações" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>

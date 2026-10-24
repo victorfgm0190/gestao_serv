@@ -4,6 +4,7 @@ import CopyButton from '../components/CopyButton'
 import NFSeEmitirModal from '../components/NFSeEmitirModal'
 import { todayBR } from '../lib/dateUtils'
 import { PARAMS_PADRAO, parametrosFiscais, proLaboreDoMes } from '../../lib/taxCalc.js'
+import { faturaPelaAgenda } from '../../lib/contract-rule.js'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
@@ -650,7 +651,8 @@ export default function Billing() {
             <div className="space-y-3">
               <select value={contractForm.contract_id} onChange={e=>onSelectContract(e.target.value)} disabled={!!editInvoice} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
                 <option value="">Selecione o contrato</option>
-                {contracts.filter(c=>c.is_active).map(c=><option key={c.id} value={c.id}>{c.name} — {c.client_name}</option>)}
+                {/* Só fixos e por projeto: hora/diária são faturados pela Agenda (lib/contract-rule.js). */}
+                {contracts.filter(c=>c.is_active && !faturaPelaAgenda(c)).map(c=><option key={c.id} value={c.id}>{c.name} — {c.client_name}</option>)}
               </select>
               {(() => {
                 const c = contracts.find(x => String(x.id) === String(contractForm.contract_id))

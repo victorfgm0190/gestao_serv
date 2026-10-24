@@ -3,6 +3,7 @@ import { requireAuth } from '../lib/auth.js'
 import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 import { contratoComRegra, contratoDosApontamentos } from '../lib/financial-rule.js'
 import { apurarCompetencia } from './fiscal-obligations.js'
+import { faturaPelaAgenda } from '../lib/contract-rule.js'
 import { tipoDaRegra, valoresDaRegra, chaveData, deslocamentoBruto, ROTULO_COBRANCA, nfAutomatica, nfOverride } from '../lib/billing-type.js'
 
 // Competência fiscal de uma fatura: a data de EMISSÃO da nota, não o mês de referência.
@@ -15,6 +16,10 @@ function competenciaDaFatura(inv) {
   }
   return { m: Number(inv.month), y: Number(inv.year) }
 }
+
+// Contrato por hora/diária no modo Contrato: calcContrato leria os espelhos do contrato,
+// enquanto a Agenda usa a regra — o mesmo serviço com dois cálculos. Ver lib/contract-rule.js.
+const ERRO_CONTRATO_AGENDA = 'Contrato por hora/diária deve ser faturado pela Agenda'
 
 const round = (n) => parseFloat((Number(n) || 0).toFixed(2))
 
@@ -424,6 +429,7 @@ export default async function handler(req, res) {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contract_id} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
         contrato = contracts[0]
+        if (faturaPelaAgenda(contrato)) return res.status(400).json({ error: ERRO_CONTRATO_AGENDA })
         const dup = await fixoMensalJaFaturado(sql, contrato, month, year)
         if (dup) return res.status(dup.status).json({ error: dup.error })
         calc = calcContrato(contracts[0], { tax_percentage_used, tax_client_percent_used })
@@ -601,6 +607,7 @@ export default async function handler(req, res) {
         const contracts = await sql`SELECT * FROM contracts WHERE id = ${contratoId} LIMIT 1`
         if (!contracts.length) return res.status(404).json({ error: 'Contrato não encontrado' })
         contrato = contracts[0]
+        if (faturaPelaAgenda(contrato)) return res.status(400).json({ error: ERRO_CONTRATO_AGENDA })
         // A própria fatura não conta como duplicata.
         const dup = await fixoMensalJaFaturado(sql, contrato, inv.month, inv.year, inv.id)
         if (dup) return res.status(dup.status).json({ error: dup.error })

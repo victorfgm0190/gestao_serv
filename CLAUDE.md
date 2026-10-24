@@ -768,6 +768,20 @@ do split; NF = líquido ÷ (1 − imposto%) e a diferença vai 100% ao Victor (e
 SteelDek / `calcContrato`). `tax_client_percent` não se soma nesse modo. A fatura não guarda
 o modo: `lib/fabricio-breakdown.js` o reconhece porque `tax_amount ≈ victor_tax_diff ≈ NF − base`.
 
+**Contrato × regra (`lib/contract-rule.js`) — 2026-10-24.** Quem é a fonte depende de como
+o contrato é faturado. **hora/dia** → Agenda, que lê valor, fixo, split e imposto da REGRA
+(do contrato só o deslocamento): no modal esses campos são somente leitura, com link
+"Editar na regra financeira", e o save grava os valores da regra no contrato.
+**mensal/contract/por_projeto** → `calcContrato`/`calcProjeto`, que leem do CONTRATO: a
+regra só pré-preenche, e `divergenciasDaRegra()` mostra "Diferente da regra (regra: X)".
+Escolher a regra no modal preenche o contrato (`camposDaRegra()`; regra projeto mantém
+`por_projeto`/`contract`). ⚠️ Contrato hora/dia **não** é faturado pelo modo Contrato: o
+`/billing` não o lista e o POST/PUT de `billing_type='contract'` responde **400**
+("Contrato por hora/diária deve ser faturado pela Agenda") — senão o mesmo serviço teria
+dois cálculos. O contrato mensal com regra projeto (Bokada #10) continua aparecendo nos
+dois modos; quem impede cobrança dupla ali é `fixoMensalJaFaturado()`. Teste:
+`lib/contract-rule.test.js`.
+
 **NF digitada (`nf_value_override`) — 2026-10-24.** No modo líquido a NF por unidade
 (diária, ou mês no projeto) pode ser digitada para arredondar: Romaneli 1.651,98 → 1.652,00.
 NULL = automático. Dono único em `lib/billing-type.js`: `nfAutomatica()` (líquido ÷ (1−%)) e
