@@ -34,14 +34,16 @@ function calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final
 //
 // Apontamentos já FATURADOS não são reescritos: os valores deles estão congelados com
 // a fatura. Uma OS nova numa data já faturada fica com cota 0 (a diária já foi cobrada).
+//
+// → [{ id, entry_date, antes, depois }] dos apontamentos cujo valor mudou.
 export async function recalcularDia(sql, contract_id, entry_date) {
-  if (!contract_id || !entry_date) return
+  if (!contract_id || !entry_date) return []
   const resolvido = await contratoComRegra(sql, contract_id)
-  if (resolvido.error) return
+  if (resolvido.error) return []
   const { contrato, rule: regra } = resolvido
   // Só a diária acopla os apontamentos de uma data. Nas outras regras, reescrever as
   // irmãs recalcularia com a regra ATUAL valores que estavam congelados de propósito.
-  if (tipoDaRegra(regra) !== 'diaria') return
+  if (tipoDaRegra(regra) !== 'diaria') return []
   const dia = chaveData(entry_date)
 
   const doDia = await sql`
@@ -50,12 +52,13 @@ export async function recalcularDia(sql, contract_id, entry_date) {
     FROM time_entries te
     WHERE te.contract_id = ${contract_id} AND te.entry_date = ${dia}::date
     ORDER BY te.id ASC`
-  if (!doDia.length) return
+  if (!doDia.length) return []
 
   const faturados = new Set(doDia.filter(e => e.faturado).map(e => Number(e.id)))
   const cotas = tipoDaRegra(regra) === 'diaria' ? cotasDeDiaria(doDia, regra, faturados) : new Map()
 
   const writes = []
+  const mudaram = []
   for (const e of doDia) {
     if (e.faturado) continue
     const hours = parseFloat(e.hours) || 0
@@ -63,6 +66,9 @@ export async function recalcularDia(sql, contract_id, entry_date) {
     if (hours > 0) {
       calc = calcular(hours, regra, e.horas_deslocamento, contrato, e.despesas_deslocamento, cotas.get(Number(e.id)))
     }
+    const antes = { gross_value: parseFloat(e.gross_value) || 0, victor_share: parseFloat(e.victor_share) || 0, fabricio_share: parseFloat(e.fabricio_share) || 0 }
+    const depois = { gross_value: calc.gross_value || 0, victor_share: calc.victor_share || 0, fabricio_share: calc.fabricio_share || 0 }
+    if (Object.keys(antes).some(k => Math.abs(antes[k] - depois[k]) >= 0.005)) mudaram.push({ id: e.id, entry_date: dia, antes, depois })
     writes.push(sql`
       UPDATE time_entries SET
         hourly_rate = ${tipoDaRegra(regra) === 'hora' ? (regra.hourly_rate || null) : null},
@@ -76,6 +82,7 @@ export async function recalcularDia(sql, contract_id, entry_date) {
       WHERE id = ${e.id}`)
   }
   if (writes.length) await sql.transaction(writes)
+  return mudaram
 }
 
 export default async function handler(req, res) {

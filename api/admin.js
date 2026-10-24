@@ -10,6 +10,7 @@ import { recalcularDia } from './time-entries.js'
 //
 // POST ?action=estornar-periodo  { company_id, year, month_from, month_to, dry_run }
 // POST ?action=migrate-billing-type   (idempotente — tipo de cobrança da regra financeira)
+// POST ?action=migrate-nf-override    (idempotente — NF digitada da regra no modo líquido)
 //
 // ── Por que estornar e não marcar status='estornado' ────────────────────────────────
 // Nenhuma destas tabelas tem 'estornado' no vocabulário de status:
@@ -299,6 +300,17 @@ async function migrateBillingType(sql, req, res) {
   })
 }
 
+// NF digitada (arredondamento) da regra no modo líquido — ver nfOverride() em
+// lib/billing-type.js. NULL = calcular automático; nenhuma linha é preenchida aqui.
+async function migrateNfOverride(sql, req, res) {
+  await sql`ALTER TABLE financial_rules ADD COLUMN IF NOT EXISTS nf_value_override NUMERIC(12,2) NULL`
+  const col = await sql`
+    SELECT column_name, data_type, numeric_precision, numeric_scale, is_nullable
+    FROM information_schema.columns
+    WHERE table_name = 'financial_rules' AND column_name = 'nf_value_override'`
+  return res.status(200).json({ success: true, coluna: col[0] })
+}
+
 export default async function handler(req, res) {
   if (!requireAdmin(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -307,7 +319,8 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
     if (req.query.action === 'estornar-periodo') return estornarPeriodo(sql, req, res)
     if (req.query.action === 'migrate-billing-type') return migrateBillingType(sql, req, res)
-    return res.status(400).json({ error: 'action inválida. Use ?action=estornar-periodo ou ?action=migrate-billing-type' })
+    if (req.query.action === 'migrate-nf-override') return migrateNfOverride(sql, req, res)
+    return res.status(400).json({ error: 'action inválida. Use ?action=estornar-periodo, ?action=migrate-billing-type ou ?action=migrate-nf-override' })
   } catch (error) {
     console.error('admin:', error)
     return res.status(500).json({ error: error.message })

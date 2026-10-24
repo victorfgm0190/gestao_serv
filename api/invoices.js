@@ -3,7 +3,7 @@ import { requireAuth } from '../lib/auth.js'
 import { desfazerAbatimentoFiscal } from '../lib/fiscal-unlink.js'
 import { contratoComRegra, contratoDosApontamentos } from '../lib/financial-rule.js'
 import { apurarCompetencia } from './fiscal-obligations.js'
-import { tipoDaRegra, valoresDaRegra, chaveData, deslocamentoBruto, ROTULO_COBRANCA } from '../lib/billing-type.js'
+import { tipoDaRegra, valoresDaRegra, chaveData, deslocamentoBruto, ROTULO_COBRANCA, nfAutomatica, nfOverride } from '../lib/billing-type.js'
 
 // Competência fiscal de uma fatura: a data de EMISSÃO da nota, não o mês de referência.
 // Mesmo critério de chaveCompetencia() em api/fiscal-obligations.js — uma NF de dezembro
@@ -163,9 +163,16 @@ export function calcPorUnidade(entries, rule, opts = {}) {
   const displacement_value = entries.reduce((s, e) => s + deslocamentoBruto(e, opts.contrato), 0)
   const base = service_value + displacement_value
 
+  // NF digitada na regra (arredondamento): substitui o gross-up só do serviço; o
+  // deslocamento cobrado segue com o automático. Mesmo critério de calcular().
+  const override = liquido ? nfOverride(rule) : null
+  const nf_unitaria = override ?? nfAutomatica(unitario, liquido ? taxReal : 0)
+
   let nf, tax, victor_servico, displacement_net, restante
   if (liquido) {
-    nf = taxReal > 0 && taxReal < 100 ? base / (1 - taxReal / 100) : base
+    nf = override != null
+      ? unidades * override + nfAutomatica(displacement_value, taxReal)
+      : nfAutomatica(base, taxReal)
     tax = nf - base
     displacement_net = displacement_value
     victor_servico = Math.min(victor_fixo_total, service_value)
@@ -205,7 +212,9 @@ export function calcPorUnidade(entries, rule, opts = {}) {
       valor_liquido: liquido,
       unidades,
       valor_unitario: round(unitario),
-      nf_unitaria: round(liquido && taxReal > 0 && taxReal < 100 ? unitario / (1 - taxReal / 100) : unitario),
+      nf_unitaria: round(nf_unitaria),
+      nf_manual: override != null,
+      nf_unitaria_automatica: round(nfAutomatica(unitario, liquido ? taxReal : 0)),
       servico: round(service_value),
       datas,
       datas_ja_faturadas: todasDatas.filter((d) => jaFaturadas.has(d)),

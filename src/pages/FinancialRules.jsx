@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
-import { tipoDaRegra, ROTULO_COBRANCA } from '../../lib/billing-type.js'
+import { tipoDaRegra, ROTULO_COBRANCA, nfAutomatica, nfOverride } from '../../lib/billing-type.js'
 
 const FORM_VAZIO = {
   client_id: '', billing_type: 'hora',
@@ -8,6 +8,7 @@ const FORM_VAZIO = {
   daily_rate: '', victor_fixed_daily: '',
   monthly_fixed_value: '', victor_fixed_monthly: '',
   is_net_value: false,
+  nf_value_override: '',
   has_tax: false, tax_percentage: '',
   has_fuel: false, fuel_value: '',
   remainder_victor_pct: '50', remainder_fabricio_pct: '50',
@@ -42,6 +43,9 @@ export default function FinancialRules() {
   const [savingClient, setSavingClient] = useState(false)
   const [form, setForm] = useState(FORM_VAZIO)
   const [erro, setErro] = useState('')
+  // Líquido e % de imposto no momento em que a NF manual foi fixada. Se mudarem depois,
+  // a NF digitada é MANTIDA e a tela avisa — nunca sobrescrita em silêncio.
+  const [nfBase, setNfBase] = useState(null)
 
   useEffect(() => { fetchAll() }, [activeCompany])
 
@@ -63,6 +67,7 @@ export default function FinancialRules() {
   function resetForm() {
     setForm(FORM_VAZIO)
     setErro('')
+    setNfBase(null)
   }
 
   function openEdit(r) {
@@ -78,6 +83,7 @@ export default function FinancialRules() {
       monthly_fixed_value: r.monthly_fixed_value ?? '',
       victor_fixed_monthly: r.victor_fixed_monthly ?? '',
       is_net_value: !!r.is_net_value,
+      nf_value_override: r.nf_value_override ?? '',
       has_tax: r.has_tax ?? false,
       tax_percentage: r.tax_percentage ?? '',
       has_fuel: r.has_fuel ?? false,
@@ -85,6 +91,7 @@ export default function FinancialRules() {
       remainder_victor_pct: r.remainder_victor_pct ?? '50',
       remainder_fabricio_pct: r.remainder_fabricio_pct ?? '50',
     })
+    setNfBase(r.nf_value_override != null ? baseDaNf({ ...r, billing_type: tipoDaRegra(r) }) : null)
     setShowModal(true)
   }
 
@@ -92,6 +99,37 @@ export default function FinancialRules() {
     setShowModal(false)
     setEditRule(null)
     resetForm()
+  }
+
+  // Líquido e % de imposto que a NF da regra usa — a NF em si sai de nfAutomatica()
+  // (lib/billing-type.js), a mesma função do apontamento e da fatura.
+  function baseDaNf(f) {
+    const tipo = tipoDaRegra(f)
+    const liq = tipo === 'hora' ? 0 : (parseFloat(f[CAMPOS_VALOR[tipo][0][0]]) || 0)
+    const pct = f.has_tax ? (parseFloat(f.tax_percentage) || 0) : 0
+    return { liq, pct }
+  }
+  const nfInfo = (() => {
+    const { liq, pct } = baseDaNf(form)
+    const auto = Math.round(nfAutomatica(liq, pct) * 100) / 100
+    const manual = form.nf_value_override !== '' && form.nf_value_override != null
+    const nf = manual ? (parseFloat(form.nf_value_override) || 0) : auto
+    const ativo = form.billing_type !== 'hora' && form.is_net_value
+    return {
+      liq, pct, auto, nf, manual, ativo,
+      ajustado: manual && Math.abs(nf - auto) >= 0.005,
+      abaixo: ativo && manual && nf < liq - 0.005,
+      baseMudou: manual && !!nfBase && (Math.abs(nfBase.liq - liq) >= 0.005 || Math.abs(nfBase.pct - pct) >= 0.0001),
+    }
+  })()
+
+  function setNfManual(v) {
+    if (!nfInfo.manual) setNfBase(baseDaNf(form))
+    setForm(f => ({ ...f, nf_value_override: v }))
+  }
+  function recalcularNf() {
+    setForm(f => ({ ...f, nf_value_override: '' }))
+    setNfBase(null)
   }
 
   const somaSplit = (parseFloat(form.remainder_victor_pct) || 0) + (parseFloat(form.remainder_fabricio_pct) || 0)
@@ -103,18 +141,29 @@ export default function FinancialRules() {
     const [campoValor, rotuloValor] = CAMPOS_VALOR[form.billing_type][0]
     if (!(parseFloat(form[campoValor]) > 0)) { setErro(`${rotuloValor.replace(' (R$)', '')} é obrigatório.`); return }
     if (!splitOk) { setErro(`% Victor + % Fabrício precisa somar 100% (está ${somaSplit}%).`); return }
+    if (nfInfo.abaixo) { setErro(`O valor da NF (${fmt(nfInfo.nf)}) não pode ser menor que o líquido (${fmt(nfInfo.liq)}).`); return }
+    // NF igual à automática não é override: gravar NULL mantém a regra acompanhando
+    // mudanças futuras de valor ou de imposto.
+    const payload = { ...form, nf_value_override: nfInfo.ativo && nfInfo.ajustado ? nfInfo.nf : null }
     try {
       const url = editRule ? `/api/financial-rules?id=${editRule.id}` : '/api/financial-rules'
       const res = await fetch(url, {
         method: editRule ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       // O status não pode ser ignorado: um 422 fecharia o modal como se tivesse salvo.
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         setErro(d.error || 'Não foi possível salvar a regra.')
         return
+      }
+      // A resposta lista as OS em aberto que a regra nova regravou (só diária).
+      const d = await res.json().catch(() => ({}))
+      const recalc = d.apontamentos_recalculados || []
+      if (recalc.length) {
+        alert('Apontamentos em aberto recalculados:\n' + recalc.map(a =>
+          `OS #${a.id} (${a.entry_date.split('-').reverse().join('/')}): NF ${fmt(a.antes.gross_value)} → ${fmt(a.depois.gross_value)}`).join('\n'))
       }
       setShowModal(false)
       setEditRule(null)
@@ -194,6 +243,7 @@ export default function FinancialRules() {
                       <span className="text-gray-400">Fixo mensal: <span className="text-white">{fmt(r.monthly_fixed_value)}</span></span>
                       {parseFloat(r.victor_fixed_monthly) > 0 && <span className="text-gray-400">Victor/mês: <span className="text-blue-400">{fmt(r.victor_fixed_monthly)}</span></span>}
                     </>}
+                    {nfOverride(r) != null && <span className="text-gray-400">NF: <span className="text-white">{fmt(r.nf_value_override)}</span> <span className="text-amber-400">(manual)</span></span>}
                     {r.has_tax && <span className="text-gray-400">Imposto: <span className="text-red-400">{r.tax_percentage}%{r.is_net_value && tipoDaRegra(r) !== 'hora' ? ' (por fora)' : ''}</span></span>}
                     {r.has_fuel && <span className="text-gray-400">Combustível: <span className="text-yellow-400">{fmt(r.fuel_value)}</span></span>}
                     <span className="text-gray-400">Restante: <span className="text-green-400">{r.remainder_victor_pct}% Victor / {r.remainder_fabricio_pct}% Fab</span></span>
@@ -240,10 +290,8 @@ export default function FinancialRules() {
                 ))}
               </div>
               {form.billing_type !== 'hora' && (() => {
-                const liq = parseFloat(form[CAMPOS_VALOR[form.billing_type][0][0]]) || 0
-                const pct = form.has_tax ? (parseFloat(form.tax_percentage) || 0) : 0
-                const nf = pct > 0 && pct < 100 ? liq / (1 - pct / 100) : liq
-                const un = form.billing_type === 'diaria' ? 'por diária' : 'por mês'
+                const { liq, pct, auto, nf, manual, ajustado, abaixo, baseMudou } = nfInfo
+                const un = form.billing_type === 'diaria' ? 'por diária' : 'mensal'
                 return (
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
@@ -251,12 +299,33 @@ export default function FinancialRules() {
                       Valor informado é líquido (imposto por fora)
                     </label>
                     {form.is_net_value && liq > 0 && (
-                      <p className="text-xs bg-gray-800/60 rounded-lg px-3 py-2 text-gray-300">
-                        NF {un}: <span className="text-white font-medium">{fmt(nf)}</span>
-                        <span className="text-gray-600"> | </span>Líquido: <span className="text-green-400">{fmt(liq)}</span>
-                        <span className="text-gray-600"> | </span>Imposto (Victor): <span className="text-orange-400">{fmt(nf - liq)}</span>
-                        {!form.has_tax && <span className="block text-gray-500 mt-1">Sem imposto marcado: a NF é o próprio valor líquido.</span>}
-                      </p>
+                      <div className="bg-gray-800/60 rounded-lg px-3 py-2 space-y-1.5">
+                        <label className="text-xs text-gray-400 font-medium">Valor da NF {un} (R$)</label>
+                        <div className="flex items-center gap-2">
+                          {/* Sem override o campo mostra o automático; digitar fixa a NF. Sair do
+                              campo com o mesmo valor do automático desfaz o override. */}
+                          <input
+                            type="number" step="0.01"
+                            value={manual ? form.nf_value_override : auto.toFixed(2)}
+                            onChange={e => setNfManual(e.target.value)}
+                            onBlur={() => { if (manual && !ajustado) recalcularNf() }}
+                            className={`${inputCls} ${abaixo ? 'border-red-500' : ''}`}
+                          />
+                          <button type="button" onClick={recalcularNf} disabled={!manual}
+                            className="shrink-0 text-xs text-blue-400 hover:text-blue-300 disabled:text-gray-600 disabled:cursor-default">
+                            Recalcular
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-300">
+                          Líquido: <span className="text-green-400">{fmt(liq)}</span>
+                          <span className="text-gray-600"> | </span>Diferença (Victor/imposto): <span className="text-orange-400">{fmt(nf - liq)}</span>
+                          <span className="text-gray-600"> | </span>Imposto calculado: <span className="text-red-400">{fmt(nf * pct / 100)}</span>
+                        </p>
+                        {ajustado && <p className="text-xs text-gray-500">Valor ajustado manualmente (automático: {fmt(auto)})</p>}
+                        {baseMudou && <p className="text-xs text-amber-400">O líquido ou o % de imposto mudou: a NF manual de {fmt(nf)} foi mantida. Use Recalcular para voltar ao automático ({fmt(auto)}).</p>}
+                        {abaixo && <p className="text-xs text-red-400">A NF não pode ser menor que o líquido.</p>}
+                        {!form.has_tax && <p className="text-xs text-gray-500">Sem imposto marcado: a NF automática é o próprio valor líquido.</p>}
+                      </div>
                     )}
                     {!form.is_net_value && <p className="text-gray-500 text-xs">Desmarcado: o valor é bruto e o imposto é descontado dele antes do split.</p>}
                   </div>

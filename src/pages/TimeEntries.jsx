@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { todayBR } from '../lib/dateUtils'
 import { calcular } from '../../lib/time-entry-calc.js'
-import { tipoDaRegra, valoresDaRegra, chaveData, dividirEmCotas, ROTULO_COBRANCA } from '../../lib/billing-type.js'
+import { tipoDaRegra, valoresDaRegra, chaveData, cotaDaDiaria, ROTULO_COBRANCA } from '../../lib/billing-type.js'
 
 const BADGE_COBRANCA = {
   hora: 'bg-blue-500/20 text-blue-400',
@@ -142,8 +142,7 @@ export default function TimeEntries() {
       const irmas = entries.filter(e => String(e.contract_id) === String(f.contract_id)
         && chaveData(e.entry_date) === f.entry_date && (!editEntry || e.id !== editEntry.id))
       osNoDia = irmas.length + 1
-      const { unitario, victor_fixo } = valoresDaRegra(rule)
-      cota = { bruto: dividirEmCotas(unitario, osNoDia).at(-1), victor_fixo: dividirEmCotas(victor_fixo, osNoDia).at(-1) }
+      cota = cotaDaDiaria(rule, osNoDia, osNoDia - 1)
     }
 
     const c = calcular(hours, rule, f.hours_fuel, contrato, f.despesas_deslocamento, cota)

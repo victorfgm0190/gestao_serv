@@ -118,7 +118,8 @@ ORDER BY table_name, ordinal_position;
 `remainder_fabricio_pct` numeric · `created_at` timestamp ·
 `billing_type` varchar NOT NULL default `'hora'` (`hora`|`diaria`|`projeto`) ·
 `daily_rate` · `victor_fixed_daily` · `monthly_fixed_value` · `victor_fixed_monthly` numeric ·
-`is_net_value` bool default false · `tipo` varchar (legado, espelho de `billing_type`)
+`is_net_value` bool default false · `nf_value_override` numeric(12,2) NULL (NF digitada no
+modo líquido: por diária ou mensal; NULL = automático) · `tipo` varchar (legado, espelho de `billing_type`)
 > Tipo de cobrança — ver "Tipo de cobrança da regra" na seção 6. `tipo` ('hora'|'por_projeto')
 > continua sendo gravado em espelho por `api/financial-rules.js`, mas **ninguém lê**:
 > a fonte é `billing_type`, interpretado por `tipoDaRegra()` (`lib/billing-type.js`).
@@ -766,6 +767,23 @@ agenda, Contrato, prévia e PUT (que ignora a própria fatura). Dono único:
 do split; NF = líquido ÷ (1 − imposto%) e a diferença vai 100% ao Victor (estrutura do
 SteelDek / `calcContrato`). `tax_client_percent` não se soma nesse modo. A fatura não guarda
 o modo: `lib/fabricio-breakdown.js` o reconhece porque `tax_amount ≈ victor_tax_diff ≈ NF − base`.
+
+**NF digitada (`nf_value_override`) — 2026-10-24.** No modo líquido a NF por unidade
+(diária, ou mês no projeto) pode ser digitada para arredondar: Romaneli 1.651,98 → 1.652,00.
+NULL = automático. Dono único em `lib/billing-type.js`: `nfAutomatica()` (líquido ÷ (1−%)) e
+`nfOverride()` (só vale com `is_net_value` fora da regra por hora); o modal, `calcular()` e
+`calcPorUnidade` usam as duas — o modal não tem mais fórmula própria.
+- Diária: `cotaDaDiaria()` rateia também a NF (`cota.nf`) entre as OS da data, com o mesmo
+  `dividirEmCotas` da diária — a soma fecha no override, e o resíduo de centavo fica na
+  **primeira** OS (menor id), mesma convenção do líquido.
+- A diferença NF − líquido vai 100% ao Victor (`victor_tax_diff`) e `tax_amount` continua
+  sendo `NF − base` — preserva o reconhecimento do modo em `fabricio-breakdown`. O imposto
+  "calculado" (NF × %) só aparece no modal, como informação.
+- Deslocamento cobrado continua com gross-up automático, por fora do override.
+- API recusa (422) NF menor que o líquido; NF igual à automática é gravada NULL.
+- O PUT de `/api/financial-rules` agora **regrava as OS em aberto** dos contratos de uma regra
+  por diária (`recalcularDia`, que passou a devolver o que mudou) e devolve
+  `apontamentos_recalculados`; faturadas ficam congeladas. Teste: `lib/nf-override.test.js`.
 
 **Uma fórmula só.** `calcular()` saiu de `api/time-entries.js` para `lib/time-entry-calc.js`
 (puro, sem `neon`) e o preview de `/time-entries` passou a importá-lo — fim da cópia no

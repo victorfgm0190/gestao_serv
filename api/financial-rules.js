@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless'
 import { requireAuth } from '../lib/auth.js'
-import { TIPOS_COBRANCA } from '../lib/billing-type.js'
+import { TIPOS_COBRANCA, tipoDaRegra } from '../lib/billing-type.js'
+import { recalcularDia } from './time-entries.js'
 
 // Split cadastrado. Não usar `|| 50`: 0 é um split legítimo (cliente 100/0)
 // e seria gravado como 50%.
@@ -30,6 +31,13 @@ function camposDaRegra(body) {
     const rotulo = { hora: 'Valor hora', diaria: 'Valor da diária', projeto: 'Valor fixo mensal' }[billing_type]
     return { error: `${rotulo} é obrigatório.` }
   }
+  // NF digitada (arredondamento) — só existe no modo líquido de diária/projeto. Fora dele
+  // é gravada NULL, para não sobreviver como valor fantasma a uma troca de tipo.
+  const is_net_value = billing_type !== 'hora' && !!body.is_net_value
+  const nf_value_override = is_net_value ? numOrNull(body.nf_value_override) : null
+  if (nf_value_override != null && nf_value_override < parseFloat(valor) - 0.005) {
+    return { error: `O valor da NF (R$ ${nf_value_override.toFixed(2)}) não pode ser menor que o líquido (R$ ${parseFloat(valor).toFixed(2)}).` }
+  }
   return {
     campos: {
       billing_type,
@@ -41,7 +49,8 @@ function camposDaRegra(body) {
       monthly_fixed_value: numOrNull(body.monthly_fixed_value),
       victor_fixed_monthly: numOrNull(body.victor_fixed_monthly),
       // Valor líquido só existe para diária/projeto: por hora o imposto sempre sai do bruto.
-      is_net_value: billing_type !== 'hora' && !!body.is_net_value,
+      is_net_value,
+      nf_value_override: nf_value_override != null && nf_value_override > 0 ? nf_value_override : null,
       has_tax: !!body.has_tax,
       tax_percentage: numOrNull(body.tax_percentage),
       has_fuel: !!body.has_fuel,
@@ -90,12 +99,12 @@ export default async function handler(req, res) {
         INSERT INTO financial_rules (
           client_id, billing_type, tipo, hourly_rate, victor_fixed_per_hour,
           daily_rate, victor_fixed_daily, monthly_fixed_value, victor_fixed_monthly, is_net_value,
-          has_tax, tax_percentage, has_fuel, fuel_value,
+          nf_value_override, has_tax, tax_percentage, has_fuel, fuel_value,
           remainder_victor_pct, remainder_fabricio_pct
         ) VALUES (
           ${client_id}, ${c.billing_type}, ${c.tipo}, ${c.hourly_rate}, ${c.victor_fixed_per_hour},
           ${c.daily_rate}, ${c.victor_fixed_daily}, ${c.monthly_fixed_value}, ${c.victor_fixed_monthly}, ${c.is_net_value},
-          ${c.has_tax}, ${c.tax_percentage}, ${c.has_fuel}, ${c.fuel_value},
+          ${c.nf_value_override}, ${c.has_tax}, ${c.tax_percentage}, ${c.has_fuel}, ${c.fuel_value},
           ${c.remainder_victor_pct}, ${c.remainder_fabricio_pct}
         ) RETURNING *
       `
@@ -114,9 +123,10 @@ export default async function handler(req, res) {
     if (v.error) return res.status(422).json({ error: v.error })
     const c = v.campos
 
-    // Faturas e apontamentos já gravados NÃO são recalculados: os valores ficam
-    // congelados na linha. A regra nova vale para o que for lançado/faturado daqui
-    // em diante (para reprocessar apontamentos em aberto, há /api/recalc-time-entries).
+    // Faturas e apontamentos FATURADOS não são recalculados: os valores ficam congelados
+    // na linha. Na diária, as OS ainda em aberto dos contratos desta regra são
+    // regravadas (recalcularDia) — o valor delas é a cota da diária, e uma NF digitada
+    // nova tem de chegar nelas. A resposta lista quais mudaram.
     try {
       const result = await sql`
         UPDATE financial_rules SET
@@ -130,6 +140,7 @@ export default async function handler(req, res) {
           monthly_fixed_value = ${c.monthly_fixed_value},
           victor_fixed_monthly = ${c.victor_fixed_monthly},
           is_net_value = ${c.is_net_value},
+          nf_value_override = ${c.nf_value_override},
           has_tax = ${c.has_tax},
           tax_percentage = ${c.tax_percentage},
           has_fuel = ${c.has_fuel},
@@ -140,7 +151,18 @@ export default async function handler(req, res) {
         RETURNING *
       `
       if (result.length === 0) return res.status(404).json({ error: 'Regra não encontrada' })
-      return res.status(200).json({ rule: result[0] })
+
+      const recalculados = []
+      if (tipoDaRegra(result[0]) === 'diaria') {
+        const dias = await sql`
+          SELECT DISTINCT te.contract_id, te.entry_date
+          FROM time_entries te
+          JOIN contracts ct ON ct.id = te.contract_id
+          WHERE ct.financial_rule_id = ${id}
+            AND NOT EXISTS (SELECT 1 FROM invoices i WHERE te.id = ANY(i.time_entry_ids))`
+        for (const d of dias) recalculados.push(...await recalcularDia(sql, d.contract_id, d.entry_date))
+      }
+      return res.status(200).json({ rule: result[0], apontamentos_recalculados: recalculados })
     } catch (error) {
       return res.status(500).json({ error: error.message })
     }
