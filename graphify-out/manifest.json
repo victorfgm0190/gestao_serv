@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "api/financial-rules.js": {
-    "mtime": 1792768549.1314216,
-    "ast_hash": "b3899d730689919ed1dd1bf3c0ac2420",
+    "mtime": 1792840098.6579869,
+    "ast_hash": "233b89a3a014ef175dff05fe1db87450",
     "semantic_hash": ""
   },
   "api/ingest-email.js": {
@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "api/invoices.js": {
-    "mtime": 1792781351.1839752,
-    "ast_hash": "736d9954e20c71f1c32022c78ad46658",
+    "mtime": 1792840077.0312512,
+    "ast_hash": "5fe24ba5619ac01a464e3a8726f36297",
     "semantic_hash": ""
   },
   "api/payable-payments.js": {
@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "api/time-entries.js": {
-    "mtime": 1792768791.7667525,
-    "ast_hash": "dbdba7aa371b29c26a0114845b227215",
+    "mtime": 1792840109.237522,
+    "ast_hash": "04684027801a45e6131d7f3d9cb71138",
     "semantic_hash": ""
   },
   "package.json": {
@@ -165,13 +165,13 @@
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
-    "mtime": 1792768678.591045,
-    "ast_hash": "720705ec9739d63d3a530c115f5f6dbb",
+    "mtime": 1792840183.6414332,
+    "ast_hash": "d5ee3477ed965ae1940372ff7ca86208",
     "semantic_hash": ""
   },
   "src/pages/TimeEntries.jsx": {
-    "mtime": 1792768835.0946295,
-    "ast_hash": "92078622ebe05542000c93bb81a4ad7c",
+    "mtime": 1792840060.1835575,
+    "ast_hash": "f88c1e44a01098e038ca5730c2f2d566",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1792781396.0192156,
-    "ast_hash": "e2c9a9f3c81732849dfc2d32fd8338ed",
+    "mtime": 1792840327.0304544,
+    "ast_hash": "d9e0e83618d183de24775a3a6f650969",
     "semantic_hash": ""
   },
   "README.md": {
@@ -395,8 +395,8 @@
     "semantic_hash": ""
   },
   "api/admin.js": {
-    "mtime": 1792768581.7682076,
-    "ast_hash": "871235e5687ed99753938d8a0e3fb9c0",
+    "mtime": 1792840121.504593,
+    "ast_hash": "8e1d24ac5d718f608d4a7afc16b0b790",
     "semantic_hash": ""
   },
   "lib/fiscal-redistribution.js": {
@@ -830,13 +830,18 @@
     "semantic_hash": ""
   },
   "lib/billing-type.js": {
-    "mtime": 1792768382.8790402,
-    "ast_hash": "8fe68ab350331ef826ae68eb51ab8e5b",
+    "mtime": 1792840046.8373413,
+    "ast_hash": "0661f62bdb225df2b5429dbef4900048",
     "semantic_hash": ""
   },
   "lib/time-entry-calc.js": {
-    "mtime": 1792768778.5636008,
-    "ast_hash": "d5bd4a3deae140bdc90dea2ade6cf8a4",
+    "mtime": 1792840059.7917838,
+    "ast_hash": "7f6b217a61861fc4788e66361ebc6845",
+    "semantic_hash": ""
+  },
+  "lib/nf-override.test.js": {
+    "mtime": 1792840303.1350923,
+    "ast_hash": "382906b4535e0644ed0aa2529e61c9d3",
     "semantic_hash": ""
   }
 }
