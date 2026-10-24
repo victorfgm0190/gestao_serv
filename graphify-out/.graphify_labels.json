@@ -64,6 +64,7 @@
   "62": "Dashboard.jsx",
   "63": "nfse-emitter-settings.js",
   "64": "MemoriaCalculo.jsx",
+  "65": "nfse-emit.js",
   "66": "Contracts.jsx",
   "67": "Clientes.jsx",
   "68": "EmailRules.jsx",
@@ -71,5 +72,12 @@
   "70": "nfse-events.js",
   "71": "dotenv",
   "72": "payment-source-tracker.js",
-  "73": "mailparser"
+  "73": "mailparser",
+  "74": "victor-recorte.js",
+  "75": "victor-tabulado.js",
+  "76": "nfse-emitter-settings.js",
+  "77": "NFSeADNClient",
+  "78": "Demands.jsx",
+  "79": "Settings.jsx",
+  "80": "EmailRules.jsx"
 }
