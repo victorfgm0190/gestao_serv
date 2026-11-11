@@ -12,9 +12,9 @@ import { CATEGORIA_KIND } from '../../lib/victor-rateio.js'
 
 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const STATUS_COLORS = {
-  pendente: 'bg-yellow-500/20 text-yellow-400',
-  pago: 'bg-green-500/20 text-green-400',
-  parcial: 'bg-orange-500/20 text-orange-400',
+  pendente: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
+  pago: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400',
+  parcial: 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400',
 }
 const FINANCE_ENDPOINTS = {
   receivables: '/api/receivables',
@@ -170,12 +170,12 @@ const modoDaCategoria = (cat) => (DIST_ENTRADA_LINHA[cat] ? 'imposto' : 'trabalh
 const MODO_INFO = {
   imposto: {
     label: 'imposto',
-    cls: 'bg-orange-500/15 text-orange-300/90',
+    cls: 'bg-orange-100 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300/90',
     ajuda: 'consome a própria linha; se faltar, desce para Lucro → Serviço. Não toca os outros impostos.',
   },
   trabalho: {
     label: 'trabalho',
-    cls: 'bg-blue-500/15 text-blue-300/90',
+    cls: 'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300/90',
     ajuda: 'vai direto para Lucro → Serviço. Não toca imposto nenhum.',
   },
 }
@@ -1914,27 +1914,27 @@ export default function Financial() {
     const cats = RECEIVE_VICTOR_CATEGORIES.filter(([k]) => (geralCats[k] || 0) > 0.005)
     if (!entries.length || !cats.length) return null
     return (
-      <div className="bg-gray-950/60 border border-gray-800 rounded-xl p-3 mt-3">
+      <div className="bg-bg/60 border border-border rounded-xl p-3 mt-3">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-gray-300 text-xs font-medium uppercase tracking-wider">Detalhamento por categoria</p>
-          <div className="flex gap-1 bg-gray-900 p-0.5 rounded-lg">
-            <button onClick={() => setBreakdownView('cliente')} className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${breakdownView === 'cliente' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Por cliente</button>
-            <button onClick={() => setBreakdownView('geral')} className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${breakdownView === 'geral' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>Geral</button>
+          <p className="text-text-3 text-xs font-medium uppercase tracking-wider">Detalhamento por categoria</p>
+          <div className="flex gap-1 bg-surface p-0.5 rounded-lg">
+            <button onClick={() => setBreakdownView('cliente')} className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${breakdownView === 'cliente' ? 'bg-blue-600 text-white' : 'text-muted hover:text-text'}`}>Por cliente</button>
+            <button onClick={() => setBreakdownView('geral')} className={`px-2 py-0.5 rounded-md text-xs font-medium transition-colors ${breakdownView === 'geral' ? 'bg-blue-600 text-white' : 'text-muted hover:text-text'}`}>Geral</button>
           </div>
         </div>
         {breakdownView === 'geral' ? (
           <div className="space-y-1">
             {cats.map(([k, label]) => (
-              <div key={k} className="flex justify-between text-xs"><span className="text-gray-400">{label}</span><span className="text-gray-200 font-mono">{fmt(geralCats[k])}</span></div>
+              <div key={k} className="flex justify-between text-xs"><span className="text-muted">{label}</span><span className="text-text-2 font-mono">{fmt(geralCats[k])}</span></div>
             ))}
-            <div className="flex justify-between text-xs border-t border-gray-800 pt-1 mt-1 font-semibold"><span className="text-gray-300">Total</span><span className="text-green-400 font-mono">{fmt(totalAmount)}</span></div>
+            <div className="flex justify-between text-xs border-t border-border pt-1 mt-1 font-semibold"><span className="text-text-3">Total</span><span className="text-green-700 dark:text-green-400 font-mono">{fmt(totalAmount)}</span></div>
           </div>
         ) : (
           <div className="space-y-2">
             {entries.map((e, i) => (
               <div key={i} className="text-xs">
-                <div className="flex justify-between gap-2"><span className="text-gray-200 truncate">{e.label}</span><span className="text-white font-mono whitespace-nowrap">Total: {fmt(e.amount)}</span></div>
-                <div className="text-gray-500 mt-0.5">└ {RECEIVE_VICTOR_CATEGORIES.filter(([k]) => (e.cats[k] || 0) > 0.005).map(([k, label]) => `${label}: ${fmt(e.cats[k])}`).join(' | ') || '—'}</div>
+                <div className="flex justify-between gap-2"><span className="text-text-2 truncate">{e.label}</span><span className="text-text font-mono whitespace-nowrap">Total: {fmt(e.amount)}</span></div>
+                <div className="text-subtle mt-0.5">└ {RECEIVE_VICTOR_CATEGORIES.filter(([k]) => (e.cats[k] || 0) > 0.005).map(([k, label]) => `${label}: ${fmt(e.cats[k])}`).join(' | ') || '—'}</div>
               </div>
             ))}
           </div>
@@ -1946,38 +1946,38 @@ export default function Financial() {
   // Renderiza uma linha das abas de Pagar/Receber. waiting=true oculta o botão "Pagar".
   function renderRow(item, waiting = false) {
     return (
-      <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <div key={item.id} className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
-              <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status] || 'bg-gray-700 text-gray-400'}`}>{item.status}</span>
+              <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs rounded-full">{item.client_name}</span>
+              <span className="text-subtle text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status] || 'bg-surface-3 text-muted'}`}>{item.status}</span>
               {tab === 'receivables' && item.contract_cnpj && (
                 <span className="flex items-center gap-1.5 text-xs">
-                  <span className="text-gray-500">CNPJ:</span>
-                  <span className="text-gray-300 font-mono">{item.contract_cnpj}</span>
+                  <span className="text-subtle">CNPJ:</span>
+                  <span className="text-text-3 font-mono">{item.contract_cnpj}</span>
                   <CopyButton value={item.contract_cnpj} />
                 </span>
               )}
             </div>
-            <p className="text-white text-sm">{item.description}</p>
+            <p className="text-text text-sm">{item.description}</p>
             <div className="flex gap-4 mt-2 text-xs">
               {item.invoice_amount != null && (
-                <span className="text-gray-500">NF: <span className="text-gray-300">{fmt(item.invoice_amount)}</span></span>
+                <span className="text-subtle">NF: <span className="text-text-3">{fmt(item.invoice_amount)}</span></span>
               )}
               {tab === 'victor' ? (
                 <>
-                  <span className="text-gray-500">Serviço: <span className="text-gray-300">{fmt(item.service_amount)}</span></span>
-                  <span className="text-gray-500">Lucro: <span className="text-gray-300">{fmt(item.profit_amount)}</span></span>
-                  <span className="text-gray-500">Total: <span className="text-white font-medium">{fmt(item.total_amount)}</span></span>
+                  <span className="text-subtle">Serviço: <span className="text-text-3">{fmt(item.service_amount)}</span></span>
+                  <span className="text-subtle">Lucro: <span className="text-text-3">{fmt(item.profit_amount)}</span></span>
+                  <span className="text-subtle">Total: <span className="text-text font-medium">{fmt(item.total_amount)}</span></span>
                 </>
               ) : (
-                <span className="text-gray-500">Valor: <span className="text-white font-medium">{fmt(item.amount)}</span></span>
+                <span className="text-subtle">Valor: <span className="text-text font-medium">{fmt(item.amount)}</span></span>
               )}
-              {parseFloat(item.paid_amount) > 0 && <span className="text-gray-500">Pago: <span className="text-green-400">{fmt(item.paid_amount)}</span></span>}
-              {item.paid_at && <span className="text-gray-500">Em: <span className="text-gray-300">{new Date(item.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></span>}
-              {item.is_compensation && <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">Compensação</span>}
+              {parseFloat(item.paid_amount) > 0 && <span className="text-subtle">Pago: <span className="text-green-700 dark:text-green-400">{fmt(item.paid_amount)}</span></span>}
+              {item.paid_at && <span className="text-subtle">Em: <span className="text-text-3">{new Date(item.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></span>}
+              {item.is_compensation && <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 text-xs rounded-full">Compensação</span>}
             </div>
 
             {/* Composição fiscal da NF — DAS/INSS/Honorários que couberam a este cliente.
@@ -1985,20 +1985,20 @@ export default function Financial() {
                 pela provisão retida na fatura, o excedente pela cascata lucro→serviço.
                 Por isso ficam marcados como "coberto" e fora dos totais da aba. */}
             {tab === 'victor' && item.fiscal && (
-              <div className="mt-3 pt-3 border-t border-gray-800/80">
+              <div className="mt-3 pt-3 border-t border-border/80">
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <span className="text-[11px] uppercase tracking-wide text-gray-500">Imposto real desta NF</span>
-                  <span className="text-xs text-gray-300 font-medium">{fmt(item.fiscal.total)}</span>
+                  <span className="text-[11px] uppercase tracking-wide text-subtle">Imposto real desta NF</span>
+                  <span className="text-xs text-text-3 font-medium">{fmt(item.fiscal.total)}</span>
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
                   {item.fiscal.linhas.map((l) => (
-                    <span key={l.kind} className="text-gray-500">
-                      {RESERVA_LABEL[l.kind] || l.kind}: <span className="text-gray-300 font-mono">{fmt(l.amount)}</span>
+                    <span key={l.kind} className="text-subtle">
+                      {RESERVA_LABEL[l.kind] || l.kind}: <span className="text-text-3 font-mono">{fmt(l.amount)}</span>
                     </span>
                   ))}
                 </div>
                 {/* De onde saiu cada real: a soma fecha com o total acima. */}
-                <p className="text-gray-600 text-[11px] mt-1.5 leading-tight">
+                <p className="text-faint text-[11px] mt-1.5 leading-tight">
                   Coberto por: provisão da NF {fmt(item.fiscal.provisionado)}
                   {item.fiscal.do_lucro !== 0 && ` + lucro ${fmt(item.fiscal.do_lucro)}`}
                   {item.fiscal.do_servico !== 0 && ` + serviço ${fmt(item.fiscal.do_servico)}`}
@@ -2009,43 +2009,43 @@ export default function Financial() {
                     provisão já saiu do victor_profit e seria descontada duas vezes.
                     Ver cascataDoLucro() em lib/fiscal-redistribution.js. */}
                 {item.cascata && (
-                  <div className="mt-3 p-3 bg-gray-900/60 rounded-lg border border-gray-700/70">
-                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">
+                  <div className="mt-3 p-3 bg-surface/60 rounded-lg border border-border-strong/70">
+                    <p className="text-[11px] uppercase tracking-wide text-subtle mb-2">
                       💰 Cascata do lucro
-                      <span className="ml-2 normal-case tracking-normal text-gray-600">
+                      <span className="ml-2 normal-case tracking-normal text-faint">
                         · agrupado por {mode === 'competencia' ? 'competência' : mode === 'fiscal' ? 'data fiscal' : 'caixa'}
                       </span>
                     </p>
 
                     <div className="space-y-1 text-xs font-mono">
-                      <div className="flex justify-between text-gray-400">
+                      <div className="flex justify-between text-muted">
                         <span className="font-sans">Lucro bruto (antes de imposto)</span>
                         <span>{fmt(item.cascata.lucro_antes_escritorio)}</span>
                       </div>
 
-                      <div className="flex justify-between text-gray-500">
+                      <div className="flex justify-between text-subtle">
                         <span className="font-sans pl-3">− Escritório</span>
                         <span>{fmt(item.cascata.escritorio)}</span>
                       </div>
-                      <div className="flex justify-between text-gray-400 border-t border-gray-800 pt-1">
+                      <div className="flex justify-between text-muted border-t border-border pt-1">
                         <span className="font-sans">= após Escritório</span>
                         <span>{fmt(item.cascata.lucro_antes_inss)}</span>
                       </div>
 
-                      <div className="flex justify-between text-gray-500">
+                      <div className="flex justify-between text-subtle">
                         <span className="font-sans pl-3">− INSS</span>
                         <span>{fmt(item.cascata.inss)}</span>
                       </div>
-                      <div className="flex justify-between text-gray-400 border-t border-gray-800 pt-1">
+                      <div className="flex justify-between text-muted border-t border-border pt-1">
                         <span className="font-sans">= após INSS</span>
                         <span>{fmt(item.cascata.lucro_antes_das)}</span>
                       </div>
 
-                      <div className="flex justify-between text-gray-500">
+                      <div className="flex justify-between text-subtle">
                         <span className="font-sans pl-3">− DAS</span>
                         <span>{fmt(item.cascata.das)}</span>
                       </div>
-                      <div className={`flex justify-between border-t border-gray-700 pt-1 font-semibold ${item.cascata.lucro_final < 0 ? 'text-red-400' : 'text-white'}`}>
+                      <div className={`flex justify-between border-t border-border-strong pt-1 font-semibold ${item.cascata.lucro_final < 0 ? 'text-red-700 dark:text-red-400' : 'text-text'}`}>
                         <span className="font-sans">= Lucro final</span>
                         <span>{fmt(item.cascata.lucro_final)}</span>
                       </div>
@@ -2055,7 +2055,7 @@ export default function Financial() {
                         registra é o clamp em zero — a diferença foi absorvida pelo
                         serviço e, no que sobrou, pelo capital próprio do Victor. */}
                     {item.cascata.lucro_final < 0 && (
-                      <p className="mt-2 text-[11px] text-gray-500 leading-tight">
+                      <p className="mt-2 text-[11px] text-subtle leading-tight">
                         Lucro negativo: o payable registra {fmt(item.profit_amount)} e a diferença
                         {item.fiscal.do_servico > 0 && <> saiu do serviço ({fmt(item.fiscal.do_servico)})</>}
                         {item.cascata.capital_proprio > 0 && <> e do capital próprio</>}.
@@ -2063,7 +2063,7 @@ export default function Financial() {
                     )}
 
                     {item.cascata.capital_proprio > 0 && (
-                      <div className="mt-2 flex justify-between text-xs font-semibold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-2 py-1">
+                      <div className="mt-2 flex justify-between text-xs font-semibold text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-300 dark:border-yellow-500/30 rounded-lg px-2 py-1">
                         <span>Capital próprio (injetar)</span>
                         <span className="font-mono">{fmt(item.cascata.capital_proprio)}</span>
                       </div>
@@ -2072,31 +2072,31 @@ export default function Financial() {
                     {/* Conferência da decomposição da NF: imposto + serviço + lucro +
                         Fabrício tem de fechar com o valor da nota. */}
                     {item.conferencia && (
-                      <div className="mt-2 pt-2 border-t border-gray-800 space-y-1 text-xs font-mono">
-                        <div className="flex justify-between text-gray-500">
+                      <div className="mt-2 pt-2 border-t border-border space-y-1 text-xs font-mono">
+                        <div className="flex justify-between text-subtle">
                           <span className="font-sans">Serviço Victor</span>
                           <span>{fmt(item.service_amount)}</span>
                         </div>
-                        <div className="flex justify-between text-gray-500">
+                        <div className="flex justify-between text-subtle">
                           <span className="font-sans">Lucro Victor</span>
                           <span>{fmt(item.profit_amount)}</span>
                         </div>
-                        <div className="flex justify-between text-gray-500">
+                        <div className="flex justify-between text-subtle">
                           <span className="font-sans">Fabrício</span>
                           <span>{fmt(item.conferencia.fabricio)}</span>
                         </div>
-                        <div className={`flex justify-between pt-1 border-t border-gray-800 ${item.conferencia.confere ? 'text-gray-400' : 'text-amber-400'}`}>
+                        <div className={`flex justify-between pt-1 border-t border-border ${item.conferencia.confere ? 'text-muted' : 'text-amber-700 dark:text-amber-400'}`}>
                           <span className="font-sans">
                             {item.conferencia.confere ? '✓' : '⚠️'} imposto + serviço + lucro + Fabrício
                           </span>
                           <span>{fmt(item.conferencia.soma)}</span>
                         </div>
-                        <div className="flex justify-between text-gray-600">
+                        <div className="flex justify-between text-faint">
                           <span className="font-sans">NF</span>
                           <span>{fmt(item.conferencia.nf)}</span>
                         </div>
                         {!item.conferencia.confere && (
-                          <p className="text-amber-300/90 text-[11px] font-sans leading-tight pt-1">
+                          <p className="text-amber-700 dark:text-amber-300/90 text-[11px] font-sans leading-tight pt-1">
                             Diferença de {fmt(Math.abs(item.conferencia.diferenca))} — esperado enquanto a
                             redistribuição do mês não for aplicada.
                           </p>
@@ -2107,7 +2107,7 @@ export default function Financial() {
                 )}
 
                 {Math.abs(item.fiscal.a_redistribuir) >= 0.01 && (
-                  <p className="mt-1.5 text-amber-300/90 text-[11px] bg-amber-500/10 border border-amber-500/30 rounded-lg px-2 py-1 leading-tight">
+                  <p className="mt-1.5 text-amber-700 dark:text-amber-300/90 text-[11px] bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-2 py-1 leading-tight">
                     ⚠️ {fmt(Math.abs(item.fiscal.a_redistribuir))} de imposto {item.fiscal.a_redistribuir > 0 ? 'a mais que' : 'a menos que'} a provisão
                     {' '}ainda não foi redistribuído — os valores acima ainda são os da fatura.
                     {' '}Aplique em <strong>/fiscal</strong>.
@@ -2123,7 +2123,7 @@ export default function Financial() {
                   <button onClick={() => { setShowPayModal(item); setPayForm(f => ({...f, paid_amount: item.amount || item.total_amount})) }} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">Pagar</button>
                 )}
                 {(item.status === 'pago' || item.status === 'recebido') && (
-                  <button onClick={() => estornar(item)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
+                  <button onClick={() => estornar(item)} className="px-3 py-1 border border-red-300 dark:border-red-500/60 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
                 )}
               </>
             ) : (
@@ -2134,7 +2134,7 @@ export default function Financial() {
                   <button onClick={() => openPayments(item)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">Ver Pagamentos</button>
                 )}
                 {tab === 'victor' && item.origin === 'faturamento' && (item.status === 'pago' || item.status === 'parcial') && (item.payments?.length > 0) && (
-                  <button onClick={() => openEditReceive(item)} className="px-3 py-1 border border-blue-500/60 text-blue-400 hover:bg-blue-500/10 rounded-lg text-xs">✏️ Editar</button>
+                  <button onClick={() => openEditReceive(item)} className="px-3 py-1 border border-blue-300 dark:border-blue-500/60 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg text-xs">✏️ Editar</button>
                 )}
                 {/* Estorno do LANÇAMENTO: apaga os pagamentos dele e devolve a pendente.
                     ⚠️ Não desfaz guia fiscal quitada pelo rateio — aquilo não passa por
@@ -2149,15 +2149,15 @@ export default function Financial() {
                 {/* Sempre disponível, inclusive nas linhas que aguardam o cliente pagar
                     (essas não têm botão de Pagar e ficariam sem acesso ao demonstrativo). */}
                 {tab === 'fabricio' && item.breakdown && (
-                  <button onClick={() => openPayments(item)} className="px-3 py-1 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg text-xs">🧮 Ver cálculo</button>
+                  <button onClick={() => openPayments(item)} className="px-3 py-1 border border-border-stronger text-text-3 hover:bg-surface-2 rounded-lg text-xs">🧮 Ver cálculo</button>
                 )}
               </>
             )}
             {(!item.origin || item.origin !== 'faturamento') && (
-              <button onClick={() => del(item.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
+              <button onClick={() => del(item.id)} className="text-faint hover:text-red-700 dark:hover:text-red-400 text-xs">Excluir</button>
             )}
             {item.origin === 'faturamento' && (
-              <span className="text-gray-600 text-xs">via Faturamento</span>
+              <span className="text-faint text-xs">via Faturamento</span>
             )}
           </div>
         </div>
@@ -2190,34 +2190,34 @@ export default function Financial() {
       (parseFloat(String(bdInputs[c.client_id]?.[cat] ?? '').replace(',', '.')) || 0) > 0)
 
     return (
-      <div key={c.client_id ?? 'sem'} className={`bg-gray-900 border rounded-xl overflow-hidden ${temDigitado ? 'border-blue-500/50' : 'border-gray-800'}`}>
+      <div key={c.client_id ?? 'sem'} className={`bg-surface shadow-sm dark:shadow-none border rounded-xl overflow-hidden ${temDigitado ? 'border-blue-300 dark:border-blue-500/50' : 'border-border'}`}>
         <button
           onClick={() => setBdAberto(p => ({ ...p, [c.client_id]: !aberto }))}
-          className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-800/40 text-left"
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface-2/40 text-left"
         >
           <span className="flex items-center gap-2 min-w-0 flex-wrap">
-            <span className="text-gray-500 text-xs">{aberto ? '▼' : '▶'}</span>
-            <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{c.client_name}</span>
+            <span className="text-subtle text-xs">{aberto ? '▼' : '▶'}</span>
+            <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs rounded-full">{c.client_name}</span>
             {/* Competências agregadas. Com o filtro num mês só é uma etiqueta redundante;
                 com "todos os meses" é o que impede a leitura de que o filtro falhou —
                 dois lançamentos certos e separados no banco viram um card só. */}
             {(c.competencias || []).length > 0 && (
-              <span className={`text-[11px] ${c.competencias.length > 1 ? 'text-amber-400/80' : 'text-gray-600'}`}>
+              <span className={`text-[11px] ${c.competencias.length > 1 ? 'text-amber-700 dark:text-amber-400/80' : 'text-faint'}`}>
                 {c.competencias.length === 1
                   ? `${months[c.competencias[0].mes - 1]}/${c.competencias[0].ano}`
                   : `${c.competencias.length} competências: ${c.competencias.map(k => `${months[k.mes - 1]}/${k.ano}`).join(', ')}`}
               </span>
             )}
-            {c.nf.total > 0 && <span className="text-gray-600 text-[11px]">NF {fmt(c.nf.total)}</span>}
+            {c.nf.total > 0 && <span className="text-faint text-[11px]">NF {fmt(c.nf.total)}</span>}
             {/* Fabrício é informativo: sai da fatura e é pago na aba dele. */}
-            {c.nf.fabricio > 0 && <span className="text-gray-600 text-[11px]">· Fab {fmt(c.nf.fabricio)}</span>}
+            {c.nf.fabricio > 0 && <span className="text-faint text-[11px]">· Fab {fmt(c.nf.fabricio)}</span>}
             {!c.disponivel && (
-              <span className="px-2 py-0.5 bg-gray-700 text-gray-400 text-[11px] rounded-full">aguardando cliente</span>
+              <span className="px-2 py-0.5 bg-surface-3 text-muted text-[11px] rounded-full">aguardando cliente</span>
             )}
           </span>
           <span className="text-right shrink-0">
-            <span className="block text-white font-semibold text-sm">{fmt(c.subtotal_saida)}</span>
-            <span className="block text-gray-600 text-[10px]">
+            <span className="block text-text font-semibold text-sm">{fmt(c.subtotal_saida)}</span>
+            <span className="block text-faint text-[10px]">
               receber {fmt(c.subtotal_receber)} + imposto {fmt(c.subtotal_impostos)}
             </span>
           </span>
@@ -2232,26 +2232,26 @@ export default function Financial() {
               // com cinco linhas zeradas nos clientes 100/0 e nos meses sem apuração.
               if (v.devido === 0 && v.pago === 0) return null
               return (
-                <div key={cat} className="flex items-center gap-2 py-1.5 border-b border-gray-800/60 last:border-0">
-                  <span className="w-32 shrink-0 text-xs text-gray-400">{BREAKDOWN_LABEL[cat]}</span>
+                <div key={cat} className="flex items-center gap-2 py-1.5 border-b border-border/60 last:border-0">
+                  <span className="w-32 shrink-0 text-xs text-muted">{BREAKDOWN_LABEL[cat]}</span>
 
-                  <span className="flex-1 min-w-0 text-[11px] font-mono text-gray-600">
+                  <span className="flex-1 min-w-0 text-[11px] font-mono text-faint">
                     {fmt(v.devido)}
-                    {v.pago > 0 && <span className="text-green-500"> · pago {fmt(v.pago)}</span>}
+                    {v.pago > 0 && <span className="text-green-700 dark:text-green-500"> · pago {fmt(v.pago)}</span>}
                     {v.rateio_percentual != null && v.devido > 0 && (
-                      <span className="text-blue-400/70 font-sans"> · {v.rateio_percentual.toFixed(2)}%</span>
+                      <span className="text-blue-700 dark:text-blue-400/70 font-sans"> · {v.rateio_percentual.toFixed(2)}%</span>
                     )}
                     {/* A cascata já zerou o lucro na gravação: dizer isso evita a leitura
                         de que o cliente simplesmente não deu lucro. */}
                     {cat === 'lucro' && v.cascade_aplicado && (
-                      <span className="text-amber-400/80 font-sans"> · zerado pela cascata (−{fmt(v.cascade_valor)})</span>
+                      <span className="text-amber-700 dark:text-amber-400/80 font-sans"> · zerado pela cascata (−{fmt(v.cascade_valor)})</span>
                     )}
                     {cat === 'servico' && v.absorveu_do_lucro > 0 && (
-                      <span className="text-amber-400/80 font-sans"> · absorveu {fmt(v.absorveu_do_lucro)} do lucro</span>
+                      <span className="text-amber-700 dark:text-amber-400/80 font-sans"> · absorveu {fmt(v.absorveu_do_lucro)} do lucro</span>
                     )}
                   </span>
 
-                  <span className={`w-24 shrink-0 text-right text-xs font-mono ${restante < -0.005 ? 'text-red-400' : restante <= 0.005 ? 'text-green-400' : 'text-gray-200'}`}>
+                  <span className={`w-24 shrink-0 text-right text-xs font-mono ${restante < -0.005 ? 'text-red-700 dark:text-red-400' : restante <= 0.005 ? 'text-green-700 dark:text-green-400' : 'text-text-2'}`}>
                     {fmt(restante)}
                   </span>
 
@@ -2260,13 +2260,13 @@ export default function Financial() {
                     disabled={!c.disponivel || v.saldo <= 0.005}
                     value={bdInputs[c.client_id]?.[cat] ?? ''}
                     onChange={e => bdSetInput(c.client_id, cat, e.target.value)}
-                    className="w-24 shrink-0 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs text-right placeholder-gray-600 focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-24 shrink-0 bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs text-right placeholder-faint focus:outline-none focus:border-blue-500 disabled:opacity-40 disabled:cursor-not-allowed"
                   />
                   <button
                     type="button"
                     disabled={!c.disponivel || v.saldo <= 0.005}
                     onClick={() => bdSetInput(c.client_id, cat, String(v.saldo.toFixed(2)))}
-                    className="shrink-0 text-[10px] text-gray-500 hover:text-blue-400 disabled:opacity-30 disabled:hover:text-gray-500"
+                    className="shrink-0 text-[10px] text-subtle hover:text-blue-700 dark:hover:text-blue-400 disabled:opacity-30 disabled:hover:text-subtle"
                     title="Preencher com o saldo total"
                   >tudo</button>
                 </div>
@@ -2278,10 +2278,10 @@ export default function Financial() {
             {fiscalDoCard(c)}
 
             {c.avisos.map((a, i) => (
-              <p key={i} className="text-amber-400/80 text-[11px] pt-1">⚠️ {a}</p>
+              <p key={i} className="text-amber-700 dark:text-amber-400/80 text-[11px] pt-1">⚠️ {a}</p>
             ))}
             {!c.disponivel && (
-              <p className="text-gray-500 text-[11px] pt-1">
+              <p className="text-subtle text-[11px] pt-1">
                 O cliente ainda não pagou o recebível — {fmt(c.aguardando)} em aberto. Não se
                 desconta imposto de dinheiro que ainda não entrou.
               </p>
@@ -2289,7 +2289,7 @@ export default function Financial() {
             {/* Caixa futuro: candidatosDisponiveis() recusaria estes payables, e a recusa
                 do backend é silenciosa — sem o aviso, pagar não faria nada e leria como bug. */}
             {c.bloqueado_futuro > 0.005 && (
-              <p className="text-amber-400/80 text-[11px] pt-1">
+              <p className="text-amber-700 dark:text-amber-400/80 text-[11px] pt-1">
                 🔒 {fmt(c.bloqueado_futuro)} com mês de caixa posterior a{' '}
                 {months[(breakdown?.caixa?.mes_referencia || 1) - 1]}/{breakdown?.caixa?.ano_referencia} —
                 não pode ser consumido ainda. O dinheiro não entrou.
@@ -2307,13 +2307,13 @@ export default function Financial() {
   // se rateia, não se soma e não se decide status. O único cálculo local é o total
   // digitado, que é a soma das caixas de entrada.
   function tabStatusCell(s) {
-    if (s === 'pago') return <span className="text-green-400">✓ Pago</span>
-    if (s === 'parcial') return <span className="text-orange-400">◐ Parcial</span>
-    if (s === 'pendente') return <span className="text-gray-500">— Pendente</span>
-    if (s === 'subtotal') return <span className="text-gray-600">Subtotal</span>
+    if (s === 'pago') return <span className="text-green-700 dark:text-green-400">✓ Pago</span>
+    if (s === 'parcial') return <span className="text-orange-700 dark:text-orange-400">◐ Parcial</span>
+    if (s === 'pendente') return <span className="text-subtle">— Pendente</span>
+    if (s === 'subtotal') return <span className="text-faint">Subtotal</span>
     // 'na' = a categoria não existe para este cliente (split 100/0 sem lucro, mês sem
     // apuração). Marcá-la como paga encheria a tabela de ✓ enganosos.
-    return <span className="text-gray-700">—</span>
+    return <span className="text-faintest">—</span>
   }
 
   // ── VISÃO RASTREIO — origem → destino (payment_sources) ────────────────────────────
@@ -2360,20 +2360,20 @@ export default function Financial() {
 
     return (
       <div className="space-y-3">
-        {rastreioErro && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{rastreioErro}</p>}
-        {rastreioLoading && <p className="text-gray-500 text-xs">Carregando rastreamento…</p>}
+        {rastreioErro && <p className="text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{rastreioErro}</p>}
+        {rastreioLoading && <p className="text-subtle text-xs">Carregando rastreamento…</p>}
 
         {/* ── 1 · ORIGEM ── */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
-          <p className="text-[11px] uppercase tracking-wide text-blue-400/80 font-medium mb-2">📊 Origem do recurso</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-3">
+          <p className="text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-400/80 font-medium mb-2">📊 Origem do recurso</p>
           {porOrigem.size === 0 && compensacoes.length === 0 ? (
-            <p className="text-gray-600 text-xs">Nenhum movimento rastreado neste recorte. O rastreamento passou a ser gravado em 15/08/2026 — pagamentos anteriores a isso não têm origem registrada.</p>
+            <p className="text-faint text-xs">Nenhum movimento rastreado neste recorte. O rastreamento passou a ser gravado em 15/08/2026 — pagamentos anteriores a isso não têm origem registrada.</p>
           ) : (
             <div className="space-y-1">
               {[...porOrigem.values()].map((g, i) => (
                 <div key={i} className="flex justify-between gap-2 text-xs">
-                  <span className="text-gray-400">{g.nome} <span className="text-gray-600">{g.tipo}</span></span>
-                  <span className="text-white font-mono">{fmt(soma(g.linhas))}</span>
+                  <span className="text-muted">{g.nome} <span className="text-faint">{g.tipo}</span></span>
+                  <span className="text-text font-mono">{fmt(soma(g.linhas))}</span>
                 </div>
               ))}
             </div>
@@ -2381,20 +2381,20 @@ export default function Financial() {
 
           {/* Créditos de compensação: origem que ainda NÃO virou pagamento. */}
           {compensacoes.length > 0 && (
-            <div className="mt-3 border-t border-gray-800 pt-2">
-              <p className="text-[11px] text-green-400 font-medium mb-1">✨ Compensações do Fabrício disponíveis</p>
-              <p className="text-[10px] text-gray-600 mb-2 leading-tight">
+            <div className="mt-3 border-t border-border pt-2">
+              <p className="text-[11px] text-green-700 dark:text-green-400 font-medium mb-1">✨ Compensações do Fabrício disponíveis</p>
+              <p className="text-[10px] text-faint mb-2 leading-tight">
                 O Fabrício deixou de receber e o valor virou crédito. Usar quita um lançamento
                 do mesmo cliente, sem sair caixa — não cria lançamento novo.
               </p>
               {compensacoes.map(c => (
                 <div key={c.id} className="flex justify-between items-center gap-2 text-xs mb-1">
-                  <span className="text-gray-400 truncate">
-                    {c.client_name || 'Sem cliente'} <span className="text-gray-600">{c.month}/{c.year}</span>
-                    {c.fabricio_description && <span className="text-gray-700"> · {c.fabricio_description}</span>}
+                  <span className="text-muted truncate">
+                    {c.client_name || 'Sem cliente'} <span className="text-faint">{c.month}/{c.year}</span>
+                    {c.fabricio_description && <span className="text-faintest"> · {c.fabricio_description}</span>}
                   </span>
                   <span className="flex items-center gap-2 shrink-0">
-                    <span className="text-green-300 font-mono">{fmt(c.amount)}</span>
+                    <span className="text-green-700 dark:text-green-300 font-mono">{fmt(c.amount)}</span>
                     <button onClick={() => usarCompensacao(c)} disabled={pagandoComp === c.id}
                       className="px-2 py-0.5 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded text-[11px]">
                       {pagandoComp === c.id ? '...' : 'Usar'}
@@ -2408,13 +2408,13 @@ export default function Financial() {
 
         {/* ── 1b · IMPOSTO ABSORVIDO ── */}
         {absorcoes.length > 0 && (
-          <div className="bg-gray-900 border border-orange-500/20 rounded-xl p-3">
-            <p className="text-[11px] uppercase tracking-wide text-orange-400/80 font-medium mb-1">🧾 Imposto absorvido</p>
-            <p className="text-[10px] text-gray-600 mb-2 leading-tight">
+          <div className="bg-surface shadow-sm dark:shadow-none border border-orange-300 dark:border-orange-500/20 rounded-xl p-3">
+            <p className="text-[11px] uppercase tracking-wide text-orange-700 dark:text-orange-400/80 font-medium mb-1">🧾 Imposto absorvido</p>
+            <p className="text-[10px] text-faint mb-2 leading-tight">
               Excedente do imposto real sobre a provisão retida na NF, descontado do que o
               Victor recebe — do lucro primeiro, do serviço no que não coube. <strong>Não é
               pagamento</strong>: é redução do que ele tem a receber.{' '}
-              <span className="text-amber-400/80">Se a guia também for quitada com caixa, o
+              <span className="text-amber-700 dark:text-amber-400/80">Se a guia também for quitada com caixa, o
               mesmo tributo sai duas vezes.</span>
             </p>
             {absorcoes.map(a => {
@@ -2425,39 +2425,39 @@ export default function Financial() {
               const devolveu = v < 0
               return (
                 <div key={a.id} className="flex justify-between gap-2 text-xs mb-0.5">
-                  <span className="text-gray-400 truncate">
+                  <span className="text-muted truncate">
                     {a.client_name || 'Sem cliente'}{' '}
-                    <span className="text-gray-600">{a.source_type === 'profit' ? 'lucro' : 'serviço'} · {a.month}/{a.year}</span>
-                    {devolveu && <span className="text-green-400/70"> · devolvido</span>}
+                    <span className="text-faint">{a.source_type === 'profit' ? 'lucro' : 'serviço'} · {a.month}/{a.year}</span>
+                    {devolveu && <span className="text-green-700 dark:text-green-400/70"> · devolvido</span>}
                   </span>
-                  <span className={`font-mono shrink-0 ${devolveu ? 'text-green-400' : 'text-orange-300'}`}>
+                  <span className={`font-mono shrink-0 ${devolveu ? 'text-green-700 dark:text-green-400' : 'text-orange-700 dark:text-orange-300'}`}>
                     {devolveu ? `+ ${fmt(-v)}` : fmt(v)}
                   </span>
                 </div>
               )
             })}
-            <div className="flex justify-between gap-2 text-xs border-t border-gray-800 mt-1 pt-1">
-              <span className="text-gray-500">Total absorvido</span>
-              <span className="text-orange-300 font-mono font-semibold">{fmt(soma(absorcoes))}</span>
+            <div className="flex justify-between gap-2 text-xs border-t border-border mt-1 pt-1">
+              <span className="text-subtle">Total absorvido</span>
+              <span className="text-orange-700 dark:text-orange-300 font-mono font-semibold">{fmt(soma(absorcoes))}</span>
             </div>
           </div>
         )}
 
         {/* ── 2 · DESTINO ── */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
-          <p className="text-[11px] uppercase tracking-wide text-blue-400/80 font-medium mb-2">💰 Destino do recurso</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-3">
+          <p className="text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-400/80 font-medium mb-2">💰 Destino do recurso</p>
           {porDestino.size === 0 ? (
-            <p className="text-gray-600 text-xs">Nada pago com rastreamento neste recorte.</p>
+            <p className="text-faint text-xs">Nada pago com rastreamento neste recorte.</p>
           ) : [...porDestino.entries()].map(([destino, linhas]) => (
             <div key={destino} className="mb-2 last:mb-0">
               <div className="flex justify-between gap-2 text-xs">
-                <span className="text-gray-300 font-medium">{CAT_LABEL[destino] || destino}</span>
-                <span className="text-green-400 font-mono">{fmt(soma(linhas))}</span>
+                <span className="text-text-3 font-medium">{CAT_LABEL[destino] || destino}</span>
+                <span className="text-green-700 dark:text-green-400 font-mono">{fmt(soma(linhas))}</span>
               </div>
               {linhas.map(l => (
                 <div key={l.id} className="flex justify-between gap-2 text-[11px] pl-3">
-                  <span className="text-gray-600">← {l.client_name || 'Sem cliente'} {rotuloOrigem(l)} <span className="text-gray-700">{l.month}/{l.year}</span></span>
-                  <span className="text-gray-500 font-mono">{fmt(l.amount)}</span>
+                  <span className="text-faint">← {l.client_name || 'Sem cliente'} {rotuloOrigem(l)} <span className="text-faintest">{l.month}/{l.year}</span></span>
+                  <span className="text-subtle font-mono">{fmt(l.amount)}</span>
                 </div>
               ))}
             </div>
@@ -2465,21 +2465,21 @@ export default function Financial() {
         </div>
 
         {/* ── 3 · HISTÓRICO ── */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
-          <p className="text-[11px] uppercase tracking-wide text-blue-400/80 font-medium mb-2">📋 Histórico rastreado</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-3">
+          <p className="text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-400/80 font-medium mb-2">📋 Histórico rastreado</p>
           {porPagamento.size === 0 ? (
-            <p className="text-gray-600 text-xs">Nenhum pagamento rastreado neste recorte.</p>
+            <p className="text-faint text-xs">Nenhum pagamento rastreado neste recorte.</p>
           ) : [...porPagamento.entries()].map(([pid, pg]) => (
-            <div key={pid} className="mb-2 last:mb-0 bg-gray-800/40 rounded-lg px-2 py-1.5">
+            <div key={pid} className="mb-2 last:mb-0 bg-surface-2/40 rounded-lg px-2 py-1.5">
               <div className="flex justify-between gap-2 text-xs">
-                <span className="text-gray-300">
+                <span className="text-text-3">
                   {pg.paid_at ? new Date(pg.paid_at).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'}
-                  <span className="text-gray-600"> · {pg.notes || 'sem descrição'}</span>
+                  <span className="text-faint"> · {pg.notes || 'sem descrição'}</span>
                 </span>
-                <span className="text-white font-mono">{fmt(soma(pg.linhas))}</span>
+                <span className="text-text font-mono">{fmt(soma(pg.linhas))}</span>
               </div>
               {pg.linhas.map(l => (
-                <div key={l.id} className="flex justify-between gap-2 text-[11px] pl-3 text-gray-600">
+                <div key={l.id} className="flex justify-between gap-2 text-[11px] pl-3 text-faint">
                   <span>├─ {l.client_name || 'Sem cliente'} {rotuloOrigem(l)} {l.month}/{l.year} → {CAT_LABEL[l.destination_category] || l.destination_category}</span>
                   <span className="font-mono">{fmt(l.amount)}</span>
                 </div>
@@ -2488,7 +2488,7 @@ export default function Financial() {
           ))}
         </div>
 
-        <p className="text-gray-700 text-[10px] leading-tight">
+        <p className="text-faintest text-[10px] leading-tight">
           O recorte é pela <strong>competência da origem</strong>, não pela data do pagamento:
           um pagamento feito em agosto consumindo saldo de janeiro aparece em janeiro, que é
           de onde o dinheiro veio.{' '}
@@ -2505,57 +2505,57 @@ export default function Financial() {
     return (
       <div className="space-y-3">
         {/* ── Seção 1: os totais a distribuir ── */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-3">
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-3">
           <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
             {/* NÃO chamar de "Valores a distribuir": esse nome é da seção do modal
                 "Receber", que mostra o que a competência ainda DEVE. Aqui são os valores
                 que se está DIGITANDO. Os dois nomes iguais na mesma tela fizeram procurar
                 a seção verde (que mora no modal) aqui na aba, onde ela nunca existiu. */}
-            <p className="text-[11px] uppercase tracking-wide text-gray-500">💸 Valores a lançar</p>
-            <span className="text-xs text-gray-500">
-              Total <span className="text-green-400 font-mono font-semibold">{fmt(tabTotalDigitado)}</span>
-              {tabLoading && <span className="text-gray-600"> · calculando…</span>}
+            <p className="text-[11px] uppercase tracking-wide text-subtle">💸 Valores a lançar</p>
+            <span className="text-xs text-subtle">
+              Total <span className="text-green-700 dark:text-green-400 font-mono font-semibold">{fmt(tabTotalDigitado)}</span>
+              {tabLoading && <span className="text-faint"> · calculando…</span>}
             </span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {RECEIVE_VICTOR_CATEGORIES.map(([k, label]) => (
               <div key={k} className="flex flex-col gap-1">
-                <label className="text-[10px] text-gray-500">{label}</label>
+                <label className="text-[10px] text-subtle">{label}</label>
                 <input
                   type="number" step="0.01" min="0" placeholder="0,00"
                   value={tabInputs[k]}
                   onChange={e => setTabInputs(p => ({ ...p, [k]: e.target.value }))}
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs text-right placeholder-gray-600 focus:outline-none focus:border-blue-500"
+                  className="bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs text-right placeholder-faint focus:outline-none focus:border-blue-500"
                 />
               </div>
             ))}
           </div>
-          <p className="text-gray-600 text-[10px] mt-2">
+          <p className="text-faint text-[10px] mt-2">
             Cada total é rateado pelo peso da NF de cada cliente e absorvido na ordem
             Escritório → DAS → INSS → Lucro → Serviço; o que não couber num cliente desce
-            para o próximo. <strong className="text-gray-500">Esta visão é leitura</strong> —
+            para o próximo. <strong className="text-subtle">Esta visão é leitura</strong> —
             o pagamento é registrado na visão Cards.
           </p>
         </div>
 
-        {tabErro && <p className="text-red-400 text-xs">{tabErro}</p>}
+        {tabErro && <p className="text-red-700 dark:text-red-400 text-xs">{tabErro}</p>}
 
         {/* ── Seção 2: a distribuição ── */}
         {!d ? (
-          <div className="text-gray-600 text-sm text-center py-6">
+          <div className="text-faint text-sm text-center py-6">
             {tabLoading ? 'Calculando distribuição…' : 'Sem distribuição para este recorte.'}
           </div>
         ) : d.distribution.length === 0 ? (
-          <div className="text-gray-600 text-sm text-center py-6">
+          <div className="text-faint text-sm text-center py-6">
             Nenhum cliente com NF neste recorte.
           </div>
         ) : (
           <>
-            <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+            <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-[10px] uppercase tracking-wide text-gray-500 border-b border-gray-800">
+                    <tr className="text-[10px] uppercase tracking-wide text-subtle border-b border-border">
                       <th className="text-left font-medium px-3 py-2">Cliente</th>
                       <th className="text-left font-medium px-3 py-2">Categoria</th>
                       <th className="text-right font-medium px-3 py-2">Bruto</th>
@@ -2572,32 +2572,32 @@ export default function Financial() {
                           return (
                             <tr key={r.category}
                               className={sub
-                                ? 'bg-gray-950/60 border-b border-gray-800 font-medium'
-                                : 'border-b border-gray-800/40 hover:bg-gray-800/20'}>
-                              <td className="px-3 py-1.5 text-gray-400 whitespace-nowrap">
+                                ? 'bg-bg/60 border-b border-border font-medium'
+                                : 'border-b border-border/40 hover:bg-surface-2/20'}>
+                              <td className="px-3 py-1.5 text-muted whitespace-nowrap">
                                 {c.client_name}
                                 {/* candidatosDisponiveis() recusaria o pagamento enquanto o
                                     cliente não pagar o recebível. A tabela não bloqueia
                                     nada, mas omitir isso faria o LÍQUIDO prometer um
                                     pagamento que o motor não faria. */}
                                 {r.category === 'escritorio' && !c.disponivel && (
-                                  <span className="ml-2 px-1.5 py-0.5 bg-gray-700 text-gray-400 text-[10px] rounded-full">
+                                  <span className="ml-2 px-1.5 py-0.5 bg-surface-3 text-muted text-[10px] rounded-full">
                                     aguardando cliente
                                   </span>
                                 )}
                               </td>
-                              <td className={`px-3 py-1.5 ${sub ? 'text-gray-300' : 'text-gray-500'}`}>
+                              <td className={`px-3 py-1.5 ${sub ? 'text-text-3' : 'text-subtle'}`}>
                                 {TAB_LINHA_LABEL[r.category] || r.category}
                               </td>
-                              <td className="px-3 py-1.5 text-right font-mono text-gray-400">{fmt(r.bruto)}</td>
-                              <td className="px-3 py-1.5 text-right text-blue-400/70">
+                              <td className="px-3 py-1.5 text-right font-mono text-muted">{fmt(r.bruto)}</td>
+                              <td className="px-3 py-1.5 text-right text-blue-700 dark:text-blue-400/70">
                                 {TAB_COM_PERCENTUAL.has(r.category) && r.percentual != null
                                   ? `${r.percentual.toFixed(2)}%`
-                                  : <span className="text-gray-700">—</span>}
+                                  : <span className="text-faintest">—</span>}
                               </td>
                               <td className={`px-3 py-1.5 text-right font-mono ${
-                                r.liquido <= 0.005 && r.bruto > 0.005 ? 'text-green-400'
-                                  : sub ? 'text-white' : 'text-gray-200'}`}>
+                                r.liquido <= 0.005 && r.bruto > 0.005 ? 'text-green-700 dark:text-green-400'
+                                  : sub ? 'text-text' : 'text-text-2'}`}>
                                 {fmt(r.liquido)}
                               </td>
                               <td className="px-3 py-1.5 whitespace-nowrap">{tabStatusCell(r.status)}</td>
@@ -2607,24 +2607,24 @@ export default function Financial() {
                         {/* FAB: sai da FATURA e é pago na aba do Fabrício. Fora de todos os
                             totais — somá-lo aqui acrescentaria à conta do Victor um valor
                             que nunca passa por ela. */}
-                        <tr className="border-b-2 border-gray-800 bg-gray-950/30">
-                          <td className="px-3 py-1 text-gray-700 text-[11px]"></td>
-                          <td className="px-3 py-1 text-gray-600 text-[11px]">FAB</td>
-                          <td className="px-3 py-1 text-right text-gray-700">—</td>
-                          <td className="px-3 py-1 text-right text-gray-700">—</td>
-                          <td className="px-3 py-1 text-right font-mono text-gray-600">{fmt(c.fabricio_share)}</td>
-                          <td className="px-3 py-1 text-gray-700 text-[11px]">aba Pagar Fab</td>
+                        <tr className="border-b-2 border-border bg-bg/30">
+                          <td className="px-3 py-1 text-faintest text-[11px]"></td>
+                          <td className="px-3 py-1 text-faint text-[11px]">FAB</td>
+                          <td className="px-3 py-1 text-right text-faintest">—</td>
+                          <td className="px-3 py-1 text-right text-faintest">—</td>
+                          <td className="px-3 py-1 text-right font-mono text-faint">{fmt(c.fabricio_share)}</td>
+                          <td className="px-3 py-1 text-faintest text-[11px]">aba Pagar Fab</td>
                         </tr>
                       </Fragment>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t border-gray-700 text-xs">
-                      <td className="px-3 py-2 text-gray-400 font-medium" colSpan={2}>Total</td>
-                      <td className="px-3 py-2 text-right font-mono text-gray-300">{fmt(d.totals.total_bruto)}</td>
+                    <tr className="border-t border-border-strong text-xs">
+                      <td className="px-3 py-2 text-muted font-medium" colSpan={2}>Total</td>
+                      <td className="px-3 py-2 text-right font-mono text-text-3">{fmt(d.totals.total_bruto)}</td>
                       <td className="px-3 py-2"></td>
-                      <td className="px-3 py-2 text-right font-mono text-white font-semibold">{fmt(d.totals.total_liquido)}</td>
-                      <td className="px-3 py-2 text-green-400 text-[11px] whitespace-nowrap">
+                      <td className="px-3 py-2 text-right font-mono text-text font-semibold">{fmt(d.totals.total_liquido)}</td>
+                      <td className="px-3 py-2 text-green-700 dark:text-green-400 text-[11px] whitespace-nowrap">
                         absorvido {fmt(d.totals.total_paid)}
                       </td>
                     </tr>
@@ -2636,20 +2636,20 @@ export default function Financial() {
             {/* ── Avisos: cada um cobre um jeito de a tabela parecer errada ── */}
             <div className="space-y-1">
               {d.totals.nao_coberto > 0.005 && (
-                <p className="text-amber-400/80 text-[11px]">
+                <p className="text-amber-700 dark:text-amber-400/80 text-[11px]">
                   ⚠️ {fmt(d.totals.nao_coberto)} não encontrou lançamento onde entrar — o total
                   digitado passou do que os clientes deste recorte devem.
                 </p>
               )}
               {d.rateio?.origem_peso === 'nf' && (
-                <p className="text-amber-400/80 text-[11px]">
+                <p className="text-amber-700 dark:text-amber-400/80 text-[11px]">
                   ⚠️ Competência ainda não apurada: sem rateio de DAS/INSS/Escritório, o peso
                   saiu do valor da NF e os valores digitados caem em Lucro/Serviço. Apure em{' '}
                   <strong>/fiscal</strong>.
                 </p>
               )}
               {d.rateio?.soma_percentual != null && d.rateio.soma_percentual < 99.5 && (
-                <p className="text-amber-400/80 text-[11px]">
+                <p className="text-amber-700 dark:text-amber-400/80 text-[11px]">
                   ⚠️ Os clientes em tela somam {d.rateio.soma_percentual.toFixed(2)}% das guias
                   da competência — o resto é de nota fora deste recorte. O valor digitado foi
                   repartido só entre os presentes.
@@ -2658,7 +2658,7 @@ export default function Financial() {
               {/* Sem esta linha a Minas some da tela sem explicação e o total da tabela
                   não bate com o total da aba, logo acima. */}
               {d.excluidos?.length > 0 && (
-                <p className="text-gray-600 text-[11px]">
+                <p className="text-faint text-[11px]">
                   Fora da tabela: {d.excluidos.map(e => `${e.client_name} (${fmt(e.subtotal_receber)})`).join(', ')} —
                   contrato sem NF, não entra no rateio de DAS/INSS/Escritório e é pago à parte.
                 </p>
@@ -2686,29 +2686,29 @@ export default function Financial() {
       const atual = M.atual === chave
       if (!m) {
         return (
-          <div key={chave} className="flex-1 min-w-[8.5rem] rounded-lg p-2 bg-gray-950/40 border border-dashed border-gray-800">
-            <p className="text-[10px] uppercase tracking-wide text-gray-600">{titulo}</p>
-            <p className="text-sm text-gray-700 mt-1">aguardando</p>
-            <p className="text-[10px] text-gray-700 mt-0.5">{legenda}</p>
+          <div key={chave} className="flex-1 min-w-[8.5rem] rounded-lg p-2 bg-bg/40 border border-dashed border-border">
+            <p className="text-[10px] uppercase tracking-wide text-faint">{titulo}</p>
+            <p className="text-sm text-faintest mt-1">aguardando</p>
+            <p className="text-[10px] text-faintest mt-0.5">{legenda}</p>
           </div>
         )
       }
       return (
-        <div key={chave} className={`flex-1 min-w-[8.5rem] rounded-lg p-2 border ${atual ? 'bg-blue-500/10 border-blue-500/40' : 'bg-gray-950/60 border-gray-800'}`}>
-          <p className={`text-[10px] uppercase tracking-wide ${atual ? 'text-blue-300' : 'text-gray-500'}`}>
+        <div key={chave} className={`flex-1 min-w-[8.5rem] rounded-lg p-2 border ${atual ? 'bg-blue-50 dark:bg-blue-500/10 border-blue-300 dark:border-blue-500/40' : 'bg-bg/60 border-border'}`}>
+          <p className={`text-[10px] uppercase tracking-wide ${atual ? 'text-blue-700 dark:text-blue-300' : 'text-subtle'}`}>
             {titulo}{atual && ' · vigente'}
           </p>
-          <p className="text-sm font-mono text-white mt-1">{fmt(m.total)}</p>
-          <div className="text-[10px] font-mono text-gray-500 mt-1 space-y-0.5">
+          <p className="text-sm font-mono text-text mt-1">{fmt(m.total)}</p>
+          <div className="text-[10px] font-mono text-subtle mt-1 space-y-0.5">
             <div className="flex justify-between"><span className="font-sans">DAS</span><span>{fmt(m.das)}</span></div>
             <div className="flex justify-between"><span className="font-sans">INSS</span><span>{fmt(m.inss)}</span></div>
             <div className="flex justify-between"><span className="font-sans">Escritório</span><span>{fmt(m.escritorio)}</span></div>
           </div>
-          <p className="text-[10px] text-gray-600 mt-1">{legenda}</p>
+          <p className="text-[10px] text-faint mt-1">{legenda}</p>
           {/* Guia parcial: algumas categorias já têm valor oficial, outras não. Sem dizer
               quais, o total do Momento 3 pareceria já ser o definitivo. */}
           {chave === 'final' && m.aguardando_guia?.length > 0 && (
-            <p className="text-[10px] text-amber-400/70 mt-0.5">
+            <p className="text-[10px] text-amber-700 dark:text-amber-400/70 mt-0.5">
               {m.aguardando_guia.map(k => BREAKDOWN_LABEL[k]).join(', ')} ainda no estimado
             </p>
           )}
@@ -2717,13 +2717,13 @@ export default function Financial() {
     }
     // Delta positivo = o imposto caiu, e a diferença fica com o Victor.
     const delta = (v, de, para) => v == null || Math.abs(v) < 0.005 ? null : (
-      <span className={v > 0 ? 'text-green-400' : 'text-red-400'}>
+      <span className={v > 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
         {de} → {para}: {v > 0 ? '+' : '−'}{fmt(Math.abs(v))} {v > 0 ? 'para o lucro' : 'a mais de imposto'}
       </span>
     )
     return (
       <details className="pt-2" open>
-        <summary className="text-[11px] text-gray-500 cursor-pointer hover:text-gray-300">🕒 Os três momentos do imposto</summary>
+        <summary className="text-[11px] text-subtle cursor-pointer hover:text-text-3">🕒 Os três momentos do imposto</summary>
         <div className="mt-2 flex gap-2 flex-wrap">
           {col('previo', '1 · Prévio', 'provisão de 7% retida na NF')}
           {col('real', '2 · Real', 'apuração: alíquota efetiva do Simples')}
@@ -2749,29 +2749,29 @@ export default function Financial() {
     if (!h.length) return null
     return (
       <details className="pt-2">
-        <summary className="text-[11px] text-gray-500 cursor-pointer hover:text-gray-300">
+        <summary className="text-[11px] text-subtle cursor-pointer hover:text-text-3">
           🧾 Histórico de pagamentos ({h.length})
         </summary>
-        <div className="mt-2 space-y-0.5 text-[11px] font-mono bg-gray-950/60 rounded-lg p-2">
-          <div className="flex justify-between text-gray-600 pb-1 border-b border-gray-800">
+        <div className="mt-2 space-y-0.5 text-[11px] font-mono bg-bg/60 rounded-lg p-2">
+          <div className="flex justify-between text-faint pb-1 border-b border-border">
             <span className="font-sans">Saldo inicial</span>
             <span>{fmt(h[0].saldo + h[0].valor)}</span>
           </div>
           {h.map(p => (
             <div key={p.payment_id} className="flex justify-between gap-2 py-0.5">
-              <span className="font-sans text-gray-400 min-w-0 truncate">
+              <span className="font-sans text-muted min-w-0 truncate">
                 {p.data.split('-').reverse().join('/')}
                 {/* Categorias parseadas de notes pela inversa de montarNotes() — no
                     backend, para o formato ter um dono só. */}
                 {Object.keys(p.categorias || {}).length > 0 && (
-                  <span className="text-gray-600"> · {Object.entries(p.categorias)
+                  <span className="text-faint"> · {Object.entries(p.categorias)
                     .map(([k, v]) => `${CAT_LABEL[k] || k} ${fmt(v)}`).join(', ')}</span>
                 )}
               </span>
               <span className="shrink-0">
-                <span className="text-red-400/80">−{fmt(p.valor)}</span>
-                <span className="text-gray-600"> → </span>
-                <span className="text-gray-300">{fmt(p.saldo)}</span>
+                <span className="text-red-700 dark:text-red-400/80">−{fmt(p.valor)}</span>
+                <span className="text-faint"> → </span>
+                <span className="text-text-3">{fmt(p.saldo)}</span>
               </span>
             </div>
           ))}
@@ -2791,18 +2791,18 @@ export default function Financial() {
     ]
     return (
       <details className="pt-2">
-        <summary className="text-[11px] text-gray-500 cursor-pointer hover:text-gray-300">💰 Cascata do lucro</summary>
-        <div className="mt-2 space-y-0.5 text-[11px] font-mono bg-gray-950/60 rounded-lg p-2">
+        <summary className="text-[11px] text-subtle cursor-pointer hover:text-text-3">💰 Cascata do lucro</summary>
+        <div className="mt-2 space-y-0.5 text-[11px] font-mono bg-bg/60 rounded-lg p-2">
           {linhas.map(([label, valor, indent]) => (
-            <div key={label} className={`flex justify-between ${indent ? 'text-gray-500 pl-3' : 'text-gray-400'}`}>
+            <div key={label} className={`flex justify-between ${indent ? 'text-subtle pl-3' : 'text-muted'}`}>
               <span className="font-sans">{label}</span><span>{fmt(valor)}</span>
             </div>
           ))}
-          <div className={`flex justify-between border-t border-gray-700 pt-1 font-semibold ${c.cascata.lucro_final < 0 ? 'text-red-400' : 'text-white'}`}>
+          <div className={`flex justify-between border-t border-border-strong pt-1 font-semibold ${c.cascata.lucro_final < 0 ? 'text-red-700 dark:text-red-400' : 'text-text'}`}>
             <span className="font-sans">= Lucro final</span><span>{fmt(c.cascata.lucro_final)}</span>
           </div>
           {c.cascata.capital_proprio > 0 && (
-            <div className="flex justify-between text-yellow-400 pt-1">
+            <div className="flex justify-between text-yellow-700 dark:text-yellow-400 pt-1">
               <span className="font-sans">Capital próprio (injetar)</span><span>{fmt(c.cascata.capital_proprio)}</span>
             </div>
           )}
@@ -2820,56 +2820,56 @@ export default function Financial() {
     const b = item?.breakdown
     if (!b) {
       return (
-        <div className="mb-5 p-3 bg-gray-800/40 border border-gray-700/60 rounded-xl">
-          <p className="text-gray-500 text-xs">
+        <div className="mb-5 p-3 bg-surface-2/40 border border-border-strong/60 rounded-xl">
+          <p className="text-subtle text-xs">
             Lançamento manual — sem fatura por trás, não há demonstrativo de cálculo.
           </p>
         </div>
       )
     }
     const linha = (label, valor, opts = {}) => (
-      <div className={`flex justify-between ${opts.className || 'text-gray-400'}`}>
+      <div className={`flex justify-between ${opts.className || 'text-muted'}`}>
         <span className="font-sans">{label}</span>
         <span>{fmt(valor)}</span>
       </div>
     )
     return (
-      <div className="mb-5 p-3 bg-gray-900/60 rounded-xl border border-gray-700/70">
+      <div className="mb-5 p-3 bg-surface/60 rounded-xl border border-border-strong/70">
         <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-          <p className="text-[11px] uppercase tracking-wide text-gray-500">🧮 Demonstrativo de cálculo</p>
-          <span className="text-[11px] text-gray-500">{b.tipo_label}</span>
+          <p className="text-[11px] uppercase tracking-wide text-subtle">🧮 Demonstrativo de cálculo</p>
+          <span className="text-[11px] text-subtle">{b.tipo_label}</span>
         </div>
 
         <div className="space-y-1 text-xs font-mono">
-          {linha('Faturamento bruto', b.bruto, { className: 'text-gray-300' })}
+          {linha('Faturamento bruto', b.bruto, { className: 'text-text-3' })}
 
           {/* Por hora: o imposto sai do bruto antes de qualquer divisão. */}
           {b.imposto_antes_do_split && (
             <>
-              {linha(`− Imposto (${b.imposto_pct}%)`, b.imposto, { className: 'text-gray-500 pl-3' })}
-              <div className="flex justify-between text-gray-400 border-t border-gray-800 pt-1">
+              {linha(`− Imposto (${b.imposto_pct}%)`, b.imposto, { className: 'text-subtle pl-3' })}
+              <div className="flex justify-between text-muted border-t border-border pt-1">
                 <span className="font-sans">= Líquido</span>
                 <span>{fmt(b.liquido)}</span>
               </div>
             </>
           )}
 
-          {linha('− Serviço Victor', b.victor_servico, { className: 'text-gray-500 pl-3' })}
+          {linha('− Serviço Victor', b.victor_servico, { className: 'text-subtle pl-3' })}
 
           {/* Deslocamento é 100% Victor e fica FORA do split — por isso aparece como
               dedução, não como parte da divisão. */}
           {b.deslocamento !== 0 && (
-            linha('− Deslocamento (100% Victor)', b.deslocamento, { className: 'text-gray-500 pl-3' })
+            linha('− Deslocamento (100% Victor)', b.deslocamento, { className: 'text-subtle pl-3' })
           )}
 
-          <div className="flex justify-between text-white font-semibold border-t border-gray-700 pt-1">
+          <div className="flex justify-between text-text font-semibold border-t border-border-strong pt-1">
             <span className="font-sans">= Lucro a dividir</span>
             <span>{fmt(b.lucro_a_dividir)}</span>
           </div>
 
           <div className="pt-2 space-y-1">
-            {linha(`Victor (${b.victor_pct}%)`, b.victor_lucro, { className: 'text-gray-400 pl-3' })}
-            <div className="flex justify-between text-green-400 font-semibold pl-3">
+            {linha(`Victor (${b.victor_pct}%)`, b.victor_lucro, { className: 'text-muted pl-3' })}
+            <div className="flex justify-between text-green-700 dark:text-green-400 font-semibold pl-3">
               <span className="font-sans">Fabrício ({b.fabricio_pct}%)</span>
               <span>{fmt(b.fabricio)} {b.confere && '✓'}</span>
             </div>
@@ -2878,7 +2878,7 @@ export default function Financial() {
           {/* Contrato fixo: o imposto existe, mas não entra no split. Mostrado à parte
               para não parecer que foi esquecido. */}
           {!b.imposto_antes_do_split && b.imposto > 0 && (
-            <div className="flex justify-between text-gray-600 border-t border-gray-800 pt-1 mt-1">
+            <div className="flex justify-between text-faint border-t border-border pt-1 mt-1">
               <span className="font-sans">Imposto ({b.imposto_pct}% da NF)</span>
               <span>{fmt(b.imposto)}</span>
             </div>
@@ -2886,7 +2886,7 @@ export default function Financial() {
 
           {/* Gross-up do imposto do cliente: majora a NF e vai 100% para o Victor. */}
           {b.diff_nf > 0 && (
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-faint">
               <span className="font-sans">Gross-up da NF (100% Victor)</span>
               <span>{fmt(b.diff_nf)}</span>
             </div>
@@ -2894,12 +2894,12 @@ export default function Financial() {
         </div>
 
         {!b.imposto_antes_do_split && (
-          <p className="text-gray-600 text-[11px] mt-2 leading-tight">
+          <p className="text-faint text-[11px] mt-2 leading-tight">
             Em contrato fixo o imposto não é descontado antes da divisão — ele sai da parte do Victor.
           </p>
         )}
         {!b.confere && (
-          <p className="text-red-400 text-[11px] mt-2 leading-tight">
+          <p className="text-red-700 dark:text-red-400 text-[11px] mt-2 leading-tight">
             ⚠️ A decomposição não fecha com o faturamento (diferença de {fmt(b.desvio)}).
           </p>
         )}
@@ -2942,8 +2942,8 @@ export default function Financial() {
 
   const statusFilter = (
     <div className="flex gap-2 items-center">
-      <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Status:</span>
-      <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500">
+      <span className="text-subtle text-xs uppercase tracking-wider mr-1">Status:</span>
+      <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="bg-surface-2 border border-border-strong rounded-lg px-3 py-1.5 text-text text-sm focus:outline-none focus:border-blue-500">
         <option value="all">Todos</option>
         <option value="pendente_parcial">Pendente / Parcial</option>
         <option value="pago">Pago</option>
@@ -2985,8 +2985,8 @@ export default function Financial() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Financeiro</h2>
-          <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
+          <h2 className="text-2xl font-bold text-text">Financeiro</h2>
+          <p className="text-muted text-sm mt-1">{activeCompany.name}</p>
         </div>
         <div className="flex gap-2">
           {tab !== 'historico' && (
@@ -2997,11 +2997,11 @@ export default function Financial() {
 
       {/* Toggle das 3 visões de data */}
       <div className="flex gap-2 mb-4 items-center">
-        <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Visão:</span>
-        <div className="flex gap-1 bg-gray-900 p-1 rounded-xl w-fit">
+        <span className="text-subtle text-xs uppercase tracking-wider mr-1">Visão:</span>
+        <div className="flex gap-1 bg-surface p-1 rounded-xl w-fit">
           {MODOS.map(([key, label, hint]) => (
             <button key={key} onClick={() => setMode(key)} title={hint}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === key ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}>
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === key ? 'bg-blue-600 text-white' : 'text-muted hover:text-text'}`}>
               {label}
             </button>
           ))}
@@ -3010,17 +3010,17 @@ export default function Financial() {
 
       {/* Filtro de mês (aplicado a todas as abas) */}
       <div className="flex gap-2 mb-6 flex-wrap items-center">
-        <button onClick={() => setFilterMonth('')} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === '' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>Todos</button>
+        <button onClick={() => setFilterMonth('')} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === '' ? 'bg-blue-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'}`}>Todos</button>
         {months.map((m, i) => (
-          <button key={i} onClick={() => setFilterMonth(i+1)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === i+1 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{m}</button>
+          <button key={i} onClick={() => setFilterMonth(i+1)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === i+1 ? 'bg-blue-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'}`}>{m}</button>
         ))}
-        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none"/>
+        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs focus:outline-none"/>
       </div>
 
       {/* Abas */}
-      <div className="flex gap-1 mb-6 bg-gray-900 p-1 rounded-xl w-fit">
+      <div className="flex gap-1 mb-6 bg-surface p-1 rounded-xl w-fit">
         {[['receivables','💰 A Receber'],['fabricio','👷 Pagar Fab'],['victor','👤 Pagar Victor'],['historico','📜 Histórico']].map(([key,label]) => (
-          <button key={key} onClick={() => setTab(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white'}`}>{label}</button>
+          <button key={key} onClick={() => setTab(key)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === key ? 'bg-surface-3 text-text' : 'text-muted hover:text-text'}`}>{label}</button>
         ))}
       </div>
 
@@ -3031,45 +3031,45 @@ export default function Financial() {
         const gridCols = cardCount >= 5 ? 'grid-cols-2 md:grid-cols-5' : cardCount === 4 ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-3'
         return (
       <div className={`grid ${gridCols} gap-4 mb-6`}>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">Total previsto</p>
-          <p className="text-white text-lg font-bold">{fmt(totalAmount)}</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+          <p className="text-muted text-xs mb-1">Total previsto</p>
+          <p className="text-text text-lg font-bold">{fmt(totalAmount)}</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">Total pago</p>
-          <p className="text-green-400 text-lg font-bold">{fmt(totalPaid)}</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+          <p className="text-muted text-xs mb-1">Total pago</p>
+          <p className="text-green-700 dark:text-green-400 text-lg font-bold">{fmt(totalPaid)}</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">Em aberto</p>
-          <p className="text-yellow-400 text-lg font-bold">{fmt(totalOpen)}</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+          <p className="text-muted text-xs mb-1">Em aberto</p>
+          <p className="text-yellow-700 dark:text-yellow-400 text-lg font-bold">{fmt(totalOpen)}</p>
           {/* Sem esta linha, o card e a tabela tabulada mostram números diferentes para o
               mesmo mês e nada explica a distância. */}
           {abertoSemNf > 0.005 && (
-            <p className="text-gray-500 text-[10px] leading-tight mt-1">
-              inclui <span className="text-gray-400">{fmt(abertoSemNf)}</span> de contrato sem NF —
-              a tabela por cliente mostra <span className="text-gray-400">{fmt(totalOpen - abertoSemNf)}</span>,
+            <p className="text-subtle text-[10px] leading-tight mt-1">
+              inclui <span className="text-muted">{fmt(abertoSemNf)}</span> de contrato sem NF —
+              a tabela por cliente mostra <span className="text-muted">{fmt(totalOpen - abertoSemNf)}</span>,
               que exclui esses (não têm rateio de imposto).
             </p>
           )}
         </div>
         {previewTotal > 0 && (
-          <div className="bg-gray-900/40 border border-dashed border-gray-700 rounded-xl p-4">
-            <p className="text-gray-400 text-xs mb-1">🔮 Previsto cliente</p>
-            <p className="text-gray-300 text-lg font-bold">{fmt(previewTotal)}</p>
+          <div className="bg-surface/40 border border-dashed border-border-strong rounded-xl p-4">
+            <p className="text-muted text-xs mb-1">🔮 Previsto cliente</p>
+            <p className="text-text-3 text-lg font-bold">{fmt(previewTotal)}</p>
           </div>
         )}
         {tab === 'victor' && (
           <button
             onClick={openReceive}
             title={reservesLista.map(([k, v]) => `${RESERVA_LABEL[k] || k}: ${fmt(v)}`).join(' | ') || 'Nada apurado neste mês'}
-            className="text-left bg-gray-900 border border-amber-500/30 rounded-xl p-4 hover:border-amber-500/60 transition-colors"
+            className="text-left bg-surface shadow-sm dark:shadow-none border border-amber-300 dark:border-amber-500/30 rounded-xl p-4 hover:border-amber-300 dark:hover:border-amber-500/60 transition-colors"
           >
-            <p className="text-gray-400 text-xs mb-1">🏦 Reservas do mês</p>
-            <p className={`text-lg font-bold ${reservesTotal > 0 ? 'text-orange-400' : 'text-gray-500'}`}>{fmt(reservesTotal)}</p>
+            <p className="text-muted text-xs mb-1">🏦 Reservas do mês</p>
+            <p className={`text-lg font-bold ${reservesTotal > 0 ? 'text-orange-700 dark:text-orange-400' : 'text-subtle'}`}>{fmt(reservesTotal)}</p>
             {reservesTotal > 0 ? (
-              <p className="text-gray-500 text-[11px] mt-1 leading-tight">{reservesLista.map(([k, v]) => `${RESERVA_LABEL[k] || k}: ${fmt(v)}`).join(' | ')}</p>
+              <p className="text-subtle text-[11px] mt-1 leading-tight">{reservesLista.map(([k, v]) => `${RESERVA_LABEL[k] || k}: ${fmt(v)}`).join(' | ')}</p>
             ) : (
-              <p className="text-gray-600 text-[11px] mt-1">Nada em aberto na apuração</p>
+              <p className="text-faint text-[11px] mt-1">Nada em aberto na apuração</p>
             )}
           </button>
         )}
@@ -3077,7 +3077,7 @@ export default function Financial() {
         )
       })()}
 
-      <p className="text-gray-500 text-xs mb-4 -mt-2">
+      <p className="text-subtle text-xs mb-4 -mt-2">
         Visualizando por {MODO_LABEL[mode]}
         {mode === 'fiscal' && ' — lançamentos sem NF (manuais e linhas fiscais) caem na competência'}
       </p>
@@ -3093,7 +3093,7 @@ export default function Financial() {
                 title={filterStatus === 'pago'
                   ? 'Sem efeito no filtro "Pago": previsão é fatura que o cliente ainda não pagou'
                   : 'Inclui as faturas cujo cliente ainda não pagou, fora do total efetivado'}
-                className={`flex items-center gap-2 text-xs ${filterStatus === 'pago' ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 cursor-pointer hover:text-gray-300'}`}
+                className={`flex items-center gap-2 text-xs ${filterStatus === 'pago' ? 'text-faint cursor-not-allowed' : 'text-muted cursor-pointer hover:text-text-3'}`}
               >
                 <input
                   type="checkbox"
@@ -3149,13 +3149,13 @@ export default function Financial() {
 
       {/* Previsão de impostos — só Lumen, aba Pagar Victor */}
       {tab === 'victor' && taxPreview && (
-        <div className="bg-gray-900 border border-blue-500/30 rounded-xl p-5 mb-6">
+        <div className="bg-surface shadow-sm dark:shadow-none border border-blue-300 dark:border-blue-500/30 rounded-xl p-5 mb-6">
           <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
-            <h3 className="text-white font-semibold">📊 Previsão de Impostos — {months[refMonth-1]}/{refYear}</h3>
+            <h3 className="text-text font-semibold">📊 Previsão de Impostos — {months[refMonth-1]}/{refYear}</h3>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400">{taxPreview.regimeLabel}</span>
+              <span className="text-xs text-muted">{taxPreview.regimeLabel}</span>
               <button onClick={toggleMemoria} disabled={loadingMemoria}
-                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-200 rounded-lg text-xs font-medium">
+                className="px-3 py-1.5 bg-surface-2 hover:bg-surface-3 disabled:opacity-50 text-text-2 rounded-lg text-xs font-medium">
                 💡 {loadingMemoria ? 'Carregando...' : showMemoria ? 'Ocultar memória' : 'Como chegamos aqui?'}
               </button>
               {/* Só faz sentido com o mês apurado: a guia é lançada SOBRE uma obrigação
@@ -3168,45 +3168,45 @@ export default function Financial() {
             </div>
           </div>
           {erroMemoria && (
-            <p className="mb-3 text-red-300 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">⚠️ {erroMemoria}</p>
+            <p className="mb-3 text-red-700 dark:text-red-300 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">⚠️ {erroMemoria}</p>
           )}
           {msgImpostos && (
-            <p className="mb-3 text-green-300 text-xs bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2 flex items-start gap-2">
+            <p className="mb-3 text-green-700 dark:text-green-300 text-xs bg-green-50 dark:bg-green-500/10 border border-green-300 dark:border-green-500/30 rounded-lg px-3 py-2 flex items-start gap-2">
               <span className="flex-1">✅ {msgImpostos}</span>
-              <button onClick={() => setMsgImpostos('')} className="text-green-300/60 hover:text-green-200">✕</button>
+              <button onClick={() => setMsgImpostos('')} className="text-green-700 dark:text-green-300/60 hover:text-green-700 dark:hover:text-green-200">✕</button>
             </p>
           )}
           {mode === 'caixa' && (
-            <p className="text-amber-300/90 text-xs mb-3">💸 Impostos previstos para pagamento em {months[nextMonth-1]}/{nextYear}</p>
+            <p className="text-amber-700 dark:text-amber-300/90 text-xs mb-3">💸 Impostos previstos para pagamento em {months[nextMonth-1]}/{nextYear}</p>
           )}
           <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
-            <div className="flex justify-between col-span-2 border-b border-gray-800 pb-2 mb-1">
-              <span className="text-gray-400">Faturamento do mês (NF)</span>
-              <span className="text-white font-medium">{fmt(taxPreview.faturamentoMes)}</span>
+            <div className="flex justify-between col-span-2 border-b border-border pb-2 mb-1">
+              <span className="text-muted">Faturamento do mês (NF)</span>
+              <span className="text-text font-medium">{fmt(taxPreview.faturamentoMes)}</span>
             </div>
             {/* Sem faturamento não há Fator R: a razão folha/receita é uma divisão por zero
                 que o taxCalc devolve como 0, e o "Anexo V" resultante seria uma etiqueta
                 inventada num mês em que não há DAS nenhum a pagar. */}
             {taxPreview.fatorR != null && taxPreview.faturamentoMes > 0 ? (
               <div className="flex justify-between col-span-2 text-xs">
-                <span className="text-gray-500">Fator R</span>
-                <span className="text-gray-300">{(taxPreview.fatorR * 100).toFixed(1)}% → Anexo {taxPreview.anexo}</span>
+                <span className="text-subtle">Fator R</span>
+                <span className="text-text-3">{(taxPreview.fatorR * 100).toFixed(1)}% → Anexo {taxPreview.anexo}</span>
               </div>
             ) : taxPreview.faturamentoMes <= 0 && (
-              <p className="col-span-2 text-xs text-gray-500">
+              <p className="col-span-2 text-xs text-subtle">
                 Nenhuma NF neste mês — sem DAS. Sobra o INSS sobre o pró-labore no piso.
               </p>
             )}
             {taxPreview.itens.map((it) => (
               <div key={it.label} className="flex justify-between col-span-2 sm:col-span-1">
-                <span className="text-gray-400">{it.label}</span>
-                <span className="text-gray-200 font-mono">{fmt(it.value)}</span>
+                <span className="text-muted">{it.label}</span>
+                <span className="text-text-2 font-mono">{fmt(it.value)}</span>
               </div>
             ))}
           </div>
-          <div className="flex justify-between items-center border-t border-gray-800 mt-3 pt-3">
-            <span className="text-gray-300 font-medium">Total a reservar</span>
-            <span className="text-orange-400 text-lg font-bold">{fmt(taxPreview.total)}</span>
+          <div className="flex justify-between items-center border-t border-border mt-3 pt-3">
+            <span className="text-text-3 font-medium">Total a reservar</span>
+            <span className="text-orange-700 dark:text-orange-400 text-lg font-bold">{fmt(taxPreview.total)}</span>
           </div>
 
           {/* O bloco acima é PREVISÃO e continua sendo: ele estima a partir do
@@ -3219,18 +3219,18 @@ export default function Financial() {
             if (!lancadas.length) return null
             const totalGuias = lancadas.reduce((s, o) => s + (parseFloat(o.amount_actual) || 0), 0)
             return (
-              <div className="mt-3 pt-3 border-t border-gray-800">
+              <div className="mt-3 pt-3 border-t border-border">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-300 font-medium text-sm">📄 Guias oficiais lançadas</span>
-                  <span className="text-blue-300 font-bold">{fmt(totalGuias)}</span>
+                  <span className="text-text-3 font-medium text-sm">📄 Guias oficiais lançadas</span>
+                  <span className="text-blue-700 dark:text-blue-300 font-bold">{fmt(totalGuias)}</span>
                 </div>
-                <p className="text-gray-500 text-[11px] mt-1 leading-tight">
+                <p className="text-subtle text-[11px] mt-1 leading-tight">
                   {lancadas.map((o) => `${RESERVA_LABEL[o.kind] || o.kind}: ${fmt(o.amount_actual)}`).join(' | ')}
                 </p>
               </div>
             )
           })()}
-          <p className="text-gray-600 text-[11px] mt-3">
+          <p className="text-faint text-[11px] mt-3">
             ⚠️ Previsão estimada. Consulte seu contador. A base é o faturamento real deste mês
             {' '}(só NFs de contrato que emite nota), e a RBT12 é esse mês × 12. A apuração de
             {' '}<strong>/fiscal</strong> usa a RBT12 dos 12 meses reais e agrupa a NF pela data de emissão —
@@ -3254,7 +3254,7 @@ export default function Financial() {
                   calculo={calculoMemoria}
                   competencia={`${months[refMonth-1]}/${refYear}`}
                   aviso={(baseDif || totalDif) && (
-                    <p className="mb-4 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                    <p className="mb-4 text-amber-700 dark:text-amber-300 text-xs bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-3 py-2">
                       ⚠️ O card acima ({fmt(taxPreview.total)}) e esta memória ({fmt(calculoMemoria.total.calculado)}) não batem.
                       {baseDif && <>
                         {' '}A base é outra: o card soma {fmt(taxPreview.faturamentoMes)} pelo mês de referência da
@@ -3273,8 +3273,8 @@ export default function Financial() {
         </div>
       )}
 
-      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : (currentData.length === 0 && previewData.length === 0) ? (
-        <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">📂</p><p>Nenhum registro encontrado.</p></div>
+      {loading ? <div className="text-subtle text-sm">Carregando...</div> : (currentData.length === 0 && previewData.length === 0) ? (
+        <div className="text-center py-16 text-faint"><p className="text-4xl mb-3">📂</p><p>Nenhum registro encontrado.</p></div>
       ) : (
         <div className="space-y-6">
           {/* Obrigações fiscais da competência — espelho de fiscal_obligations.
@@ -3283,16 +3283,16 @@ export default function Financial() {
               A quitação é em /fiscal, que é o único lugar que registra fiscal_payments —
               dois canais de pagamento para a mesma guia fariam um dos dois mentir. */}
           {fiscalData.length > 0 && (
-            <div className="space-y-2 bg-gray-900/40 border border-orange-500/20 rounded-xl p-3">
+            <div className="space-y-2 bg-surface/40 border border-orange-300 dark:border-orange-500/20 rounded-xl p-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <p className="text-xs font-medium uppercase tracking-wider text-orange-400/80">🏛️ Obrigações fiscais</p>
-                <span className="text-xs text-gray-500">
-                  Em aberto: <span className="text-orange-400 font-medium">
+                <p className="text-xs font-medium uppercase tracking-wider text-orange-700 dark:text-orange-400/80">🏛️ Obrigações fiscais</p>
+                <span className="text-xs text-subtle">
+                  Em aberto: <span className="text-orange-700 dark:text-orange-400 font-medium">
                     {fmt(fiscalData.reduce((s, r) => s + Math.max(saldoOf(r), 0), 0))}
                   </span>
                 </span>
               </div>
-              <p className="text-gray-600 text-[11px] -mt-1">
+              <p className="text-faint text-[11px] -mt-1">
                 O que a empresa deve na competência. Fora dos totais desta aba — quitação em <strong>/fiscal</strong>.
               </p>
               {[...fiscalData]
@@ -3302,17 +3302,17 @@ export default function Financial() {
                   return KIND_ORDEM.indexOf(a.kind) - KIND_ORDEM.indexOf(b.kind)   // kind ASC
                 })
                 .map(item => (
-                  <div key={item.id} className="flex items-center justify-between gap-3 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2">
+                  <div key={item.id} className="flex items-center justify-between gap-3 bg-surface border border-border rounded-lg px-3 py-2">
                     <div className="flex items-center gap-2 flex-wrap min-w-0">
-                      <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
-                      <span className="text-white text-sm truncate">{item.description}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status] || 'bg-gray-700 text-gray-400'}`}>{item.status}</span>
+                      <span className="text-subtle text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
+                      <span className="text-text text-sm truncate">{item.description}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[item.status] || 'bg-surface-3 text-muted'}`}>{item.status}</span>
                     </div>
                     <div className="flex items-baseline gap-3 shrink-0 text-xs">
                       {parseFloat(item.paid_amount) > 0 && (
-                        <span className="text-gray-500">Pago: <span className="text-green-400">{fmt(item.paid_amount)}</span></span>
+                        <span className="text-subtle">Pago: <span className="text-green-700 dark:text-green-400">{fmt(item.paid_amount)}</span></span>
                       )}
-                      <span className="text-gray-200 font-mono text-sm">{fmt(item.total_amount)}</span>
+                      <span className="text-text-2 font-mono text-sm">{fmt(item.total_amount)}</span>
                     </div>
                   </div>
                 ))}
@@ -3322,38 +3322,38 @@ export default function Financial() {
               As outras abas seguem na lista — só o Victor tem cascata e rateio a mostrar. */}
           {tab === 'victor' ? (
             bdLoading ? (
-              <div className="text-gray-500 text-sm">Carregando breakdown...</div>
+              <div className="text-subtle text-sm">Carregando breakdown...</div>
             ) : !breakdown || breakdown.clientes.length === 0 ? (
-              <div className="text-center py-10 text-gray-600 text-sm">Nenhum lançamento por cliente neste recorte.</div>
+              <div className="text-center py-10 text-faint text-sm">Nenhum lançamento por cliente neste recorte.</div>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <span className="flex items-center gap-2">
-                    <p className="text-xs font-medium uppercase tracking-wider text-green-400/80">👤 Por cliente</p>
+                    <p className="text-xs font-medium uppercase tracking-wider text-green-700 dark:text-green-400/80">👤 Por cliente</p>
                     {/* As duas visões leem o MESMO breakdown do backend — a tabela pelo
                         ?action=calcular-distribuicao, os cards pelo ?breakdown=true —,
                         então não têm como divergir no conjunto de clientes.
                         Só os Cards pagam: ver o comentário do estado tabView. */}
-                    <span className="flex gap-1 bg-gray-800 rounded-lg p-0.5">
+                    <span className="flex gap-1 bg-surface-2 rounded-lg p-0.5">
                       <button onClick={() => setTabView('tabela')}
-                        className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'tabela' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'tabela' ? 'bg-surface-3 text-text' : 'text-subtle hover:text-text-3'}`}
                       >📋 Tabela</button>
                       <button onClick={() => setTabView('cards')}
-                        className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'cards' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'cards' ? 'bg-surface-3 text-text' : 'text-subtle hover:text-text-3'}`}
                         title="Momentos do imposto, extrato por cliente e pagamento"
                       >🗂️ Cards</button>
                       <button onClick={() => setTabView('rastreio')}
-                        className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'rastreio' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                        className={`px-2 py-0.5 rounded text-[11px] ${tabView === 'rastreio' ? 'bg-surface-3 text-text' : 'text-subtle hover:text-text-3'}`}
                         title="De onde veio cada centavo e para onde foi (payment_sources)"
                       >🔎 Rastreio</button>
                     </span>
                   </span>
-                  <span className="text-xs text-gray-500">
-                    Receber <span className="text-white font-medium">{fmt(breakdown.totais.receber)}</span>
-                    <span className="text-gray-700"> · </span>
-                    Imposto <span className="text-orange-400 font-medium">{fmt(breakdown.totais.impostos)}</span>
-                    <span className="text-gray-700"> · </span>
-                    Saída <span className="text-white font-semibold">{fmt(breakdown.totais.saida)}</span>
+                  <span className="text-xs text-subtle">
+                    Receber <span className="text-text font-medium">{fmt(breakdown.totais.receber)}</span>
+                    <span className="text-faintest"> · </span>
+                    Imposto <span className="text-orange-700 dark:text-orange-400 font-medium">{fmt(breakdown.totais.impostos)}</span>
+                    <span className="text-faintest"> · </span>
+                    Saída <span className="text-text font-semibold">{fmt(breakdown.totais.saida)}</span>
                   </span>
                 </div>
 
@@ -3361,21 +3361,21 @@ export default function Financial() {
                     bloco próprio abaixo, senão o "prévio" cobriria um conjunto maior que
                     o "real" e a diferença entre eles deixaria de ser a alíquota. */}
                 {breakdown.momentos?.previo != null && (
-                  <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-3">
+                  <div className="bg-surface/60 border border-border rounded-xl p-3">
                     <div className="flex items-center gap-3 flex-wrap text-xs">
-                      <span className="text-[11px] uppercase tracking-wide text-gray-500">🕒 Imposto do recorte</span>
-                      <span className="text-gray-500">1 · Prévio <span className="text-gray-200 font-mono">{fmt(breakdown.momentos.previo)}</span></span>
-                      <span className="text-gray-700">→</span>
-                      <span className="text-gray-500">2 · Real <span className="text-gray-200 font-mono">{fmt(breakdown.momentos.real)}</span></span>
-                      <span className="text-gray-700">→</span>
-                      <span className="text-gray-500">3 · Final{' '}
+                      <span className="text-[11px] uppercase tracking-wide text-subtle">🕒 Imposto do recorte</span>
+                      <span className="text-subtle">1 · Prévio <span className="text-text-2 font-mono">{fmt(breakdown.momentos.previo)}</span></span>
+                      <span className="text-faintest">→</span>
+                      <span className="text-subtle">2 · Real <span className="text-text-2 font-mono">{fmt(breakdown.momentos.real)}</span></span>
+                      <span className="text-faintest">→</span>
+                      <span className="text-subtle">3 · Final{' '}
                         {breakdown.momentos.final == null
-                          ? <span className="text-gray-700">aguardando guia</span>
-                          : <span className="text-gray-200 font-mono">{fmt(breakdown.momentos.final)}</span>}
+                          ? <span className="text-faintest">aguardando guia</span>
+                          : <span className="text-text-2 font-mono">{fmt(breakdown.momentos.final)}</span>}
                       </span>
                     </div>
                     {breakdown.caixa?.bloqueado > 0.005 && (
-                      <p className="text-amber-400/80 text-[11px] mt-2">
+                      <p className="text-amber-700 dark:text-amber-400/80 text-[11px] mt-2">
                         🔒 {fmt(breakdown.caixa.bloqueado)} em caixa posterior a{' '}
                         {months[breakdown.caixa.mes_referencia - 1]}/{breakdown.caixa.ano_referencia} —
                         aparece no card, mas não pode ser pago ainda.
@@ -3395,8 +3395,8 @@ export default function Financial() {
                     nem o Pagar, e conclui que os botões sumiram. Dizer onde eles estão custa
                     duas linhas e evita a busca. */}
                 {tabView === 'tabela' && (
-                  <div className="bg-blue-500/5 border border-blue-500/25 rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap">
-                    <p className="text-[11px] text-blue-200/80 leading-tight">
+                  <div className="bg-blue-50 dark:bg-blue-500/5 border border-blue-300 dark:border-blue-500/25 rounded-xl p-3 flex items-center justify-between gap-3 flex-wrap">
+                    <p className="text-[11px] text-blue-700 dark:text-blue-200/80 leading-tight">
                       Esta visão é <strong>leitura</strong>: mostra quanto cabe a cada cliente, mas não grava.
                       Para <strong>pagar</strong>, <strong>distribuir uma guia</strong> ou <strong>estornar</strong>,
                       use a visão Cards.
@@ -3412,30 +3412,30 @@ export default function Financial() {
                     nota. Ficam FORA dos cards porque não há payable — o Victor só recebe
                     quando o cliente paga o recebível, e um input aqui gravaria em nada. */}
                 {breakdown.previstos?.length > 0 && (
-                  <div className="bg-gray-900/40 border border-dashed border-gray-700 rounded-xl p-3">
+                  <div className="bg-surface/40 border border-dashed border-border-strong rounded-xl p-3">
                     <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-                      <p className="text-[11px] uppercase tracking-wide text-gray-500">
+                      <p className="text-[11px] uppercase tracking-wide text-subtle">
                         🔮 Ainda sem NF — imposto previsto
                       </p>
-                      <span className="text-xs text-gray-500">
-                        Base <span className="text-gray-300 font-mono">{fmt(breakdown.previsao?.base)}</span>
-                        <span className="text-gray-700"> · </span>
-                        Imposto <span className="text-orange-400/80 font-mono">{fmt(breakdown.momentos?.previsto_nao_faturado)}</span>
+                      <span className="text-xs text-subtle">
+                        Base <span className="text-text-3 font-mono">{fmt(breakdown.previsao?.base)}</span>
+                        <span className="text-faintest"> · </span>
+                        Imposto <span className="text-orange-700 dark:text-orange-400/80 font-mono">{fmt(breakdown.momentos?.previsto_nao_faturado)}</span>
                       </span>
                     </div>
                     {breakdown.previstos.map(p => (
-                      <div key={p.client_id} className="flex justify-between gap-2 py-1 text-[11px] font-mono border-b border-gray-800/60 last:border-0">
-                        <span className="font-sans text-gray-400">{p.client_name}</span>
-                        <span className="text-gray-500">
+                      <div key={p.client_id} className="flex justify-between gap-2 py-1 text-[11px] font-mono border-b border-border/60 last:border-0">
+                        <span className="font-sans text-muted">{p.client_name}</span>
+                        <span className="text-subtle">
                           base {fmt(p.base)}
-                          <span className="text-gray-700"> · </span>
+                          <span className="text-faintest"> · </span>
                           DAS {fmt(p.momentos.previo.das)} · INSS {fmt(p.momentos.previo.inss)} · Escrit {fmt(p.momentos.previo.escritorio)}
-                          <span className="text-gray-700"> · </span>
-                          <span className="text-orange-400/80">{fmt(p.momentos.previo.total)}</span>
+                          <span className="text-faintest"> · </span>
+                          <span className="text-orange-700 dark:text-orange-400/80">{fmt(p.momentos.previo.total)}</span>
                         </span>
                       </div>
                     ))}
-                    <p className="text-gray-600 text-[10px] mt-2">
+                    <p className="text-faint text-[10px] mt-2">
                       Horas apontadas sem fatura e contrato mensal sem nota no mês. Nada a pagar
                       aqui: o lançamento do Victor só nasce quando o cliente paga o recebível.
                       {breakdown.previsao?.contratos_projetados === false && (
@@ -3456,46 +3456,46 @@ export default function Financial() {
                     botão para gravá-los. */}
                 {tabView !== 'tabela' && barraFechada && bdTotalDigitado <= 0 && (
                   <button onClick={() => setBarraFechada(false)}
-                    className="sticky bottom-2 w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-xl text-xs font-medium shadow-lg">
+                    className="sticky bottom-2 w-full px-3 py-2 bg-surface-2 hover:bg-surface-3 border border-border-strong text-text-3 rounded-xl text-xs font-medium shadow-lg">
                     💸 Abrir pagamento / distribuir guia
                   </button>
                 )}
-                <div className={`sticky bottom-2 bg-gray-900 border border-gray-700 rounded-xl p-3 space-y-2 shadow-lg ${tabView === 'tabela' || (barraFechada && bdTotalDigitado <= 0) ? 'hidden' : ''}`}>
+                <div className={`sticky bottom-2 bg-surface border border-border-strong rounded-xl p-3 space-y-2 shadow-lg ${tabView === 'tabela' || (barraFechada && bdTotalDigitado <= 0) ? 'hidden' : ''}`}>
                   {/* Guias rateadas: digita-se o total UMA vez e o rateio diz quanto cabe a
                       cada cliente. Preenche os campos dos cards — não paga sozinho, para o
                       valor ainda poder ser conferido e ajustado antes do Pagar. */}
                   {!mostrarRateio && (
                     <button onClick={() => { setMostrarRateio(true); setDestaqueRateio(true); setTimeout(() => setDestaqueRateio(false), 2600) }}
-                      className="text-[11px] text-blue-300/80 hover:text-blue-200 underline decoration-dotted">
+                      className="text-[11px] text-blue-700 dark:text-blue-300/80 hover:text-blue-700 dark:hover:text-blue-200 underline decoration-dotted">
                       🧮 Distribuir uma guia pelo rateio (Escritório, DAS, INSS)
                     </button>
                   )}
                   {mostrarRateio && (
                   <div id="bloco-distribuir-rateio"
-                    className={`border-b border-gray-800 pb-2 rounded-lg transition-all duration-500 ${destaqueRateio ? 'ring-2 ring-blue-400/70 bg-blue-500/5 px-2 pt-2' : ''}`}>
-                    <p className="text-[11px] uppercase tracking-wider text-blue-300/80 mb-1.5">
+                    className={`border-b border-border pb-2 rounded-lg transition-all duration-500 ${destaqueRateio ? 'ring-2 ring-blue-400/70 bg-blue-50 dark:bg-blue-500/5 px-2 pt-2' : ''}`}>
+                    <p className="text-[11px] uppercase tracking-wider text-blue-700 dark:text-blue-300/80 mb-1.5">
                       🧮 Distribuir guia pelo rateio
                     </p>
                     <div className="flex items-end gap-2 flex-wrap">
                       {CATEGORIAS_RATEADAS.map(cat => (
                         <div key={cat} className="flex flex-col gap-1">
-                          <label className="text-[10px] text-gray-500">{BREAKDOWN_LABEL[cat]} — total da guia</label>
+                          <label className="text-[10px] text-subtle">{BREAKDOWN_LABEL[cat]} — total da guia</label>
                           <div className="flex gap-1">
                             <input type="number" step="0.01" placeholder="0,00"
                               value={bdTotais[cat]}
                               onChange={e => { setBdTotais(t => ({ ...t, [cat]: e.target.value })); setBdDistMsg(''); setBdDistErro('') }}
-                              className="w-28 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-blue-500"/>
+                              className="w-28 bg-surface-2 border border-border-strong rounded-lg px-2 py-1.5 text-text text-xs placeholder-faint focus:outline-none focus:border-blue-500"/>
                             <button onClick={() => distribuirRateado(cat)}
-                              className="px-2 py-1.5 border border-blue-500/40 text-blue-300 hover:bg-blue-500/10 rounded-lg text-[11px] whitespace-nowrap">
+                              className="px-2 py-1.5 border border-blue-300 dark:border-blue-500/40 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg text-[11px] whitespace-nowrap">
                               Distribuir
                             </button>
                           </div>
                         </div>
                       ))}
                     </div>
-                    {bdDistMsg && <p className="text-green-400/90 text-[11px] mt-1.5">{bdDistMsg}</p>}
-                    {bdDistErro && <p className="text-red-400 text-[11px] mt-1.5">{bdDistErro}</p>}
-                    <p className="text-gray-600 text-[10px] mt-1 leading-tight">
+                    {bdDistMsg && <p className="text-green-700 dark:text-green-400/90 text-[11px] mt-1.5">{bdDistMsg}</p>}
+                    {bdDistErro && <p className="text-red-700 dark:text-red-400 text-[11px] mt-1.5">{bdDistErro}</p>}
+                    <p className="text-faint text-[10px] mt-1 leading-tight">
                       Preenche os campos dos cards com a fatia de cada cliente — <strong>não paga</strong>.
                       Confira e use o <strong>Pagar</strong> abaixo. O peso é o <strong>saldo em aberto</strong> de
                       cada um, não o percentual exibido: ele é arredondado a 2 casas e deixaria um centavo para trás.
@@ -3505,13 +3505,13 @@ export default function Financial() {
 
                   <div className="flex items-end gap-3 flex-wrap">
                     <div className="flex flex-col gap-1">
-                      <label className="text-[11px] text-gray-400">Data do pagamento</label>
+                      <label className="text-[11px] text-muted">Data do pagamento</label>
                       <input type="date" value={bdPaidAt} onChange={e => { setBdPaidAt(e.target.value); setBdPlano(null) }}
-                        className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-blue-500"/>
+                        className="bg-surface-2 border border-border-strong rounded-lg px-3 py-1.5 text-text text-xs focus:outline-none focus:border-blue-500"/>
                     </div>
                     <div className="flex-1 min-w-[8rem]">
-                      <p className="text-[11px] text-gray-400">Total a pagar</p>
-                      <p className="text-lg font-bold text-green-400">{fmt(bdTotalDigitado)}</p>
+                      <p className="text-[11px] text-muted">Total a pagar</p>
+                      <p className="text-lg font-bold text-green-700 dark:text-green-400">{fmt(bdTotalDigitado)}</p>
                     </div>
                     {/* Cancelar = descartar o que foi digitado. Não fecha nada: esta barra
                         não é um modal, é parte da visão Cards. Sem ele, o único jeito de
@@ -3532,12 +3532,12 @@ export default function Financial() {
                         setBarraFechada(true)
                       }}
                       title="Descarta os valores digitados e fecha a distribuição — nada é gravado"
-                      className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-medium"
+                      className="px-3 py-2 bg-surface-3 hover:bg-surface-4 text-text rounded-lg text-xs font-medium"
                     >❌ Cancelar</button>
                     <button
                       onClick={() => bdEnviar(false)}
                       disabled={bdTotalDigitado <= 0 || bdSaving}
-                      className="px-3 py-2 border border-gray-600 text-gray-200 hover:bg-gray-800 rounded-lg text-xs font-medium disabled:opacity-40"
+                      className="px-3 py-2 border border-border-stronger text-text-2 hover:bg-surface-2 rounded-lg text-xs font-medium disabled:opacity-40"
                     >👁️ Ver prévia</button>
                     <button
                       onClick={() => bdEnviar(true)}
@@ -3552,15 +3552,15 @@ export default function Financial() {
                       quitada e saldo do Victor consumido são dinheiros diferentes, e o
                       estorno de cada uma tem rota própria. */}
                   {(pagosMes?.guias?.length > 0 || pagosMes?.outras?.length > 0) && (
-                    <div className="border-t border-gray-800 pt-2 space-y-1">
-                      <p className="text-[11px] uppercase tracking-wider text-gray-400">
+                    <div className="border-t border-border pt-2 space-y-1">
+                      <p className="text-[11px] uppercase tracking-wider text-muted">
                         ✅ Guias pagas
-                        <span className="text-gray-600 normal-case tracking-normal">
+                        <span className="text-faint normal-case tracking-normal">
                           {' '}— pagas em {months[pagosMes.mes - 1]}/{pagosMes.ano} ou da competência {months[refMonth - 1]}/{refYear}
                         </span>
                         {pagosMes.outras?.length > 0 && pagosMes.guias.length > 0 && (
                           <button onClick={() => setVerTodasGuias(v => !v)}
-                            className="ml-2 text-[10px] text-blue-300/80 hover:text-blue-200 underline decoration-dotted normal-case tracking-normal">
+                            className="ml-2 text-[10px] text-blue-700 dark:text-blue-300/80 hover:text-blue-700 dark:hover:text-blue-200 underline decoration-dotted normal-case tracking-normal">
                             {verTodasGuias ? 'só este recorte' : `+${pagosMes.outras.length} de outros períodos`}
                           </button>
                         )}
@@ -3570,7 +3570,7 @@ export default function Financial() {
                           relato é banal — filtro da aba em "todos os meses" faz refMonth
                           virar o mês atual, e o recorte deixa de casar. */}
                       {pagosMes.guias.length === 0 && pagosMes.outras.length > 0 && (
-                        <p className="text-amber-400/80 text-[10px] leading-tight">
+                        <p className="text-amber-700 dark:text-amber-400/80 text-[10px] leading-tight">
                           Nenhuma guia paga neste recorte, mas há {pagosMes.outras.length} em
                           outros períodos.{' '}
                           <button onClick={() => setVerTodasGuias(v => !v)} className="underline decoration-dotted">
@@ -3582,22 +3582,22 @@ export default function Financial() {
                         ? [...pagosMes.guias, ...(verTodasGuias ? pagosMes.outras : [])]
                         : pagosMes.guias).map(g => (
                         <div key={`g${g.id}`} className="flex items-center justify-between gap-2 text-[11px]">
-                          <span className="truncate text-gray-300">
-                            <span className="px-1.5 py-0.5 rounded-full bg-orange-500/15 text-orange-300/90 text-[9px] uppercase mr-1.5">guia</span>
+                          <span className="truncate text-text-3">
+                            <span className="px-1.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-500/15 text-orange-700 dark:text-orange-300/90 text-[9px] uppercase mr-1.5">guia</span>
                             {CAT_LABEL[g.kind] || g.kind}
                             {/* As DUAS datas na linha: de que mês é a guia e quando o
                                 dinheiro saiu. Um pagamento de agosto quitando fevereiro é
                                 o normal, e sem as duas a lista parece filtrada errado. */}
-                            <span className="text-gray-600">
+                            <span className="text-faint">
                               {' '}· competência {g.competencia_mes}/{g.competencia_ano}
                               {' '}· pago em {new Date(g.paid_at).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                               {' '}· {g.method}
                             </span>
                           </span>
                           <span className="flex items-center gap-2 shrink-0">
-                            <span className="font-mono text-gray-300">{fmt(g.amount)}</span>
+                            <span className="font-mono text-text-3">{fmt(g.amount)}</span>
                             <button onClick={() => estornarPago('guia', g)} disabled={estornandoPago === `guia-${g.id}`}
-                              className="px-2 py-0.5 border border-red-500/60 text-red-400 hover:bg-red-500/10 disabled:opacity-40 rounded text-[10px]">
+                              className="px-2 py-0.5 border border-red-300 dark:border-red-500/60 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-40 rounded text-[10px]">
                               {estornandoPago === `guia-${g.id}` ? '...' : 'Estornar'}
                             </button>
                           </span>
@@ -3606,45 +3606,45 @@ export default function Financial() {
                     </div>
                   )}
 
-                  {bdErro && <p className="text-red-400 text-xs">{bdErro}</p>}
-                  {bdMsg && <p className="text-green-400 text-xs">{bdMsg}</p>}
+                  {bdErro && <p className="text-red-700 dark:text-red-400 text-xs">{bdErro}</p>}
+                  {bdMsg && <p className="text-green-700 dark:text-green-400 text-xs">{bdMsg}</p>}
 
                   {bdPlano?.resumo && (
-                    <div className="border-t border-gray-800 pt-2 space-y-1">
-                      <p className="text-[11px] uppercase tracking-wider text-blue-300">Prévia — nada foi gravado</p>
+                    <div className="border-t border-border pt-2 space-y-1">
+                      <p className="text-[11px] uppercase tracking-wider text-blue-700 dark:text-blue-300">Prévia — nada foi gravado</p>
                       {bdPlano.alocacoes?.map(a => (
                         <div key={a.ordem} className="flex justify-between gap-2 text-[11px]">
-                          <span className="truncate text-gray-400">
-                            <span className="text-gray-600 font-mono">{a.ordem}.</span>{' '}
-                            <span className={a.tipo === 'rateio' ? 'text-blue-400' : 'text-amber-400'}>
+                          <span className="truncate text-muted">
+                            <span className="text-faint font-mono">{a.ordem}.</span>{' '}
+                            <span className={a.tipo === 'rateio' ? 'text-blue-700 dark:text-blue-400' : 'text-amber-700 dark:text-amber-400'}>
                               {a.tipo === 'rateio' ? 'rateio' : 'fallback'}
                             </span>{' '}
                             {CAT_LABEL[a.categoria] || a.categoria} · {a.cliente_nome} · lançamento #{a.payable_id}
                           </span>
-                          <span className="shrink-0 font-mono text-green-400">{fmt(a.valor)}</span>
+                          <span className="shrink-0 font-mono text-green-700 dark:text-green-400">{fmt(a.valor)}</span>
                         </div>
                       ))}
                       {/* Pagar uma categoria fiscal quita a guia da competência — dizer
                           isso aqui evita a descoberta pela /fiscal depois. */}
                       {bdPlano.resumo.quitacoes?.length > 0 && (
-                        <p className="text-[11px] text-orange-400/90 pt-1">
+                        <p className="text-[11px] text-orange-700 dark:text-orange-400/90 pt-1">
                           Quita em Apuração Fiscal: {bdPlano.resumo.quitacoes.map(q => `${CAT_LABEL[q.kind] || q.kind} ${fmt(q.valor)}`).join(' · ')}
                         </p>
                       )}
                       {bdPlano.resumo.sem_obrigacao?.length > 0 && (
-                        <p className="text-[11px] text-amber-400/80">
+                        <p className="text-[11px] text-amber-700 dark:text-amber-400/80">
                           ⚠️ Sem apuração em {months[refMonth-1]}/{refYear} para: {bdPlano.resumo.sem_obrigacao.map(k => CAT_LABEL[k] || k).join(', ')}. Nenhuma guia será quitada.
                         </p>
                       )}
                       {bdPlano.resumo.ja_quitadas?.length > 0 && (
-                        <p className="text-[11px] text-red-400">
+                        <p className="text-[11px] text-red-700 dark:text-red-400">
                           ⛔ Já quitado nesta competência: {bdPlano.resumo.ja_quitadas.map(q => CAT_LABEL[q.categoria] || q.categoria).join(', ')}. Estorne o abatimento em /fiscal antes de pagar de novo.
                         </p>
                       )}
                     </div>
                   )}
 
-                  <p className="text-gray-600 text-[10px]">
+                  <p className="text-faint text-[10px]">
                     O estorno continua por lançamento (logo abaixo) e o abatimento fiscal em <strong>/fiscal</strong>.
                   </p>
                 </div>
@@ -3661,22 +3661,22 @@ export default function Financial() {
                   const comPagamento = (availableData || []).filter(r => r.status === 'pago' || r.status === 'parcial')
                   if (!comPagamento.length) return null
                   return (
-                    <div className="bg-gray-900/40 border border-gray-800 rounded-xl p-3 space-y-2">
-                      <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                    <div className="bg-surface/40 border border-border rounded-xl p-3 space-y-2">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted">
                         ↩️ Lançamentos com pagamento — {comPagamento.length}
                       </p>
-                      <p className="text-gray-600 text-[10px] -mt-1 leading-tight">
+                      <p className="text-faint text-[10px] -mt-1 leading-tight">
                         Estornar apaga os pagamentos do lançamento e o devolve para Pendente.
                         Guia fiscal quitada pelo rateio não sai por aqui — isso é em <strong>/fiscal → Pagamentos</strong>.
                       </p>
                       {comPagamento.map(item => (
-                        <div key={item.id} className="flex items-center justify-between gap-2 flex-wrap border-t border-gray-800/60 pt-2 first:border-0 first:pt-0">
-                          <span className="text-xs text-gray-300 truncate">
-                            <span className="text-gray-500">{months[item.month - 1]}/{item.year}</span> {item.client_name}
-                            <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] ${item.status === 'pago' ? 'bg-green-500/20 text-green-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                        <div key={item.id} className="flex items-center justify-between gap-2 flex-wrap border-t border-border/60 pt-2 first:border-0 first:pt-0">
+                          <span className="text-xs text-text-3 truncate">
+                            <span className="text-subtle">{months[item.month - 1]}/{item.year}</span> {item.client_name}
+                            <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] ${item.status === 'pago' ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' : 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400'}`}>
                               {item.status === 'pago' ? '✓ Pago' : '◐ Parcial'}
                             </span>
-                            <span className="text-gray-600 font-mono ml-2">{fmt(item.paid_amount)} de {fmt(item.total_amount)}</span>
+                            <span className="text-faint font-mono ml-2">{fmt(item.paid_amount)} de {fmt(item.total_amount)}</span>
                           </span>
                           <span className="flex gap-2 shrink-0">
                             <button onClick={() => openPayments(item)}
@@ -3695,7 +3695,7 @@ export default function Financial() {
           ) : availableData.length > 0 && (
             <div className="space-y-3">
               {isPayTab && (waitingData.length > 0 || previewData.length > 0) && (
-                <p className="text-xs font-medium uppercase tracking-wider text-green-400/80">✅ Disponível para pagar</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-green-700 dark:text-green-400/80">✅ Disponível para pagar</p>
               )}
               {availableData.map(item => renderRow(item, false))}
             </div>
@@ -3704,28 +3704,28 @@ export default function Financial() {
               marcados e com os inputs desabilitados — repetir a lista aqui mostraria o
               mesmo lançamento duas vezes. */}
           {isPayTab && tab !== 'victor' && waitingData.length > 0 && (
-            <div className="space-y-3 bg-gray-900/40 border border-gray-800/60 rounded-xl p-3">
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">⏳ Aguardando recebimento do cliente</p>
+            <div className="space-y-3 bg-surface/40 border border-border/60 rounded-xl p-3">
+              <p className="text-xs font-medium uppercase tracking-wider text-subtle">⏳ Aguardando recebimento do cliente</p>
               <div className="space-y-3 opacity-70">
                 {waitingData.map(item => renderRow(item, true))}
               </div>
             </div>
           )}
           {isPayTab && previewData.length > 0 && (
-            <div className="space-y-3 bg-gray-900/30 border border-dashed border-gray-700 rounded-xl p-3 opacity-60">
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">🔮 Previsto (aguardando cliente pagar)</p>
-              <p className="text-gray-600 text-xs -mt-1">Será criado automaticamente quando o cliente pagar</p>
+            <div className="space-y-3 bg-surface/30 border border-dashed border-border-strong rounded-xl p-3 opacity-60">
+              <p className="text-xs font-medium uppercase tracking-wider text-subtle">🔮 Previsto (aguardando cliente pagar)</p>
+              <p className="text-faint text-xs -mt-1">Será criado automaticamente quando o cliente pagar</p>
               {previewData.map(item => (
-                <div key={item.id} className="bg-gray-900 border border-dashed border-gray-700 rounded-xl p-4">
+                <div key={item.id} className="bg-surface shadow-sm dark:shadow-none border border-dashed border-border-strong rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
-                    <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-400">previsto</span>
+                    <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs rounded-full">{item.client_name}</span>
+                    <span className="text-subtle text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-surface-3 text-muted">previsto</span>
                   </div>
                   <div className="flex gap-4 mt-1 text-xs items-center">
-                    <span className="text-gray-500">Total: <span className="text-white font-medium">{fmt(item.amount || item.total_amount)}</span></span>
+                    <span className="text-subtle">Total: <span className="text-text font-medium">{fmt(item.amount || item.total_amount)}</span></span>
                     {tab === 'fabricio' && item.breakdown && (
-                      <button onClick={() => openPayments(item)} className="ml-auto px-3 py-1 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg text-xs">🧮 Ver cálculo</button>
+                      <button onClick={() => openPayments(item)} className="ml-auto px-3 py-1 border border-border-stronger text-text-3 hover:bg-surface-2 rounded-lg text-xs">🧮 Ver cálculo</button>
                     )}
                   </div>
                 </div>
@@ -3740,46 +3740,46 @@ export default function Financial() {
         <div>
           {/* Filtro de tipo */}
           <div className="flex gap-2 mb-4 flex-wrap items-center">
-            <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Tipo:</span>
+            <span className="text-subtle text-xs uppercase tracking-wider mr-1">Tipo:</span>
             {[['receivables','A Receber'],['fabricio','Pagar Fabrício'],['victor','Pagar Victor']].map(([key,label]) => (
-              <button key={key} onClick={() => setHistType(key)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histType === key ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{label}</button>
+              <button key={key} onClick={() => setHistType(key)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histType === key ? 'bg-indigo-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'}`}>{label}</button>
             ))}
           </div>
 
           {/* Filtro de cliente */}
           {histClients.length > 0 && (
             <div className="flex gap-2 mb-4 flex-wrap items-center">
-              <span className="text-gray-500 text-xs uppercase tracking-wider mr-1">Cliente:</span>
-              <button onClick={() => setHistClient('')} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histClient === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>Todos</button>
+              <span className="text-subtle text-xs uppercase tracking-wider mr-1">Cliente:</span>
+              <button onClick={() => setHistClient('')} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histClient === '' ? 'bg-surface-4 text-text' : 'bg-surface-2 text-muted hover:bg-surface-3'}`}>Todos</button>
               {histClients.map(c => (
-                <button key={c.id} onClick={() => setHistClient(String(c.id))} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{c.name}</button>
+                <button key={c.id} onClick={() => setHistClient(String(c.id))} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${histClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'}`}>{c.name}</button>
               ))}
             </div>
           )}
 
           {/* Totalizador */}
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-6 w-fit min-w-[220px]">
-            <p className="text-gray-400 text-xs mb-1">Total pago no período</p>
-            <p className="text-green-400 text-lg font-bold">{fmt(histTotalPaid)}</p>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4 mb-6 w-fit min-w-[220px]">
+            <p className="text-muted text-xs mb-1">Total pago no período</p>
+            <p className="text-green-700 dark:text-green-400 text-lg font-bold">{fmt(histTotalPaid)}</p>
           </div>
 
-          {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : histData.length === 0 ? (
-            <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">📭</p><p>Nenhum pagamento registrado no período.</p></div>
+          {loading ? <div className="text-subtle text-sm">Carregando...</div> : histData.length === 0 ? (
+            <div className="text-center py-16 text-faint"><p className="text-4xl mb-3">📭</p><p>Nenhum pagamento registrado no período.</p></div>
           ) : (
             <div className="space-y-3">
               {histData.map(item => (
-                <div key={item.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+                <div key={item.id} className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{item.client_name}</span>
-                    <span className="text-gray-500 text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
-                    {item.origin === 'faturamento' && <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-full">via Faturamento</span>}
+                    <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs rounded-full">{item.client_name}</span>
+                    <span className="text-subtle text-xs">{months[effMonth(item)-1]}/{effYear(item)}</span>
+                    {item.origin === 'faturamento' && <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 text-xs rounded-full">via Faturamento</span>}
                   </div>
-                  {item.description && <p className="text-white text-sm">{item.description}</p>}
+                  {item.description && <p className="text-text text-sm">{item.description}</p>}
                   <div className="flex gap-4 mt-2 text-xs flex-wrap">
-                    <span className="text-gray-500">Pago: <span className="text-green-400 font-medium">{fmt(item.paid_amount)}</span></span>
-                    {item.paid_at && <span className="text-gray-500">Em: <span className="text-gray-300">{new Date(item.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></span>}
+                    <span className="text-subtle">Pago: <span className="text-green-700 dark:text-green-400 font-medium">{fmt(item.paid_amount)}</span></span>
+                    {item.paid_at && <span className="text-subtle">Em: <span className="text-text-3">{new Date(item.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></span>}
                   </div>
-                  {item.notes && <p className="text-gray-500 text-xs mt-2 italic">{item.notes}</p>}
+                  {item.notes && <p className="text-subtle text-xs mt-2 italic">{item.notes}</p>}
                 </div>
               ))}
             </div>
@@ -3790,16 +3790,16 @@ export default function Financial() {
       {/* Modal — valores reais das guias (o contador confirmou) */}
       {editImpostos && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-1">
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-text mb-1">
               Valores reais dos impostos — {months[editImpostos.month - 1]}/{editImpostos.year}
             </h3>
-            <p className="text-gray-500 text-xs mb-4">
+            <p className="text-subtle text-xs mb-4">
               O que o contador confirmou. Em branco = sem guia lançada, volta a valer o valor apurado.
             </p>
 
             {editImpostos.rows.length === 0 ? (
-              <p className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+              <p className="text-amber-700 dark:text-amber-300 text-xs bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-3 py-2">
                 Nada apurado nesta competência. Rode a apuração em <strong>/fiscal</strong> antes de lançar as guias.
               </p>
             ) : (
@@ -3807,8 +3807,8 @@ export default function Financial() {
                 {editImpostos.rows.map((r) => (
                   <div key={r.id} className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white">{RESERVA_LABEL[r.kind] || r.kind}</p>
-                      <p className="text-[11px] text-gray-500">
+                      <p className="text-sm text-text">{RESERVA_LABEL[r.kind] || r.kind}</p>
+                      <p className="text-[11px] text-subtle">
                         Apurado {fmt(r.estimado)}
                         {r.pago > 0 && ` · ${fmt(r.pago)} já pago`}
                       </p>
@@ -3816,18 +3816,18 @@ export default function Financial() {
                     <input
                       type="number" step="0.01" min="0" placeholder={r.estimado.toFixed(2)}
                       value={r.valor} onChange={(e) => setLinhaImposto(r.id, e.target.value)}
-                      className="w-36 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm text-right placeholder-gray-600 focus:outline-none focus:border-blue-500"
+                      className="w-36 bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm text-right placeholder-faint focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 ))}
 
-                <label className="flex items-start gap-2 pt-2 border-t border-gray-800 cursor-pointer">
+                <label className="flex items-start gap-2 pt-2 border-t border-border cursor-pointer">
                   <input type="checkbox" checked={editImpostos.aplicar}
                     onChange={(e) => setEditImpostos((s) => ({ ...s, aplicar: e.target.checked }))}
                     className="mt-0.5 accent-blue-500" />
-                  <span className="text-xs text-gray-300">
+                  <span className="text-xs text-text-3">
                     Atualizar os lançamentos do Victor
-                    <span className="block text-gray-500 text-[11px]">
+                    <span className="block text-subtle text-[11px]">
                       O imposto real substitui a provisão da fatura no que o Victor tem a receber.
                       Desmarque para só registrar as guias e conferir a prévia em <strong>/fiscal</strong>.
                     </span>
@@ -3837,12 +3837,12 @@ export default function Financial() {
             )}
 
             {erroImpostos && (
-              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroImpostos}</p>
+              <p className="mt-3 text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erroImpostos}</p>
             )}
 
             <div className="flex gap-3 mt-5">
               <button onClick={() => { setEditImpostos(null); setErroImpostos('') }}
-                className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+                className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Cancelar</button>
               <button onClick={salvarImpostosReais} disabled={savingImpostos || editImpostos.rows.length === 0}
                 className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">
                 {savingImpostos ? 'Salvando...' : 'Salvar e recalcular'}
@@ -3855,44 +3855,44 @@ export default function Financial() {
       {/* Modal novo registro */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-4">Novo registro — {tab === 'receivables' ? 'A Receber' : tab === 'fabricio' ? 'Pagar Fabrício' : 'Pagar Victor'}</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-text mb-4">Novo registro — {tab === 'receivables' ? 'A Receber' : tab === 'fabricio' ? 'Pagar Fabrício' : 'Pagar Victor'}</h3>
             <div className="space-y-3">
-              <select value={form.client_id} onChange={e=>setForm(f=>({...f,client_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+              <select value={form.client_id} onChange={e=>setForm(f=>({...f,client_id:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                 <option value="">Selecione o cliente</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <div className="grid grid-cols-2 gap-3">
-                <select value={form.month} onChange={e=>setForm(f=>({...f,month:parseInt(e.target.value)}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <select value={form.month} onChange={e=>setForm(f=>({...f,month:parseInt(e.target.value)}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                   {months.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
                 </select>
-                <input type="number" value={form.year} onChange={e=>setForm(f=>({...f,year:parseInt(e.target.value)}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <input type="number" value={form.year} onChange={e=>setForm(f=>({...f,year:parseInt(e.target.value)}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Descrição</label>
-                <input placeholder="Descrição" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Descrição</label>
+                <input placeholder="Descrição" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
               </div>
               {tab === 'victor' ? (
                 <>
-                  <input placeholder="Valor serviço (R$)" type="number" value={form.service_amount} onChange={e=>setForm(f=>({...f,service_amount:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                  <input placeholder="Valor lucro (R$)" type="number" value={form.profit_amount} onChange={e=>setForm(f=>({...f,profit_amount:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <input placeholder="Valor serviço (R$)" type="number" value={form.service_amount} onChange={e=>setForm(f=>({...f,service_amount:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
+                  <input placeholder="Valor lucro (R$)" type="number" value={form.profit_amount} onChange={e=>setForm(f=>({...f,profit_amount:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                 </>
               ) : (
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-400 font-medium">Valor (R$)</label>
-                  <input placeholder="Valor (R$)" type="number" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <label className="text-xs text-muted font-medium">Valor (R$)</label>
+                  <input placeholder="Valor (R$)" type="number" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                 </div>
               )}
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Observações</label>
-                <textarea placeholder="Observações" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+                <label className="text-xs text-muted font-medium">Observações</label>
+                <textarea placeholder="Observações" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"/>
               </div>
             </div>
             {erroModal && (
-              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroModal}</p>
+              <p className="mt-3 text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erroModal}</p>
             )}
             <div className="flex gap-3 mt-5">
-              <button onClick={closeModal} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={closeModal} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Cancelar</button>
               <button onClick={save} disabled={saving} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{saving ? 'Salvando...' : 'Salvar'}</button>
             </div>
           </div>
@@ -3902,25 +3902,25 @@ export default function Financial() {
       {/* Modal pagamento — A Receber (pagamento único) */}
       {showPayModal && tab === 'receivables' && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-4">Registrar pagamento</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-text mb-4">Registrar pagamento</h3>
             <div className="space-y-3">
-              <input placeholder="Valor pago (R$)" type="number" value={payForm.paid_amount} onChange={e=>setPayForm(f=>({...f,paid_amount:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <input placeholder="Valor pago (R$)" type="number" value={payForm.paid_amount} onChange={e=>setPayForm(f=>({...f,paid_amount:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
-                <input type="date" value={payForm.paid_at} onChange={e=>setPayForm(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Data do pagamento</label>
+                <input type="date" value={payForm.paid_at} onChange={e=>setPayForm(f=>({...f,paid_at:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
-              <select value={payForm.status} onChange={e=>setPayForm(f=>({...f,status:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+              <select value={payForm.status} onChange={e=>setPayForm(f=>({...f,status:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                 <option value="pago">Pago integralmente</option>
                 <option value="parcial">Pago parcialmente</option>
               </select>
-              <textarea placeholder="Observações" value={payForm.notes} onChange={e=>setPayForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+              <textarea placeholder="Observações" value={payForm.notes} onChange={e=>setPayForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
             {erroPay && (
-              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroPay}</p>
+              <p className="mt-3 text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erroPay}</p>
             )}
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>{setShowPayModal(null);setErroPay('')}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={()=>{setShowPayModal(null);setErroPay('')}} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Cancelar</button>
               <button onClick={() => pay(showPayModal)} disabled={paying} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{paying ? 'Confirmando...' : 'Confirmar'}</button>
             </div>
           </div>
@@ -3930,15 +3930,15 @@ export default function Financial() {
       {/* Modal pagamentos — Pagar Victor/Fabrício (múltiplos pagamentos) */}
       {showPayModal && tab !== 'receivables' && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-1">
-              <h3 className="text-lg font-bold text-white">Pagamentos</h3>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[showPayModal.status] || 'bg-gray-700 text-gray-400'}`}>{showPayModal.status}</span>
+              <h3 className="text-lg font-bold text-text">Pagamentos</h3>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[showPayModal.status] || 'bg-surface-3 text-muted'}`}>{showPayModal.status}</span>
             </div>
-            <p className="text-gray-400 text-xs mb-4">
+            <p className="text-muted text-xs mb-4">
               {showPayModal.client_name} — {months[showPayModal.month-1]}/{showPayModal.year}
-              <span className="text-gray-500"> · Total: </span>
-              <span className="text-white">{fmt(showPayModal.total_amount || showPayModal.amount)}</span>
+              <span className="text-subtle"> · Total: </span>
+              <span className="text-text">{fmt(showPayModal.total_amount || showPayModal.amount)}</span>
             </p>
 
             {/* Demonstrativo — como a fatura chegou ao valor do Fabrício. Vem antes da
@@ -3946,10 +3946,10 @@ export default function Financial() {
             {tab === 'fabricio' && fabricioBreakdownPanel(showPayModal)}
 
               {tab === 'fabricio' && (
-                <div className="border border-gray-800 rounded-xl p-3 space-y-3 mb-4">
-                  <p className="text-xs font-medium uppercase tracking-wider text-blue-300/80">🤝 Compensação</p>
-                  <input placeholder="Forma de pagamento" value={payForm.payment_method} onChange={e=>setPayForm(f=>({...f,payment_method:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                  <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+                <div className="border border-border rounded-xl p-3 space-y-3 mb-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-blue-700 dark:text-blue-300/80">🤝 Compensação</p>
+                  <input placeholder="Forma de pagamento" value={payForm.payment_method} onChange={e=>setPayForm(f=>({...f,payment_method:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
+                  <label className="flex items-center gap-2 text-text-3 text-sm cursor-pointer">
                     <input type="checkbox" checked={payForm.is_compensation} onChange={e=>setPayForm(f=>({...f,is_compensation:e.target.checked}))} className="rounded"/>
                     É uma compensação?
                   </label>
@@ -3963,8 +3963,8 @@ export default function Financial() {
                       : (parseFloat(String(payForm.compensation_amount).replace(',', '.')) || 0)
                     const dinheiro = cents(pago - comp)
                     return (
-                      <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 flex flex-col gap-2">
-                        <p className="text-[11px] text-blue-200/80 leading-tight">
+                      <div className="rounded-lg border border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/5 p-3 flex flex-col gap-2">
+                        <p className="text-[11px] text-blue-700 dark:text-blue-200/80 leading-tight">
                           O Fabrício deixa de receber e o valor vira crédito do Victor —
                           nenhum dinheiro sai. Não cria lançamento a pagar: o crédito fica
                           disponível para ser usado na aba Pagar Victor.
@@ -3973,15 +3973,15 @@ export default function Financial() {
                           <input type="number" step="0.01" placeholder={`Compensado (padrão: ${fmt(pago)})`}
                             value={payForm.compensation_amount}
                             onChange={e=>setPayForm(f=>({...f,compensation_amount:e.target.value}))}
-                            className="w-40 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-                          <span className="text-[11px] text-gray-500">de {fmt(pago)} pagos</span>
+                            className="w-40 bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
+                          <span className="text-[11px] text-subtle">de {fmt(pago)} pagos</span>
                         </div>
                         {dinheiro > 0.005 && (
                           <>
                             {/* Opção 3: o Fabrício abre mão do que sobrou, e essa parte
                                 também vira crédito do Victor. Só aparece quando HÁ sobra —
                                 sem ela o checkbox não teria sobre o que agir. */}
-                            <label className="flex items-start gap-2 text-[11px] text-gray-300 cursor-pointer">
+                            <label className="flex items-start gap-2 text-[11px] text-text-3 cursor-pointer">
                               <input type="checkbox" checked={payForm.nao_recebe_restante}
                                 onChange={e=>setPayForm(f=>({...f,nao_recebe_restante:e.target.checked}))}
                                 className="rounded mt-0.5"/>
@@ -3990,7 +3990,7 @@ export default function Financial() {
                                 também para o Victor
                               </span>
                             </label>
-                            <p className={payForm.nao_recebe_restante ? 'text-[11px] text-green-300/90' : 'text-[11px] text-amber-300/90'}>
+                            <p className={payForm.nao_recebe_restante ? 'text-[11px] text-green-700 dark:text-green-300/90' : 'text-[11px] text-amber-700 dark:text-amber-300/90'}>
                               {payForm.nao_recebe_restante
                                 ? <>Crédito do Victor: <strong>{fmt(comp)}</strong> de compensação + <strong>{fmt(dinheiro)}</strong> que o Fabrício abriu mão = <strong>{fmt(comp + dinheiro)}</strong>. Nada sai do caixa.</>
                                 : <>{fmt(comp)} compensados (sem caixa) + <strong>{fmt(dinheiro)} pagos em dinheiro</strong> (sai do caixa).</>}
@@ -3998,11 +3998,11 @@ export default function Financial() {
                           </>
                         )}
                         {dinheiro < -0.005 && (
-                          <p className="text-[11px] text-red-400">
+                          <p className="text-[11px] text-red-700 dark:text-red-400">
                             A compensação passa do valor pago em {fmt(-dinheiro)} — o backend vai recusar.
                           </p>
                         )}
-                        <textarea placeholder="Detalhe da compensação (ex: Fabrício devia R$ 900)" value={payForm.compensation_notes} onChange={e=>setPayForm(f=>({...f,compensation_notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+                        <textarea placeholder="Detalhe da compensação (ex: Fabrício devia R$ 900)" value={payForm.compensation_notes} onChange={e=>setPayForm(f=>({...f,compensation_notes:e.target.value}))} rows={2} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"/>
                       </div>
                     )
                   })()}
@@ -4010,21 +4010,21 @@ export default function Financial() {
                     className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">
                     {paying ? 'Salvando...' : 'Salvar compensação'}
                   </button>
-                  {erroPay && <p className="text-red-400 text-xs">{erroPay}</p>}
+                  {erroPay && <p className="text-red-700 dark:text-red-400 text-xs">{erroPay}</p>}
                 </div>
               )}
 
             {/* Lista de pagamentos */}
             <div className="space-y-2 mb-5">
               {modalPayments.length === 0 ? (
-                <p className="text-gray-500 text-sm text-center py-4">Nenhum pagamento registrado</p>
+                <p className="text-subtle text-sm text-center py-4">Nenhum pagamento registrado</p>
               ) : modalPayments.map(p => (
-                <div key={p.id} className="flex items-center justify-between gap-3 bg-gray-800 rounded-lg px-3 py-2">
+                <div key={p.id} className="flex items-center justify-between gap-3 bg-surface-2 rounded-lg px-3 py-2">
                   <div className="min-w-0">
-                    <p className="text-white text-sm font-medium">{fmt(p.amount)} <span className="text-gray-500 font-normal">em {new Date(p.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></p>
-                    {p.notes && <p className="text-gray-500 text-xs italic truncate">{p.notes}</p>}
+                    <p className="text-text text-sm font-medium">{fmt(p.amount)} <span className="text-subtle font-normal">em {new Date(p.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span></p>
+                    {p.notes && <p className="text-subtle text-xs italic truncate">{p.notes}</p>}
                   </div>
-                  <button onClick={() => setEstornoConfirm(p)} title="Estornar" className="shrink-0 text-red-500 hover:text-red-400 text-base">🗑️</button>
+                  <button onClick={() => setEstornoConfirm(p)} title="Estornar" className="shrink-0 text-red-700 dark:text-red-500 hover:text-red-700 dark:hover:text-red-400 text-base">🗑️</button>
                 </div>
               ))}
             </div>
@@ -4033,42 +4033,42 @@ export default function Financial() {
             {breakdownPanel(paymentEntries)}
 
             {/* Formulário novo pagamento */}
-            <div className="border-t border-gray-800 pt-4 space-y-3">
-              <p className="text-gray-300 text-sm font-medium">Novo pagamento</p>
+            <div className="border-t border-border pt-4 space-y-3">
+              <p className="text-text-3 text-sm font-medium">Novo pagamento</p>
               {tab === 'victor' ? (
                 <>
                   <div className="grid grid-cols-2 gap-2">
                     {VICTOR_CATEGORIES.map(([key, label]) => (
                       <div key={key} className="flex flex-col gap-1">
-                        <label className="text-xs text-gray-400 font-medium">{label} (R$)</label>
-                        <input type="number" placeholder="0" value={victorCats[key]} onChange={e=>setVictorCats(c=>({...c,[key]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                        <label className="text-xs text-muted font-medium">{label} (R$)</label>
+                        <input type="number" placeholder="0" value={victorCats[key]} onChange={e=>setVictorCats(c=>({...c,[key]:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                       </div>
                     ))}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
-                    <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                    <label className="text-xs text-muted font-medium">Data do pagamento</label>
+                    <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                   </div>
-                  <p className="text-sm text-gray-300">Total a pagar: <span className="text-green-400 font-bold">{fmt(victorCatTotal)}</span></p>
+                  <p className="text-sm text-text-3">Total a pagar: <span className="text-green-700 dark:text-green-400 font-bold">{fmt(victorCatTotal)}</span></p>
                   <button onClick={addPayment} disabled={addingPay || victorCatTotal <= 0 || !newPay.paid_at} className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{addingPay ? 'Registrando...' : 'Registrar Pagamento'}</button>
                 </>
               ) : (
                 <>
-                  <input placeholder="Valor (R$)" type="number" value={newPay.amount} onChange={e=>setNewPay(f=>({...f,amount:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <input placeholder="Valor (R$)" type="number" value={newPay.amount} onChange={e=>setNewPay(f=>({...f,amount:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
-                    <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                    <label className="text-xs text-muted font-medium">Data do pagamento</label>
+                    <input type="date" value={newPay.paid_at} onChange={e=>setNewPay(f=>({...f,paid_at:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                   </div>
-                  <textarea placeholder="Observação" value={newPay.notes} onChange={e=>setNewPay(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+                  <textarea placeholder="Observação" value={newPay.notes} onChange={e=>setNewPay(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"/>
                   <button onClick={addPayment} disabled={addingPay || !newPay.amount || !newPay.paid_at} className="w-full py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{addingPay ? 'Registrando...' : 'Registrar Pagamento'}</button>
                 </>
               )}
             </div>
 
             {erroPayments && (
-              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroPayments}</p>
+              <p className="mt-3 text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erroPayments}</p>
             )}
-            <button onClick={()=>{setShowPayModal(null);setErroPayments('')}} className="w-full mt-3 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Fechar</button>
+            <button onClick={()=>{setShowPayModal(null);setErroPayments('')}} className="w-full mt-3 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Fechar</button>
           </div>
         </div>
       )}
@@ -4076,11 +4076,11 @@ export default function Financial() {
       {/* Confirmação de estorno */}
       {estornoConfirm && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-sm">
-            <h3 className="text-lg font-bold text-white mb-2">Estornar pagamento</h3>
-            <p className="text-gray-400 text-sm mb-5">Deseja estornar o pagamento de {fmt(estornoConfirm.amount)} realizado em {new Date(estornoConfirm.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}?</p>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-bold text-text mb-2">Estornar pagamento</h3>
+            <p className="text-muted text-sm mb-5">Deseja estornar o pagamento de {fmt(estornoConfirm.amount)} realizado em {new Date(estornoConfirm.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}?</p>
             <div className="flex gap-3">
-              <button onClick={()=>setEstornoConfirm(null)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={()=>setEstornoConfirm(null)} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Cancelar</button>
               <button onClick={()=>deletePayment(estornoConfirm)} disabled={addingPay} className="flex-1 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{addingPay ? 'Estornando...' : 'Estornar'}</button>
             </div>
           </div>
@@ -4093,15 +4093,15 @@ export default function Financial() {
           e a tabela de distribuição reflete isso sozinha por ser derivada de paid_amount. */}
       {estornoItens?.length > 0 && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 w-full max-w-sm max-h-[85vh] overflow-y-auto">
-            <h3 className="text-base font-bold text-white mb-3">
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-5 w-full max-w-sm max-h-[85vh] overflow-y-auto">
+            <h3 className="text-base font-bold text-text mb-3">
               {estornoItens.length === 1 ? 'Estornar pagamento' : `Estornar ${estornoItens.length} pagamentos`}
             </h3>
             {/* Um pagamento: os detalhes cabem e são o que se quer conferir antes de
                 confirmar. Vários: a lista, porque repetir "Absorveu de" N vezes viraria
                 parede de texto e o que importa no lote é o conjunto e o total. */}
             {estornoItens.length === 1 ? (
-              <div className="space-y-1 text-xs font-mono bg-gray-950/60 rounded-lg p-3">
+              <div className="space-y-1 text-xs font-mono bg-bg/60 rounded-lg p-3">
                 {[
                   ['Cliente', estornoItens[0].client_name],
                   ['Competência', estornoItens[0].competencia],
@@ -4109,29 +4109,29 @@ export default function Financial() {
                   ['Absorveu de', `${estornoItens[0].origem} · lucro ${fmt(estornoItens[0].de_lucro)} + serviço ${fmt(estornoItens[0].de_servico)}`],
                 ].map(([label, valor]) => (
                   <div key={label} className="flex justify-between gap-3">
-                    <span className="font-sans text-gray-500">{label}</span>
-                    <span className="text-gray-300 text-right">{valor}</span>
+                    <span className="font-sans text-subtle">{label}</span>
+                    <span className="text-text-3 text-right">{valor}</span>
                   </div>
                 ))}
-                <div className="flex justify-between gap-3 border-t border-gray-800 pt-1 mt-1">
-                  <span className="font-sans text-gray-400 font-semibold">Valor a devolver</span>
-                  <span className="text-red-400 font-semibold">{fmt(estornoItens[0].valor_pagamento)}</span>
+                <div className="flex justify-between gap-3 border-t border-border pt-1 mt-1">
+                  <span className="font-sans text-muted font-semibold">Valor a devolver</span>
+                  <span className="text-red-700 dark:text-red-400 font-semibold">{fmt(estornoItens[0].valor_pagamento)}</span>
                 </div>
               </div>
             ) : (
-              <div className="space-y-0.5 text-[11px] font-mono bg-gray-950/60 rounded-lg p-3">
+              <div className="space-y-0.5 text-[11px] font-mono bg-bg/60 rounded-lg p-3">
                 {estornoItens.map(it => (
                   <div key={it.payment_id} className="flex justify-between gap-3">
-                    <span className="font-sans text-gray-500 min-w-0 truncate">
+                    <span className="font-sans text-subtle min-w-0 truncate">
                       {it.data ? it.data.split('-').reverse().join('/') : '—'} · {it.client_name}
-                      <span className="text-gray-700"> · {it.competencia}</span>
+                      <span className="text-faintest"> · {it.competencia}</span>
                     </span>
-                    <span className="text-gray-300 shrink-0">{fmt(it.valor_pagamento)}</span>
+                    <span className="text-text-3 shrink-0">{fmt(it.valor_pagamento)}</span>
                   </div>
                 ))}
-                <div className="flex justify-between gap-3 border-t border-gray-800 pt-1 mt-1">
-                  <span className="font-sans text-gray-400 font-semibold">Total a devolver</span>
-                  <span className="text-red-400 font-semibold">{fmt(estornoTotal(estornoItens))}</span>
+                <div className="flex justify-between gap-3 border-t border-border pt-1 mt-1">
+                  <span className="font-sans text-muted font-semibold">Total a devolver</span>
+                  <span className="text-red-700 dark:text-red-400 font-semibold">{fmt(estornoTotal(estornoItens))}</span>
                 </div>
               </div>
             )}
@@ -4139,22 +4139,22 @@ export default function Financial() {
                 categoria, estornar devolve todas. Mostrar só a fatia clicada faria o valor
                 do botão não bater com o que some da tela. */}
             {estornoItens.some(i => i.categorias_da_sessao > 1) && (
-              <p className="text-amber-400/80 text-[11px] mt-2 leading-tight">
+              <p className="text-amber-700 dark:text-amber-400/80 text-[11px] mt-2 leading-tight">
                 ⚠️ {estornoItens.length === 1 ? 'Este pagamento cobre' : 'Há pagamento que cobre'} mais
                 de uma categoria — o estorno devolve todas elas, não só a fatia da categoria
                 em que foi marcado.
               </p>
             )}
-            <p className="text-gray-600 text-[11px] mt-2 leading-tight">
+            <p className="text-faint text-[11px] mt-2 leading-tight">
               O saldo do lançamento volta ao valor anterior e a distribuição recalcula. O
               estorno fica registrado nas observações do lançamento.
             </p>
-            {erroReceive && <p className="text-red-400 text-xs mt-2">{erroReceive}</p>}
+            {erroReceive && <p className="text-red-700 dark:text-red-400 text-xs mt-2">{erroReceive}</p>}
             <div className="flex gap-2 mt-4">
               <button
                 onClick={() => { setEstornoItens(null); setErroReceive('') }}
                 disabled={estornando}
-                className="flex-1 px-4 py-2 border border-gray-600 text-gray-300 hover:bg-gray-800 rounded-lg text-sm disabled:opacity-40"
+                className="flex-1 px-4 py-2 border border-border-stronger text-text-3 hover:bg-surface-2 rounded-lg text-sm disabled:opacity-40"
               >Cancelar</button>
               <button
                 onClick={confirmarEstornoPagamento}
@@ -4170,36 +4170,36 @@ export default function Financial() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           {/* max-w-3xl (era md): a tabela de distribuição passou a ter 9 colunas e em
               448px elas quebravam linha, deixando os valores ilegíveis. */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-1">{editSession ? 'Editar recebimento — Pagar Victor' : receiveTarget ? 'Pagar — Pagar Victor' : 'Receber — Pagar Victor'}</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-text mb-1">{editSession ? 'Editar recebimento — Pagar Victor' : receiveTarget ? 'Pagar — Pagar Victor' : 'Receber — Pagar Victor'}</h3>
             {receiveTarget && (
-              <p className="text-gray-400 text-xs mb-4">Alvo: {receiveTarget.client_name} — {months[receiveTarget.month-1]}/{receiveTarget.year} · Saldo: {fmt((parseFloat(receiveTarget.total_amount)||0) - (parseFloat(receiveTarget.paid_amount)||0))}</p>
+              <p className="text-muted text-xs mb-4">Alvo: {receiveTarget.client_name} — {months[receiveTarget.month-1]}/{receiveTarget.year} · Saldo: {fmt((parseFloat(receiveTarget.total_amount)||0) - (parseFloat(receiveTarget.paid_amount)||0))}</p>
             )}
             {editSession && (
-              <p className="text-gray-400 text-xs mb-4">Editando a sessão de {new Date(editSession.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}. Ao confirmar, a distribuição anterior é substituída.</p>
+              <p className="text-muted text-xs mb-4">Editando a sessão de {new Date(editSession.paid_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}. Ao confirmar, a distribuição anterior é substituída.</p>
             )}
             {!receiveTarget && !editSession && <div className="mb-4" />}
             <div className="space-y-3">
               {/* Reservas do mês — vêm da apuração fiscal, não são mais digitadas aqui. */}
-              <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-3 space-y-2">
-                <p className="text-amber-300 text-xs font-medium uppercase tracking-wider">🏦 Reservas do mês (ficam no caixa)</p>
+              <div className="bg-amber-50 dark:bg-amber-500/5 border border-amber-300 dark:border-amber-500/30 rounded-xl p-3 space-y-2">
+                <p className="text-amber-700 dark:text-amber-300 text-xs font-medium uppercase tracking-wider">🏦 Reservas do mês (ficam no caixa)</p>
                 {reservesLista.length ? (
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1">
                     {reservesLista.map(([key, v]) => (
                       <div key={key} className="flex items-center justify-between text-xs">
-                        <span className="text-gray-400">{RESERVA_LABEL[key] || key}</span>
-                        <span className="text-gray-200">{fmt(v)}</span>
+                        <span className="text-muted">{RESERVA_LABEL[key] || key}</span>
+                        <span className="text-text-2">{fmt(v)}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-xs">Nada em aberto na apuração deste mês.</p>
+                  <p className="text-subtle text-xs">Nada em aberto na apuração deste mês.</p>
                 )}
-                <div className="flex items-center justify-between gap-2 border-t border-amber-500/20 pt-2">
-                  <p className="text-xs text-gray-300">Total reservas: <span className="text-orange-400 font-bold">{fmt(reservesTotal)}</span></p>
+                <div className="flex items-center justify-between gap-2 border-t border-amber-300 dark:border-amber-500/20 pt-2">
+                  <p className="text-xs text-text-3">Total reservas: <span className="text-orange-700 dark:text-orange-400 font-bold">{fmt(reservesTotal)}</span></p>
                   <a href="/fiscal" className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-xs font-medium">Abrir apuração</a>
                 </div>
-                <p className="text-gray-600 text-[11px]">
+                <p className="text-faint text-[11px]">
                   Valor em aberto (devido − pago) da apuração de {(() => { const {rm,ry} = reserveRefPeriod(); return `${months[rm-1]}/${ry}` })()}.
                   Para alterar, apure ou lance a guia em Apuração Fiscal.
                 </p>
@@ -4216,10 +4216,10 @@ export default function Financial() {
                   if (oculta && !digitou) return null
                   return (
                     <div key={key} className="flex flex-col gap-1">
-                      <label className="text-xs text-gray-400 font-medium flex items-center gap-1.5">
+                      <label className="text-xs text-muted font-medium flex items-center gap-1.5">
                         {label} (R$)
                         {oculta && (
-                          <span className="px-1.5 py-0.5 rounded-full text-[9px] uppercase tracking-wide bg-amber-500/15 text-amber-300/90"
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] uppercase tracking-wide bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300/90"
                             title="Esta categoria é rateada por cliente e se paga na visão Cards. Aparece aqui porque a sessão que você está editando já a continha — zerar o campo remove o valor da sessão.">
                             de sessão anterior
                           </span>
@@ -4230,13 +4230,13 @@ export default function Financial() {
                         <span className={`px-1.5 py-0.5 rounded-full text-[9px] uppercase tracking-wide ${modo.cls} ${digitou ? '' : 'opacity-60'}`}
                           title={`Modo ${modo.label}: ${modo.ajuda}`}>{modo.label}</span>
                       </label>
-                      <input type="number" placeholder="0" value={receiveCats[key]} onChange={e=>setReceiveCats(c=>({...c,[key]:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                      <input type="number" placeholder="0" value={receiveCats[key]} onChange={e=>setReceiveCats(c=>({...c,[key]:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                     </div>
                   )
                 })}
               </div>
               <div className="flex flex-col gap-1 text-[10px] leading-tight">
-                <p className="text-orange-300/70">
+                <p className="text-orange-700 dark:text-orange-300/70">
                   <strong className="uppercase">imposto</strong> (Escritório, INSS) — consome a
                   própria linha e, se faltar, desce para Lucro → Serviço. <strong>Nunca toca a linha de outro
                   imposto.</strong>
@@ -4244,20 +4244,20 @@ export default function Financial() {
                 {/* Sem esta frase, procurar Honorários/DAS aqui e não achar se lê como campo
                     que sumiu. Eles saíram porque este modal debita SALDO e não quita guia —
                     quem os paga pelo rateio é a visão Cards. */}
-                <p className="text-gray-500">
+                <p className="text-subtle">
                   <strong>Honorários e DAS não entram aqui</strong>: eles são rateados por cliente e
                   se pagam na visão <strong>🗂️ Cards</strong>, que consome a fatia de cada um e quita a
                   guia. Este modal debita o saldo dos lançamentos e não quita guia nenhuma.
                 </p>
-                <p className="text-blue-300/70">
+                <p className="text-blue-700 dark:text-blue-300/70">
                   <strong className="uppercase">trabalho</strong> (Pró-labore, Lucros, Demais despesas) — vai
                   direto para Lucro → Serviço. <strong>Nunca toca imposto nenhum.</strong>
                 </p>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Data do pagamento</label>
-                <input type="date" value={receivePaidAt} onChange={e=>setReceivePaidAt(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Data do pagamento</label>
+                <input type="date" value={receivePaidAt} onChange={e=>setReceivePaidAt(e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
 
               {/* VALORES DISTRIBUÍDOS — o que já saiu, por categoria.
@@ -4265,21 +4265,21 @@ export default function Financial() {
                   não havia histórico ("um bloco de R$ 0,00 é ruído"), e o resultado foi uma
                   investigação de bug: sem histórico a seção sumia, e some é indistinguível
                   de quebrada. Um empty-state de uma linha responde a pergunta. */}
-              <div className="bg-green-500/5 border border-green-500/30 rounded-xl p-3">
+              <div className="bg-green-50 dark:bg-green-500/5 border border-green-300 dark:border-green-500/30 rounded-xl p-3">
                 <div className="flex items-center justify-between gap-2 mb-1.5">
                   {/* "Valores pagos" e não "distribuídos": é o mesmo número que a spec
                       pediu num card separado, e dois cards com o mesmo valor lado a lado
                       leem como R$ 46. O que faltava era poder ABRIR e ESTORNAR — foi isso
                       que entrou aqui, em vez de um segundo card. */}
-                  <p className="text-green-400/90 text-xs font-medium uppercase tracking-wider">Valores pagos</p>
-                  <span className="text-xs text-gray-500">
-                    Total <span className="text-green-400 font-mono font-semibold">{fmt(distribuidosTotal)}</span>
+                  <p className="text-green-700 dark:text-green-400/90 text-xs font-medium uppercase tracking-wider">Valores pagos</p>
+                  <span className="text-xs text-subtle">
+                    Total <span className="text-green-700 dark:text-green-400 font-mono font-semibold">{fmt(distribuidosTotal)}</span>
                   </span>
                 </div>
                 {distribuidosLista.length === 0 ? (
-                  <p className="text-gray-500 text-[11px]">
+                  <p className="text-subtle text-[11px]">
                     Nenhum pagamento registrado nos lançamentos de{' '}
-                    <span className="text-gray-400">{activeCompany.name}</span>. O que for pago
+                    <span className="text-muted">{activeCompany.name}</span>. O que for pago
                     aqui aparece nesta lista, por categoria.
                   </p>
                 ) : (
@@ -4292,21 +4292,21 @@ export default function Financial() {
                             <button
                               type="button"
                               onClick={() => setPagosAberto(p => ({ ...p, [d.k]: !aberto }))}
-                              className="w-full flex justify-between gap-2 text-left hover:bg-green-500/5 rounded px-1 -mx-1 py-0.5"
+                              className="w-full flex justify-between gap-2 text-left hover:bg-green-50 dark:hover:bg-green-500/5 rounded px-1 -mx-1 py-0.5"
                             >
-                              <span className="font-sans text-gray-400 min-w-0 truncate">
-                                <span className="text-gray-600">{aberto ? '▼' : '▶'}</span>{' '}
-                                <span className="text-green-500">✓</span> {d.label}
-                                {d.data && <span className="text-gray-600"> · {d.data.split('-').reverse().join('/')}</span>}
-                                {d.clientes.length > 0 && <span className="text-gray-600"> · {d.clientes.join(', ')}</span>}
+                              <span className="font-sans text-muted min-w-0 truncate">
+                                <span className="text-faint">{aberto ? '▼' : '▶'}</span>{' '}
+                                <span className="text-green-700 dark:text-green-500">✓</span> {d.label}
+                                {d.data && <span className="text-faint"> · {d.data.split('-').reverse().join('/')}</span>}
+                                {d.clientes.length > 0 && <span className="text-faint"> · {d.clientes.join(', ')}</span>}
                               </span>
-                              <span className="text-green-400 shrink-0">−{fmt(d.valor)}</span>
+                              <span className="text-green-700 dark:text-green-400 shrink-0">−{fmt(d.valor)}</span>
                             </button>
                             {aberto && (
-                              <div className="ml-3 mt-0.5 mb-1 pl-2 border-l border-gray-800 space-y-0.5">
+                              <div className="ml-3 mt-0.5 mb-1 pl-2 border-l border-border space-y-0.5">
                                 {d.itens.map(it => (
                                   <div key={it.payment_id} className="flex items-center justify-between gap-2">
-                                    <span className="font-sans text-gray-500 min-w-0 truncate flex items-center gap-1.5">
+                                    <span className="font-sans text-subtle min-w-0 truncate flex items-center gap-1.5">
                                       <input
                                         type="checkbox"
                                         checked={!!pagosSel[it.payment_id]}
@@ -4320,17 +4320,17 @@ export default function Financial() {
                                       />
                                       <span className="min-w-0 truncate">
                                         {it.data ? it.data.split('-').reverse().join('/') : '—'} · {it.client_name}
-                                        <span className="text-gray-700"> · {it.competencia}</span>
+                                        <span className="text-faintest"> · {it.competencia}</span>
                                         {/* De onde o dinheiro saiu — o lucro absorve primeiro. */}
-                                        <span className="text-gray-600"> · de {it.origem}</span>
+                                        <span className="text-faint"> · de {it.origem}</span>
                                       </span>
                                     </span>
                                     <span className="flex items-center gap-2 shrink-0">
-                                      <span className="text-gray-300">{fmt(it.valor)}</span>
+                                      <span className="text-text-3">{fmt(it.valor)}</span>
                                       <button
                                         type="button"
                                         onClick={() => { setEstornoAviso(''); setEstornoItens([it]) }}
-                                        className="font-sans text-[10px] px-1.5 py-0.5 border border-red-500/40 text-red-400 hover:bg-red-500/10 rounded"
+                                        className="font-sans text-[10px] px-1.5 py-0.5 border border-red-300 dark:border-red-500/40 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded"
                                       >Estornar</button>
                                     </span>
                                   </div>
@@ -4346,14 +4346,14 @@ export default function Financial() {
                         pagamentos DISTINTOS: marcar a mesma sessão em duas categorias
                         seleciona uma linha só. */}
                     {pagosSelLista.length > 0 && (
-                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-green-500/20">
-                        <span className="font-sans text-[11px] text-gray-400">
+                      <div className="flex items-center justify-between gap-2 mt-2 pt-2 border-t border-green-300 dark:border-green-500/20">
+                        <span className="font-sans text-[11px] text-muted">
                           {pagosSelLista.length} pagamento{pagosSelLista.length > 1 ? 's' : ''} ·{' '}
-                          <span className="font-mono text-red-400">{fmt(estornoTotal(pagosSelLista))}</span>
+                          <span className="font-mono text-red-700 dark:text-red-400">{fmt(estornoTotal(pagosSelLista))}</span>
                           <button
                             type="button"
                             onClick={() => setPagosSel({})}
-                            className="ml-2 text-[10px] text-gray-500 hover:text-gray-300 underline"
+                            className="ml-2 text-[10px] text-subtle hover:text-text-3 underline"
                           >limpar</button>
                         </span>
                         <button
@@ -4363,7 +4363,7 @@ export default function Financial() {
                         >Estornar selecionados ({pagosSelLista.length})</button>
                       </div>
                     )}
-                    <p className="text-gray-600 text-[10px] mt-1.5 leading-tight">
+                    <p className="text-faint text-[10px] mt-1.5 leading-tight">
                       Já consumido dos lançamentos listados abaixo — clique numa categoria para
                       ver os pagamentos, marcar vários e estornar de uma vez. A quebra por
                       categoria vem do histórico de cada pagamento; pagamento lançado sem
@@ -4375,48 +4375,48 @@ export default function Financial() {
                     pode derrubar a distribuição inteira da competência. Calar sobre isso
                     faria sumir pagamentos que o usuário não mandou estornar. */}
                 {estornoAviso && (
-                  <p className="text-amber-400/90 text-[10px] mt-2 leading-tight border-t border-green-500/20 pt-1.5">
+                  <p className="text-amber-700 dark:text-amber-400/90 text-[10px] mt-2 leading-tight border-t border-green-300 dark:border-green-500/20 pt-1.5">
                     ⚠️ {estornoAviso}
                   </p>
                 )}
               </div>
 
               {/* VALORES A DISTRIBUIR — o que a competência ainda deve, por categoria. */}
-              <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-3">
+              <div className="bg-amber-50 dark:bg-amber-500/5 border border-amber-300 dark:border-amber-500/30 rounded-xl p-3">
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <p className="text-amber-400/90 text-xs font-medium uppercase tracking-wider">Valores a distribuir</p>
-                  <span className="text-xs text-gray-500">
-                    Total <span className="text-amber-400 font-mono font-semibold">{fmt(aDistribuirTotal)}</span>
+                  <p className="text-amber-700 dark:text-amber-400/90 text-xs font-medium uppercase tracking-wider">Valores a distribuir</p>
+                  <span className="text-xs text-subtle">
+                    Total <span className="text-amber-700 dark:text-amber-400 font-mono font-semibold">{fmt(aDistribuirTotal)}</span>
                   </span>
                 </div>
                 <div className="space-y-0.5 font-mono text-[11px]">
                   {aDistribuir.map(d => (
                     <div key={d.k} className="flex justify-between gap-2">
-                      <span className="font-sans text-gray-400 min-w-0 truncate">
+                      <span className="font-sans text-muted min-w-0 truncate">
                         {d.label}
                         {d.digitando > 0.005 && d.devido > 0.005 && (
-                          <span className="text-gray-600"> · {fmt(d.digitando)} de {fmt(d.devido)} sendo digitado</span>
+                          <span className="text-faint"> · {fmt(d.digitando)} de {fmt(d.devido)} sendo digitado</span>
                         )}
                         {/* Alocado neste modal, guia ainda aberta — ver o cálculo de aDistribuir. */}
                         {d.alocadoSemQuitar > 0.005 && (
-                          <span className="text-amber-400/70"> · {fmt(d.alocadoSemQuitar)} já alocado sem quitar a guia</span>
+                          <span className="text-amber-700 dark:text-amber-400/70"> · {fmt(d.alocadoSemQuitar)} já alocado sem quitar a guia</span>
                         )}
                       </span>
-                      <span className={`shrink-0 ${d.restante > 0.005 ? 'text-amber-400' : 'text-gray-600'}`}>
+                      <span className={`shrink-0 ${d.restante > 0.005 ? 'text-amber-700 dark:text-amber-400' : 'text-faint'}`}>
                         {fmt(d.restante)}
                       </span>
                     </div>
                   ))}
                 </div>
                 {aDistribuirSemQuitar.length > 0 && (
-                  <p className="text-amber-400/80 text-[10px] mt-1.5 leading-tight">
+                  <p className="text-amber-700 dark:text-amber-400/80 text-[10px] mt-1.5 leading-tight">
                     ⚠️ {aDistribuirSemQuitar.map(d => d.label).join(', ')} aparece nas duas seções: o
                     valor já saiu do saldo do Victor, mas este modal não quita a guia — ela segue
                     devida em <strong>/fiscal</strong>, onde é registrada como abatimento.
                   </p>
                 )}
                 {Object.keys(reserves).length === 0 && (
-                  <p className="text-gray-600 text-[10px] mt-1.5 leading-tight">
+                  <p className="text-faint text-[10px] mt-1.5 leading-tight">
                     Sem apuração em {months[refMonth-1]}/{refYear} — nada a distribuir por
                     categoria. Apure em <strong>/fiscal</strong> para ver DAS, INSS e Escritório aqui.
                   </p>
@@ -4428,8 +4428,8 @@ export default function Financial() {
                   onde cada categoria é digitada no cliente a que pertence, em vez de
                   ser roteada por um checkbox. Este modal ficou sendo só o
                   ?action=pagar-distribuido (pool único) do Flow B e da edição de sessão. */}
-              <div className="bg-gray-950/60 border border-gray-800 rounded-xl p-3">
-                <p className="text-gray-300 text-xs font-medium uppercase tracking-wider">Distribuição do saldo</p>
+              <div className="bg-bg/60 border border-border rounded-xl p-3">
+                <p className="text-text-3 text-xs font-medium uppercase tracking-wider">Distribuição do saldo</p>
                 {/* ⚠️ Este painel IGNORA o filtro de mês da tela, e tem de ignorar: o pool
                     é consumido do mês mais antigo para o mais novo, e candidatosDisponiveis()
                     no backend também não filtra por competência — só pelo teto de caixa.
@@ -4437,7 +4437,7 @@ export default function Financial() {
                     consome, que é a versão em espelho do bug do "Receber gravava zero".
                     Sem esta frase, ver fev listado com o filtro em jan parece o filtro
                     tendo falhado (foi a leitura do Bokada #42/#44). */}
-                <p className="text-gray-600 text-[10px] mb-2 leading-tight">
+                <p className="text-faint text-[10px] mb-2 leading-tight">
                   Todas as competências em aberto até {months[effRefMonth-1]}/{effRefYear}, da mais
                   antiga para a mais nova — não só o mês do filtro. É a ordem em que o pagamento
                   consome os saldos.
@@ -4453,7 +4453,7 @@ export default function Financial() {
                 {(quitadosOcultos.length > 0 || quitadosComImposto.length > 0) && (
                   <div className="mb-2">
                     {quitadosOcultos.length > 0 && (
-                      <p className="text-gray-600 text-[10px] leading-tight">
+                      <p className="text-faint text-[10px] leading-tight">
                         {quitadosOcultos.length === 1 ? '1 lançamento já quitado não aparece' : `${quitadosOcultos.length} lançamentos já quitados não aparecem`}
                         {' '}({quitadosOcultos.slice(0, 3).map(r => `${r.client_name} ${months[r.month-1]}/${r.year}`).join(', ')}
                         {quitadosOcultos.length > 3 ? ` +${quitadosOcultos.length - 3}` : ''}) — não têm saldo nem imposto a consumir.
@@ -4466,7 +4466,7 @@ export default function Financial() {
                         "Honorários 150", e a tela mostrava só o Bokada. Esconder a maior das
                         duas parcelas era a prévia divergindo da gravação. */}
                     {quitadosComImposto.length > 0 && (
-                      <p className="text-amber-400/80 text-[10px] leading-tight mt-1">
+                      <p className="text-amber-700 dark:text-amber-400/80 text-[10px] leading-tight mt-1">
                         ⚠️ {quitadosComImposto.map(r => `${r.client_name} ${months[r.month-1]}/${r.year} (${fmt(r.impostoAberto)})`).join(', ')}
                         {' '}{quitadosComImposto.length === 1 ? 'está quitado' : 'estão quitados'}, mas
                         {quitadosComImposto.length === 1 ? ' segue' : ' seguem'} na lista pelo imposto em
@@ -4478,18 +4478,18 @@ export default function Financial() {
                   </div>
                 )}
                 {distRows.length === 0 ? (
-                  <p className="text-gray-600 text-xs text-center py-2">Nenhum saldo pendente</p>
+                  <p className="text-faint text-xs text-center py-2">Nenhum saldo pendente</p>
                 ) : (
                   <div className="space-y-2">
                     {distRows.map(d => (
-                      <div key={d.id} className="border-b border-gray-800/60 last:border-0 pb-2 last:pb-0">
+                      <div key={d.id} className="border-b border-border/60 last:border-0 pb-2 last:pb-0">
                         {/* Cabeçalho: o saldo consumido pelo pagamento — a razão de ser
                             do painel. A árvore abaixo diz de QUE esse saldo é feito. */}
                         <div className="flex items-center justify-between gap-2 text-xs">
-                          <span className={`truncate ${d.state === 'zero' ? 'text-gray-600' : 'text-gray-300'}`}>
-                            <span className="text-gray-500">{months[d.month-1]}/{d.year}</span> {d.client_name}
+                          <span className={`truncate ${d.state === 'zero' ? 'text-faint' : 'text-text-3'}`}>
+                            <span className="text-subtle">{months[d.month-1]}/{d.year}</span> {d.client_name}
                             {d.semNf && (
-                              <span className="ml-1.5 px-1.5 py-0.5 bg-gray-700 text-gray-400 text-[10px] rounded-full font-sans">
+                              <span className="ml-1.5 px-1.5 py-0.5 bg-surface-3 text-muted text-[10px] rounded-full font-sans">
                                 sem NF · consumido por último
                               </span>
                             )}
@@ -4498,27 +4498,27 @@ export default function Financial() {
                                 se lê como erro — é o oposto: são justamente elas que a
                                 cascata do imposto vai consumir. */}
                             {d.saldo <= 0.005 && d.imposto.sobra > 0.005 && (
-                              <span className="ml-1.5 px-1.5 py-0.5 bg-amber-500/15 text-amber-300/90 text-[10px] rounded-full font-sans">
+                              <span className="ml-1.5 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300/90 text-[10px] rounded-full font-sans">
                                 quitado · só imposto
                               </span>
                             )}
                           </span>
                           <span className="shrink-0 font-mono text-right whitespace-nowrap">
-                            <span className="text-gray-500">Saldo: {fmt(d.saldo)}</span>
+                            <span className="text-subtle">Saldo: {fmt(d.saldo)}</span>
                             {/* De onde o saldo saiu. Sem isto, um lançamento com pagamento
                                 anterior parece simplesmente menor, e a cascata parece ter
                                 parado no meio dele. */}
                             {d.jaPago > 0.005 && (
-                              <span className="text-gray-600 text-[10px]"
+                              <span className="text-faint text-[10px]"
                                 title="Total devido do lançamento menos o que já foi pago em sessões anteriores. A cascata consome o SALDO, não o total.">
                                 {' '}(de {fmt(d.total)} · {fmt(d.jaPago)} já pago)
                               </span>
                             )}
-                            <span className="text-gray-600"> → </span>
+                            <span className="text-faint"> → </span>
                             <span className={
-                              d.state === 'zero' ? 'text-gray-600 line-through'
-                              : d.state === 'partial' ? 'text-yellow-400'
-                              : 'text-green-400'
+                              d.state === 'zero' ? 'text-faint line-through'
+                              : d.state === 'partial' ? 'text-yellow-700 dark:text-yellow-400'
+                              : 'text-green-700 dark:text-green-400'
                             }>Líquido: {fmt(d.liquido)}</span>
                             {/* ⚠️ "Líquido 0,00" num lançamento que ainda carrega imposto se
                                 lê como se a linha tivesse sumido do nada — e o SUB logo
@@ -4526,7 +4526,7 @@ export default function Financial() {
                                 somar os dois. O imposto vem AQUI, rotulado e com o sinal
                                 oposto explícito: ele é devido ao fisco, não ao Victor. */}
                             {d.imposto.sobra > 0.005 && (
-                              <span className="text-amber-400/80" title="Imposto rateado desta nota, devido ao FISCO — não é saldo do Victor. Este modal não quita guia: para isso use a visão Cards ou /fiscal.">
+                              <span className="text-amber-700 dark:text-amber-400/80" title="Imposto rateado desta nota, devido ao FISCO — não é saldo do Victor. Este modal não quita guia: para isso use a visão Cards ou /fiscal.">
                                 {' · '}imposto: {fmt(d.imposto.sobra)}
                               </span>
                             )}
@@ -4545,16 +4545,16 @@ export default function Financial() {
                         <div className="mt-1.5 overflow-x-auto">
                         <table className="w-full min-w-[46rem] font-mono text-[11px]">
                           <thead>
-                            <tr className="text-[9px] uppercase tracking-wide text-gray-600 border-b border-gray-800">
+                            <tr className="text-[9px] uppercase tracking-wide text-faint border-b border-border">
                               <th className="text-left font-medium font-sans pb-0.5 pr-2">Categoria</th>
                               <th className="text-right font-medium font-sans pb-0.5 px-1">Original</th>
                               <th className="text-right font-medium font-sans pb-0.5 px-1">Absorveu</th>
                               <th className="text-right font-medium font-sans pb-0.5 px-1">Ajust. bruto</th>
                               <th className="text-right font-medium font-sans pb-0.5 px-1">Pagos</th>
-                              <th className="text-right font-medium font-sans pb-0.5 px-1 text-green-500/70">Líquido</th>
-                              <th className="text-right font-medium font-sans pb-0.5 px-1 bg-blue-500/10 text-blue-300/80">Digitado</th>
-                              <th className="text-right font-medium font-sans pb-0.5 px-1 bg-orange-500/10 text-orange-300/80">Será pago</th>
-                              <th className="text-right font-medium font-sans pb-0.5 pl-1 bg-green-500/10 text-green-300/80">Sobra</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1 text-green-700 dark:text-green-500/70">Líquido</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300/80">Digitado</th>
+                              <th className="text-right font-medium font-sans pb-0.5 px-1 bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-300/80">Será pago</th>
+                              <th className="text-right font-medium font-sans pb-0.5 pl-1 bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-300/80">Sobra</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -4565,15 +4565,15 @@ export default function Financial() {
                               // as duas — senão a simulação não teria de onde sair.
                               const liquidoAntes = cents(c.liquido + c.absorvido)
                               const zerou = c.bruto > 0.005 && c.liquido <= 0.005
-                              const opt = (v, cls = 'text-gray-500') => v > 0.005
+                              const opt = (v, cls = 'text-subtle') => v > 0.005
                                 ? <span className={cls}>{fmt(v)}</span>
-                                : <span className="text-gray-700">—</span>
+                                : <span className="text-faintest">—</span>
                               return (
-                                <tr key={cat} className="border-b border-gray-800/40">
-                                  <td className="font-sans text-gray-500 py-px pr-2 whitespace-nowrap">
+                                <tr key={cat} className="border-b border-border/40">
+                                  <td className="font-sans text-subtle py-px pr-2 whitespace-nowrap">
                                     {DIST_LINHA_LABEL[cat]}
                                     {c.percentual != null && (
-                                      <span className="text-gray-700"> ({c.percentual.toFixed(2)}%)</span>
+                                      <span className="text-faintest"> ({c.percentual.toFixed(2)}%)</span>
                                     )}
                                     {/* ⚠️ ABSORVEU é o que a cascata FISCAL levou, não o que este
                                         pagamento vai consumir — e a linha do Lucro quase sempre
@@ -4582,71 +4582,71 @@ export default function Financial() {
                                         "979,63 + 7.920,37 = 8.900". Dizer em palavras, na própria
                                         linha, é o único lugar onde a confusão não passa. */}
                                     {c.absorveu > 0.005 && c.bruto <= 0.005 && (
-                                      <span className="text-red-400/70"> · imposto absorveu tudo, nada a consumir</span>
+                                      <span className="text-red-700 dark:text-red-400/70"> · imposto absorveu tudo, nada a consumir</span>
                                     )}
                                     {c.absorveu > 0.005 && c.bruto > 0.005 && (
-                                      <span className="text-red-400/60"> · imposto levou {fmt(c.absorveu)}</span>
+                                      <span className="text-red-700 dark:text-red-400/60"> · imposto levou {fmt(c.absorveu)}</span>
                                     )}
                                   </td>
-                                  <td className="text-right text-gray-500 py-px px-1">{fmt(c.original)}</td>
+                                  <td className="text-right text-subtle py-px px-1">{fmt(c.original)}</td>
                                   {/* O lucro zerado por cascata não é "cliente sem lucro": o
                                       imposto o superou e o serviço cobriu a diferença. */}
-                                  <td className="text-right py-px px-1">{opt(c.absorveu, 'text-red-400/80')}</td>
-                                  <td className="text-right text-gray-400 py-px px-1">{fmt(c.bruto)}</td>
-                                  <td className="text-right py-px px-1">{opt(c.pagos, 'text-orange-400/80')}</td>
-                                  <td className={`text-right py-px px-1 ${zerou ? 'text-gray-600' : 'text-green-400'}`}>{fmt(liquidoAntes)}</td>
-                                  <td className="text-right py-px px-1 bg-blue-500/5">{opt(c.direcionado, 'text-blue-300')}</td>
-                                  <td className="text-right py-px px-1 bg-orange-500/5">{opt(c.absorvido, 'text-orange-300')}</td>
-                                  <td className={`text-right py-px pl-1 bg-green-500/5 ${c.absorvido > 0.005 ? 'text-white font-semibold' : 'text-gray-300'}`}>{fmt(c.liquido)}</td>
+                                  <td className="text-right py-px px-1">{opt(c.absorveu, 'text-red-700 dark:text-red-400/80')}</td>
+                                  <td className="text-right text-muted py-px px-1">{fmt(c.bruto)}</td>
+                                  <td className="text-right py-px px-1">{opt(c.pagos, 'text-orange-700 dark:text-orange-400/80')}</td>
+                                  <td className={`text-right py-px px-1 ${zerou ? 'text-faint' : 'text-green-700 dark:text-green-400'}`}>{fmt(liquidoAntes)}</td>
+                                  <td className="text-right py-px px-1 bg-blue-50 dark:bg-blue-500/5">{opt(c.direcionado, 'text-blue-700 dark:text-blue-300')}</td>
+                                  <td className="text-right py-px px-1 bg-orange-50 dark:bg-orange-500/5">{opt(c.absorvido, 'text-orange-700 dark:text-orange-300')}</td>
+                                  <td className={`text-right py-px pl-1 bg-green-50 dark:bg-green-500/5 ${c.absorvido > 0.005 ? 'text-text font-semibold' : 'text-text-3'}`}>{fmt(c.liquido)}</td>
                                 </tr>
                               )
                             })}
                             {/* Separador entre as 5 trabalháveis e as 2 informativas. */}
                             <tr className="font-semibold">
-                              <td className="font-sans text-gray-400 border-t-2 border-gray-700 pt-0.5 pr-2">SUB</td>
-                              <td className="text-right text-gray-400 border-t-2 border-gray-700 pt-0.5 px-1">{fmt(d.sub.original)}</td>
-                              <td className="text-right text-red-400/80 border-t-2 border-gray-700 pt-0.5 px-1">{d.sub.absorveu > 0.005 ? fmt(d.sub.absorveu) : '—'}</td>
-                              <td className="text-right text-gray-400 border-t-2 border-gray-700 pt-0.5 px-1">{fmt(d.sub.bruto)}</td>
-                              <td className="text-right text-orange-400/80 border-t-2 border-gray-700 pt-0.5 px-1">{d.sub.pagos > 0.005 ? fmt(d.sub.pagos) : '—'}</td>
-                              <td className="text-right text-green-400 border-t-2 border-gray-700 pt-0.5 px-1">{fmt(d.sub.liquido)}</td>
-                              <td className="text-right text-blue-300 border-t-2 border-gray-700 pt-0.5 px-1 bg-blue-500/5">{d.sub.direcionado > 0.005 ? fmt(d.sub.direcionado) : '—'}</td>
-                              <td className="text-right text-orange-300 border-t-2 border-gray-700 pt-0.5 px-1 bg-orange-500/5">{d.sub.absorvido > 0.005 ? fmt(d.sub.absorvido) : '—'}</td>
-                              <td className="text-right text-white border-t-2 border-gray-700 pt-0.5 pl-1 bg-green-500/5">{fmt(d.sub.sobra)}</td>
+                              <td className="font-sans text-muted border-t-2 border-border-strong pt-0.5 pr-2">SUB</td>
+                              <td className="text-right text-muted border-t-2 border-border-strong pt-0.5 px-1">{fmt(d.sub.original)}</td>
+                              <td className="text-right text-red-700 dark:text-red-400/80 border-t-2 border-border-strong pt-0.5 px-1">{d.sub.absorveu > 0.005 ? fmt(d.sub.absorveu) : '—'}</td>
+                              <td className="text-right text-muted border-t-2 border-border-strong pt-0.5 px-1">{fmt(d.sub.bruto)}</td>
+                              <td className="text-right text-orange-700 dark:text-orange-400/80 border-t-2 border-border-strong pt-0.5 px-1">{d.sub.pagos > 0.005 ? fmt(d.sub.pagos) : '—'}</td>
+                              <td className="text-right text-green-700 dark:text-green-400 border-t-2 border-border-strong pt-0.5 px-1">{fmt(d.sub.liquido)}</td>
+                              <td className="text-right text-blue-700 dark:text-blue-300 border-t-2 border-border-strong pt-0.5 px-1 bg-blue-50 dark:bg-blue-500/5">{d.sub.direcionado > 0.005 ? fmt(d.sub.direcionado) : '—'}</td>
+                              <td className="text-right text-orange-700 dark:text-orange-300 border-t-2 border-border-strong pt-0.5 px-1 bg-orange-50 dark:bg-orange-500/5">{d.sub.absorvido > 0.005 ? fmt(d.sub.absorvido) : '—'}</td>
+                              <td className="text-right text-text border-t-2 border-border-strong pt-0.5 pl-1 bg-green-50 dark:bg-green-500/5">{fmt(d.sub.sobra)}</td>
                             </tr>
                             {/* O SUB acima soma dois sinais opostos. Estas duas linhas dizem
                                 quanto dele é de cada lado — e é na SOBRA de "= imposto" que
                                 mora o valor que sobra num lançamento já quitado. */}
                             {[
-                              { key: 'receber', label: '= a receber', hint: 'lucro + serviço · o que este pagamento consome', cls: 'text-green-300' },
+                              { key: 'receber', label: '= a receber', hint: 'lucro + serviço · o que este pagamento consome', cls: 'text-green-700 dark:text-green-300' },
                               // ⚠️ O hint não diz "não é consumido": digitar Escritório/DAS/INSS
                               // aqui REDUZ esta linha na simulação. O que não acontece é a guia
                               // ser quitada — o ?action=pagar-distribuido não grava
                               // fiscal_payments. É a mesma ressalva de `aDistribuirSemQuitar`.
-                              { key: 'imposto', label: '= imposto', hint: 'devido ao fisco · este modal não quita guia', cls: 'text-amber-300' },
+                              { key: 'imposto', label: '= imposto', hint: 'devido ao fisco · este modal não quita guia', cls: 'text-amber-700 dark:text-amber-300' },
                             ].map(({ key, label, hint, cls }) => {
                               const t = d[key]
                               const opt2 = (v) => (v > 0.005 ? fmt(v) : '—')
                               return (
                                 <tr key={key} className="text-[10px]">
                                   <td className={`font-sans py-px pr-2 whitespace-nowrap ${cls}`}>
-                                    {label}<span className="text-gray-700"> · {hint}</span>
+                                    {label}<span className="text-faintest"> · {hint}</span>
                                   </td>
-                                  <td className="text-right text-gray-600 py-px px-1">{opt2(t.original)}</td>
-                                  <td className="text-right text-gray-600 py-px px-1">{opt2(t.absorveu)}</td>
-                                  <td className="text-right text-gray-500 py-px px-1">{opt2(t.bruto)}</td>
-                                  <td className="text-right text-gray-600 py-px px-1">{opt2(t.pagos)}</td>
-                                  <td className="text-right text-gray-500 py-px px-1">{opt2(t.liquido)}</td>
-                                  <td className="text-right text-gray-600 py-px px-1 bg-blue-500/5">{opt2(t.direcionado)}</td>
-                                  <td className="text-right text-gray-600 py-px px-1 bg-orange-500/5">{opt2(t.absorvido)}</td>
-                                  <td className={`text-right py-px pl-1 bg-green-500/5 font-semibold ${cls}`}>{fmt(t.sobra)}</td>
+                                  <td className="text-right text-faint py-px px-1">{opt2(t.original)}</td>
+                                  <td className="text-right text-faint py-px px-1">{opt2(t.absorveu)}</td>
+                                  <td className="text-right text-subtle py-px px-1">{opt2(t.bruto)}</td>
+                                  <td className="text-right text-faint py-px px-1">{opt2(t.pagos)}</td>
+                                  <td className="text-right text-subtle py-px px-1">{opt2(t.liquido)}</td>
+                                  <td className="text-right text-faint py-px px-1 bg-blue-50 dark:bg-blue-500/5">{opt2(t.direcionado)}</td>
+                                  <td className="text-right text-faint py-px px-1 bg-orange-50 dark:bg-orange-500/5">{opt2(t.absorvido)}</td>
+                                  <td className={`text-right py-px pl-1 bg-green-50 dark:bg-green-500/5 font-semibold ${cls}`}>{fmt(t.sobra)}</td>
                                 </tr>
                               )
                             })}
                             {d.fabricio != null && (
                               <tr>
-                                <td className="font-sans text-gray-600 py-px pr-2">FAB</td>
-                                <td className="text-right text-gray-600 py-px px-1">{fmt(d.fabricio)}</td>
-                                <td colSpan={7} className="text-right text-gray-700 py-px text-[10px] font-sans">sai da nota · pago na aba Pagar Fab</td>
+                                <td className="font-sans text-faint py-px pr-2">FAB</td>
+                                <td className="text-right text-faint py-px px-1">{fmt(d.fabricio)}</td>
+                                <td colSpan={7} className="text-right text-faintest py-px text-[10px] font-sans">sai da nota · pago na aba Pagar Fab</td>
                               </tr>
                             )}
                           </tbody>
@@ -4657,7 +4657,7 @@ export default function Financial() {
                             sair, e as três linhas fiscais o listam de novo. A coluna que
                             fecha com a nota é AJUST. BRUTO. Dizer isso evita a leitura de
                             que a decomposição está estourada em ~R$ 1.000. */}
-                        <p className="text-gray-700 text-[10px] mt-1 leading-tight">
+                        <p className="text-faintest text-[10px] mt-1 leading-tight">
                             <strong>Original</strong> e <strong>Absorveu</strong> descrevem o que a
                             cascata FISCAL já fez — não o pagamento que está sendo digitado. Só
                             <strong> Líquido</strong> é consumível, e o que este pagamento leva está
@@ -4673,7 +4673,7 @@ export default function Financial() {
                             começa, e escorrem para o Serviço.
                         </p>
                         {Math.abs(d.aRedistribuir) > 0.005 && (
-                          <p className="text-amber-400/80 text-[10px] leading-tight pt-1">
+                          <p className="text-amber-700 dark:text-amber-400/80 text-[10px] leading-tight pt-1">
                             ⚠️ As três linhas fiscais são o imposto REAL, mas o lançamento ainda
                             carrega a provisão de 7%: {fmt(d.aRedistribuir)} não foi
                             redistribuído, então o SUB está alto nesse valor. Aplicar em /fiscal.
@@ -4684,7 +4684,7 @@ export default function Financial() {
                   </div>
                 )}
                 {distOverflow > 0 && (
-                  <p className="text-red-400 text-xs mt-2">⚠️ Valor excede o saldo disponível em {fmt(distOverflow)}</p>
+                  <p className="text-red-700 dark:text-red-400 text-xs mt-2">⚠️ Valor excede o saldo disponível em {fmt(distOverflow)}</p>
                 )}
                 {/* Distinto do overflow acima: ali o POOL passou do saldo dos lançamentos;
                     aqui o valor coube no pool, mas passou do que AQUELA categoria alcança —
@@ -4694,7 +4694,7 @@ export default function Financial() {
                 {/* Nomeia QUEM sobrou e por qual regra. "R$ X não coube" sem dizer de que
                     categoria manda o usuário conferir as sete à mão. */}
                 {distSobraCategoria > 0.005 && distOverflow <= 0.005 && (
-                  <div className="text-amber-400/80 text-[11px] mt-2 space-y-0.5">
+                  <div className="text-amber-700 dark:text-amber-400/80 text-[11px] mt-2 space-y-0.5">
                     {Object.entries(distSobras).filter(([, v]) => v > 0.005).map(([cat, v]) => {
                       const rotulo = (RECEIVE_VICTOR_CATEGORIES.find(([k]) => k === cat) || [cat, cat])[1]
                       return (
@@ -4708,13 +4708,13 @@ export default function Financial() {
                   </div>
                 )}
                 {foraDoTeto.length > 0 && (
-                  <div className="mt-3 pt-2 border-t border-gray-800">
-                    <p className="text-gray-500 text-[11px] mb-1">
+                  <div className="mt-3 pt-2 border-t border-border">
+                    <p className="text-subtle text-[11px] mb-1">
                       {foraDoTeto.length === 1 ? '1 lançamento ficou' : `${foraDoTeto.length} lançamentos ficaram`} de fora: o caixa deles é posterior a {months[effRefMonth-1]}/{effRefYear} (data deste pagamento). Ajuste a data para alcançá-los.
                     </p>
                     {foraDoTeto.map(r => (
-                      <div key={r.id} className="flex items-center justify-between gap-2 text-[11px] text-gray-600">
-                        <span className="truncate">{months[r.month-1]}/{r.year} {r.client_name} <span className="text-gray-700">· caixa {months[r.pm-1]}/{r.py}</span></span>
+                      <div key={r.id} className="flex items-center justify-between gap-2 text-[11px] text-faint">
+                        <span className="truncate">{months[r.month-1]}/{r.year} {r.client_name} <span className="text-faintest">· caixa {months[r.pm-1]}/{r.py}</span></span>
                         <span className="shrink-0 font-mono">{fmt(r.saldo)}</span>
                       </div>
                     ))}
@@ -4726,55 +4726,55 @@ export default function Financial() {
               {editSession && breakdownPanel(editEntries)}
 
               {/* Saldo disponível considerando as reservas do mês */}
-              <div className="border-t border-gray-800 pt-3 space-y-1 text-xs">
-                <div className="flex justify-between"><span className="text-gray-400">Saldo disponível bruto</span><span className="text-white">{fmt(saldoDisponivelBruto)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">(-) Reservas</span><span className="text-orange-400">-{fmt(reservesTotal)}</span></div>
-                <div className="flex justify-between font-semibold"><span className="text-gray-300">= Disponível para distribuir</span><span className="text-green-400">{fmt(disponivelParaDistribuir)}</span></div>
+              <div className="border-t border-border pt-3 space-y-1 text-xs">
+                <div className="flex justify-between"><span className="text-muted">Saldo disponível bruto</span><span className="text-text">{fmt(saldoDisponivelBruto)}</span></div>
+                <div className="flex justify-between"><span className="text-muted">(-) Reservas</span><span className="text-orange-700 dark:text-orange-400">-{fmt(reservesTotal)}</span></div>
+                <div className="flex justify-between font-semibold"><span className="text-text-3">= Disponível para distribuir</span><span className="text-green-700 dark:text-green-400">{fmt(disponivelParaDistribuir)}</span></div>
                 {reservesExceedSaldo && (
-                  <p className="text-red-400 text-xs pt-1">⚠️ Reservas excedem o saldo disponível</p>
+                  <p className="text-red-700 dark:text-red-400 text-xs pt-1">⚠️ Reservas excedem o saldo disponível</p>
                 )}
                 {!reservesExceedSaldo && receiveExcedeDisponivel && (
-                  <p className="text-red-400 text-xs pt-1">⚠️ Total a distribuir excede o disponível (após reservas) em {fmt(receiveTotal - disponivelParaDistribuir)}</p>
+                  <p className="text-red-700 dark:text-red-400 text-xs pt-1">⚠️ Total a distribuir excede o disponível (após reservas) em {fmt(receiveTotal - disponivelParaDistribuir)}</p>
                 )}
               </div>
 
-              <p className="text-sm text-gray-300 border-t border-gray-800 pt-3">Total a distribuir: <span className="text-green-400 font-bold">{fmt(receiveTotal)}</span></p>
+              <p className="text-sm text-text-3 border-t border-border pt-3">Total a distribuir: <span className="text-green-700 dark:text-green-400 font-bold">{fmt(receiveTotal)}</span></p>
             </div>
 
             {erroReceive && (
-              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erroReceive}</p>
+              <p className="mt-3 text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erroReceive}</p>
             )}
 
             {/* Flow B — painel de decisão da sobra (overflow) */}
             {overflowInfo ? (
-              <div className="mt-5 bg-amber-500/10 border border-amber-500/40 rounded-xl p-4">
-                <p className="text-amber-300 text-sm font-medium mb-1">Sobra após preencher o registro</p>
-                <p className="text-gray-300 text-xs mb-4">O registro alvo recebeu {fmt(overflowInfo.targetSaldo)}. Ainda restam <span className="text-amber-300 font-bold">{fmt(overflowInfo.overflow)}</span> a distribuir. O que deseja fazer?</p>
+              <div className="mt-5 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/40 rounded-xl p-4">
+                <p className="text-amber-700 dark:text-amber-300 text-sm font-medium mb-1">Sobra após preencher o registro</p>
+                <p className="text-text-3 text-xs mb-4">O registro alvo recebeu {fmt(overflowInfo.targetSaldo)}. Ainda restam <span className="text-amber-700 dark:text-amber-300 font-bold">{fmt(overflowInfo.overflow)}</span> a distribuir. O que deseja fazer?</p>
                 {!showMesAnterior ? (
                   <div className="space-y-2">
                     <button onClick={() => resolveOverflow('pharma')} disabled={receiving} className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">Completar com Pharmalog</button>
                     <button onClick={() => resolveOverflow('demais')} disabled={receiving} className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">Completar com demais clientes</button>
-                    <button onClick={() => setShowMesAnterior(true)} disabled={receiving} className="w-full py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-gray-200 rounded-lg text-sm font-medium">Ir para mês anterior</button>
-                    <button onClick={() => resolveOverflow('nada')} disabled={receiving} className="w-full py-2 border border-gray-700 text-gray-400 hover:bg-gray-800 disabled:opacity-50 rounded-lg text-sm">Não fazer nada</button>
+                    <button onClick={() => setShowMesAnterior(true)} disabled={receiving} className="w-full py-2 bg-surface-3 hover:bg-surface-4 disabled:opacity-50 text-text-2 rounded-lg text-sm font-medium">Ir para mês anterior</button>
+                    <button onClick={() => resolveOverflow('nada')} disabled={receiving} className="w-full py-2 border border-border-strong text-muted hover:bg-surface-2 disabled:opacity-50 rounded-lg text-sm">Não fazer nada</button>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-gray-400 text-xs">Escolha o registro de mês anterior para continuar:</p>
+                    <p className="text-muted text-xs">Escolha o registro de mês anterior para continuar:</p>
                     {prevMonthsWithBalance.length === 0 ? (
-                      <p className="text-gray-600 text-xs text-center py-2">Nenhum saldo em meses anteriores</p>
+                      <p className="text-faint text-xs text-center py-2">Nenhum saldo em meses anteriores</p>
                     ) : prevMonthsWithBalance.map(r => (
-                      <button key={r.id} onClick={() => resolveOverflow('mes', r.id)} disabled={receiving} className="w-full flex items-center justify-between gap-2 py-2 px-3 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 rounded-lg text-xs">
-                        <span className="text-gray-200 truncate"><span className="text-gray-500">{months[r.month-1]}/{r.year}</span> {r.client_name}</span>
-                        <span className="text-green-400 font-mono shrink-0">{fmt(r.saldo)}</span>
+                      <button key={r.id} onClick={() => resolveOverflow('mes', r.id)} disabled={receiving} className="w-full flex items-center justify-between gap-2 py-2 px-3 bg-surface-2 hover:bg-surface-3 disabled:opacity-50 rounded-lg text-xs">
+                        <span className="text-text-2 truncate"><span className="text-subtle">{months[r.month-1]}/{r.year}</span> {r.client_name}</span>
+                        <span className="text-green-700 dark:text-green-400 font-mono shrink-0">{fmt(r.saldo)}</span>
                       </button>
                     ))}
-                    <button onClick={() => setShowMesAnterior(false)} disabled={receiving} className="w-full py-2 border border-gray-700 text-gray-400 hover:bg-gray-800 disabled:opacity-50 rounded-lg text-xs">Voltar</button>
+                    <button onClick={() => setShowMesAnterior(false)} disabled={receiving} className="w-full py-2 border border-border-strong text-muted hover:bg-surface-2 disabled:opacity-50 rounded-lg text-xs">Voltar</button>
                   </div>
                 )}
               </div>
             ) : (
               <div className="flex gap-3 mt-5">
-                <button onClick={closeReceive} disabled={receiving} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-50">Cancelar</button>
+                <button onClick={closeReceive} disabled={receiving} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm disabled:opacity-50">Cancelar</button>
                 <button onClick={confirmReceive} disabled={receiving || receiveTotal <= 0 || !receivePaidAt} className="flex-1 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{receiving ? (editSession ? 'Salvando...' : 'Distribuindo...') : (editSession ? 'Salvar edição' : 'Confirmar')}</button>
               </div>
             )}
