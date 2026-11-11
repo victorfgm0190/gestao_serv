@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { semDescricao } from '../lib/semDescricao'
 import { useOutletContext, Link } from 'react-router-dom'
 import CopyButton from '../components/CopyButton'
 import NFSeEmitirModal from '../components/NFSeEmitirModal'
@@ -907,7 +908,9 @@ export default function Billing() {
                         <div>
                           <p className="text-white text-xs font-medium">{new Date(e.entry_date).toLocaleDateString('pt-BR',{timeZone:'UTC'})} — <span className="text-blue-400">{parseFloat(e.hours).toFixed(2)}h</span></p>
                           {e.hora_inicial && <p className="text-gray-500 text-xs">{e.hora_inicial} → {e.hora_final}{e.intervalo_inicio?` (int: ${e.intervalo_inicio}-${e.intervalo_fim})`:''}</p>}
-                          {e.description && <p className="text-gray-500 text-xs truncate">{e.description}</p>}
+                          {semDescricao(e)
+                            ? <p className="text-amber-300/80 text-xs" title="Sem descrição">📝 sem descrição</p>
+                            : <p className="text-gray-500 text-xs truncate">{e.description}</p>}
                         </div>
                       </label>
                     ))}
@@ -916,10 +919,20 @@ export default function Billing() {
                     const selected = timeEntries.filter(e => selectedEntries.includes(e.id))
                     const totalHours = selected.reduce((s,e) => s + (parseFloat(e.hours)||0), 0)
                     const datas = new Set(selected.map(e => String(e.entry_date).slice(0,10))).size
+                    // OS lançadas em lote sem descrição: aviso, não trava (a NFS-e não
+                    // lê a descrição da OS, mas o demonstrativo/export sai com a linha vazia).
+                    const semDesc = selected.filter(semDescricao).length
                     return (
+                      <>
+                      {semDesc > 0 && (
+                        <p className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 mt-2">
+                          📝 {semDesc} OS sem descrição — complete em Apontamento de Horas antes de gerar, se quiser o detalhe no demonstrativo.
+                        </p>
+                      )}
                       <p className="text-blue-400 text-xs font-medium mt-2">
                         {selectedEntries.length} agenda(s) selecionada(s) · {totalHours.toFixed(2)}h · {datas} data(s) distinta(s)
                       </p>
+                      </>
                     )
                   })()}
                 </div>

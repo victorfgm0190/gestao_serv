@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { todayBR } from '../lib/dateUtils'
 import HorasCalendar from '../components/HorasCalendar'
+import LoteAgendas from '../components/LoteAgendas'
+import { buscarOutraEmpresa, invalidarApontamentos } from '../lib/apontamentosCache'
+import { semDescricao } from '../lib/semDescricao'
 import { sobrepoe, faixaHorario } from '../lib/horasConflito'
 import { calcular } from '../../lib/time-entry-calc.js'
 import { tipoDaRegra, valoresDaRegra, chaveData, cotaDaDiaria, ROTULO_COBRANCA } from '../../lib/billing-type.js'
@@ -75,13 +78,48 @@ export default function TimeEntries() {
     setOutraEntries([])
     if (view !== 'calendario' || !mostrarOutra || !outraId) return
     let vivo = true
-    fetch(`/api/time-entries?company_id=${outraId}&month=${filterMonth}&year=${filterYear}`)
-      .then(r => r.ok ? r.json() : { entries: [] })
-      .then(d => { if (vivo) setOutraEntries(d.entries || []) })
-      .catch(e => console.error(e))
+    buscarOutraEmpresa(outraId, [`${filterYear}-${String(filterMonth).padStart(2, '0')}-01`])
+      .then(lista => { if (vivo) setOutraEntries(lista) })
     // Troca rápida de mês/empresa: a resposta antiga não pode sobrescrever a nova.
     return () => { vivo = false }
   }, [view, mostrarOutra, outraId, filterMonth, filterYear])
+
+  // Aviso de conflito do modal individual: busca a outra empresa no mês da DATA do
+  // formulário, em qualquer visão e com o toggle do calendário ligado ou não.
+  const [modalOutras, setModalOutras] = useState([])
+  useEffect(() => {
+    if (!showModal || !outraId || !form.entry_date) { setModalOutras([]); return }
+    let vivo = true
+    buscarOutraEmpresa(outraId, [form.entry_date]).then(lista => { if (vivo) setModalOutras(lista) })
+    return () => { vivo = false }
+  }, [showModal, outraId, form.entry_date])
+
+  // Lote: modal + modo "Selecionar dias" do calendário.
+  const [loteDias, setLoteDias] = useState(null) // null = fechado; [] = pelo cabeçalho
+  const [selecionando, setSelecionando] = useState(false)
+  const [selecionados, setSelecionados] = useState([])
+  const [filtroSemDesc, setFiltroSemDesc] = useState(false)
+  const [toast, setToast] = useState('')
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 4000)
+    return () => clearTimeout(t)
+  }, [toast])
+  function sairDaSelecao() { setSelecionando(false); setSelecionados([]) }
+  useEffect(() => {
+    if (!selecionando || loteDias) return
+    const onKey = (ev) => { if (ev.key === 'Escape') sairDaSelecao() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selecionando, loteDias])
+  // Trocar empresa ou mês abandona a seleção (os dias eram de outra tela).
+  useEffect(() => { sairDaSelecao(); setLoteDias(null) }, [activeCompany, filterMonth, filterYear])
+  function loteConcluido({ created, skipped }) {
+    setLoteDias(null)
+    sairDaSelecao()
+    setToast(`${created} agenda${created === 1 ? '' : 's'} lançada${created === 1 ? '' : 's'}${skipped ? ` (${skipped} pulada${skipped === 1 ? '' : 's'})` : ''}`)
+    fetchAll()
+  }
 
   useEffect(() => { fetchAll() }, [activeCompany, filterMonth, filterYear])
   useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth])
@@ -256,6 +294,7 @@ export default function TimeEntries() {
         setErro(data.error || 'Não foi possível salvar o lançamento.')
         return
       }
+      invalidarApontamentos(activeCompany.id)
       closeModal()
       fetchAll()
     } catch {
@@ -281,6 +320,7 @@ export default function TimeEntries() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     })
+    invalidarApontamentos(activeCompany.id)
     fetchAll()
   }
 
@@ -343,9 +383,10 @@ export default function TimeEntries() {
       return map
     }, new Map())
   ).map(([id, name]) => ({ id, name }))
-  const filteredEntries = filterClient
-    ? entries.filter(e => String(e.client_id) === String(filterClient))
-    : entries
+  const filteredEntries = entries
+    .filter(e => !filterClient || String(e.client_id) === String(filterClient))
+    .filter(e => !filtroSemDesc || semDescricao(e))
+  const qtdSemDesc = entries.filter(e => (!filterClient || String(e.client_id) === String(filterClient)) && semDescricao(e)).length
   const totalVictor = filteredEntries.reduce((s, e) => s + (parseFloat(e.victor_share) || 0), 0)
   const totalFab = filteredEntries.reduce((s, e) => s + (parseFloat(e.fabricio_share) || 0), 0)
   const totalHoras = filteredEntries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
@@ -405,7 +446,9 @@ export default function TimeEntries() {
           {e.contract_name && (
             <p className="text-gray-500 text-xs mb-1">📄 {e.contract_name}</p>
           )}
-          <p className="text-white text-sm">{e.description}</p>
+          {semDescricao(e)
+        ? <p className="text-amber-300/80 text-xs" title="Sem descrição">📝 Sem descrição — edite para completar</p>
+        : <p className="text-white text-sm">{e.description}</p>}
           {(() => {
             // Por diária/projeto as horas são só demonstrativo: o valor segue a regra.
             const rule = regraDaEntrada(e)
@@ -461,6 +504,9 @@ export default function TimeEntries() {
               📥 Exportar Excel
             </button>
           )}
+          <button onClick={() => setLoteDias([])} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-sm font-medium transition-colors">
+            🗓️ Lançar em lote
+          </button>
           <button onClick={openNew} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
             + Lançar horas
           </button>
@@ -495,6 +541,15 @@ export default function TimeEntries() {
               {c.name}
             </button>
           ))}
+          <button
+            onClick={() => setFiltroSemDesc(v => !v)}
+            title="OS lançadas sem descrição, para completar depois"
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filtroSemDesc ? 'bg-amber-600 text-white' : 'bg-gray-800 text-amber-300/80 hover:bg-gray-700'
+            }`}
+          >
+            📝 Sem descrição{qtdSemDesc ? ` (${qtdSemDesc})` : ''}
+          </button>
         </div>
       )}
 
@@ -554,6 +609,13 @@ export default function TimeEntries() {
           mostrarOutra={mostrarOutra}
           onToggleOutra={mudarMostrarOutra}
           onVerNaOutra={() => outraEmpresa && setActiveCompany?.(outraEmpresa)}
+          selecionando={selecionando}
+          selecionados={selecionados}
+          onIniciarSelecao={() => { setSelecionados([]); setSelecionando(true) }}
+          onAlternarSelecionado={(k) => setSelecionados(ss => (ss.includes(k) ? ss.filter(x => x !== k) : [...ss, k]))}
+          onLimparSelecao={() => setSelecionados([])}
+          onCancelarSelecao={sairDaSelecao}
+          onLancarSelecionados={() => selecionados.length && setLoteDias([...selecionados].sort())}
         />
       ) : loading ? <div className="text-gray-500 text-sm">Carregando...</div> : filteredEntries.length === 0 ? (
         <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">⏱️</p><p>Nenhum lançamento neste período.</p></div>
@@ -621,7 +683,7 @@ export default function TimeEntries() {
               {(() => {
                 // Aviso, não trava: só compara com o que já está carregado (mês
                 // em tela, visão Calendário com a outra empresa ligada).
-                const conflitos = outraEntries.filter(o => chaveData(o.entry_date) === form.entry_date && sobrepoe(form, o))
+                const conflitos = modalOutras.filter(o => chaveData(o.entry_date) === form.entry_date && sobrepoe(form, o))
                 if (!conflitos.length) return null
                 return (
                   <p className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
@@ -667,6 +729,24 @@ export default function TimeEntries() {
             </div>
           </div>
         </div>
+      )}
+
+      {loteDias && (
+        <LoteAgendas
+          key={loteDias.join(',') || 'cabecalho'}
+          activeCompany={activeCompany}
+          outraEmpresa={outraEmpresa}
+          clients={clients}
+          rules={rules}
+          diasIniciais={loteDias}
+          mesRef={{ year: Number(filterYear), month: filterMonth }}
+          onClose={() => setLoteDias(null)}
+          onDone={loteConcluido}
+        />
+      )}
+
+      {toast && (
+        <div className="fixed top-4 right-4 z-[60] bg-emerald-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg">{toast}</div>
       )}
     </div>
   )

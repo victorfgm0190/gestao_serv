@@ -85,6 +85,125 @@ export async function recalcularDia(sql, contract_id, entry_date) {
   return mudaram
 }
 
+const EMPRESAS = ['1', '2']
+const LIMITE_LOTE = 31
+const DATA_RE = /^\d{4}-\d{2}-\d{2}$/
+
+// Validação + cálculo de UM lançamento, sem gravar. Dono único: o POST individual e o
+// lote (`lancarEmLote`) passam por aqui, então as duas portas não podem divergir.
+// → { error, status } | { valores prontos para inserirLancamento }
+async function prepararLancamento(sql, body, company_id) {
+  const {
+    client_id, contract_id, entry_date,
+    description, hours_fuel, despesas_deslocamento, notes,
+    hora_inicial, intervalo_inicio, intervalo_fim, hora_final,
+  } = body || {}
+
+  if (!EMPRESAS.includes(String(company_id))) return { status: 400, error: 'company_id inválido (use 1 ou 2)' }
+  if (!client_id) return { error: 'Cliente obrigatório.' }
+  if (!entry_date || !DATA_RE.test(String(entry_date).slice(0, 10))) return { error: 'Data inválida (use AAAA-MM-DD).' }
+
+  const hours = calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final)
+
+  // Contrato e regra saem juntos, do contrato escolhido na tela. O fallback antigo
+  // ("contrato ativo mais recente do cliente") foi removido junto com a busca da
+  // regra por client_id: eram dois sorteios encadeados, e a tela de horas já exige
+  // o contrato (63/63 lançamentos no banco têm contract_id).
+  // `company_id` no filtro garante que o contrato é da empresa ativa.
+  const resolvido = await contratoComRegra(sql, contract_id, { company_id })
+  if (resolvido.error) return { error: resolvido.error }
+  const { contrato, rule: regra } = resolvido
+  // `clients` não tem company_id: o cliente pertence à empresa através do contrato.
+  // Contrato de um cliente lançado em nome de outro gravaria a OS no card errado.
+  if (Number(contrato.client_id) !== Number(client_id)) {
+    return { error: `O contrato "${contrato.name}" não é do cliente informado.` }
+  }
+
+  const horas_desloc = parseFloat(hours_fuel) || 0
+  const despesas_desloc = parseFloat(despesas_deslocamento) || 0
+
+  let calc = {
+    gross_value: null, tax_amount: null, net_value: null,
+    victor_share: null, fabricio_share: null, fuel_cost: null, valor_deslocamento: 0
+  }
+  if (hours > 0) {
+    calc = calcular(hours, regra, horas_desloc, contrato, despesas_desloc)
+  }
+  const hourly_rate = tipoDaRegra(regra) === 'hora' ? (regra.hourly_rate || null) : null
+
+  // Descrição é opcional (lote só marca o dia; ela é completada depois). Vazio vira
+  // NULL — a coluna é nullable, o export usa `description || ''` e a NFS-e não lê
+  // a descrição da OS (vem de invoices.descricao_nfse).
+  const desc = typeof description === 'string' && description.trim() ? description : null
+
+  return {
+    company_id: Number(company_id), client_id, contrato, regra, hours, calc, hourly_rate,
+    entry_date: String(entry_date).slice(0, 10), description: desc, notes: notes || null,
+    hora_inicial: hora_inicial || null, intervalo_inicio: intervalo_inicio || null,
+    intervalo_fim: intervalo_fim || null, hora_final: hora_final || null,
+    horas_desloc, despesas_desloc,
+  }
+}
+
+// INSERT de um lançamento preparado. `id` explícito só no lote (ver lancarEmLote).
+function inserirLancamento(sql, p, id = null) {
+  return sql`
+    INSERT INTO time_entries (
+      id, company_id, client_id, contract_id, entry_date, description,
+      hours, hourly_rate, gross_value, tax_amount,
+      net_value, victor_share, fabricio_share, fuel_cost, notes,
+      hora_inicial, intervalo_inicio, intervalo_fim, hora_final,
+      horas_deslocamento, valor_deslocamento, despesas_deslocamento
+    ) VALUES (
+      COALESCE(${id}::int, nextval(pg_get_serial_sequence('time_entries', 'id'))),
+      ${p.company_id}, ${p.client_id}, ${p.contrato.id}, ${p.entry_date}, ${p.description},
+      ${p.hours}, ${p.hourly_rate}, ${p.calc.gross_value}, ${p.calc.tax_amount},
+      ${p.calc.net_value}, ${p.calc.victor_share}, ${p.calc.fabricio_share},
+      ${p.calc.fuel_cost}, ${p.notes},
+      ${p.hora_inicial}, ${p.intervalo_inicio}, ${p.intervalo_fim}, ${p.hora_final},
+      ${p.horas_desloc}, ${p.calc.valor_deslocamento || 0}, ${p.despesas_desloc}
+    ) RETURNING id
+  `
+}
+
+// POST { company_id, batch: [ { client_id, contract_id, entry_date, hora_*, ... } ] }
+//
+// Tudo ou nada: cada item passa por prepararLancamento (mesma validação e mesmo
+// cálculo do individual); qualquer erro devolve 422 com a lista por data e nada é
+// gravado. Os ids são reservados na sequence ANTES da transação — o driver do Neon
+// não devolve RETURNING de dentro de sql.transaction em lote.
+async function lancarEmLote(sql, req, res) {
+  const { company_id, batch } = req.body || {}
+  if (!EMPRESAS.includes(String(company_id))) return res.status(400).json({ error: 'company_id inválido (use 1 ou 2)' })
+  if (!Array.isArray(batch) || batch.length === 0) return res.status(400).json({ error: 'Lote vazio.' })
+  if (batch.length > LIMITE_LOTE) return res.status(400).json({ error: `Lote acima do limite de ${LIMITE_LOTE} itens (${batch.length}).` })
+
+  const preparados = []
+  const errors = []
+  for (const item of batch) {
+    // company_id do item é ignorado: o lote inteiro é da empresa do corpo.
+    const prep = await prepararLancamento(sql, item, company_id)
+    if (prep.error) errors.push({ entry_date: item?.entry_date || null, error: prep.error })
+    else preparados.push(prep)
+  }
+  if (errors.length) return res.status(422).json({ error: `${errors.length} item(ns) inválido(s); nada foi gravado.`, errors, ids: [] })
+
+  const seq = await sql`SELECT nextval(pg_get_serial_sequence('time_entries', 'id'))::int AS id FROM generate_series(1, ${preparados.length})`
+  const ids = seq.map(r => r.id)
+  try {
+    await sql.transaction(preparados.map((p, i) => inserirLancamento(sql, p, ids[i])))
+  } catch (e) {
+    return res.status(500).json({ error: `Falha ao gravar o lote; nada foi gravado. ${e.message}`, errors: [], ids: [] })
+  }
+
+  // Diária: cada (contrato, data) tocado recalcula as cotas — o mesmo passo do POST
+  // individual. Fora da transação, como lá: as OS já existem quando a cota é dividida.
+  const tocados = new Map(preparados.map(p => [`${p.contrato.id}|${p.entry_date}`, p]))
+  for (const p of tocados.values()) await recalcularDia(sql, p.contrato.id, p.entry_date)
+
+  return res.status(201).json({ ids, errors: [], created: ids.length })
+}
+
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -121,57 +240,17 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const {
-      company_id, client_id, contract_id, entry_date,
-      description, hours_fuel, despesas_deslocamento, notes,
-      hora_inicial, intervalo_inicio, intervalo_fim, hora_final,
-    } = req.body
-
-    const hours = calcularHoras(hora_inicial, intervalo_inicio, intervalo_fim, hora_final)
-
-    // Contrato e regra saem juntos, do contrato escolhido na tela. O fallback antigo
-    // ("contrato ativo mais recente do cliente") foi removido junto com a busca da
-    // regra por client_id: eram dois sorteios encadeados, e a tela de horas já exige
-    // o contrato (63/63 lançamentos no banco têm contract_id).
-    const resolvido = await contratoComRegra(sql, contract_id, { company_id })
-    if (resolvido.error) return res.status(422).json({ error: resolvido.error })
-    const { contrato, rule: regra } = resolvido
-
-    const horas_desloc = parseFloat(hours_fuel) || 0
-    const despesas_desloc = parseFloat(despesas_deslocamento) || 0
-
-    let calc = {
-      gross_value: null, tax_amount: null, net_value: null,
-      victor_share: null, fabricio_share: null, fuel_cost: null, valor_deslocamento: 0
+    if (req.query?.action === 'batch' || Array.isArray(req.body?.batch)) {
+      return lancarEmLote(sql, req, res)
     }
+    const prep = await prepararLancamento(sql, req.body, req.body?.company_id)
+    if (prep.error) return res.status(prep.status || 422).json({ error: prep.error })
 
-    if (hours > 0) {
-      calc = calcular(hours, regra, horas_desloc, contrato, despesas_desloc)
-    }
-
-    const hourly_rate = tipoDaRegra(regra) === 'hora' ? (regra.hourly_rate || null) : null
-
-    const result = await sql`
-      INSERT INTO time_entries (
-        company_id, client_id, contract_id, entry_date, description,
-        hours, hourly_rate, gross_value, tax_amount,
-        net_value, victor_share, fabricio_share, fuel_cost, notes,
-        hora_inicial, intervalo_inicio, intervalo_fim, hora_final,
-        horas_deslocamento, valor_deslocamento, despesas_deslocamento
-      ) VALUES (
-        ${company_id}, ${client_id}, ${contract_id || null}, ${entry_date}, ${description},
-        ${hours}, ${hourly_rate}, ${calc.gross_value}, ${calc.tax_amount},
-        ${calc.net_value}, ${calc.victor_share}, ${calc.fabricio_share},
-        ${calc.fuel_cost}, ${notes},
-        ${hora_inicial || null}, ${intervalo_inicio || null},
-        ${intervalo_fim || null}, ${hora_final || null},
-        ${horas_desloc}, ${calc.valor_deslocamento || 0}, ${despesas_desloc}
-      ) RETURNING *
-    `
+    const [inserido] = await inserirLancamento(sql, prep)
     // Diária: a OS nova muda a cota das irmãs da mesma data (e a dela mesma).
-    await recalcularDia(sql, contrato.id, entry_date)
-    const [entry] = await sql`SELECT * FROM time_entries WHERE id = ${result[0].id}`
-    return res.status(201).json({ entry, hours_calculated: hours })
+    await recalcularDia(sql, prep.contrato.id, prep.entry_date)
+    const [entry] = await sql`SELECT * FROM time_entries WHERE id = ${inserido.id}`
+    return res.status(201).json({ entry, hours_calculated: prep.hours })
   }
 
   if (req.method === 'PUT') {

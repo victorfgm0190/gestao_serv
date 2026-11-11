@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { chaveData } from '../../lib/billing-type.js'
 import { todayBR } from '../lib/dateUtils'
 import { sobrepoe, faixaHorario } from '../lib/horasConflito'
+import { semDescricao } from '../lib/semDescricao'
 
 // Visão calendário do Apontamento de Horas. Não busca nada: recebe os mesmos
 // `entries` (já filtrados por empresa/mês/ano/cliente) que a lista usa, e
@@ -86,6 +87,8 @@ function useIsMobile() {
   return mobile
 }
 
+const MarcaSemDescricao = () => <span title="Sem descrição" aria-label="Sem descrição" className="mr-0.5">📝</span>
+
 function Chip({ e, outra, sigla, compacto }) {
   const tamanho = compacto ? 'text-[10px] leading-tight px-1.5 py-0.5' : 'text-[11px] px-2 py-0.5'
   if (outra) {
@@ -97,7 +100,7 @@ function Chip({ e, outra, sigla, compacto }) {
   }
   return (
     <span className={`block min-w-0 truncate rounded ${tamanho} ${corDoCliente(e.client_id)}`}>
-      {e.client_name || 'Sem cliente'} <span className="font-mono">{hhmm(e.hours)}</span>
+      {semDescricao(e) && <MarcaSemDescricao />}{e.client_name || 'Sem cliente'} <span className="font-mono">{hhmm(e.hours)}</span>
     </span>
   )
 }
@@ -105,6 +108,9 @@ function Chip({ e, outra, sigla, compacto }) {
 export default function HorasCalendar({
   entries, outras = [], year, month, fmt, renderEntry, onNewOnDay,
   ativa, outra, mostrarOutra, onToggleOutra, onVerNaOutra,
+  // Modo "Selecionar dias" (lote). O estado mora na página: o modal do lote o lê.
+  selecionando = false, selecionados = [], onIniciarSelecao, onAlternarSelecionado,
+  onLimparSelecao, onCancelarSelecao, onLancarSelecionados,
 }) {
   const [diaAberto, setDiaAberto] = useState(null)
   const isMobile = useIsMobile()
@@ -132,6 +138,7 @@ export default function HorasCalendar({
   }, [diaAberto, vazio])
 
   function clicarDia(k) {
+    if (selecionando) { onAlternarSelecionado(k); return }
     // Dia com horas só na outra empresa também abre o painel: é ali que se vê
     // o horário ocupado antes de lançar (e o painel tem "+ Lançar neste dia").
     if ((porDia.get(k) || []).length + (porDiaOutra.get(k) || []).length > 0) setDiaAberto(k)
@@ -152,11 +159,33 @@ export default function HorasCalendar({
     return d >= 1 && d <= diasNoMes ? d : null
   })
 
-  const toggle = outra && (
-    <label className="inline-flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none mb-3">
-      <input type="checkbox" checked={!!mostrarOutra} onChange={(ev) => onToggleOutra(ev.target.checked)} className="accent-blue-500" />
-      Mostrar {outra.name}
-    </label>
+  const marcados = new Set(selecionados)
+  const toggle = (
+    <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+      {outra ? (
+        <label className="inline-flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
+          <input type="checkbox" checked={!!mostrarOutra} onChange={(ev) => onToggleOutra(ev.target.checked)} className="accent-blue-500" />
+          Mostrar {outra.name}
+        </label>
+      ) : <span />}
+      {selecionando ? (
+        <span className="text-xs text-blue-300">Modo seleção: clique nos dias para marcar · Esc para sair</span>
+      ) : (
+        <button onClick={onIniciarSelecao} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs transition-colors">☑ Selecionar dias</button>
+      )}
+    </div>
+  )
+
+  const barraSelecao = selecionando && (
+    <>
+      <div className="h-16" />
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 bg-gray-900 border border-blue-500/50 shadow-xl rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap max-w-[calc(100vw-2rem)]">
+        <span className="text-sm text-white">{selecionados.length} dia{selecionados.length === 1 ? '' : 's'} selecionado{selecionados.length === 1 ? '' : 's'}</span>
+        <button onClick={onLimparSelecao} disabled={!selecionados.length} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-gray-300 rounded-lg text-xs">Limpar</button>
+        <button onClick={onCancelarSelecao} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Cancelar</button>
+        <button onClick={onLancarSelecionados} disabled={!selecionados.length} className="px-3 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-medium">Lançar nos {selecionados.length} dias</button>
+      </div>
+    </>
   )
 
   const painel = diaAberto && !vazio && (
@@ -230,12 +259,12 @@ export default function HorasCalendar({
               return (
                 <button
                   key={k}
-                  onClick={() => setDiaAberto(k)}
-                  className={`w-full min-w-0 text-left bg-gray-900 border rounded-xl p-3 ${k === hoje ? 'border-blue-500' : 'border-gray-800'}`}
+                  onClick={() => (selecionando ? onAlternarSelecionado(k) : setDiaAberto(k))}
+                  className={`w-full min-w-0 text-left bg-gray-900 border rounded-xl p-3 ${marcados.has(k) ? 'border-blue-500 ring-2 ring-blue-500' : k === hoje ? 'border-blue-500' : 'border-gray-800'}`}
                   style={lista.length === 0 ? LISTRADO_CELULA : undefined}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-white text-sm font-medium capitalize truncate">{conflitoNoDia(k) && '⚠️ '}{rotuloDia(k)}</span>
+                    <span className="text-white text-sm font-medium capitalize truncate">{marcados.has(k) && '✓ '}{conflitoNoDia(k) && '⚠️ '}{rotuloDia(k)}</span>
                     {lista.length > 0 && <span className="text-gray-300 text-xs font-mono shrink-0">{hhmm(totalHoras(lista))}</span>}
                   </div>
                   <div className="flex flex-wrap gap-1">
@@ -249,6 +278,7 @@ export default function HorasCalendar({
           </div>
         )}
         {legenda}
+        {barraSelecao}
         {painel}
       </>
     )
@@ -278,17 +308,18 @@ export default function HorasCalendar({
             const ehHoje = k === hoje
             const soOutra = lista.length === 0 && listaOutra.length > 0
             const conflito = conflitoNoDia(k)
+            const marcado = marcados.has(k)
             return (
               <button
                 key={i}
                 onClick={() => clicarDia(k)}
-                title={todos.length ? 'Ver apontamentos do dia' : 'Lançar horas neste dia'}
+                title={selecionando ? (marcado ? 'Desmarcar' : 'Marcar para o lote') : todos.length ? 'Ver apontamentos do dia' : 'Lançar horas neste dia'}
                 style={soOutra ? LISTRADO_CELULA : undefined}
-                className={`relative min-w-0 overflow-hidden min-h-[110px] p-1.5 text-left flex flex-col gap-1 transition-colors hover:bg-gray-800/60 ${borda} ${fimDeSemana ? 'bg-gray-800/30' : ''} ${ehHoje ? 'ring-2 ring-inset ring-blue-500' : ''}`}
+                className={`relative min-w-0 overflow-hidden min-h-[110px] p-1.5 text-left flex flex-col gap-1 transition-colors hover:bg-gray-800/60 ${borda} ${fimDeSemana ? 'bg-gray-800/30' : ''} ${marcado ? 'ring-2 ring-inset ring-blue-400 bg-blue-500/10' : ehHoje ? 'ring-2 ring-inset ring-blue-500' : ''}`}
               >
                 <div className="flex items-start justify-between gap-1 min-w-0">
                   <span className={`text-xs font-medium ${ehHoje ? 'text-blue-400' : lista.length ? 'text-white' : 'text-gray-500'}`}>
-                    {d}{conflito && <span className="ml-1" title={`Conflito de horário com ${outra?.name}`}>⚠️</span>}
+                    {marcado && <span className="text-blue-300 mr-1">✓</span>}{d}{conflito && <span className="ml-1" title={`Conflito de horário com ${outra?.name}`}>⚠️</span>}
                   </span>
                   <div className="text-right leading-tight">
                     {lista.length > 0 && <div className="text-[11px] font-mono text-gray-300">{hhmm(totalHoras(lista))}</div>}
@@ -308,6 +339,7 @@ export default function HorasCalendar({
         </div>
       </div>
       {legenda}
+      {barraSelecao}
       {painel}
     </>
   )
