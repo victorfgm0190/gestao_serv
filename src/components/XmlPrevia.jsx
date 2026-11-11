@@ -67,14 +67,14 @@ export default function XmlPrevia({
 
   return (
     <details className="text-xs" open={aberto}>
-      <summary className="cursor-pointer text-gray-400 hover:text-gray-200">
-        {titulo} <span className="text-gray-600">({kb(xml.length)})</span>
+      <summary className="cursor-pointer text-muted hover:text-text-2">
+        {titulo} <span className="text-faint">({kb(xml.length)})</span>
       </summary>
 
       {/* ⚠️ O XML é mostrado INTEIRO, não recortado em 500 caracteres: a
           assinatura fica no fim, e é ela o motivo mais comum de recusa. O
           painel rola. */}
-      <pre className="mt-2 p-2 bg-gray-950 border border-gray-800 rounded max-h-48 overflow-auto text-[10px] text-gray-400 whitespace-pre-wrap break-all">
+      <pre className="mt-2 p-2 bg-bg border border-border rounded max-h-48 overflow-auto text-[10px] text-muted whitespace-pre-wrap break-all">
         {xml}
       </pre>
 
@@ -93,7 +93,7 @@ export default function XmlPrevia({
         </button>
       </div>
 
-      {erro && <p className="mt-2 text-xs text-red-300">{erro}</p>}
+      {erro && <p className="mt-2 text-xs text-red-700 dark:text-red-300">{erro}</p>}
     </details>
   )
 }

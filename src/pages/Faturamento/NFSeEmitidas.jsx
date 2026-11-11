@@ -37,11 +37,11 @@ const badges = {
   // Vocabulário real gravado por api/nfse-emit.js. O esboço usava
   // submitted/approved/rejected, que não são gravados por lugar nenhum — TODA
   // linha cairia no default e um erro apareceria como "📤 Enviada".
-  enviada: ['bg-blue-900/40 text-blue-300 border-blue-700', '📤 Enviada'],
-  autorizada: ['bg-green-900/40 text-green-300 border-green-700', '✅ Autorizada'],
-  erro: ['bg-red-900/40 text-red-300 border-red-700', '❌ Erro'],
-  cancelada: ['bg-gray-800 text-gray-400 border-gray-600', '🚫 Cancelada'],
-  substituida: ['bg-purple-900/40 text-purple-300 border-purple-700', '🔄 Substituída'],
+  enviada: ['bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700', '📤 Enviada'],
+  autorizada: ['bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700', '✅ Autorizada'],
+  erro: ['bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700', '❌ Erro'],
+  cancelada: ['bg-surface-2 text-muted border-border-stronger', '🚫 Cancelada'],
+  substituida: ['bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700', '🔄 Substituída'],
 }
 
 const brl = (v) =>
@@ -177,9 +177,9 @@ export default function NFSeEmitidas() {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-3xl font-bold text-white">📋 NFS-e emitidas</h1>
+        <h1 className="text-3xl font-bold text-text">📋 NFS-e emitidas</h1>
         <span
-          className="px-2 py-1 rounded text-xs font-medium text-white"
+          className="px-2 py-1 rounded text-xs font-medium text-text"
           style={{ backgroundColor: activeCompany.color }}
         >
           {activeCompany.name}
@@ -187,31 +187,31 @@ export default function NFSeEmitidas() {
       </div>
 
       {erro && (
-        <div className="p-3 rounded text-sm border bg-red-900/30 text-red-300 border-red-700">
+        <div className="p-3 rounded text-sm border bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700">
           ❌ {erro}
         </div>
       )}
 
       {aviso && (
-        <div className="p-3 rounded text-sm border bg-green-900/30 text-green-300 border-green-700 flex items-start gap-3">
+        <div className="p-3 rounded text-sm border bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 flex items-start gap-3">
           <span className="flex-1">✅ {aviso}</span>
-          <button onClick={() => setAviso(null)} className="text-green-400 hover:text-green-200">✕</button>
+          <button onClick={() => setAviso(null)} className="text-green-700 dark:text-green-400 hover:text-green-700 dark:hover:text-green-200">✕</button>
         </div>
       )}
 
       {loading ? (
-        <p className="text-gray-400">Carregando…</p>
+        <p className="text-muted">Carregando…</p>
       ) : emissions.length === 0 ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
-          <p className="text-gray-400">
+        <div className="bg-surface border border-border rounded-lg p-8 text-center">
+          <p className="text-muted">
             Nenhuma NFS-e emitida para a {activeCompany.name}.
           </p>
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+        <div className="bg-surface border border-border rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-gray-300">
-              <thead className="bg-gray-800 border-b border-gray-700 text-xs uppercase tracking-wider">
+            <table className="w-full text-sm text-text-3">
+              <thead className="bg-surface-2 border-b border-border-strong text-xs uppercase tracking-wider">
                 <tr>
                   <th className="px-4 py-3 text-left">NFS-e</th>
                   <th className="px-4 py-3 text-left">Cliente</th>
@@ -229,17 +229,17 @@ export default function NFSeEmitidas() {
               <tbody>
                 {emissions.map((e) => {
                   const [cor, rotulo] = badges[e.status] || [
-                    'bg-gray-800 text-gray-400 border-gray-600', `❔ ${e.status || 'desconhecido'}`,
+                    'bg-surface-2 text-muted border-border-stronger', `❔ ${e.status || 'desconhecido'}`,
                   ]
                   return (
                     // Fragment COM key: o elemento raiz de um map precisa de
                     // chave, e a forma curta <> nao aceita uma.
                     <Fragment key={e.id}>
-                    <tr className="border-b border-gray-800 hover:bg-gray-800/60">
-                      <td className="px-4 py-3 font-mono text-blue-400">
-                        {e.nfseNumber ? `#${e.nfseNumber}` : <span className="text-gray-500">s/ número</span>}
+                    <tr className="border-b border-border hover:bg-surface-2/60">
+                      <td className="px-4 py-3 font-mono text-blue-700 dark:text-blue-400">
+                        {e.nfseNumber ? `#${e.nfseNumber}` : <span className="text-subtle">s/ número</span>}
                         {e.ambiente === 2 && (
-                          <span className="ml-2 text-[10px] text-amber-400 font-sans">homolog.</span>
+                          <span className="ml-2 text-[10px] text-amber-700 dark:text-amber-400 font-sans">homolog.</span>
                         )}
                       </td>
                       <td className="px-4 py-3">{e.cliente}</td>
@@ -249,13 +249,13 @@ export default function NFSeEmitidas() {
                           {rotulo}
                         </span>
                         {e.erro && (
-                          <p className="text-xs text-red-400 mt-1 max-w-xs truncate" title={e.erro}>
+                          <p className="text-xs text-red-700 dark:text-red-400 mt-1 max-w-xs truncate" title={e.erro}>
                             {e.erro}
                           </p>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-400">{dataBR(e.competencia)}</td>
-                      <td className="px-4 py-3 text-xs text-gray-400">{dataBR(e.emittedAt)}</td>
+                      <td className="px-4 py-3 text-xs text-muted">{dataBR(e.competencia)}</td>
+                      <td className="px-4 py-3 text-xs text-muted">{dataBR(e.emittedAt)}</td>
                       <td className="px-4 py-3 text-right whitespace-nowrap space-x-2">
                         {/* Emissão sem XML não tem o que baixar — o botão diz isso
                             em vez de levar a um 404. */}
@@ -286,7 +286,7 @@ export default function NFSeEmitidas() {
                           onClick={() => baixar(e, 'dps')}
                           disabled={!e.temXml || baixando === `${e.id}:dps`}
                           title="Baixar a DPS enviada (o pedido, não a nota)"
-                          className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs rounded transition-colors"
+                          className="px-3 py-1 bg-surface-3 hover:bg-surface-4 disabled:opacity-40 disabled:cursor-not-allowed text-text text-xs rounded transition-colors"
                         >
                           {baixando === `${e.id}:dps` ? '⏳' : '📃'} DPS
                         </button>
@@ -301,7 +301,7 @@ export default function NFSeEmitidas() {
                         <button
                           onClick={() => alternar(e.id)}
                           title="Histórico da nota"
-                          className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-xs rounded transition-colors"
+                          className="px-3 py-1 bg-surface-3 hover:bg-surface-4 text-text text-xs rounded transition-colors"
                         >
                           {aberta === e.id ? '▲' : '▼'} Histórico
                         </button>
@@ -337,14 +337,14 @@ export default function NFSeEmitidas() {
                       </td>
                     </tr>
                     {aberta === e.id && (
-                      <tr className="border-b border-gray-800 bg-gray-950/60">
+                      <tr className="border-b border-border bg-bg/60">
                         <td colSpan={7} className="px-6 py-4">
-                          <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">
+                          <p className="text-xs uppercase tracking-wider text-subtle mb-3">
                             Histórico da nota
                           </p>
                           {eventos[e.id]
                             ? <NFSeTimeline events={eventos[e.id]} />
-                            : <p className="text-gray-500 text-sm">Carregando…</p>}
+                            : <p className="text-subtle text-sm">Carregando…</p>}
                         </td>
                       </tr>
                     )}
@@ -355,8 +355,8 @@ export default function NFSeEmitidas() {
             </table>
           </div>
 
-          <div className="px-4 py-3 bg-gray-800 border-t border-gray-700 flex items-center justify-between flex-wrap gap-2">
-            <p className="text-xs text-gray-400">
+          <div className="px-4 py-3 bg-surface-2 border-t border-border-strong flex items-center justify-between flex-wrap gap-2">
+            <p className="text-xs text-muted">
               {total === 0
                 ? 'Nenhum registro'
                 : `Mostrando ${(page - 1) * limit + 1}–${Math.min(page * limit, total)} de ${total}`}
@@ -365,15 +365,15 @@ export default function NFSeEmitidas() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-xs rounded transition-colors"
+                className="px-3 py-1 bg-surface-3 hover:bg-surface-4 disabled:opacity-40 text-text text-xs rounded transition-colors"
               >
                 ← Anterior
               </button>
-              <span className="text-xs text-gray-400">Página {page} de {totalPages}</span>
+              <span className="text-xs text-muted">Página {page} de {totalPages}</span>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page >= totalPages}
-                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-xs rounded transition-colors"
+                className="px-3 py-1 bg-surface-3 hover:bg-surface-4 disabled:opacity-40 text-text text-xs rounded transition-colors"
               >
                 Próxima →
               </button>

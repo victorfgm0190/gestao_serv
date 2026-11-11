@@ -95,64 +95,64 @@ export default function Settings() {
   return (
     <div className="p-8 max-w-2xl">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white">Configurações</h2>
-        <p className="text-gray-400 text-sm mt-1">Configuração fiscal — {activeCompany.name}</p>
+        <h2 className="text-2xl font-bold text-text">Configurações</h2>
+        <p className="text-muted text-sm mt-1">Configuração fiscal — {activeCompany.name}</p>
       </div>
 
       {loading ? (
-        <div className="text-gray-500 text-sm">Carregando...</div>
+        <div className="text-subtle text-sm">Carregando...</div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5">
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 space-y-5">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Regime tributário</label>
-            <select value={form.regime} onChange={set('regime')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+            <label className="text-xs text-muted font-medium uppercase tracking-wider">Regime tributário</label>
+            <select value={form.regime} onChange={set('regime')} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
               {REGIMES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
             </select>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Faturamento médio mensal (R$)</label>
-            <input type="number" placeholder="0,00" value={form.faturamento_medio_mensal} onChange={set('faturamento_medio_mensal')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-            <p className="text-gray-600 text-[11px]">Informe o faturamento do último mês. O sistema estima os 12 meses automaticamente.</p>
+            <label className="text-xs text-muted font-medium uppercase tracking-wider">Faturamento médio mensal (R$)</label>
+            <input type="number" placeholder="0,00" value={form.faturamento_medio_mensal} onChange={set('faturamento_medio_mensal')} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
+            <p className="text-faint text-[11px]">Informe o faturamento do último mês. O sistema estima os 12 meses automaticamente.</p>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Salários mensais (CLT) (R$)</label>
-            <input type="number" placeholder="0,00" value={form.salarios_mensal} onChange={set('salarios_mensal')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-            <p className="text-gray-600 text-[11px]">Total de salários CLT pagos no mês. Soma ao pró-labore na folha.</p>
+            <label className="text-xs text-muted font-medium uppercase tracking-wider">Salários mensais (CLT) (R$)</label>
+            <input type="number" placeholder="0,00" value={form.salarios_mensal} onChange={set('salarios_mensal')} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
+            <p className="text-faint text-[11px]">Total de salários CLT pagos no mês. Soma ao pró-labore na folha.</p>
           </div>
 
-          <div className="border-t border-gray-800 pt-5 space-y-5">
+          <div className="border-t border-border pt-5 space-y-5">
             <div>
-              <h3 className="text-sm font-semibold text-white">Parâmetros da apuração</h3>
-              <p className="text-gray-500 text-[11px] mt-1">
-                O pró-labore é <strong className="text-gray-400">calculado</strong> a partir do faturamento:
+              <h3 className="text-sm font-semibold text-text">Parâmetros da apuração</h3>
+              <p className="text-subtle text-[11px] mt-1">
+                O pró-labore é <strong className="text-muted">calculado</strong> a partir do faturamento:
                 o maior valor entre o percentual e o piso. Usado no Fator R, no INSS e na apuração mensal.
               </p>
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Pró-labore — percentual do faturamento (%)</label>
-              <input type="number" step="0.01" placeholder="28" value={form.prolabore_percentual} onChange={set('prolabore_percentual')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <p className="text-gray-600 text-[11px]">28% é o mínimo do Fator R para permanecer no Anexo III (6%) em vez do V (15,5%).</p>
+              <label className="text-xs text-muted font-medium uppercase tracking-wider">Pró-labore — percentual do faturamento (%)</label>
+              <input type="number" step="0.01" placeholder="28" value={form.prolabore_percentual} onChange={set('prolabore_percentual')} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
+              <p className="text-faint text-[11px]">28% é o mínimo do Fator R para permanecer no Anexo III (6%) em vez do V (15,5%).</p>
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Pró-labore — piso (R$)</label>
-              <input type="number" placeholder="1621" value={form.prolabore_minimo} onChange={set('prolabore_minimo')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <p className="text-gray-600 text-[11px]">Acompanha o salário mínimo — atualize em janeiro.</p>
+              <label className="text-xs text-muted font-medium uppercase tracking-wider">Pró-labore — piso (R$)</label>
+              <input type="number" placeholder="1621" value={form.prolabore_minimo} onChange={set('prolabore_minimo')} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
+              <p className="text-faint text-[11px]">Acompanha o salário mínimo — atualize em janeiro.</p>
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Honorários do contador (R$/mês)</label>
-              <input type="number" placeholder="150" value={form.honorarios_mensal} onChange={set('honorarios_mensal')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <label className="text-xs text-muted font-medium uppercase tracking-wider">Honorários do contador (R$/mês)</label>
+              <input type="number" placeholder="150" value={form.honorarios_mensal} onChange={set('honorarios_mensal')} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
             </div>
 
             {prolaborePreview != null && (
-              <p className="text-xs text-gray-400 bg-gray-800/60 border border-gray-700 rounded-lg px-3 py-2">
+              <p className="text-xs text-muted bg-surface-2/60 border border-border-strong rounded-lg px-3 py-2">
                 Com faturamento de R$ {Number(form.faturamento_medio_mensal || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })},
                 {' '}o pró-labore será{' '}
-                <strong className="text-white">R$ {prolaborePreview.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                <strong className="text-text">R$ {prolaborePreview.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                 {prolaborePreview === (parseFloat(form.prolabore_minimo) || 0) ? ' (piso)' : ` (${parseFloat(form.prolabore_percentual) || 0}%)`}.
               </p>
             )}
@@ -160,20 +160,20 @@ export default function Settings() {
 
           {isLucro && (
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">ISS municipal (%)</label>
-              <input type="number" placeholder="5" value={form.iss_percent} onChange={set('iss_percent')} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <label className="text-xs text-muted font-medium uppercase tracking-wider">ISS municipal (%)</label>
+              <input type="number" placeholder="5" value={form.iss_percent} onChange={set('iss_percent')} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
             </div>
           )}
 
           {isSimples && (
-            <p className="text-gray-600 text-xs border-t border-gray-800 pt-4">
+            <p className="text-faint text-xs border-t border-border pt-4">
               A previsão de impostos usa a faixa do Simples e o INSS sobre o pró-labore.
               O ISS não se aplica separadamente neste regime.
             </p>
           )}
 
-          {msg && <p className="text-green-400 text-sm bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">✅ {msg}</p>}
-          {erro && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erro}</p>}
+          {msg && <p className="text-green-700 dark:text-green-400 text-sm bg-green-50 dark:bg-green-500/10 border border-green-300 dark:border-green-500/30 rounded-lg px-3 py-2">✅ {msg}</p>}
+          {erro && <p className="text-red-700 dark:text-red-400 text-sm bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erro}</p>}
 
           <div className="flex justify-end pt-2">
             <button onClick={save} disabled={saving} className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{saving ? 'Salvando...' : 'Salvar'}</button>

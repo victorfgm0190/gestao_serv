@@ -38,38 +38,38 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
-      <form onSubmit={entrar} className="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-2xl p-8">
-        <h1 className="text-2xl font-bold text-white mb-1">Gestão Serv</h1>
-        <p className="text-gray-400 text-sm mb-6">Entre para continuar</p>
+    <div className="min-h-screen bg-bg text-text flex items-center justify-center p-4">
+      <form onSubmit={entrar} className="w-full max-w-sm bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-8">
+        <h1 className="text-2xl font-bold text-text mb-1">Gestão Serv</h1>
+        <p className="text-muted text-sm mb-6">Entre para continuar</p>
 
         <div className="space-y-3">
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-gray-400 font-medium">Usuário</span>
+            <span className="text-xs text-muted font-medium">Usuário</span>
             <input
               autoFocus
               autoComplete="username"
               value={form.username}
               onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"
               placeholder="usuário"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-gray-400 font-medium">Senha</span>
+            <span className="text-xs text-muted font-medium">Senha</span>
             <input
               type="password"
               autoComplete="current-password"
               value={form.password}
               onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"
               placeholder="••••••••"
             />
           </label>
         </div>
 
         {erro && (
-          <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+          <p className="mt-3 text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">
             {erro}
           </p>
         )}

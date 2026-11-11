@@ -29,7 +29,7 @@ export default function CopyButton({ value, label = 'Copiar', className = '' }) 
     <button
       type="button"
       onClick={copy}
-      className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${copied ? 'bg-green-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-200'} ${className}`}
+      className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${copied ? 'bg-green-600 text-white' : 'bg-surface-3 hover:bg-surface-4 text-text-2'} ${className}`}
     >
       {copied ? 'Copiado!' : label}
     </button>

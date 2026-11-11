@@ -24,12 +24,12 @@ const CAMPOS_VALOR = {
 }
 
 const BADGE_COBRANCA = {
-  hora: 'bg-blue-500/20 text-blue-400',
-  diaria: 'bg-emerald-500/20 text-emerald-400',
-  projeto: 'bg-amber-500/20 text-amber-400',
+  hora: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  diaria: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
+  projeto: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
 }
 
-const inputCls = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500'
+const inputCls = 'w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500'
 
 export default function FinancialRules() {
   const { activeCompany } = useOutletContext()
@@ -204,11 +204,11 @@ export default function FinancialRules() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Regras Financeiras</h2>
-          <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
+          <h2 className="text-2xl font-bold text-text">Regras Financeiras</h2>
+          <p className="text-muted text-sm mt-1">{activeCompany.name}</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => { setClientForm({ name: '', company_id: String(activeCompany.id) }); setShowClientModal(true) }} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-sm font-medium transition-colors">
+          <button onClick={() => { setClientForm({ name: '', company_id: String(activeCompany.id) }); setShowClientModal(true) }} className="px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-2 rounded-lg text-sm font-medium transition-colors">
             + Novo Cliente
           </button>
           <button onClick={() => { setEditRule(null); resetForm(); setShowModal(true) }} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
@@ -217,41 +217,41 @@ export default function FinancialRules() {
         </div>
       </div>
 
-      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : rules.length === 0 ? (
-        <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">💰</p><p>Nenhuma regra financeira cadastrada.</p></div>
+      {loading ? <div className="text-subtle text-sm">Carregando...</div> : rules.length === 0 ? (
+        <div className="text-center py-16 text-faint"><p className="text-4xl mb-3">💰</p><p>Nenhuma regra financeira cadastrada.</p></div>
       ) : (
         <div className="space-y-3">
           {rules.map(r => (
-            <div key={r.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div key={r.id} className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-5">
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-white font-semibold text-lg">{r.client_name}</p>
+                    <p className="text-text font-semibold text-lg">{r.client_name}</p>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${BADGE_COBRANCA[tipoDaRegra(r)]}`}>{ROTULO_COBRANCA[tipoDaRegra(r)]}</span>
-                    {r.is_net_value && tipoDaRegra(r) !== 'hora' && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">Valor líquido</span>}
+                    {r.is_net_value && tipoDaRegra(r) !== 'hora' && <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-surface-3 text-text-3">Valor líquido</span>}
                   </div>
                   <div className="flex flex-wrap gap-4 mt-3 text-sm">
                     {tipoDaRegra(r) === 'hora' && <>
-                      <span className="text-gray-400">Hora: <span className="text-white">{fmt(r.hourly_rate)}</span></span>
-                      <span className="text-gray-400">Victor/h: <span className="text-blue-400">{fmt(r.victor_fixed_per_hour)}</span></span>
+                      <span className="text-muted">Hora: <span className="text-text">{fmt(r.hourly_rate)}</span></span>
+                      <span className="text-muted">Victor/h: <span className="text-blue-700 dark:text-blue-400">{fmt(r.victor_fixed_per_hour)}</span></span>
                     </>}
                     {tipoDaRegra(r) === 'diaria' && <>
-                      <span className="text-gray-400">Diária: <span className="text-white">{fmt(r.daily_rate)}</span></span>
-                      {parseFloat(r.victor_fixed_daily) > 0 && <span className="text-gray-400">Victor/diária: <span className="text-blue-400">{fmt(r.victor_fixed_daily)}</span></span>}
+                      <span className="text-muted">Diária: <span className="text-text">{fmt(r.daily_rate)}</span></span>
+                      {parseFloat(r.victor_fixed_daily) > 0 && <span className="text-muted">Victor/diária: <span className="text-blue-700 dark:text-blue-400">{fmt(r.victor_fixed_daily)}</span></span>}
                     </>}
                     {tipoDaRegra(r) === 'projeto' && <>
-                      <span className="text-gray-400">Fixo mensal: <span className="text-white">{fmt(r.monthly_fixed_value)}</span></span>
-                      {parseFloat(r.victor_fixed_monthly) > 0 && <span className="text-gray-400">Victor/mês: <span className="text-blue-400">{fmt(r.victor_fixed_monthly)}</span></span>}
+                      <span className="text-muted">Fixo mensal: <span className="text-text">{fmt(r.monthly_fixed_value)}</span></span>
+                      {parseFloat(r.victor_fixed_monthly) > 0 && <span className="text-muted">Victor/mês: <span className="text-blue-700 dark:text-blue-400">{fmt(r.victor_fixed_monthly)}</span></span>}
                     </>}
-                    {nfOverride(r) != null && <span className="text-gray-400">NF: <span className="text-white">{fmt(r.nf_value_override)}</span> <span className="text-amber-400">(manual)</span></span>}
-                    {r.has_tax && <span className="text-gray-400">Imposto: <span className="text-red-400">{r.tax_percentage}%{r.is_net_value && tipoDaRegra(r) !== 'hora' ? ' (por fora)' : ''}</span></span>}
-                    {r.has_fuel && <span className="text-gray-400">Combustível: <span className="text-yellow-400">{fmt(r.fuel_value)}</span></span>}
-                    <span className="text-gray-400">Restante: <span className="text-green-400">{r.remainder_victor_pct}% Victor / {r.remainder_fabricio_pct}% Fab</span></span>
+                    {nfOverride(r) != null && <span className="text-muted">NF: <span className="text-text">{fmt(r.nf_value_override)}</span> <span className="text-amber-700 dark:text-amber-400">(manual)</span></span>}
+                    {r.has_tax && <span className="text-muted">Imposto: <span className="text-red-700 dark:text-red-400">{r.tax_percentage}%{r.is_net_value && tipoDaRegra(r) !== 'hora' ? ' (por fora)' : ''}</span></span>}
+                    {r.has_fuel && <span className="text-muted">Combustível: <span className="text-yellow-700 dark:text-yellow-400">{fmt(r.fuel_value)}</span></span>}
+                    <span className="text-muted">Restante: <span className="text-green-700 dark:text-green-400">{r.remainder_victor_pct}% Victor / {r.remainder_fabricio_pct}% Fab</span></span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <button onClick={() => openEdit(r)} className="text-gray-400 hover:text-blue-400 text-sm transition-colors">Editar</button>
-                  <button onClick={() => deleteRule(r.id)} className="text-gray-600 hover:text-red-400 text-sm transition-colors">Excluir</button>
+                  <button onClick={() => openEdit(r)} className="text-muted hover:text-blue-700 dark:hover:text-blue-400 text-sm transition-colors">Editar</button>
+                  <button onClick={() => deleteRule(r.id)} className="text-faint hover:text-red-700 dark:hover:text-red-400 text-sm transition-colors">Excluir</button>
                 </div>
               </div>
             </div>
@@ -261,30 +261,30 @@ export default function FinancialRules() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">{editRule ? 'Editar regra financeira' : 'Nova regra financeira'}</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-text mb-4">{editRule ? 'Editar regra financeira' : 'Nova regra financeira'}</h3>
             <div className="space-y-3">
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Cliente</label>
+                <label className="text-xs text-muted font-medium">Cliente</label>
                 <select value={form.client_id} onChange={e => setForm(f=>({...f,client_id:e.target.value}))} className={inputCls}>
                   <option value="">Selecione o cliente</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Tipo de cobrança</label>
+                <label className="text-xs text-muted font-medium">Tipo de cobrança</label>
                 <select value={form.billing_type} onChange={e=>setForm(f=>({...f,billing_type:e.target.value}))} className={inputCls}>
                   <option value="hora">Por hora</option>
                   <option value="diaria">Por diária</option>
                   <option value="projeto">Por projeto (fixo mensal)</option>
                 </select>
-                {form.billing_type === 'diaria' && <p className="text-gray-500 text-xs">Cobra 1 diária por data trabalhada. Várias OS na mesma data = 1 diária; as horas são só demonstrativo.</p>}
-                {form.billing_type === 'projeto' && <p className="text-gray-500 text-xs">Cobra o fixo mensal 1× por competência. As OS do mês são só demonstrativo.</p>}
+                {form.billing_type === 'diaria' && <p className="text-subtle text-xs">Cobra 1 diária por data trabalhada. Várias OS na mesma data = 1 diária; as horas são só demonstrativo.</p>}
+                {form.billing_type === 'projeto' && <p className="text-subtle text-xs">Cobra o fixo mensal 1× por competência. As OS do mês são só demonstrativo.</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {CAMPOS_VALOR[form.billing_type].map(([campo, rotulo]) => (
                   <div key={campo} className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400 font-medium">{rotulo}</label>
+                    <label className="text-xs text-muted font-medium">{rotulo}</label>
                     <input type="number" step="0.01" placeholder="0,00" value={form[campo]} onChange={e=>setForm(f=>({...f,[campo]:e.target.value}))} className={inputCls}/>
                   </div>
                 ))}
@@ -294,13 +294,13 @@ export default function FinancialRules() {
                 const un = form.billing_type === 'diaria' ? 'por diária' : 'mensal'
                 return (
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+                    <label className="flex items-center gap-2 text-text-3 text-sm cursor-pointer">
                       <input type="checkbox" checked={form.is_net_value} onChange={e=>setForm(f=>({...f,is_net_value:e.target.checked}))} className="rounded"/>
                       Valor informado é líquido (imposto por fora)
                     </label>
                     {form.is_net_value && liq > 0 && (
-                      <div className="bg-gray-800/60 rounded-lg px-3 py-2 space-y-1.5">
-                        <label className="text-xs text-gray-400 font-medium">Valor da NF {un} (R$)</label>
+                      <div className="bg-surface-2/60 rounded-lg px-3 py-2 space-y-1.5">
+                        <label className="text-xs text-muted font-medium">Valor da NF {un} (R$)</label>
                         <div className="flex items-center gap-2">
                           {/* Sem override o campo mostra o automático; digitar fixa a NF. Sair do
                               campo com o mesmo valor do automático desfaz o override. */}
@@ -312,60 +312,60 @@ export default function FinancialRules() {
                             className={`${inputCls} ${abaixo ? 'border-red-500' : ''}`}
                           />
                           <button type="button" onClick={recalcularNf} disabled={!manual}
-                            className="shrink-0 text-xs text-blue-400 hover:text-blue-300 disabled:text-gray-600 disabled:cursor-default">
+                            className="shrink-0 text-xs text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 disabled:text-faint disabled:cursor-default">
                             Recalcular
                           </button>
                         </div>
-                        <p className="text-xs text-gray-300">
-                          Líquido: <span className="text-green-400">{fmt(liq)}</span>
-                          <span className="text-gray-600"> | </span>Diferença (Victor/imposto): <span className="text-orange-400">{fmt(nf - liq)}</span>
-                          <span className="text-gray-600"> | </span>Imposto calculado: <span className="text-red-400">{fmt(nf * pct / 100)}</span>
+                        <p className="text-xs text-text-3">
+                          Líquido: <span className="text-green-700 dark:text-green-400">{fmt(liq)}</span>
+                          <span className="text-faint"> | </span>Diferença (Victor/imposto): <span className="text-orange-700 dark:text-orange-400">{fmt(nf - liq)}</span>
+                          <span className="text-faint"> | </span>Imposto calculado: <span className="text-red-700 dark:text-red-400">{fmt(nf * pct / 100)}</span>
                         </p>
-                        {ajustado && <p className="text-xs text-gray-500">Valor ajustado manualmente (automático: {fmt(auto)})</p>}
-                        {baseMudou && <p className="text-xs text-amber-400">O líquido ou o % de imposto mudou: a NF manual de {fmt(nf)} foi mantida. Use Recalcular para voltar ao automático ({fmt(auto)}).</p>}
-                        {abaixo && <p className="text-xs text-red-400">A NF não pode ser menor que o líquido.</p>}
-                        {!form.has_tax && <p className="text-xs text-gray-500">Sem imposto marcado: a NF automática é o próprio valor líquido.</p>}
+                        {ajustado && <p className="text-xs text-subtle">Valor ajustado manualmente (automático: {fmt(auto)})</p>}
+                        {baseMudou && <p className="text-xs text-amber-700 dark:text-amber-400">O líquido ou o % de imposto mudou: a NF manual de {fmt(nf)} foi mantida. Use Recalcular para voltar ao automático ({fmt(auto)}).</p>}
+                        {abaixo && <p className="text-xs text-red-700 dark:text-red-400">A NF não pode ser menor que o líquido.</p>}
+                        {!form.has_tax && <p className="text-xs text-subtle">Sem imposto marcado: a NF automática é o próprio valor líquido.</p>}
                       </div>
                     )}
-                    {!form.is_net_value && <p className="text-gray-500 text-xs">Desmarcado: o valor é bruto e o imposto é descontado dele antes do split.</p>}
+                    {!form.is_net_value && <p className="text-subtle text-xs">Desmarcado: o valor é bruto e o imposto é descontado dele antes do split.</p>}
                   </div>
                 )
               })()}
-              <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+              <label className="flex items-center gap-2 text-text-3 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.has_tax} onChange={e=>setForm(f=>({...f,has_tax:e.target.checked}))} className="rounded"/>
                 Tem imposto?
               </label>
               {form.has_tax && (
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-400 font-medium">% Imposto</label>
+                  <label className="text-xs text-muted font-medium">% Imposto</label>
                   <input placeholder="ex: 7" type="number" step="0.01" value={form.tax_percentage} onChange={e=>setForm(f=>({...f,tax_percentage:e.target.value}))} className={inputCls}/>
                 </div>
               )}
-              <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+              <label className="flex items-center gap-2 text-text-3 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.has_fuel} onChange={e=>setForm(f=>({...f,has_fuel:e.target.checked}))} className="rounded"/>
                 Tem deslocamento/combustível?
               </label>
               {form.has_fuel && (
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs text-gray-400 font-medium">Valor combustível (R$)</label>
+                  <label className="text-xs text-muted font-medium">Valor combustível (R$)</label>
                   <input placeholder="0,00" type="number" step="0.01" value={form.fuel_value} onChange={e=>setForm(f=>({...f,fuel_value:e.target.value}))} className={inputCls}/>
                 </div>
               )}
               <div className="flex gap-3">
                 <div className="flex flex-col gap-1 flex-1">
-                  <label className="text-xs text-gray-400 font-medium">% Victor</label>
+                  <label className="text-xs text-muted font-medium">% Victor</label>
                   <input type="number" step="0.01" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className={inputCls}/>
                 </div>
                 <div className="flex flex-col gap-1 flex-1">
-                  <label className="text-xs text-gray-400 font-medium">% Fabrício</label>
+                  <label className="text-xs text-muted font-medium">% Fabrício</label>
                   <input type="number" step="0.01" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className={inputCls}/>
                 </div>
               </div>
-              {!splitOk && <p className="text-amber-400 text-xs">% Victor + % Fabrício somam {somaSplit}% — precisam somar 100%.</p>}
-              {erro && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erro}</p>}
+              {!splitOk && <p className="text-amber-700 dark:text-amber-400 text-xs">% Victor + % Fabrício somam {somaSplit}% — precisam somar 100%.</p>}
+              {erro && <p className="text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erro}</p>}
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={closeModal} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
+              <button onClick={closeModal} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm transition-colors">Cancelar</button>
               <button onClick={save} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">Salvar</button>
             </div>
           </div>
@@ -374,23 +374,23 @@ export default function FinancialRules() {
 
       {showClientModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-4">Novo Cliente</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-text mb-4">Novo Cliente</h3>
             <div className="space-y-3">
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Nome do cliente</label>
-                <input autoFocus placeholder="Nome do cliente" value={clientForm.name} onChange={e=>setClientForm(f=>({...f,name:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Nome do cliente</label>
+                <input autoFocus placeholder="Nome do cliente" value={clientForm.name} onChange={e=>setClientForm(f=>({...f,name:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Empresa</label>
-                <select value={clientForm.company_id} onChange={e=>setClientForm(f=>({...f,company_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <label className="text-xs text-muted font-medium">Empresa</label>
+                <select value={clientForm.company_id} onChange={e=>setClientForm(f=>({...f,company_id:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                   <option value="1">Lumen</option>
                   <option value="2">Imperium</option>
                 </select>
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => { setShowClientModal(false); setClientForm({ name: '', company_id: '1' }) }} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
+              <button onClick={() => { setShowClientModal(false); setClientForm({ name: '', company_id: '1' }) }} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm transition-colors">Cancelar</button>
               <button onClick={saveClient} disabled={savingClient || !clientForm.name.trim()} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors">{savingClient ? 'Salvando...' : 'Salvar'}</button>
             </div>
           </div>

@@ -55,35 +55,35 @@ export default function NFSeCancelModal({ emission, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gray-900 rounded-xl p-6 max-w-lg w-full border border-gray-700 my-8">
-        <h2 className="text-xl font-bold text-red-400 mb-1">🚫 Cancelar NFS-e</h2>
-        <p className="text-xs text-gray-400 mb-4">
+      <div className="bg-surface shadow-sm dark:shadow-none rounded-xl p-6 max-w-lg w-full border border-border-strong my-8">
+        <h2 className="text-xl font-bold text-red-700 dark:text-red-400 mb-1">🚫 Cancelar NFS-e</h2>
+        <p className="text-xs text-muted mb-4">
           {emission?.nfseNumber ? `Nota #${emission.nfseNumber}` : `Emissão ${emission?.id}`}
           {emission?.cliente ? ` · ${emission.cliente}` : ''}
         </p>
 
-        <div className="mb-4 p-3 bg-red-900/25 border border-red-700/60 rounded text-red-300 text-sm">
+        <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/25 border border-red-300 dark:border-red-700/60 rounded text-red-700 dark:text-red-300 text-sm">
           ⚠️ O cancelamento é registrado no fisco e não pode ser desfeito por aqui.
         </div>
 
         {erro && (
-          <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-sm">
             ❌ {erro}
-            {detalhe && <p className="mt-1 text-xs text-red-200">{detalhe}</p>}
+            {detalhe && <p className="mt-1 text-xs text-red-700 dark:text-red-200">{detalhe}</p>}
           </div>
         )}
 
         {previa ? (
           <div className="space-y-4">
-            <div className="p-3 bg-amber-900/20 border border-amber-700/50 rounded text-amber-200 text-sm">
+            <div className="p-3 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50 rounded text-amber-700 dark:text-amber-200 text-sm">
               ⚠️ Nada foi transmitido ainda. Confirme para cancelar de verdade.
             </div>
-            <div className="p-3 bg-gray-800 rounded text-sm text-gray-300 space-y-1">
+            <div className="p-3 bg-surface-2 rounded text-sm text-text-3 space-y-1">
               <p><strong>Nota:</strong> {previa.resumo?.nfse_number ? `nº ${previa.resumo.nfse_number}` : `emissão ${previa.resumo?.emission_id}`}</p>
               <p><strong>Motivo:</strong> {previa.resumo?.motivo}</p>
               <p><strong>Código:</strong> {previa.resumo?.codigo_motivo}</p>
               <p><strong>Ambiente:</strong>{' '}
-                <span className={previa.resumo?.ambiente === 'producao' ? 'text-red-300 font-semibold' : 'text-amber-300'}>
+                <span className={previa.resumo?.ambiente === 'producao' ? 'text-red-700 dark:text-red-300 font-semibold' : 'text-amber-700 dark:text-amber-300'}>
                   {previa.resumo?.ambiente}
                 </span>
               </p>
@@ -106,7 +106,7 @@ export default function NFSeCancelModal({ emission, onClose, onSuccess }) {
 
             <div className="flex gap-3">
               <button onClick={() => setPrevia(null)} disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded transition-colors">
+                className="flex-1 px-4 py-2 bg-surface-3 hover:bg-surface-4 disabled:opacity-50 text-text rounded transition-colors">
                 ← Voltar
               </button>
               <button onClick={() => chamar(true)} disabled={loading}
@@ -118,10 +118,10 @@ export default function NFSeCancelModal({ emission, onClose, onSuccess }) {
         ) : (
           <div className="space-y-4">
             <label className="block">
-              <span className="text-sm font-semibold text-gray-300 mb-1 block">Motivo</span>
+              <span className="text-sm font-semibold text-text-3 mb-1 block">Motivo</span>
               <select
                 value={codigo} onChange={(e) => setCodigo(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-surface-2 border border-border-strong rounded text-text focus:border-blue-500 focus:outline-none"
               >
                 {MOTIVOS.map((m) => (
                   <option key={m.codigo} value={m.codigo}>{m.codigo} — {m.texto}</option>
@@ -130,19 +130,19 @@ export default function NFSeCancelModal({ emission, onClose, onSuccess }) {
             </label>
 
             <label className="block">
-              <span className="text-sm font-semibold text-gray-300 mb-1 block">Observações (opcional)</span>
+              <span className="text-sm font-semibold text-text-3 mb-1 block">Observações (opcional)</span>
               <textarea
                 value={observacoes} onChange={(e) => setObservacoes(e.target.value)}
                 placeholder="Detalhes que ajudem a entender o cancelamento depois"
                 rows="3" maxLength="200"
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none resize-none"
+                className="w-full px-3 py-2 bg-surface-2 border border-border-strong rounded text-text placeholder-subtle focus:border-blue-500 focus:outline-none resize-none"
               />
-              <p className="text-xs text-gray-500 mt-1">{observacoes.length}/200</p>
+              <p className="text-xs text-subtle mt-1">{observacoes.length}/200</p>
             </label>
 
             <div className="flex gap-3">
               <button onClick={onClose} disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded transition-colors">
+                className="flex-1 px-4 py-2 bg-surface-3 hover:bg-surface-4 disabled:opacity-50 text-text rounded transition-colors">
                 Manter a nota
               </button>
               <button onClick={() => chamar(false)} disabled={loading}

@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useCNPJConsulta, aplicarDados } from '../lib/useCNPJConsulta'
 
 const COMPANIES = [
-  { id: 1, name: 'Lumen', badge: 'bg-blue-500/20 text-blue-300 border border-blue-500/40' },
-  { id: 2, name: 'Imperium', badge: 'bg-purple-500/20 text-purple-300 border border-purple-500/40' },
+  { id: 1, name: 'Lumen', badge: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-500/40' },
+  { id: 2, name: 'Imperium', badge: 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-500/40' },
 ]
 
 // Campos fiscais do TOMADOR — o que a NFS-e precisa saber sobre o cliente.
@@ -155,8 +155,8 @@ export default function Clientes() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Clientes</h2>
-          <p className="text-gray-400 text-sm mt-1">Gerencie os clientes e as empresas às quais pertencem</p>
+          <h2 className="text-2xl font-bold text-text">Clientes</h2>
+          <p className="text-muted text-sm mt-1">Gerencie os clientes e as empresas às quais pertencem</p>
         </div>
         <button
           onClick={openNew}
@@ -167,17 +167,17 @@ export default function Clientes() {
       </div>
 
       {loading ? (
-        <div className="text-gray-500 text-sm">Carregando...</div>
+        <div className="text-subtle text-sm">Carregando...</div>
       ) : clients.length === 0 ? (
-        <div className="text-center py-16 text-gray-600">
+        <div className="text-center py-16 text-faint">
           <p className="text-4xl mb-3">👥</p>
           <p>Nenhum cliente cadastrado.</p>
         </div>
       ) : (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-gray-500 border-b border-gray-800">
+              <tr className="text-left text-subtle border-b border-border">
                 <th className="px-4 py-3 font-medium">Nome</th>
                 <th className="px-4 py-3 font-medium">Empresas</th>
                 <th className="px-4 py-3 font-medium text-right">Ações</th>
@@ -185,8 +185,8 @@ export default function Clientes() {
             </thead>
             <tbody>
               {clients.map(client => (
-                <tr key={client.id} className="border-b border-gray-800/60 last:border-0">
-                  <td className="px-4 py-3 text-white">{client.name}</td>
+                <tr key={client.id} className="border-b border-border/60 last:border-0">
+                  <td className="px-4 py-3 text-text">{client.name}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1.5">
                       {(client.company_ids || []).map(cid => {
@@ -199,23 +199,23 @@ export default function Clientes() {
                         )
                       })}
                       {(client.company_ids || []).length === 0 && (
-                        <span className="text-gray-600 text-xs">—</span>
+                        <span className="text-faint text-xs">—</span>
                       )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     {confirmDelete === client.id ? (
                       <div className="flex items-center justify-end gap-2">
-                        <span className="text-gray-400 text-xs">Confirmar?</span>
+                        <span className="text-muted text-xs">Confirmar?</span>
                         <button
                           onClick={() => remove(client.id)}
-                          className="text-red-400 hover:text-red-300 text-xs font-medium"
+                          className="text-red-700 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-xs font-medium"
                         >
                           Excluir
                         </button>
                         <button
                           onClick={() => setConfirmDelete(null)}
-                          className="text-gray-500 hover:text-gray-300 text-xs"
+                          className="text-subtle hover:text-text-3 text-xs"
                         >
                           Cancelar
                         </button>
@@ -224,13 +224,13 @@ export default function Clientes() {
                       <div className="flex items-center justify-end gap-3">
                         <button
                           onClick={() => openEdit(client)}
-                          className="text-gray-400 hover:text-blue-400 text-xs transition-colors"
+                          className="text-muted hover:text-blue-700 dark:hover:text-blue-400 text-xs transition-colors"
                         >
                           Editar
                         </button>
                         <button
                           onClick={() => setConfirmDelete(client.id)}
-                          className="text-gray-400 hover:text-red-400 text-xs transition-colors"
+                          className="text-muted hover:text-red-700 dark:hover:text-red-400 text-xs transition-colors"
                         >
                           Excluir
                         </button>
@@ -246,23 +246,23 @@ export default function Clientes() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-text mb-4">
               {editing ? 'Editar cliente' : 'Novo cliente'}
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Nome</label>
+                <label className="block text-xs text-subtle uppercase tracking-wider mb-1.5">Nome</label>
                 <input
                   autoFocus
                   placeholder="Nome do cliente"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                  className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">Empresas</label>
+                <label className="block text-xs text-subtle uppercase tracking-wider mb-1.5">Empresas</label>
                 <div className="space-y-2">
                   {COMPANIES.map(c => (
                     <label key={c.id} className="flex items-center gap-2.5 cursor-pointer select-none">
@@ -272,25 +272,25 @@ export default function Clientes() {
                         onChange={() => toggleCompany(c.id)}
                         className="w-4 h-4 rounded accent-blue-500"
                       />
-                      <span className="text-sm text-gray-200">{c.name}</span>
+                      <span className="text-sm text-text-2">{c.name}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               {/* ---- dados fiscais (NFS-e) ---- */}
-              <div className="border-t border-gray-800 pt-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
+              <div className="border-t border-border pt-4">
+                <p className="text-xs text-subtle uppercase tracking-wider mb-3">
                   Dados fiscais — usados na NFS-e
                 </p>
 
-                <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">CPF / CNPJ</label>
+                <label className="block text-xs text-subtle uppercase tracking-wider mb-1.5">CPF / CNPJ</label>
                 <div className="flex gap-2">
                   <input
                     placeholder="00.000.000/0000-00"
                     value={form.cpf_cnpj}
                     onChange={e => setForm(f => ({ ...f, cpf_cnpj: e.target.value }))}
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                    className="flex-1 bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"
                   />
                   <button
                     onClick={buscarCnpj}
@@ -306,21 +306,21 @@ export default function Clientes() {
                   <input type="checkbox" checked={sobrescrever}
                     onChange={e => setSobrescrever(e.target.checked)}
                     className="w-3.5 h-3.5 rounded accent-blue-500" />
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-muted">
                     Substituir campos já preenchidos
                   </span>
                 </label>
 
-                {erroCnpj && <p className="text-red-400 text-xs mt-2">❌ {erroCnpj}</p>}
-                {avisoCnpj && <p className="text-amber-400 text-xs mt-2">⚠️ {avisoCnpj}</p>}
+                {erroCnpj && <p className="text-red-700 dark:text-red-400 text-xs mt-2">❌ {erroCnpj}</p>}
+                {avisoCnpj && <p className="text-amber-700 dark:text-amber-400 text-xs mt-2">⚠️ {avisoCnpj}</p>}
                 {resultadoCnpj && !erroCnpj && (
-                  <p className="text-xs mt-2 text-green-400">
+                  <p className="text-xs mt-2 text-green-700 dark:text-green-400">
                     ✅ {resultadoCnpj.municipio ? `${resultadoCnpj.municipio} — ` : ''}
                     {resultadoCnpj.preenchidos.length} campo(s) preenchido(s)
                     {/* Dizer o que NÃO foi tocado é o ponto: sem isso, a pessoa
                         supõe que tudo veio da Receita e não confere o que ficou. */}
                     {resultadoCnpj.mantidos.length > 0 && (
-                      <span className="text-amber-400">
+                      <span className="text-amber-700 dark:text-amber-400">
                         {' '}· {resultadoCnpj.mantidos.length} mantido(s) com o valor que já estava
                         ({resultadoCnpj.mantidos.join(', ')})
                       </span>
@@ -331,24 +331,24 @@ export default function Clientes() {
                 <div className="grid md:grid-cols-2 gap-3 mt-4">
                   {CAMPOS_FISCAIS.map(([k, rotulo, dica]) => (
                     <div key={k} className={k === 'endereco' ? 'md:col-span-2' : ''}>
-                      <label className="block text-xs text-gray-500 uppercase tracking-wider mb-1.5">{rotulo}</label>
+                      <label className="block text-xs text-subtle uppercase tracking-wider mb-1.5">{rotulo}</label>
                       <input
                         placeholder={dica}
                         value={form[k]}
                         onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                        className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"
                       />
                     </div>
                   ))}
                 </div>
               </div>
 
-              {error && <p className="text-red-400 text-xs">{error}</p>}
+              {error && <p className="text-red-700 dark:text-red-400 text-xs">{error}</p>}
             </div>
             <div className="flex gap-3 mt-5">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
+                className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm transition-colors"
               >
                 Cancelar
               </button>

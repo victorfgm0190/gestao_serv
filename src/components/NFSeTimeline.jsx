@@ -19,12 +19,12 @@ const ICONES = {
 }
 
 const CORES = {
-  'nfse.autorizada': 'text-green-400',
-  'nfse.rejeitada': 'text-red-400',
-  'nfse.cancelada': 'text-red-400',
-  'nfse.cancelamento_sincronizado': 'text-red-400',
-  'nfse.erro': 'text-red-400',
-  'nfse.enviada': 'text-yellow-400',
+  'nfse.autorizada': 'text-green-700 dark:text-green-400',
+  'nfse.rejeitada': 'text-red-700 dark:text-red-400',
+  'nfse.cancelada': 'text-red-700 dark:text-red-400',
+  'nfse.cancelamento_sincronizado': 'text-red-700 dark:text-red-400',
+  'nfse.erro': 'text-red-700 dark:text-red-400',
+  'nfse.enviada': 'text-yellow-700 dark:text-yellow-400',
 }
 
 const dataHora = (v) => {
@@ -35,7 +35,7 @@ const dataHora = (v) => {
 
 export default function NFSeTimeline({ events = [] }) {
   if (!events?.length) {
-    return <p className="text-gray-500 text-sm">Nenhum evento registrado.</p>
+    return <p className="text-subtle text-sm">Nenhum evento registrado.</p>
   }
 
   return (
@@ -47,27 +47,27 @@ export default function NFSeTimeline({ events = [] }) {
           <div key={ev.id ?? i} className="flex gap-3">
             <div className="flex flex-col items-center">
               <span className="text-base leading-none pt-0.5">{ICONES[ev.event_type] || '•'}</span>
-              {i < events.length - 1 && <div className="w-px flex-1 bg-gray-700 my-1" />}
+              {i < events.length - 1 && <div className="w-px flex-1 bg-surface-3 my-1" />}
             </div>
             <div className="pb-3 min-w-0">
-              <p className={`text-sm font-semibold ${CORES[ev.event_type] || 'text-gray-200'}`}>
+              <p className={`text-sm font-semibold ${CORES[ev.event_type] || 'text-text-2'}`}>
                 {/* O rótulo vem do servidor, do mesmo mapa que grava os tipos.
                     Um segundo dicionário aqui divergiria no dia em que um tipo
                     novo fosse acrescentado — e o evento apareceria cru. */}
                 {ev.label || ev.event_type}
                 {ev.origem === 'webhook' && (
-                  <span className="ml-2 text-[10px] font-normal text-gray-500 uppercase">via webhook</span>
+                  <span className="ml-2 text-[10px] font-normal text-subtle uppercase">via webhook</span>
                 )}
                 {/* ⚠️ 'manual' não é detalhe de origem: o fato não foi
                     observado por nós nem entregue pelo emissor — foi declarado
                     por uma pessoa. Sem a etiqueta, um cancelamento sincronizado
                     lê-se como evento do fisco. */}
                 {ev.origem === 'manual' && (
-                  <span className="ml-2 text-[10px] font-normal text-amber-500 uppercase">registro manual</span>
+                  <span className="ml-2 text-[10px] font-normal text-amber-700 dark:text-amber-500 uppercase">registro manual</span>
                 )}
               </p>
-              <p className="text-xs text-gray-500">{dataHora(ev.event_timestamp)}</p>
-              {detalhe && <p className="text-xs text-gray-400 mt-0.5 break-words">{String(detalhe)}</p>}
+              <p className="text-xs text-subtle">{dataHora(ev.event_timestamp)}</p>
+              {detalhe && <p className="text-xs text-muted mt-0.5 break-words">{String(detalhe)}</p>}
             </div>
           </div>
         )

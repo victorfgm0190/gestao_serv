@@ -16,25 +16,25 @@ const fmt = (v) => `R$ ${(Number(v) || 0).toLocaleString('pt-BR', { minimumFract
 // `gravado` só aparece quando o recálculo de agora difere do que está na obrigação —
 // não é erro, é o mês tendo mudado depois da apuração.
 function Passo({ n, titulo, formula, valor, gravado, tom = 'normal', nota }) {
-  const cor = tom === 'destaque' ? 'border-amber-500/40 bg-amber-500/10' : 'border-gray-800 bg-gray-900/60'
+  const cor = tom === 'destaque' ? 'border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10' : 'border-border bg-surface/60'
   return (
     <div className={`rounded-xl border ${cor} p-3`}>
       <div className="flex items-baseline justify-between gap-3 flex-wrap">
-        <p className={`text-xs font-medium ${tom === 'destaque' ? 'text-amber-300' : 'text-white'}`}>
-          <span className="text-gray-600 mr-1.5">{n}.</span>{titulo}
+        <p className={`text-xs font-medium ${tom === 'destaque' ? 'text-amber-700 dark:text-amber-300' : 'text-text'}`}>
+          <span className="text-faint mr-1.5">{n}.</span>{titulo}
         </p>
         {valor !== undefined && (
-          <p className={`text-sm font-semibold tabular-nums ${tom === 'destaque' ? 'text-amber-300' : 'text-white'}`}>
+          <p className={`text-sm font-semibold tabular-nums ${tom === 'destaque' ? 'text-amber-700 dark:text-amber-300' : 'text-text'}`}>
             {fmt(valor)}
           </p>
         )}
       </div>
       {formula && (
-        <p className="mt-1 font-mono text-[11px] leading-relaxed text-gray-400 break-words">{formula}</p>
+        <p className="mt-1 font-mono text-[11px] leading-relaxed text-muted break-words">{formula}</p>
       )}
-      {nota && <p className="mt-1 text-[11px] text-gray-500">{nota}</p>}
+      {nota && <p className="mt-1 text-[11px] text-subtle">{nota}</p>}
       {gravado?.divergente && (
-        <p className="mt-2 text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-lg px-2 py-1">
+        <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-2 py-1">
           Gravado na apuração: {fmt(gravado.estimado)}
           {gravado.guia !== null && <> · guia oficial {fmt(gravado.guia)}</>}
           {' '}— o mês mudou desde então. Reapure para alinhar.
@@ -51,9 +51,9 @@ export default function MemoriaCalculo({ calculo, competencia, aviso = null }) {
   const semNf = c.faturas_sem_nf
   let n = 0
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-      <h3 className="text-white font-semibold text-sm">Memória de cálculo — {competencia}</h3>
-      <p className="text-gray-600 text-[11px] mb-4">
+    <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-5">
+      <h3 className="text-text font-semibold text-sm">Memória de cálculo — {competencia}</h3>
+      <p className="text-faint text-[11px] mb-4">
         O passo a passo que a apuração percorre, do faturamento do mês até o valor de cada guia.
         Previsão de caixa, não contabilidade formal.
       </p>
@@ -61,7 +61,7 @@ export default function MemoriaCalculo({ calculo, competencia, aviso = null }) {
       {aviso}
 
       {!c.apuravel && (
-        <p className="mb-4 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+        <p className="mb-4 text-amber-700 dark:text-amber-300 text-xs bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-3 py-2">
           ⚠️ Sem faturamento tributável nesta competência — a apuração não gera obrigação aqui.
           Os valores abaixo são só a conta hipotética (o pró-labore no piso faz aparecer INSS mesmo com R$ 0,00 faturado).
         </p>
@@ -117,19 +117,19 @@ export default function MemoriaCalculo({ calculo, competencia, aviso = null }) {
           formula={c.escritorio.formula} gravado={c.escritorio.gravado} />
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-800 flex items-baseline justify-between gap-3 flex-wrap">
+      <div className="mt-4 pt-4 border-t border-border flex items-baseline justify-between gap-3 flex-wrap">
         <div>
-          <p className="text-white text-sm font-semibold">Total apurado</p>
-          <p className="font-mono text-[11px] text-gray-400 mt-0.5">{c.total.formula}</p>
+          <p className="text-text text-sm font-semibold">Total apurado</p>
+          <p className="font-mono text-[11px] text-muted mt-0.5">{c.total.formula}</p>
         </div>
-        <p className="text-white text-lg font-bold tabular-nums">{fmt(c.total.calculado)}</p>
+        <p className="text-text text-lg font-bold tabular-nums">{fmt(c.total.calculado)}</p>
       </div>
 
       {c.lancados_a_mao.length > 0 && (
-        <p className="mt-3 text-[11px] text-gray-500">
+        <p className="mt-3 text-[11px] text-subtle">
           Fora da fórmula, lançados à mão: {c.lancados_a_mao.map((o) => `${KIND_LABEL[o.kind] || o.kind} ${fmt(o.valor)}`).join(' · ')}.
           A apuração não os recalcula — por isso sobrevivem a uma reapuração.
-          {c.total.gravado !== null && <> Total gravado no mês, com eles: <strong className="text-gray-400">{fmt(c.total.gravado)}</strong>.</>}
+          {c.total.gravado !== null && <> Total gravado no mês, com eles: <strong className="text-muted">{fmt(c.total.gravado)}</strong>.</>}
         </p>
       )}
     </div>

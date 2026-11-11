@@ -19,10 +19,10 @@ const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov
 const KIND_ICON = { das: '🏛️', inss: '🧾', honorarios: '📋', pro_labore: '👤', escritorio: '🏢' }
 
 const STATUS_STYLE = {
-  previsto: 'bg-gray-700 text-gray-300',
-  apurado: 'bg-blue-500/20 text-blue-300 border border-blue-500/40',
-  parcial: 'bg-amber-500/20 text-amber-300 border border-amber-500/40',
-  pago: 'bg-green-500/20 text-green-300 border border-green-500/40',
+  previsto: 'bg-surface-3 text-text-3',
+  apurado: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-500/40',
+  parcial: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40',
+  pago: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-500/40',
 }
 
 const fmt = (v) => `R$ ${(Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -34,14 +34,14 @@ const dataBR = (d) => (d ? new Date(d).toLocaleDateString('pt-BR', { timeZone: '
 // da que ainda não aconteceu — a 3 só acende quando a guia do escritório chega.
 function Etapa({ n, titulo, ativa, linhas }) {
   return (
-    <div className={`rounded-xl border p-3 ${ativa ? 'border-gray-700 bg-gray-800/40' : 'border-gray-800 bg-gray-900/40 opacity-50'}`}>
-      <p className="text-[10px] uppercase tracking-wide text-gray-500 mb-1">Etapa {n}</p>
-      <p className="text-xs text-white font-medium mb-2">{titulo}</p>
+    <div className={`rounded-xl border p-3 ${ativa ? 'border-border-strong bg-surface-2/40' : 'border-border bg-surface/40 opacity-50'}`}>
+      <p className="text-[10px] uppercase tracking-wide text-subtle mb-1">Etapa {n}</p>
+      <p className="text-xs text-text font-medium mb-2">{titulo}</p>
       <dl className="space-y-1 text-[11px]">
         {linhas.map(([k, v]) => (
           <div key={k} className="flex justify-between gap-2">
-            <dt className="text-gray-600">{k}</dt>
-            <dd className="text-gray-300">{v}</dd>
+            <dt className="text-faint">{k}</dt>
+            <dd className="text-text-3">{v}</dd>
           </div>
         ))}
       </dl>
@@ -241,15 +241,15 @@ export default function FiscalObligations() {
     <div className="p-8">
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-2xl font-bold text-white">Apuração Fiscal</h2>
-          <p className="text-gray-400 text-sm mt-1">
+          <h2 className="text-2xl font-bold text-text">Apuração Fiscal</h2>
+          <p className="text-muted text-sm mt-1">
             DAS, INSS e honorários de {months[month - 1]}/{year} — {activeCompany.name}
           </p>
         </div>
         <div className="flex gap-2">
           {calculo && (
             <button onClick={() => setShowMemoria((v) => !v)}
-              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-sm font-medium">
+              className="px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-2 rounded-lg text-sm font-medium">
               💡 {showMemoria ? 'Ocultar memória' : 'Como chegamos aqui?'}
             </button>
           )}
@@ -263,27 +263,27 @@ export default function FiscalObligations() {
       <div className="flex gap-2 mb-4 flex-wrap items-center">
         {months.map((m, i) => (
           <button key={i} onClick={() => setMonth(i + 1)}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${month === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{m}</button>
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${month === i + 1 ? 'bg-blue-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'}`}>{m}</button>
         ))}
         <select value={year} onChange={(e) => setYear(Number(e.target.value))}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs ml-2">
+          className="bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs ml-2">
           {[year - 1, year, year + 1].filter((v, i, a) => a.indexOf(v) === i).map((y) => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
 
-      {msg && <p className="mb-4 text-green-300 text-sm bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">✅ {msg}</p>}
-      {erro && <p className="mb-4 text-red-300 text-sm bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">⚠️ {erro}</p>}
+      {msg && <p className="mb-4 text-green-700 dark:text-green-300 text-sm bg-green-50 dark:bg-green-500/10 border border-green-300 dark:border-green-500/30 rounded-lg px-3 py-2">✅ {msg}</p>}
+      {erro && <p className="mb-4 text-red-700 dark:text-red-300 text-sm bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">⚠️ {erro}</p>}
 
       {/* Faturado mas não tributado. Sem isto à vista, um DAS menor do que o faturamento
           sugere pareceria erro de apuração em vez da regra do contrato sem NF.
           Com a memória aberta some: lá o mesmo dado aparece como passo destacado. */}
       {semNf.length > 0 && !showMemoria && (
-        <div className="mb-4 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
-          <p className="text-amber-300 text-xs font-medium">
+        <div className="mb-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-3 py-2">
+          <p className="text-amber-700 dark:text-amber-300 text-xs font-medium">
             Fora da apuração — contrato sem NF: {fmt(semNf.reduce((s, i) => s + i.invoice_value, 0))}
             {' '}em {semNf.length} fatura(s)
           </p>
-          <p className="text-amber-200/60 text-[11px] mt-1">
+          <p className="text-amber-700 dark:text-amber-200/60 text-[11px] mt-1">
             {semNf.map((i) => `${i.client_name} ${fmt(i.invoice_value)}`).join(' · ')} — não entram no DAS,
             no INSS, no Fator R nem no rateio por cliente. Continuam em A Receber normalmente.
           </p>
@@ -297,11 +297,11 @@ export default function FiscalObligations() {
       )}
 
       {loading ? (
-        <p className="text-gray-500 text-sm">Carregando...</p>
+        <p className="text-subtle text-sm">Carregando...</p>
       ) : !apurado ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center">
-          <p className="text-gray-400 text-sm">Nada apurado para {months[month - 1]}/{year}.</p>
-          <p className="text-gray-600 text-xs mt-1">
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-8 text-center">
+          <p className="text-muted text-sm">Nada apurado para {months[month - 1]}/{year}.</p>
+          <p className="text-faint text-xs mt-1">
             Apurar calcula DAS, INSS e honorários a partir das notas emitidas no mês e rateia por cliente.
             Reapurar depois é seguro: pagamentos e guias já lançadas são preservados.
           </p>
@@ -314,33 +314,33 @@ export default function FiscalObligations() {
               const pago = Number(ob.paid_amount) || 0
               const falta = Math.max(devido - pago, 0)
               return (
-                <div key={ob.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+                <div key={ob.id} className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span>{KIND_ICON[ob.kind]}</span>
-                      <h3 className="text-white font-semibold">{KIND_LABEL[ob.kind] || ob.kind}</h3>
+                      <h3 className="text-text font-semibold">{KIND_LABEL[ob.kind] || ob.kind}</h3>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_STYLE[ob.status] || STATUS_STYLE.previsto}`}>{ob.status}</span>
                   </div>
 
-                  <p className="text-2xl font-bold text-white">{fmt(devido)}</p>
+                  <p className="text-2xl font-bold text-text">{fmt(devido)}</p>
                   {ob.amount_actual != null ? (
-                    <p className="text-[11px] text-gray-500 mt-0.5">
+                    <p className="text-[11px] text-subtle mt-0.5">
                       guia oficial · estimado era {fmt(ob.amount_estimated)}
                     </p>
                   ) : (
-                    <p className="text-[11px] text-gray-500 mt-0.5">estimado — guia ainda não lançada</p>
+                    <p className="text-[11px] text-subtle mt-0.5">estimado — guia ainda não lançada</p>
                   )}
 
                   <dl className="mt-3 space-y-1 text-xs">
-                    <div className="flex justify-between"><dt className="text-gray-500">Pago</dt><dd className="text-gray-300">{fmt(pago)}</dd></div>
-                    <div className="flex justify-between"><dt className="text-gray-500">Falta</dt><dd className={falta > 0 ? 'text-amber-400' : 'text-green-400'}>{fmt(falta)}</dd></div>
-                    <div className="flex justify-between"><dt className="text-gray-500">Vencimento</dt><dd className="text-gray-300">{dataBR(ob.due_date)}</dd></div>
-                    {ob.doc_number && <div className="flex justify-between"><dt className="text-gray-500">Guia nº</dt><dd className="text-gray-300">{ob.doc_number}</dd></div>}
+                    <div className="flex justify-between"><dt className="text-subtle">Pago</dt><dd className="text-text-3">{fmt(pago)}</dd></div>
+                    <div className="flex justify-between"><dt className="text-subtle">Falta</dt><dd className={falta > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}>{fmt(falta)}</dd></div>
+                    <div className="flex justify-between"><dt className="text-subtle">Vencimento</dt><dd className="text-text-3">{dataBR(ob.due_date)}</dd></div>
+                    {ob.doc_number && <div className="flex justify-between"><dt className="text-subtle">Guia nº</dt><dd className="text-text-3">{ob.doc_number}</dd></div>}
                     {ob.base_amount != null && (
                       <div className="flex justify-between">
-                        <dt className="text-gray-500">Base</dt>
-                        <dd className="text-gray-400">{fmt(ob.base_amount)}{ob.rate_used != null ? ` × ${pct(ob.rate_used)}` : ''}</dd>
+                        <dt className="text-subtle">Base</dt>
+                        <dd className="text-muted">{fmt(ob.base_amount)}{ob.rate_used != null ? ` × ${pct(ob.rate_used)}` : ''}</dd>
                       </div>
                     )}
                   </dl>
@@ -354,11 +354,11 @@ export default function FiscalObligations() {
                         doc_number: ob.doc_number || '',
                         estimado: ob.amount_estimated,
                       })}
-                      className="flex-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-xs">
+                      className="flex-1 px-3 py-1.5 bg-surface-2 hover:bg-surface-3 text-text-2 rounded-lg text-xs">
                       Lançar guia
                     </button>
                     <button onClick={() => abrirPagamentos(ob)}
-                      className="flex-1 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-xs">
+                      className="flex-1 px-3 py-1.5 bg-surface-2 hover:bg-surface-3 text-text-2 rounded-lg text-xs">
                       Pagamentos
                     </button>
                   </div>
@@ -368,9 +368,9 @@ export default function FiscalObligations() {
           </div>
 
           {redistrib?.mudancas && (
-            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 mb-6">
+            <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-5 mb-6">
               <div className="flex items-start justify-between gap-4 flex-wrap mb-1">
-                <h3 className="text-white font-semibold text-sm">
+                <h3 className="text-text font-semibold text-sm">
                   {absorve ? 'Redistribuição — imposto real × provisão' : 'Imposto real × provisão da nota'}
                 </h3>
                 {/* Sem absorção não há o que aplicar: o backend devolve depois = antes e
@@ -382,7 +382,7 @@ export default function FiscalObligations() {
                   </button>
                 )}
               </div>
-              <p className="text-gray-600 text-[11px] mb-4">
+              <p className="text-faint text-[11px] mb-4">
                 {absorve ? (
                   <>
                     A fatura desconta uma provisão de imposto; a apuração diz o valor real.
@@ -400,7 +400,7 @@ export default function FiscalObligations() {
               </p>
 
               {redistrib.desatualizado && (
-                <p className="mb-4 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                <p className="mb-4 text-amber-700 dark:text-amber-300 text-xs bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-3 py-2">
                   ⚠️ O faturamento do mês mudou depois da apuração
                   ({fmt(redistrib.faturamento_apurado)} → {fmt(redistrib.faturamento_atual)}). Reapure antes de redistribuir.
                 </p>
@@ -426,10 +426,10 @@ export default function FiscalObligations() {
                     : [['Aguardando', 'a guia oficial']]} />
               </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-800 overflow-x-auto">
+              <div className="mt-4 pt-4 border-t border-border overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="text-gray-500 border-b border-gray-800">
+                    <tr className="text-subtle border-b border-border">
                       <th className="text-left font-medium py-2">Componente</th>
                       <th className="text-right font-medium py-2">Antes</th>
                       <th className="text-right font-medium py-2">Depois</th>
@@ -442,20 +442,20 @@ export default function FiscalObligations() {
                       ['Lucro Victor', redistrib.mudancas.lucro_victor],
                       ['Imposto do mês', redistrib.mudancas.imposto],
                     ].map(([label, v]) => (
-                      <tr key={label} className="border-b border-gray-800/60">
-                        <td className="py-2 text-gray-300">{label}</td>
-                        <td className="py-2 text-right text-gray-500">{fmt(v.antes)}</td>
-                        <td className="py-2 text-right text-gray-200">{fmt(v.depois)}</td>
-                        <td className={`py-2 text-right font-medium ${Math.abs(v.diferenca) < 0.01 ? 'text-gray-600' : v.diferenca > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <tr key={label} className="border-b border-border/60">
+                        <td className="py-2 text-text-3">{label}</td>
+                        <td className="py-2 text-right text-subtle">{fmt(v.antes)}</td>
+                        <td className="py-2 text-right text-text-2">{fmt(v.depois)}</td>
+                        <td className={`py-2 text-right font-medium ${Math.abs(v.diferenca) < 0.01 ? 'text-faint' : v.diferenca > 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                           {v.diferenca > 0 ? '+' : ''}{fmt(v.diferenca)}
                         </td>
                       </tr>
                     ))}
                     <tr>
-                      <td className="py-2 text-white font-medium">Total do Victor</td>
-                      <td className="py-2 text-right text-gray-500">{fmt(redistrib.mudancas.total_victor.antes)}</td>
-                      <td className="py-2 text-right text-white font-bold">{fmt(redistrib.mudancas.total_victor.depois)}</td>
-                      <td className={`py-2 text-right font-bold ${Math.abs(redistrib.mudancas.total_victor.diferenca) < 0.01 ? 'text-gray-600' : redistrib.mudancas.total_victor.diferenca > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <td className="py-2 text-text font-medium">Total do Victor</td>
+                      <td className="py-2 text-right text-subtle">{fmt(redistrib.mudancas.total_victor.antes)}</td>
+                      <td className="py-2 text-right text-text font-bold">{fmt(redistrib.mudancas.total_victor.depois)}</td>
+                      <td className={`py-2 text-right font-bold ${Math.abs(redistrib.mudancas.total_victor.diferenca) < 0.01 ? 'text-faint' : redistrib.mudancas.total_victor.diferenca > 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                         {redistrib.mudancas.total_victor.diferenca > 0 ? '+' : ''}{fmt(redistrib.mudancas.total_victor.diferenca)}
                       </td>
                     </tr>
@@ -465,19 +465,19 @@ export default function FiscalObligations() {
 
               <p className="text-[11px] mt-3">
                 {pendente ? (
-                  <span className="text-amber-400">
+                  <span className="text-amber-700 dark:text-amber-400">
                     Pendente: os lançamentos do Victor ainda estão com o valor da provisão.
                   </span>
                 ) : redistrib.pendentes_de_recebimento?.length ? (
-                  <span className="text-gray-500">
+                  <span className="text-subtle">
                     {redistrib.pendentes_de_recebimento.length} fatura(s) ainda não recebida(s) — o valor
                     já sai corrigido quando o recebimento for marcado.
                   </span>
                 ) : (
-                  <span className="text-green-400">✓ Redistribuição aplicada; os lançamentos do Victor já estão com o imposto real.</span>
+                  <span className="text-green-700 dark:text-green-400">✓ Redistribuição aplicada; os lançamentos do Victor já estão com o imposto real.</span>
                 )}
                 {redistrib.mudancas.nao_coberto > 0 && (
-                  <span className="text-red-400 block mt-1">
+                  <span className="text-red-700 dark:text-red-400 block mt-1">
                     {fmt(redistrib.mudancas.nao_coberto)} de imposto não cabe no que o Victor tem a receber — sai do capital próprio.
                   </span>
                 )}
@@ -486,18 +486,18 @@ export default function FiscalObligations() {
           )}
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-5">
-              <h3 className="text-white font-semibold text-sm mb-1">Custo por cliente</h3>
-              <p className="text-gray-600 text-[11px] mb-4">
+            <div className="lg:col-span-2 bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-5">
+              <h3 className="text-text font-semibold text-sm mb-1">Custo por cliente</h3>
+              <p className="text-faint text-[11px] mb-4">
                 Rateio proporcional ao valor da NF de cada cliente no mês.
               </p>
               {!rateioLista.length ? (
-                <p className="text-gray-500 text-xs">Sem rateio — o mês não teve faturamento por cliente.</p>
+                <p className="text-subtle text-xs">Sem rateio — o mês não teve faturamento por cliente.</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="text-gray-500 border-b border-gray-800">
+                      <tr className="text-subtle border-b border-border">
                         <th className="text-left font-medium py-2">Cliente</th>
                         {kindsRateados.map((k) => <th key={k} className="text-right font-medium py-2">{KIND_LABEL[k] || k}</th>)}
                         <th className="text-right font-medium py-2">Total</th>
@@ -505,10 +505,10 @@ export default function FiscalObligations() {
                     </thead>
                     <tbody>
                       {rateioLista.map(([cliente, v]) => (
-                        <tr key={cliente} className="border-b border-gray-800/60">
-                          <td className="py-2 text-gray-300">{cliente}</td>
-                          {kindsRateados.map((k) => <td key={k} className="py-2 text-right text-gray-400">{fmt(v[k])}</td>)}
-                          <td className="py-2 text-right text-white font-medium">{fmt(v.total)}</td>
+                        <tr key={cliente} className="border-b border-border/60">
+                          <td className="py-2 text-text-3">{cliente}</td>
+                          {kindsRateados.map((k) => <td key={k} className="py-2 text-right text-muted">{fmt(v[k])}</td>)}
+                          <td className="py-2 text-right text-text font-medium">{fmt(v.total)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -518,30 +518,30 @@ export default function FiscalObligations() {
             </div>
 
             <div className="space-y-4">
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-                <h3 className="text-white font-semibold text-sm mb-3">Total do mês</h3>
+              <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-5">
+                <h3 className="text-text font-semibold text-sm mb-3">Total do mês</h3>
                 <div className="space-y-1 text-xs">
-                  <div className="flex justify-between"><span className="text-gray-500">Devido</span><span className="text-white font-bold">{fmt(totalDevido)}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Pago</span><span className="text-gray-300">{fmt(totalPago)}</span></div>
-                  <div className="flex justify-between border-t border-gray-800 pt-1 mt-1">
-                    <span className="text-gray-500">Em aberto</span>
-                    <span className={totalDevido - totalPago > 0.005 ? 'text-amber-400' : 'text-green-400'}>{fmt(Math.max(totalDevido - totalPago, 0))}</span>
+                  <div className="flex justify-between"><span className="text-subtle">Devido</span><span className="text-text font-bold">{fmt(totalDevido)}</span></div>
+                  <div className="flex justify-between"><span className="text-subtle">Pago</span><span className="text-text-3">{fmt(totalPago)}</span></div>
+                  <div className="flex justify-between border-t border-border pt-1 mt-1">
+                    <span className="text-subtle">Em aberto</span>
+                    <span className={totalDevido - totalPago > 0.005 ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}>{fmt(Math.max(totalDevido - totalPago, 0))}</span>
                   </div>
                 </div>
                 {snapshot && (
-                  <dl className="mt-4 pt-3 border-t border-gray-800 space-y-1 text-[11px]">
-                    <div className="flex justify-between"><dt className="text-gray-600">Faturamento</dt><dd className="text-gray-400">{fmt(snapshot.faturamento_mes)}</dd></div>
-                    <div className="flex justify-between"><dt className="text-gray-600">RBT12{snapshot.rbt12_proporcionalizado ? ` (${snapshot.rbt12_meses}m proporcional.)` : ''}</dt><dd className="text-gray-400">{fmt(snapshot.rbt12)}</dd></div>
-                    <div className="flex justify-between"><dt className="text-gray-600">Pró-labore</dt><dd className="text-gray-400">{fmt(snapshot.prolabore)}{snapshot.prolabore_no_piso ? ' (piso)' : ''}</dd></div>
-                    <div className="flex justify-between"><dt className="text-gray-600">Fator R</dt><dd className={snapshot.fatorR >= 0.28 ? 'text-green-400' : 'text-amber-400'}>{pct(snapshot.fatorR)}</dd></div>
-                    <div className="flex justify-between"><dt className="text-gray-600">Anexo</dt><dd className="text-gray-400">{snapshot.anexo} · {pct(snapshot.aliquota_efetiva)}</dd></div>
+                  <dl className="mt-4 pt-3 border-t border-border space-y-1 text-[11px]">
+                    <div className="flex justify-between"><dt className="text-faint">Faturamento</dt><dd className="text-muted">{fmt(snapshot.faturamento_mes)}</dd></div>
+                    <div className="flex justify-between"><dt className="text-faint">RBT12{snapshot.rbt12_proporcionalizado ? ` (${snapshot.rbt12_meses}m proporcional.)` : ''}</dt><dd className="text-muted">{fmt(snapshot.rbt12)}</dd></div>
+                    <div className="flex justify-between"><dt className="text-faint">Pró-labore</dt><dd className="text-muted">{fmt(snapshot.prolabore)}{snapshot.prolabore_no_piso ? ' (piso)' : ''}</dd></div>
+                    <div className="flex justify-between"><dt className="text-faint">Fator R</dt><dd className={snapshot.fatorR >= 0.28 ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}>{pct(snapshot.fatorR)}</dd></div>
+                    <div className="flex justify-between"><dt className="text-faint">Anexo</dt><dd className="text-muted">{snapshot.anexo} · {pct(snapshot.aliquota_efetiva)}</dd></div>
                   </dl>
                 )}
               </div>
 
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
-                <h3 className="text-white font-semibold text-sm mb-1">Abater do Victor</h3>
-                <p className="text-gray-600 text-[11px] mb-3">
+              <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-5">
+                <h3 className="text-text font-semibold text-sm mb-1">Abater do Victor</h3>
+                <p className="text-faint text-[11px] mb-3">
                   {absorve
                     ? 'Consome estas despesas dos lançamentos a pagar do Victor, do mês mais antigo para o mais novo. Só entram lançamentos cujo cliente já pagou.'
                     : 'Desligado: o imposto não é mais descontado do que o Victor recebe. Quite a guia em "Pagamentos", no card de cada obrigação — o saldo por cliente cai junto.'}
@@ -551,9 +551,9 @@ export default function FiscalObligations() {
                     é justamente o que desfaz o que ficou do modelo anterior. */}
                 {!absorve && !distribuido ? null : distribuido ? (
                   <>
-                    <p className="text-green-300 text-xs mb-3">✅ Já abatido neste mês.</p>
+                    <p className="text-green-700 dark:text-green-300 text-xs mb-3">✅ Já abatido neste mês.</p>
                     <button onClick={estornarDistribuicao} disabled={!!busy}
-                      className="w-full px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-200 rounded-lg text-xs">
+                      className="w-full px-3 py-2 bg-surface-2 hover:bg-surface-3 disabled:opacity-50 text-text-2 rounded-lg text-xs">
                       {busy === 'estornar-dist' ? 'Estornando...' : 'Estornar abatimento'}
                     </button>
                   </>
@@ -565,18 +565,18 @@ export default function FiscalObligations() {
                     </button>
                     {temPrevisto && (
                       <button onClick={() => distribuir(true)} disabled={!!busy}
-                        className="w-full mt-2 px-3 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-gray-300 rounded-lg text-xs">
+                        className="w-full mt-2 px-3 py-2 bg-surface-2 hover:bg-surface-3 disabled:opacity-50 text-text-3 rounded-lg text-xs">
                         Abater incluindo estimativas
                       </button>
                     )}
-                    <p className="text-gray-600 text-[11px] mt-2">
+                    <p className="text-faint text-[11px] mt-2">
                       {temPrevisto
                         ? 'Há obrigações ainda sem guia oficial. O primeiro botão ignora essas; o segundo usa o valor estimado.'
                         : 'Todas as guias já foram lançadas.'}
                     </p>
                   </>
                 )}
-                {tudoQuitado && <p className="text-gray-600 text-[11px] mt-2">Todas as obrigações estão quitadas.</p>}
+                {tudoQuitado && <p className="text-faint text-[11px] mt-2">Todas as obrigações estão quitadas.</p>}
               </div>
             </div>
           </div>
@@ -586,7 +586,7 @@ export default function FiscalObligations() {
       {guiaModal && (
         <Modal onClose={() => setGuiaModal(null)} title={`Guia oficial — ${KIND_LABEL[guiaModal.kind]}`}>
           <form onSubmit={salvarGuia} className="space-y-4">
-            <p className="text-gray-500 text-[11px]">
+            <p className="text-subtle text-[11px]">
               Valor apurado internamente: {fmt(guiaModal.estimado)}. Ao lançar a guia, o valor
               oficial passa a ser o devido. Deixe em branco para desfazer o lançamento.
             </p>
@@ -605,7 +605,7 @@ export default function FiscalObligations() {
                 placeholder="ex.: DAS-07/2026" className={inputCls} />
             </Campo>
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setGuiaModal(null)} className="px-4 py-2 text-gray-400 hover:text-white text-sm">Cancelar</button>
+              <button type="button" onClick={() => setGuiaModal(null)} className="px-4 py-2 text-muted hover:text-text text-sm">Cancelar</button>
               <button type="submit" disabled={!!busy} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">
                 {busy === 'guia' ? 'Salvando...' : 'Salvar'}
               </button>
@@ -641,18 +641,18 @@ export default function FiscalObligations() {
             </div>
           </form>
 
-          <div className="mt-5 pt-4 border-t border-gray-800">
-            <h4 className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">Histórico</h4>
+          <div className="mt-5 pt-4 border-t border-border">
+            <h4 className="text-muted text-xs font-medium uppercase tracking-wider mb-2">Histórico</h4>
             {!payments.length ? (
-              <p className="text-gray-600 text-xs">Nenhum pagamento registrado.</p>
+              <p className="text-faint text-xs">Nenhum pagamento registrado.</p>
             ) : (
               <ul className="space-y-1">
                 {payments.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between text-xs bg-gray-800/60 rounded-lg px-3 py-2">
-                    <span className="text-gray-300">{fmt(p.amount)}</span>
-                    <span className="text-gray-500">{dataBR(p.paid_at)} · {p.method || '—'}</span>
+                  <li key={p.id} className="flex items-center justify-between text-xs bg-surface-2/60 rounded-lg px-3 py-2">
+                    <span className="text-text-3">{fmt(p.amount)}</span>
+                    <span className="text-subtle">{dataBR(p.paid_at)} · {p.method || '—'}</span>
                     <button onClick={() => estornarPagamento(p.id)} disabled={!!busy}
-                      className="text-red-400 hover:text-red-300 disabled:opacity-50">Estornar</button>
+                      className="text-red-700 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50">Estornar</button>
                   </li>
                 ))}
               </ul>
@@ -670,12 +670,12 @@ function tudoQuitadoSemGuia(obligations) {
   return !obligations.some((o) => o.status !== 'previsto')
 }
 
-const inputCls = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500'
+const inputCls = 'w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500'
 
 function Campo({ label, children }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">{label}</label>
+      <label className="text-xs text-muted font-medium uppercase tracking-wider">{label}</label>
       {children}
     </div>
   )
@@ -684,10 +684,10 @@ function Campo({ label, children }) {
 function Modal({ title, children, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-white font-semibold">{title}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-white text-sm">✕</button>
+          <h3 className="text-text font-semibold">{title}</h3>
+          <button onClick={onClose} className="text-subtle hover:text-text text-sm">✕</button>
         </div>
         {children}
       </div>

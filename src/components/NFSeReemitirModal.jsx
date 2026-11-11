@@ -134,9 +134,9 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gray-900 rounded-xl p-6 max-w-lg w-full border border-gray-700 my-8">
-        <h2 className="text-xl font-bold text-white mb-1">🔄 Re-emitir NFS-e</h2>
-        <p className="text-xs text-gray-400 mb-4">
+      <div className="bg-surface shadow-sm dark:shadow-none rounded-xl p-6 max-w-lg w-full border border-border-strong my-8">
+        <h2 className="text-xl font-bold text-text mb-1">🔄 Re-emitir NFS-e</h2>
+        <p className="text-xs text-muted mb-4">
           {emission?.nfseNumber ? `Nota nº ${emission.nfseNumber}` : `Emissão ${emission?.id}`}
           {emission?.cliente ? ` · ${emission.cliente}` : ''} · {brl(emission?.valor)}
         </p>
@@ -155,7 +155,7 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
                 onConfirmar={setConfirmado}
               />
             ) : (
-              <div className="p-3 bg-gray-800 border border-gray-700 rounded text-gray-300 text-sm">
+              <div className="p-3 bg-surface-2 border border-border-strong rounded text-text-3 text-sm">
                 🚫 Nota já cancelada no sistema — a fatura está liberada. Nada será
                 sincronizado; a re-emissão vai direto para a prévia.
               </div>
@@ -163,7 +163,7 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
 
             {precisaSincronizar && (
               <label className="block">
-                <span className="text-sm font-semibold text-gray-300 mb-1 block">
+                <span className="text-sm font-semibold text-text-3 mb-1 block">
                   Motivo do cancelamento no portal (opcional)
                 </span>
                 <input
@@ -172,9 +172,9 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
                   onChange={(e) => setMotivo(e.target.value)}
                   placeholder="Ex.: valor divergente, cancelada pelo contador"
                   maxLength="255"
-                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 bg-surface-2 border border-border-strong rounded text-text placeholder-subtle focus:border-blue-500 focus:outline-none"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-subtle mt-1">
                   Fica no histórico da nota — é o que explica, meses depois, por que ela
                   aparece cancelada sem evento do fisco.
                 </p>
@@ -183,16 +183,16 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
 
             {/* ⚠️ O valor da nova nota NÃO é digitado aqui — ver o cabeçalho
                 deste arquivo. A prévia mostra o valor que a fatura tem agora. */}
-            <div className="p-3 bg-gray-800/60 border border-gray-700 rounded text-xs text-gray-400">
-              💰 <strong className="text-gray-300">Valor:</strong> a nova nota sai pelo valor
+            <div className="p-3 bg-surface-2/60 border border-border-strong rounded text-xs text-muted">
+              💰 <strong className="text-text-3">Valor:</strong> a nova nota sai pelo valor
               atual da fatura, que a prévia mostra antes de transmitir. Para mudá-lo, edite a
-              fatura em <span className="text-gray-300">/billing</span> (só enquanto ela estiver
+              fatura em <span className="text-text-3">/billing</span> (só enquanto ela estiver
               pendente) — o valor é calculado junto com o split Victor/Fabrício e não pode ser
               digitado avulso.
             </div>
 
             <label className="block">
-              <span className="text-sm font-semibold text-gray-300 mb-1 block">
+              <span className="text-sm font-semibold text-text-3 mb-1 block">
                 Nova descrição do serviço (opcional)
               </span>
               <textarea
@@ -200,12 +200,12 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
                 onChange={(e) => setDescricao(e.target.value)}
                 placeholder="Em branco mantém a descrição da fatura"
                 rows="2" maxLength="2000"
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none resize-none"
+                className="w-full px-3 py-2 bg-surface-2 border border-border-strong rounded text-text placeholder-subtle focus:border-blue-500 focus:outline-none resize-none"
               />
             </label>
 
             <label className="block">
-              <span className="text-sm font-semibold text-gray-300 mb-1 block">
+              <span className="text-sm font-semibold text-text-3 mb-1 block">
                 Alíquota ISS (%) (opcional)
               </span>
               <input
@@ -213,20 +213,20 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
                 value={aliquota}
                 onChange={(e) => setAliquota(e.target.value)}
                 placeholder="Em branco usa a da fatura / do emitente"
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-surface-2 border border-border-strong rounded text-text placeholder-subtle focus:border-blue-500 focus:outline-none"
               />
             </label>
 
             {erro && (
-              <div className="p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-sm">
                 ❌ {erro}
-                {detalhe && <p className="mt-1 text-xs text-red-200">{detalhe}</p>}
+                {detalhe && <p className="mt-1 text-xs text-red-700 dark:text-red-200">{detalhe}</p>}
               </div>
             )}
 
             <div className="flex gap-3">
               <button onClick={onClose} disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded transition-colors">
+                className="flex-1 px-4 py-2 bg-surface-3 hover:bg-surface-4 disabled:opacity-50 text-text rounded transition-colors">
                 Fechar
               </button>
               <button onClick={gerarPrevia} disabled={loading || !confirmado}
@@ -240,25 +240,25 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
         {previa && (
           <div className="space-y-4">
             {sincronizada && !sincronizada.ja_cancelada && (
-              <div className="p-3 bg-gray-800 border border-gray-700 rounded text-gray-300 text-sm">
+              <div className="p-3 bg-surface-2 border border-border-strong rounded text-text-3 text-sm">
                 🚫 Nota nº {sincronizada.nfse_cancelada ?? emission?.nfseNumber} marcada como
                 cancelada. A fatura {sincronizada.invoice_number ? `${sincronizada.invoice_number} ` : ''}
                 está liberada.
               </div>
             )}
 
-            <div className="p-3 bg-amber-900/20 border border-amber-700/50 rounded text-amber-200 text-sm">
+            <div className="p-3 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50 rounded text-amber-700 dark:text-amber-200 text-sm">
               ⚠️ Nada foi transmitido ainda. Confirme para emitir a nova nota de verdade.
             </div>
 
-            <div className="p-3 bg-gray-800 rounded text-sm text-gray-300 space-y-1">
+            <div className="p-3 bg-surface-2 rounded text-sm text-text-3 space-y-1">
               <p><strong>Cliente:</strong> {previa.resumo?.cliente}</p>
               <p><strong>Valor:</strong> {brl(previa.resumo?.valor_servico)}</p>
               <p><strong>Alíquota ISS:</strong> {previa.resumo?.aliquota_iss}%</p>
               <p><strong>Competência:</strong> {previa.resumo?.competencia}</p>
               <p><strong>DPS nº:</strong> {previa.resumo?.dps_number}</p>
               <p><strong>Ambiente:</strong>{' '}
-                <span className={previa.ambiente === 'producao' ? 'text-red-300 font-semibold' : 'text-amber-300'}>
+                <span className={previa.ambiente === 'producao' ? 'text-red-700 dark:text-red-300 font-semibold' : 'text-amber-700 dark:text-amber-300'}>
                   {previa.ambiente}
                 </span>
               </p>
@@ -278,9 +278,9 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
             />
 
             {erro && (
-              <div className="p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-sm">
                 ❌ {erro}
-                {detalhe && <p className="mt-1 text-xs text-red-200">{detalhe}</p>}
+                {detalhe && <p className="mt-1 text-xs text-red-700 dark:text-red-200">{detalhe}</p>}
               </div>
             )}
 
@@ -289,7 +289,7 @@ export default function NFSeReemitirModal({ emission, onClose, onSuccess }) {
                   marcada como cancelada, porque ela FOI cancelada no portal —
                   o que se está adiando é a nova emissão, não o fato. */}
               <button onClick={() => setPrevia(null)} disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded transition-colors">
+                className="flex-1 px-4 py-2 bg-surface-3 hover:bg-surface-4 disabled:opacity-50 text-text rounded transition-colors">
                 ← Voltar
               </button>
               <button onClick={transmitir} disabled={loading}

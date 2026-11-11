@@ -32,15 +32,15 @@ const dataBR = (v) => (v ? new Date(v).toLocaleDateString('pt-BR') : '—')
 
 function Selo({ status, dias }) {
   const mapa = {
-    expired: ['🔴', 'text-red-400', 'EXPIRADO'],
-    critical: ['🟠', 'text-orange-400', `CRÍTICO (${dias} dias)`],
-    warning: ['🟡', 'text-yellow-400', `AVISO (${dias} dias)`],
-    ok: ['✅', 'text-green-400', `OK (${dias} dias)`],
-    not_yet_valid: ['⏳', 'text-blue-400', 'AINDA NÃO VIGENTE'],
+    expired: ['🔴', 'text-red-700 dark:text-red-400', 'EXPIRADO'],
+    critical: ['🟠', 'text-orange-700 dark:text-orange-400', `CRÍTICO (${dias} dias)`],
+    warning: ['🟡', 'text-yellow-700 dark:text-yellow-400', `AVISO (${dias} dias)`],
+    ok: ['✅', 'text-green-700 dark:text-green-400', `OK (${dias} dias)`],
+    not_yet_valid: ['⏳', 'text-blue-700 dark:text-blue-400', 'AINDA NÃO VIGENTE'],
   }
   // Status desconhecido não pode render nada em branco — o esboço devolvia
   // null no default e a linha simplesmente sumia.
-  const [icone, cor, texto] = mapa[status] || ['❔', 'text-gray-400', String(status || 'desconhecido')]
+  const [icone, cor, texto] = mapa[status] || ['❔', 'text-muted', String(status || 'desconhecido')]
   return (
     <span className={`font-bold ${cor}`}>
       {icone} {texto}
@@ -150,9 +150,9 @@ export default function NFSeSettings() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <h1 className="text-3xl font-bold text-white">🔐 Certificado NFS-e</h1>
+        <h1 className="text-3xl font-bold text-text">🔐 Certificado NFS-e</h1>
         <span
-          className="px-2 py-1 rounded text-xs font-medium text-white"
+          className="px-2 py-1 rounded text-xs font-medium text-text"
           style={{ backgroundColor: activeCompany.color }}
         >
           {activeCompany.name}
@@ -160,16 +160,16 @@ export default function NFSeSettings() {
       </div>
 
       {/* STATUS */}
-      <section className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-        <h2 className="text-xl font-bold text-white mb-4">📊 Status do certificado</h2>
+      <section className="bg-surface border border-border rounded-lg p-6">
+        <h2 className="text-xl font-bold text-text mb-4">📊 Status do certificado</h2>
 
         {loadingStatus ? (
-          <p className="text-gray-400">Verificando…</p>
+          <p className="text-muted">Verificando…</p>
         ) : certInfo ? (
           <div className="space-y-4">
-            <div className="p-4 bg-gray-800 rounded border border-gray-700">
+            <div className="p-4 bg-surface-2 rounded border border-border-strong">
               <p><Selo status={certInfo.status} dias={dias} /></p>
-              <p className="text-sm text-gray-300 mt-1">
+              <p className="text-sm text-text-3 mt-1">
                 {certInfo.status === 'expired'
                   ? (dias <= -1
                     ? `Expirou há ${Math.abs(dias)} dia(s), em ${dataBR(certInfo.valid_until)}`
@@ -178,11 +178,11 @@ export default function NFSeSettings() {
               </p>
             </div>
 
-            <div className="p-4 bg-gray-800 rounded border border-gray-700 text-sm text-gray-300 space-y-2">
+            <div className="p-4 bg-surface-2 rounded border border-border-strong text-sm text-text-3 space-y-2">
               <p><strong>Titular:</strong> {certInfo.subject}</p>
               <p>
                 <strong>Thumbprint:</strong>{' '}
-                <code className="text-xs bg-gray-900 px-2 py-1 rounded break-all">
+                <code className="text-xs bg-surface px-2 py-1 rounded break-all">
                   {certInfo.thumbprint?.slice(0, 32)}…
                 </code>
               </p>
@@ -199,18 +199,18 @@ export default function NFSeSettings() {
             </button>
           </div>
         ) : (
-          <p className="text-gray-400">Nenhum certificado configurado para a {activeCompany.name}.</p>
+          <p className="text-muted">Nenhum certificado configurado para a {activeCompany.name}.</p>
         )}
       </section>
 
       {/* UPLOAD */}
-      <section className="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-4">
-        <h2 className="text-xl font-bold text-white">
+      <section className="bg-surface border border-border rounded-lg p-6 space-y-4">
+        <h2 className="text-xl font-bold text-text">
           📤 {certInfo ? 'Substituir certificado' : 'Carregar certificado'}
         </h2>
 
         <div>
-          <span className="text-sm font-semibold text-gray-300">Arquivo .pfx</span>
+          <span className="text-sm font-semibold text-text-3">Arquivo .pfx</span>
           <div className="mt-2 flex items-center gap-3 flex-wrap">
             <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
               📎 Selecionar arquivo
@@ -222,21 +222,21 @@ export default function NFSeSettings() {
               />
             </label>
             {arquivo && (
-              <span className="text-sm text-gray-300">
-                {arquivo.name} <span className="text-gray-500">({(arquivo.size / 1024).toFixed(1)} KB)</span>
+              <span className="text-sm text-text-3">
+                {arquivo.name} <span className="text-subtle">({(arquivo.size / 1024).toFixed(1)} KB)</span>
               </span>
             )}
           </div>
         </div>
 
         <label className="block">
-          <span className="text-sm font-semibold text-gray-300">Senha do certificado</span>
+          <span className="text-sm font-semibold text-text-3">Senha do certificado</span>
           <input
             type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             placeholder="Senha do arquivo .pfx"
-            className="mt-2 block w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+            className="mt-2 block w-full px-3 py-2 bg-surface-2 border border-border-strong rounded text-text placeholder-subtle focus:border-blue-500 focus:outline-none"
           />
         </label>
 
@@ -252,8 +252,8 @@ export default function NFSeSettings() {
           <div
             className={`p-3 rounded text-sm border ${
               mensagem.tipo === 'ok'
-                ? 'bg-green-900/30 text-green-300 border-green-700'
-                : 'bg-red-900/30 text-red-300 border-red-700'
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700'
+                : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700'
             }`}
           >
             {mensagem.tipo === 'ok' ? '✅ ' : '❌ '}{mensagem.texto}
@@ -261,7 +261,7 @@ export default function NFSeSettings() {
         )}
       </section>
 
-      <section className="bg-gray-800 border border-gray-700 rounded-lg p-4 text-sm text-gray-300 space-y-2">
+      <section className="bg-surface-2 border border-border-strong rounded-lg p-4 text-sm text-text-3 space-y-2">
         <p>
           ℹ️ <strong>Certificado A1:</strong> arquivo <code>.pfx</code> emitido por uma
           autoridade certificadora ICP-Brasil. Vale 1 ano e é o que assina a NFS-e.

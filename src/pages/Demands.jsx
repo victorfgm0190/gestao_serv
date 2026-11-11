@@ -4,12 +4,12 @@ import { useOutletContext } from 'react-router-dom'
 const STATUS_OPTIONS = ['nova', 'pendente', 'em análise', 'em andamento', 'resolvida', 'cancelada']
 
 const STATUS_COLORS = {
-  'nova': 'bg-blue-500/20 text-blue-400',
-  'em análise': 'bg-yellow-500/20 text-yellow-400',
-  'pendente': 'bg-orange-500/20 text-orange-400',
-  'em andamento': 'bg-purple-500/20 text-purple-400',
-  'resolvida': 'bg-green-500/20 text-green-400',
-  'cancelada': 'bg-gray-500/20 text-gray-400',
+  'nova': 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  'em análise': 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
+  'pendente': 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400',
+  'em andamento': 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400',
+  'resolvida': 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400',
+  'cancelada': 'bg-subtle/20 text-muted',
 }
 
 export default function Demands() {
@@ -170,14 +170,14 @@ export default function Demands() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Demandas</h2>
-          <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
+          <h2 className="text-2xl font-bold text-text">Demandas</h2>
+          <p className="text-muted text-sm mt-1">{activeCompany.name}</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={syncEmails}
             disabled={syncing}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+            className="px-4 py-2 bg-surface-3 hover:bg-surface-4 disabled:opacity-50 text-text rounded-lg text-sm font-medium transition-colors"
           >
             {syncing ? 'Sincronizando...' : '📧 Sincronizar e-mails'}
           </button>
@@ -196,7 +196,7 @@ export default function Demands() {
           <button
             onClick={() => setFilterClient('')}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              filterClient === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              filterClient === '' ? 'bg-surface-4 text-text' : 'bg-surface-2 text-muted hover:bg-surface-3'
             }`}
           >
             Todos os clientes
@@ -206,7 +206,7 @@ export default function Demands() {
               key={c.id}
               onClick={() => setFilterClient(String(c.id))}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                filterClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                filterClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'
               }`}
             >
               {c.name}
@@ -222,7 +222,7 @@ export default function Demands() {
             key={s}
             onClick={() => setFilterStatus(s)}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              filterStatus === s ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              filterStatus === s ? 'bg-surface-4 text-text' : 'bg-surface-2 text-muted hover:bg-surface-3'
             }`}
           >
             {s}
@@ -231,7 +231,7 @@ export default function Demands() {
         <button
           onClick={() => setFilterStatus('')}
           className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-            filterStatus === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            filterStatus === '' ? 'bg-surface-4 text-text' : 'bg-surface-2 text-muted hover:bg-surface-3'
           }`}
         >
           Todos
@@ -239,49 +239,49 @@ export default function Demands() {
       </div>
 
       {/* Contador */}
-      <p className="text-gray-500 text-xs mb-4">{filtered.length} demanda(s)</p>
+      <p className="text-subtle text-xs mb-4">{filtered.length} demanda(s)</p>
 
       {/* List */}
       {loading ? (
-        <div className="text-gray-500 text-sm">Carregando...</div>
+        <div className="text-subtle text-sm">Carregando...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-600">
+        <div className="text-center py-16 text-faint">
           <p className="text-4xl mb-3">📭</p>
           <p>Nenhuma demanda encontrada.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {filtered.map(d => (
-            <div key={d.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-gray-700 transition-colors">
+            <div key={d.id} className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4 hover:border-border-strong transition-colors">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     {getClientName(d.client_id) && (
-                      <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full font-medium">
+                      <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs rounded-full font-medium">
                         {getClientName(d.client_id)}
                       </span>
                     )}
                   </div>
-                  <p className="text-white font-medium truncate">{d.subject || '(sem assunto)'}</p>
-                  <p className="text-gray-400 text-sm mt-1">{d.sender_name} {d.sender_email ? `<${d.sender_email}>` : ''}</p>
-                  {d.body && <p className="text-gray-500 text-sm mt-2 line-clamp-2">{d.body}</p>}
+                  <p className="text-text font-medium truncate">{d.subject || '(sem assunto)'}</p>
+                  <p className="text-muted text-sm mt-1">{d.sender_name} {d.sender_email ? `<${d.sender_email}>` : ''}</p>
+                  {d.body && <p className="text-subtle text-sm mt-2 line-clamp-2">{d.body}</p>}
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <select
                     value={d.status}
                     onChange={e => updateStatus(d.id, e.target.value)}
-                    className="bg-gray-800 border border-gray-700 text-gray-300 text-xs rounded-lg px-2 py-1"
+                    className="bg-surface-2 border border-border-strong text-text-3 text-xs rounded-lg px-2 py-1"
                   >
                     {STATUS_OPTIONS.map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[d.status] || 'bg-gray-700 text-gray-300'}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[d.status] || 'bg-surface-3 text-text-3'}`}>
                     {d.status}
                   </span>
                 </div>
               </div>
-              <p className="text-gray-600 text-xs mt-3">
+              <p className="text-faint text-xs mt-3">
                 {d.received_at ? new Date(d.received_at).toLocaleDateString('pt-BR', {timeZone:'UTC'}) : new Date(d.created_at).toLocaleDateString('pt-BR', {timeZone:'UTC'})}
               </p>
             </div>
@@ -292,38 +292,38 @@ export default function Demands() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg">
-            <h3 className="text-lg font-bold text-white mb-4">Nova demanda</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-lg">
+            <h3 className="text-lg font-bold text-text mb-4">Nova demanda</h3>
             <div className="space-y-3">
               <input
                 placeholder="Nome do remetente"
                 value={form.sender_name}
                 onChange={e => setForm(f => ({ ...f, sender_name: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"
               />
               <input
                 placeholder="E-mail do remetente"
                 value={form.sender_email}
                 onChange={e => setForm(f => ({ ...f, sender_email: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"
               />
               <input
                 placeholder="Assunto"
                 value={form.subject}
                 onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"
               />
               <textarea
                 placeholder="Descrição / corpo da mensagem"
                 value={form.body}
                 onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
                 rows={4}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"
+                className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"
               />
               <select
                 value={form.status}
                 onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"
               >
                 {STATUS_OPTIONS.map(s => (
                   <option key={s} value={s}>{s}</option>
@@ -331,12 +331,12 @@ export default function Demands() {
               </select>
             </div>
             {erro && (
-              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erro}</p>
+              <p className="mt-3 text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erro}</p>
             )}
             <div className="flex gap-3 mt-5">
               <button
                 onClick={closeModal}
-                className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors"
+                className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm transition-colors"
               >
                 Cancelar
               </button>

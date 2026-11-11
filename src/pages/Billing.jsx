@@ -469,7 +469,7 @@ export default function Billing() {
   }
 
   const fmt = v => v != null ? `R$ ${parseFloat(v).toFixed(2).replace('.',',')}` : '-'
-  const STATUS_COLORS = { pendente:'bg-yellow-500/20 text-yellow-400', recebido:'bg-green-500/20 text-green-400' }
+  const STATUS_COLORS = { pendente:'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400', recebido:'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' }
 
   // Filtros de mês (0 = todos) e cliente aplicados no frontend
   const invoicesByMonth = invoices.filter(inv => filterMonth === 0 || inv.month === filterMonth)
@@ -489,8 +489,8 @@ export default function Billing() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Faturamento</h2>
-          <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
+          <h2 className="text-2xl font-bold text-text">Faturamento</h2>
+          <p className="text-muted text-sm mt-1">{activeCompany.name}</p>
         </div>
         <div className="flex gap-2 items-center">
           <button onClick={openContractModal} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">📄 Contrato</button>
@@ -499,38 +499,38 @@ export default function Billing() {
       </div>
 
       {fiscalInfo && (
-        <div className="mb-6 flex items-start gap-3 bg-blue-500/10 border border-blue-500/40 rounded-xl px-4 py-3">
-          <span className="text-blue-400 text-sm">ℹ️</span>
-          <p className="text-blue-200 text-sm flex-1">{fiscalInfo}</p>
-          <button onClick={()=>setFiscalInfo('')} className="text-gray-400 hover:text-white text-sm shrink-0">✕</button>
+        <div className="mb-6 flex items-start gap-3 bg-blue-50 dark:bg-blue-500/10 border border-blue-300 dark:border-blue-500/40 rounded-xl px-4 py-3">
+          <span className="text-blue-700 dark:text-blue-400 text-sm">ℹ️</span>
+          <p className="text-blue-700 dark:text-blue-200 text-sm flex-1">{fiscalInfo}</p>
+          <button onClick={()=>setFiscalInfo('')} className="text-muted hover:text-text text-sm shrink-0">✕</button>
         </div>
       )}
 
       {/* Parâmetros vigentes da apuração — deixa visível com que regra o pró-labore
           será gravado, já que agora eles são configuráveis em Configurações. */}
       {activeCompany.id === 1 && (
-        <p className="mb-6 text-xs text-gray-500">
+        <p className="mb-6 text-xs text-subtle">
           Pró-labore fiscal:{' '}
-          <span className="text-gray-300">
+          <span className="text-text-3">
             {(fiscalParams.prolabore_percentual * 100).toFixed(fiscalParams.prolabore_percentual * 100 % 1 === 0 ? 0 : 2)}%
           </span>{' '}
           do faturamento, piso de{' '}
-          <span className="text-gray-300">
+          <span className="text-text-3">
             R$ {fiscalParams.prolabore_minimo.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
           {' '}· honorários{' '}
-          <span className="text-gray-300">
+          <span className="text-text-3">
             R$ {fiscalParams.honorarios_mensal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </p>
       )}
 
       <div className="flex gap-2 mb-6 flex-wrap items-center">
-        <button onClick={() => setFilterMonth(0)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === 0 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>Todos</button>
+        <button onClick={() => setFilterMonth(0)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === 0 ? 'bg-blue-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'}`}>Todos</button>
         {months.map((m, i) => (
-          <button key={i} onClick={() => setFilterMonth(i+1)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === i+1 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{m}</button>
+          <button key={i} onClick={() => setFilterMonth(i+1)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === i+1 ? 'bg-blue-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'}`}>{m}</button>
         ))}
-        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none"/>
+        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs focus:outline-none"/>
       </div>
 
       {clientsWithInvoices.length > 0 && (
@@ -538,7 +538,7 @@ export default function Billing() {
           <button
             onClick={() => setFilterClient('')}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              filterClient === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              filterClient === '' ? 'bg-surface-4 text-text' : 'bg-surface-2 text-muted hover:bg-surface-3'
             }`}
           >
             Todos os clientes
@@ -548,7 +548,7 @@ export default function Billing() {
               key={c.id}
               onClick={() => setFilterClient(String(c.id))}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                filterClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                filterClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'
               }`}
             >
               {c.name}
@@ -557,53 +557,53 @@ export default function Billing() {
         </div>
       )}
 
-      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : filteredInvoices.length === 0 ? (
-        <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">🧾</p><p>Nenhuma fatura gerada.</p></div>
+      {loading ? <div className="text-subtle text-sm">Carregando...</div> : filteredInvoices.length === 0 ? (
+        <div className="text-center py-16 text-faint"><p className="text-4xl mb-3">🧾</p><p>Nenhuma fatura gerada.</p></div>
       ) : (
         <div className="space-y-3">
           {filteredInvoices.map(inv => (
-            <div key={inv.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+            <div key={inv.id} className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{inv.client_name}</span>
-                    <span className="text-gray-400 text-xs">{months[inv.month-1]}/{inv.year}</span>
-                    {inv.invoice_number && <span className="text-gray-500 text-xs">NF: {inv.invoice_number}</span>}
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[inv.status]||'bg-gray-700 text-gray-400'}`}>{inv.status}</span>
-                    <span className="text-gray-600 text-xs">{inv.billing_type==='contract'?'📄 Contrato':inv.billing_type==='projeto'?'📦 Projeto':'📅 Agenda'}</span>
+                    <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs rounded-full">{inv.client_name}</span>
+                    <span className="text-muted text-xs">{months[inv.month-1]}/{inv.year}</span>
+                    {inv.invoice_number && <span className="text-subtle text-xs">NF: {inv.invoice_number}</span>}
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[inv.status]||'bg-surface-3 text-muted'}`}>{inv.status}</span>
+                    <span className="text-faint text-xs">{inv.billing_type==='contract'?'📄 Contrato':inv.billing_type==='projeto'?'📦 Projeto':'📅 Agenda'}</span>
                     {inv.require_nf === false && (
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-amber-500/15 text-amber-300 border border-amber-500/30" title="Contrato sem NF: não entra no DAS, INSS, Fator R nem no rateio por cliente.">
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30" title="Contrato sem NF: não entra no DAS, INSS, Fator R nem no rateio por cliente.">
                         Sem NF — fora da apuração
                       </span>
                     )}
                   </div>
-                  {inv.contract_name && <p className="text-gray-400 text-sm mb-2">{inv.contract_name}</p>}
-                  <div className="bg-gray-800 rounded-lg p-3 space-y-1 text-xs">
-                    <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white font-medium">{fmt(inv.invoice_value)}</span></div>
-                    {parseFloat(inv.tax_amount)>0 && <div className="flex justify-between"><span className="text-gray-400">Imposto</span><span className="text-red-400">-{fmt(inv.tax_amount)}</span></div>}
-                    {parseFloat(inv.victor_tax_diff)>0 && <div className="flex justify-between"><span className="text-gray-400">Diferença NF → imposto Victor</span><span className="text-orange-400">{fmt(inv.victor_tax_diff)}</span></div>}
-                    <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
-                      <div className="flex justify-between"><span className="text-gray-400">Victor serviço</span><span className="text-blue-300">{fmt(inv.victor_service)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">Victor lucro</span><span className="text-blue-300">{fmt(inv.victor_profit)}</span></div>
-                      <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor TOTAL</span><span className="text-blue-400">{fmt(inv.victor_total)}</span></div>
+                  {inv.contract_name && <p className="text-muted text-sm mb-2">{inv.contract_name}</p>}
+                  <div className="bg-surface-2 rounded-lg p-3 space-y-1 text-xs">
+                    <div className="flex justify-between"><span className="text-muted">Valor NF</span><span className="text-text font-medium">{fmt(inv.invoice_value)}</span></div>
+                    {parseFloat(inv.tax_amount)>0 && <div className="flex justify-between"><span className="text-muted">Imposto</span><span className="text-red-700 dark:text-red-400">-{fmt(inv.tax_amount)}</span></div>}
+                    {parseFloat(inv.victor_tax_diff)>0 && <div className="flex justify-between"><span className="text-muted">Diferença NF → imposto Victor</span><span className="text-orange-700 dark:text-orange-400">{fmt(inv.victor_tax_diff)}</span></div>}
+                    <div className="border-t border-border-strong pt-1 mt-1 space-y-1">
+                      <div className="flex justify-between"><span className="text-muted">Victor serviço</span><span className="text-blue-700 dark:text-blue-300">{fmt(inv.victor_service)}</span></div>
+                      <div className="flex justify-between"><span className="text-muted">Victor lucro</span><span className="text-blue-700 dark:text-blue-300">{fmt(inv.victor_profit)}</span></div>
+                      <div className="flex justify-between font-semibold"><span className="text-text-3">Victor TOTAL</span><span className="text-blue-700 dark:text-blue-400">{fmt(inv.victor_total)}</span></div>
                     </div>
-                    <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício TOTAL</span><span className="text-purple-400">{fmt(inv.fabricio_total)}</span></div>
+                    <div className="flex justify-between font-semibold border-t border-border-strong pt-1"><span className="text-text-3">Fabrício TOTAL</span><span className="text-purple-700 dark:text-purple-400">{fmt(inv.fabricio_total)}</span></div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 shrink-0">
                   {inv.status==='pendente' && <button onClick={()=>markReceived(inv)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">✓ Recebi</button>}
                   {inv.status==='pendente' && (
-                    <button onClick={()=>openEditInvoice(inv)} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs">✏️ Editar</button>
+                    <button onClick={()=>openEditInvoice(inv)} className="px-3 py-1 bg-surface-3 hover:bg-surface-4 text-text rounded-lg text-xs">✏️ Editar</button>
                   )}
                   {inv.status==='recebido' && (
-                    <button onClick={()=>estornarFatura(inv)} className="px-3 py-1 border border-red-500/60 text-red-400 hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
+                    <button onClick={()=>estornarFatura(inv)} className="px-3 py-1 border border-red-300 dark:border-red-500/60 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-xs">↩ Estornar</button>
                   )}
                   {/* Contrato sem NF não emite nota — mesma regra que já tira a
                       Minas da apuração e do rateio. O botão nem aparece. */}
                   {inv.require_nf !== false && (
                     <button onClick={()=>setNfseInvoice(inv)} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-xs">📄 NFS-e</button>
                   )}
-                  <button onClick={()=>deleteInvoice(inv.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
+                  <button onClick={()=>deleteInvoice(inv.id)} className="text-faint hover:text-red-700 dark:hover:text-red-400 text-xs">Excluir</button>
                 </div>
               </div>
             </div>
@@ -623,7 +623,7 @@ export default function Billing() {
       )}
 
       {nfseOk && (
-        <div className="fixed bottom-4 right-4 z-50 bg-green-900/90 border border-green-700 rounded-lg px-4 py-3 text-green-200 text-sm max-w-xs">
+        <div className="fixed bottom-4 right-4 z-50 bg-green-900/90 border border-green-300 dark:border-green-700 rounded-lg px-4 py-3 text-green-200 text-sm max-w-xs">
           <p className="font-bold">✅ NFS-e transmitida</p>
           {/* Nº e NSU só aparecem quando existem: o número é atribuído pelo ADN
               e pode chegar depois, por webhook. "NFSe #: undefined" se lê como
@@ -631,26 +631,26 @@ export default function Billing() {
           {nfseOk.nfse_number && <p className="text-xs mt-1">Nota nº {nfseOk.nfse_number}</p>}
           {nfseOk.nsu && <p className="text-xs">NSU: {nfseOk.nsu}</p>}
           {!nfseOk.nfse_number && !nfseOk.nsu && (
-            <p className="text-xs mt-1 text-green-300/80">Número e NSU chegam quando o ADN processar.</p>
+            <p className="text-xs mt-1 text-green-700 dark:text-green-300/80">Número e NSU chegam quando o ADN processar.</p>
           )}
           <div className="flex items-center gap-3 mt-2">
             {/* ⚠️ Sem `window.location.reload()`. Nada nesta tela muda com a
                 emissão — a nota aparece na lista de NFS-e —, e o reload
                 descartaria os filtros de mês e cliente que o usuário montou. */}
-            <Link to="/faturamento/nfse-emitidas" className="text-xs underline hover:text-white">
+            <Link to="/faturamento/nfse-emitidas" className="text-xs underline hover:text-text">
               ver na lista de NFS-e
             </Link>
-            <button onClick={() => setNfseOk(null)} className="text-xs underline hover:text-white">fechar</button>
+            <button onClick={() => setNfseOk(null)} className="text-xs underline hover:text-text">fechar</button>
           </div>
         </div>
       )}
 
       {showContractModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">{editInvoice ? 'Editar Fatura' : 'Gerar Fatura — Contrato'}</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-text mb-4">{editInvoice ? 'Editar Fatura' : 'Gerar Fatura — Contrato'}</h3>
             <div className="space-y-3">
-              <select value={contractForm.contract_id} onChange={e=>onSelectContract(e.target.value)} disabled={!!editInvoice} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
+              <select value={contractForm.contract_id} onChange={e=>onSelectContract(e.target.value)} disabled={!!editInvoice} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
                 <option value="">Selecione o contrato</option>
                 {/* Só fixos e por projeto: hora/diária são faturados pela Agenda (lib/contract-rule.js). */}
                 {contracts.filter(c=>c.is_active && !faturaPelaAgenda(c)).map(c=><option key={c.id} value={c.id}>{c.name} — {c.client_name}</option>)}
@@ -659,18 +659,18 @@ export default function Billing() {
                 const c = contracts.find(x => String(x.id) === String(contractForm.contract_id))
                 if (!c || !c.cnpj) return null
                 return (
-                  <div className="flex items-center gap-2 text-xs bg-gray-800/50 rounded-lg px-3 py-2">
-                    <span className="text-gray-400 font-medium">CNPJ:</span>
-                    <span className="text-white font-mono">{c.cnpj}</span>
+                  <div className="flex items-center gap-2 text-xs bg-surface-2/50 rounded-lg px-3 py-2">
+                    <span className="text-muted font-medium">CNPJ:</span>
+                    <span className="text-text font-mono">{c.cnpj}</span>
                     <CopyButton value={c.cnpj} className="ml-auto" />
                   </div>
                 )
               })()}
               <div className="grid grid-cols-2 gap-3">
-                <select value={contractForm.month} onChange={e=>setContractForm(f=>({...f,month:parseInt(e.target.value)}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <select value={contractForm.month} onChange={e=>setContractForm(f=>({...f,month:parseInt(e.target.value)}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                   {months.map((m,i)=><option key={i} value={i+1}>{m}</option>)}
                 </select>
-                <input type="number" value={contractForm.year} onChange={e=>setContractForm(f=>({...f,year:parseInt(e.target.value)}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <input type="number" value={contractForm.year} onChange={e=>setContractForm(f=>({...f,year:parseInt(e.target.value)}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
 
               {(() => {
@@ -706,63 +706,63 @@ export default function Billing() {
                   }
                   return (
                     <>
-                      <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
-                        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Parcelas do projeto</p>
+                      <div className="bg-surface-2/50 rounded-xl p-3 space-y-2">
+                        <p className="text-muted text-xs font-medium uppercase tracking-wider">Parcelas do projeto</p>
                         {installments.length === 0 ? (
-                          <p className="text-gray-500 text-xs py-1">Este contrato não tem parcelas cadastradas.</p>
+                          <p className="text-subtle text-xs py-1">Este contrato não tem parcelas cadastradas.</p>
                         ) : installments.map(it => {
                           const isLinked = editInvoice && String(it.invoice_id) === String(editInvoice.id)
                           const selectable = it.status === 'pendente' || isLinked
                           return (
-                            <label key={it.id} className={`flex items-center gap-2 p-2 rounded-lg ${selectable ? 'cursor-pointer hover:bg-gray-800' : 'opacity-50 cursor-not-allowed'}`}>
+                            <label key={it.id} className={`flex items-center gap-2 p-2 rounded-lg ${selectable ? 'cursor-pointer hover:bg-surface-2' : 'opacity-50 cursor-not-allowed'}`}>
                               <input type="radio" name="installment" value={it.id} disabled={!selectable} checked={String(selectedInstallment) === String(it.id)} onChange={()=>setSelectedInstallment(String(it.id))} className="shrink-0"/>
-                              <span className="text-gray-400 text-xs w-6">#{it.installment_number}</span>
-                              <span className="text-white text-xs flex-1 truncate">{it.description || 'Parcela'}</span>
-                              {it.due_date && <span className="text-gray-500 text-xs">{new Date(it.due_date).toLocaleDateString('pt-BR',{timeZone:'UTC'})}</span>}
-                              <span className="text-white text-xs font-medium">{fmt(it.value)}</span>
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${it.status === 'faturado' ? 'bg-amber-500/20 text-amber-400' : 'bg-yellow-500/20 text-yellow-400'}`}>{it.status}</span>
+                              <span className="text-muted text-xs w-6">#{it.installment_number}</span>
+                              <span className="text-text text-xs flex-1 truncate">{it.description || 'Parcela'}</span>
+                              {it.due_date && <span className="text-subtle text-xs">{new Date(it.due_date).toLocaleDateString('pt-BR',{timeZone:'UTC'})}</span>}
+                              <span className="text-text text-xs font-medium">{fmt(it.value)}</span>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${it.status === 'faturado' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'}`}>{it.status}</span>
                             </label>
                           )
                         })}
                       </div>
 
-                      <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
-                        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Impostos</p>
+                      <div className="bg-surface-2/50 rounded-xl p-3 space-y-2">
+                        <p className="text-muted text-xs font-medium uppercase tracking-wider">Impostos</p>
                         <div className="flex gap-3">
                           <div className="flex flex-col gap-1 flex-1">
-                            <label className="text-xs text-gray-400 font-medium">% Imposto real (Victor)</label>
-                            <input type="number" step="0.01" value={contractForm.tax_percentage_used} onChange={e=>setContractForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                            <label className="text-xs text-muted font-medium">% Imposto real (Victor)</label>
+                            <input type="number" step="0.01" value={contractForm.tax_percentage_used} onChange={e=>setContractForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                           </div>
                           <div className="flex flex-col gap-1 flex-1">
-                            <label className="text-xs text-gray-400 font-medium">% Imposto cliente</label>
-                            <input type="number" step="0.01" value={contractForm.tax_client_percent_used} onChange={e=>setContractForm(f=>({...f,tax_client_percent_used:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                            <label className="text-xs text-muted font-medium">% Imposto cliente</label>
+                            <input type="number" step="0.01" value={contractForm.tax_client_percent_used} onChange={e=>setContractForm(f=>({...f,tax_client_percent_used:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                           </div>
                         </div>
-                        <p className="text-gray-500 text-xs">O valor NF é calculado a partir da parcela selecionada.</p>
+                        <p className="text-subtle text-xs">O valor NF é calculado a partir da parcela selecionada.</p>
                       </div>
 
                       {inst && (
-                        <div className="bg-gray-800 rounded-xl p-3 space-y-1 text-xs">
-                          <p className="text-gray-400 font-medium uppercase tracking-wider mb-1">Demonstrativo — {SPLIT_MODE_LABEL[mode]}</p>
-                          <div className="flex justify-between"><span className="text-gray-400">Valor da parcela</span><span className="text-white">{fmt(base)}</span></div>
-                          <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(impostoReal)}</span></div>
-                          <div className="flex justify-between"><span className="text-gray-400">Líquido</span><span className="text-white font-medium">{fmt(net)}</span></div>
+                        <div className="bg-surface-2 rounded-xl p-3 space-y-1 text-xs">
+                          <p className="text-muted font-medium uppercase tracking-wider mb-1">Demonstrativo — {SPLIT_MODE_LABEL[mode]}</p>
+                          <div className="flex justify-between"><span className="text-muted">Valor da parcela</span><span className="text-text">{fmt(base)}</span></div>
+                          <div className="flex justify-between"><span className="text-muted">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-700 dark:text-red-400">-{fmt(impostoReal)}</span></div>
+                          <div className="flex justify-between"><span className="text-muted">Líquido</span><span className="text-text font-medium">{fmt(net)}</span></div>
                           {PRIORITY_LABEL[mode] && (
-                            <div className="flex justify-between"><span className="text-gray-400">(-) {PRIORITY_LABEL[mode]}</span><span className="text-blue-300">-{fmt(priority)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">(-) {PRIORITY_LABEL[mode]}</span><span className="text-blue-700 dark:text-blue-300">-{fmt(priority)}</span></div>
                           )}
-                          <div className="flex justify-between"><span className="text-gray-400">Restante p/ split ({victorPct}% V / {fabPct}% F)</span><span className="text-white">{fmt(restante)}</span></div>
-                          <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(nf)}</span></div>
+                          <div className="flex justify-between"><span className="text-muted">Restante p/ split ({victorPct}% V / {fabPct}% F)</span><span className="text-text">{fmt(restante)}</span></div>
+                          <div className="flex justify-between"><span className="text-muted">Valor NF</span><span className="text-text">{fmt(nf)}</span></div>
                           {diffNf > 0.005 && (
-                            <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(diffNf)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">Diff NF → Victor</span><span className="text-orange-700 dark:text-orange-400">+{fmt(diffNf)}</span></div>
                           )}
-                          <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
+                          <div className="border-t border-border-strong pt-1 mt-1 space-y-1">
                             {priority > 0.005 && (
-                              <div className="flex justify-between"><span className="text-gray-400">Victor prioritário</span><span className="text-blue-300">+{fmt(priority)}</span></div>
+                              <div className="flex justify-between"><span className="text-muted">Victor prioritário</span><span className="text-blue-700 dark:text-blue-300">+{fmt(priority)}</span></div>
                             )}
-                            <div className="flex justify-between"><span className="text-gray-400">Victor lucro</span><span className="text-blue-300">+{fmt(victorLucro)}</span></div>
-                            <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor total</span><span className="text-blue-400">{fmt(victorTotal)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">Victor lucro</span><span className="text-blue-700 dark:text-blue-300">+{fmt(victorLucro)}</span></div>
+                            <div className="flex justify-between font-semibold"><span className="text-text-3">Victor total</span><span className="text-blue-700 dark:text-blue-400">{fmt(victorTotal)}</span></div>
                           </div>
-                          <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício total</span><span className="text-purple-400">{fmt(fabricio)}</span></div>
+                          <div className="flex justify-between font-semibold border-t border-border-strong pt-1"><span className="text-text-3">Fabrício total</span><span className="text-purple-700 dark:text-purple-400">{fmt(fabricio)}</span></div>
                         </div>
                       )}
                     </>
@@ -784,61 +784,61 @@ export default function Billing() {
                 const taxClient = parseFloat(contractForm.tax_client_percent_used) || 0
                 return (
                   <>
-                    <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
-                      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Impostos</p>
+                    <div className="bg-surface-2/50 rounded-xl p-3 space-y-2">
+                      <p className="text-muted text-xs font-medium uppercase tracking-wider">Impostos</p>
                       <div className="flex gap-3">
                         <div className="flex flex-col gap-1 flex-1">
-                          <label className="text-xs text-gray-400 font-medium">% Imposto real (Victor)</label>
-                          <input type="number" step="0.01" value={contractForm.tax_percentage_used} onChange={e=>setContractForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                          <label className="text-xs text-muted font-medium">% Imposto real (Victor)</label>
+                          <input type="number" step="0.01" value={contractForm.tax_percentage_used} onChange={e=>setContractForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                         </div>
                         {c.has_tax && (
                           <div className="flex flex-col gap-1 flex-1">
-                            <label className="text-xs text-gray-400 font-medium">% Imposto cliente</label>
-                            <input type="number" step="0.01" value={contractForm.tax_client_percent_used} onChange={e=>onContractClientPctChange(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                            <label className="text-xs text-muted font-medium">% Imposto cliente</label>
+                            <input type="number" step="0.01" value={contractForm.tax_client_percent_used} onChange={e=>onContractClientPctChange(e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                           </div>
                         )}
                       </div>
                       <div className="flex flex-col gap-1">
-                        <label className="text-xs text-gray-400 font-medium">Valor NF (bruto)</label>
-                        <input type="number" step="0.01" value={contractForm.invoice_value} onChange={e=>onContractNfChange(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                        <label className="text-xs text-muted font-medium">Valor NF (bruto)</label>
+                        <input type="number" step="0.01" value={contractForm.invoice_value} onChange={e=>onContractNfChange(e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="text-gray-400">Imposto estimado:</span>
-                        <span className="text-red-400 font-medium">{fmt(impostoReal)}</span>
+                        <span className="text-muted">Imposto estimado:</span>
+                        <span className="text-red-700 dark:text-red-400 font-medium">{fmt(impostoReal)}</span>
                       </div>
                     </div>
 
-                    <div className="bg-gray-800 rounded-xl p-3 space-y-1 text-xs">
-                      <p className="text-gray-400 font-medium uppercase tracking-wider mb-1">Demonstrativo</p>
-                      <div className="flex justify-between"><span className="text-gray-400">Valor base</span><span className="text-white">{fmt(base)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">% Imposto cobrado</span><span className="text-white">{taxClient.toFixed(2).replace('.',',')}%</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(nf)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(impostoReal)}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(diffNf)}</span></div>
-                      <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
-                        <div className="flex justify-between"><span className="text-gray-400">Victor fixo</span><span className="text-blue-300">+{fmt(victorFixo)}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-400">Victor lucro</span><span className="text-blue-300">+{fmt(victorLucro)}</span></div>
-                        <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor total</span><span className="text-blue-400">{fmt(victorTotal)}</span></div>
+                    <div className="bg-surface-2 rounded-xl p-3 space-y-1 text-xs">
+                      <p className="text-muted font-medium uppercase tracking-wider mb-1">Demonstrativo</p>
+                      <div className="flex justify-between"><span className="text-muted">Valor base</span><span className="text-text">{fmt(base)}</span></div>
+                      <div className="flex justify-between"><span className="text-muted">% Imposto cobrado</span><span className="text-text">{taxClient.toFixed(2).replace('.',',')}%</span></div>
+                      <div className="flex justify-between"><span className="text-muted">Valor NF</span><span className="text-text">{fmt(nf)}</span></div>
+                      <div className="flex justify-between"><span className="text-muted">(-) Imposto real ({taxReal.toFixed(2).replace('.',',')}%)</span><span className="text-red-700 dark:text-red-400">-{fmt(impostoReal)}</span></div>
+                      <div className="flex justify-between"><span className="text-muted">Diff NF → Victor</span><span className="text-orange-700 dark:text-orange-400">+{fmt(diffNf)}</span></div>
+                      <div className="border-t border-border-strong pt-1 mt-1 space-y-1">
+                        <div className="flex justify-between"><span className="text-muted">Victor fixo</span><span className="text-blue-700 dark:text-blue-300">+{fmt(victorFixo)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted">Victor lucro</span><span className="text-blue-700 dark:text-blue-300">+{fmt(victorLucro)}</span></div>
+                        <div className="flex justify-between font-semibold"><span className="text-text-3">Victor total</span><span className="text-blue-700 dark:text-blue-400">{fmt(victorTotal)}</span></div>
                       </div>
-                      <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício total</span><span className="text-purple-400">{fmt(fabricio)}</span></div>
+                      <div className="flex justify-between font-semibold border-t border-border-strong pt-1"><span className="text-text-3">Fabrício total</span><span className="text-purple-700 dark:text-purple-400">{fmt(fabricio)}</span></div>
                     </div>
                   </>
                 )
               })()}
 
-              <input placeholder="Número da NF (opcional)" value={contractForm.invoice_number} onChange={e=>setContractForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <input placeholder="Número da NF (opcional)" value={contractForm.invoice_number} onChange={e=>setContractForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Data de emissão da NF</label>
-                <input type="date" value={contractForm.emission_date} onChange={e=>setContractForm(f=>({...f,emission_date:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Data de emissão da NF</label>
+                <input type="date" value={contractForm.emission_date} onChange={e=>setContractForm(f=>({...f,emission_date:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Data prevista de recebimento (mês de caixa)</label>
-                <input type="date" value={contractForm.payment_date} onChange={e=>setContractForm(f=>({...f,payment_date:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Data prevista de recebimento (mês de caixa)</label>
+                <input type="date" value={contractForm.payment_date} onChange={e=>setContractForm(f=>({...f,payment_date:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
-              <textarea placeholder="Observações" value={contractForm.notes} onChange={e=>setContractForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+              <textarea placeholder="Observações" value={contractForm.notes} onChange={e=>setContractForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
-            <div className="flex gap-3 mt-5 sticky bottom-0 -mx-6 -mb-6 px-6 pt-3 pb-6 bg-gray-900 border-t border-gray-800">
-              <button onClick={()=>{setShowContractModal(false);setEditInvoice(null);setInstallments([]);setSelectedInstallment('')}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+            <div className="flex gap-3 mt-5 sticky bottom-0 -mx-6 -mb-6 px-6 pt-3 pb-6 bg-surface border-t border-border">
+              <button onClick={()=>{setShowContractModal(false);setEditInvoice(null);setInstallments([]);setSelectedInstallment('')}} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Cancelar</button>
               {(() => {
                 const c = contracts.find(x => String(x.id) === String(contractForm.contract_id))
                 const blocked = c?.billing_type === 'por_projeto' && !selectedInstallment
@@ -851,10 +851,10 @@ export default function Billing() {
 
       {showAgendaModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">{editInvoice ? 'Editar Fatura — Agenda' : 'Gerar Fatura — Por Agenda'}</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-text mb-4">{editInvoice ? 'Editar Fatura — Agenda' : 'Gerar Fatura — Por Agenda'}</h3>
             <div className="space-y-3">
-              <select value={agendaForm.client_id} onChange={e=>{const v=e.target.value;setAgendaForm(f=>({...f,client_id:v,contract_id:''}));fetchEntries(v,agendaForm.month,agendaForm.year)}} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+              <select value={agendaForm.client_id} onChange={e=>{const v=e.target.value;setAgendaForm(f=>({...f,client_id:v,contract_id:''}));fetchEntries(v,agendaForm.month,agendaForm.year)}} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                 <option value="">Selecione o cliente</option>
                 {clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -863,14 +863,14 @@ export default function Billing() {
                 const selected = doCliente.find(x => String(x.id) === String(agendaForm.contract_id))
                 return (
                   <>
-                    <select value={agendaForm.contract_id} onChange={e=>setAgendaForm(f=>({...f,contract_id:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                    <select value={agendaForm.contract_id} onChange={e=>setAgendaForm(f=>({...f,contract_id:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                       <option value="">Selecione o contrato</option>
                       {doCliente.map(c=><option key={c.id} value={c.id}>{c.name} — {c.billing_type === 'hora' ? 'Por hora' : c.billing_type === 'dia' ? 'Por dia' : 'Fixo/Mensal'}</option>)}
                     </select>
                     {selected && selected.cnpj && (
-                      <div className="flex items-center gap-2 text-xs bg-gray-800/50 rounded-lg px-3 py-2">
-                        <span className="text-gray-400 font-medium">CNPJ:</span>
-                        <span className="text-white font-mono">{selected.cnpj}</span>
+                      <div className="flex items-center gap-2 text-xs bg-surface-2/50 rounded-lg px-3 py-2">
+                        <span className="text-muted font-medium">CNPJ:</span>
+                        <span className="text-text font-mono">{selected.cnpj}</span>
                         <CopyButton value={selected.cnpj} className="ml-auto" />
                       </div>
                     )}
@@ -878,39 +878,39 @@ export default function Billing() {
                 )
               })()}
               <div className="grid grid-cols-2 gap-3">
-                <select value={agendaForm.month} onChange={e=>{const v=parseInt(e.target.value);setAgendaForm(f=>({...f,month:v}));fetchEntries(agendaForm.client_id,v,agendaForm.year)}} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <select value={agendaForm.month} onChange={e=>{const v=parseInt(e.target.value);setAgendaForm(f=>({...f,month:v}));fetchEntries(agendaForm.client_id,v,agendaForm.year)}} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                   {months.map((m,i)=><option key={i} value={i+1}>{m}</option>)}
                 </select>
-                <input type="number" value={agendaForm.year} onChange={e=>{const v=parseInt(e.target.value);setAgendaForm(f=>({...f,year:v}));fetchEntries(agendaForm.client_id,agendaForm.month,v)}} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <input type="number" value={agendaForm.year} onChange={e=>{const v=parseInt(e.target.value);setAgendaForm(f=>({...f,year:v}));fetchEntries(agendaForm.client_id,agendaForm.month,v)}} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Número da NF</label>
-                <input placeholder="Número da NF (opcional)" value={agendaForm.invoice_number} onChange={e=>setAgendaForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Número da NF</label>
+                <input placeholder="Número da NF (opcional)" value={agendaForm.invoice_number} onChange={e=>setAgendaForm(f=>({...f,invoice_number:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Data de emissão da NF</label>
-                <input type="date" value={agendaForm.emission_date} onChange={e=>setAgendaForm(f=>({...f,emission_date:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Data de emissão da NF</label>
+                <input type="date" value={agendaForm.emission_date} onChange={e=>setAgendaForm(f=>({...f,emission_date:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Data prevista de recebimento (mês de caixa)</label>
-                <input type="date" value={agendaForm.payment_date} onChange={e=>setAgendaForm(f=>({...f,payment_date:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Data prevista de recebimento (mês de caixa)</label>
+                <input type="date" value={agendaForm.payment_date} onChange={e=>setAgendaForm(f=>({...f,payment_date:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
               {timeEntries.length > 0 && (
-                <div className="bg-gray-800 rounded-xl p-3">
+                <div className="bg-surface-2 rounded-xl p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-gray-400 text-xs uppercase tracking-wider">Selecione as agendas</p>
-                    <button onClick={()=>setSelectedEntries(timeEntries.map(e=>e.id))} className="text-blue-400 text-xs">Selecionar todas</button>
+                    <p className="text-muted text-xs uppercase tracking-wider">Selecione as agendas</p>
+                    <button onClick={()=>setSelectedEntries(timeEntries.map(e=>e.id))} className="text-blue-700 dark:text-blue-400 text-xs">Selecionar todas</button>
                   </div>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {timeEntries.map(e=>(
-                      <label key={e.id} className="flex items-start gap-2 cursor-pointer hover:bg-gray-700 p-1 rounded">
+                      <label key={e.id} className="flex items-start gap-2 cursor-pointer hover:bg-surface-3 p-1 rounded">
                         <input type="checkbox" checked={selectedEntries.includes(e.id)} onChange={()=>toggleEntry(e.id)} className="mt-0.5 rounded"/>
                         <div>
-                          <p className="text-white text-xs font-medium">{new Date(e.entry_date).toLocaleDateString('pt-BR',{timeZone:'UTC'})} — <span className="text-blue-400">{parseFloat(e.hours).toFixed(2)}h</span></p>
-                          {e.hora_inicial && <p className="text-gray-500 text-xs">{e.hora_inicial} → {e.hora_final}{e.intervalo_inicio?` (int: ${e.intervalo_inicio}-${e.intervalo_fim})`:''}</p>}
+                          <p className="text-text text-xs font-medium">{new Date(e.entry_date).toLocaleDateString('pt-BR',{timeZone:'UTC'})} — <span className="text-blue-700 dark:text-blue-400">{parseFloat(e.hours).toFixed(2)}h</span></p>
+                          {e.hora_inicial && <p className="text-subtle text-xs">{e.hora_inicial} → {e.hora_final}{e.intervalo_inicio?` (int: ${e.intervalo_inicio}-${e.intervalo_fim})`:''}</p>}
                           {semDescricao(e)
-                            ? <p className="text-amber-300/80 text-xs" title="Sem descrição">📝 sem descrição</p>
-                            : <p className="text-gray-500 text-xs truncate">{e.description}</p>}
+                            ? <p className="text-amber-700 dark:text-amber-300/80 text-xs" title="Sem descrição">📝 sem descrição</p>
+                            : <p className="text-subtle text-xs truncate">{e.description}</p>}
                         </div>
                       </label>
                     ))}
@@ -925,11 +925,11 @@ export default function Billing() {
                     return (
                       <>
                       {semDesc > 0 && (
-                        <p className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 mt-2">
+                        <p className="text-amber-700 dark:text-amber-300 text-xs bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-3 py-2 mt-2">
                           📝 {semDesc} OS sem descrição — complete em Apontamento de Horas antes de gerar, se quiser o detalhe no demonstrativo.
                         </p>
                       )}
-                      <p className="text-blue-400 text-xs font-medium mt-2">
+                      <p className="text-blue-700 dark:text-blue-400 text-xs font-medium mt-2">
                         {selectedEntries.length} agenda(s) selecionada(s) · {totalHours.toFixed(2)}h · {datas} data(s) distinta(s)
                       </p>
                       </>
@@ -952,88 +952,88 @@ export default function Billing() {
                 const fmtD = d => d.split('-').reverse().join('/')
                 return (
                   <>
-                    <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
-                      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Impostos</p>
+                    <div className="bg-surface-2/50 rounded-xl p-3 space-y-2">
+                      <p className="text-muted text-xs font-medium uppercase tracking-wider">Impostos</p>
                       <div className="flex gap-3">
                         <div className="flex flex-col gap-1 flex-1">
-                          <label className="text-xs text-gray-400 font-medium">{liquido ? '% Imposto (por fora)' : '% Imposto real (Victor)'}</label>
-                          <input type="number" step="0.01" value={agendaForm.tax_percentage_used} onChange={e=>setAgendaForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                          <label className="text-xs text-muted font-medium">{liquido ? '% Imposto (por fora)' : '% Imposto real (Victor)'}</label>
+                          <input type="number" step="0.01" value={agendaForm.tax_percentage_used} onChange={e=>setAgendaForm(f=>({...f,tax_percentage_used:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                         </div>
                         {!liquido && (
                           <div className="flex flex-col gap-1 flex-1">
-                            <label className="text-xs text-gray-400 font-medium">% Imposto cliente</label>
-                            <input type="number" step="0.01" value={agendaForm.tax_client_percent_used} onChange={e=>onPct(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                            <label className="text-xs text-muted font-medium">% Imposto cliente</label>
+                            <input type="number" step="0.01" value={agendaForm.tax_client_percent_used} onChange={e=>onPct(e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                           </div>
                         )}
                       </div>
                       {!liquido && b && (
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs text-gray-400 font-medium">Valor NF (bruto)</label>
-                          <input type="number" step="0.01" value={b.invoice_value ? parseFloat(b.invoice_value).toFixed(2) : ''} onChange={e=>onNf(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                          <label className="text-xs text-muted font-medium">Valor NF (bruto)</label>
+                          <input type="number" step="0.01" value={b.invoice_value ? parseFloat(b.invoice_value).toFixed(2) : ''} onChange={e=>onNf(e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                         </div>
                       )}
-                      {liquido && <p className="text-gray-500 text-xs">Regra de valor líquido: a NF é o líquido ÷ (1 − imposto%), e a diferença vai 100% para o Victor.</p>}
+                      {liquido && <p className="text-subtle text-xs">Regra de valor líquido: a NF é o líquido ÷ (1 − imposto%), e a diferença vai 100% para o Victor.</p>}
                     </div>
 
-                    {agendaPreview.loading && !b && <p className="text-gray-500 text-xs">Calculando…</p>}
-                    {agendaPreview.error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{agendaPreview.error}</p>}
+                    {agendaPreview.loading && !b && <p className="text-subtle text-xs">Calculando…</p>}
+                    {agendaPreview.error && <p className="text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{agendaPreview.error}</p>}
                     {b && (
-                      <div className={`bg-gray-800 rounded-xl p-3 space-y-1 text-xs ${agendaPreview.loading ? 'opacity-60' : ''}`}>
+                      <div className={`bg-surface-2 rounded-xl p-3 space-y-1 text-xs ${agendaPreview.loading ? 'opacity-60' : ''}`}>
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-gray-400 font-medium uppercase tracking-wider">Demonstrativo</p>
-                          {cob && <span className="px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">{cob.rotulo}{liquido ? ' · valor líquido' : ''}</span>}
+                          <p className="text-muted font-medium uppercase tracking-wider">Demonstrativo</p>
+                          {cob && <span className="px-2 py-0.5 rounded-full bg-surface-3 text-text-3">{cob.rotulo}{liquido ? ' · valor líquido' : ''}</span>}
                         </div>
-                        <div className="flex justify-between"><span className="text-gray-400">OS / horas{cob ? ' (informativo)' : ''}</span><span className="text-white">{selectedEntries.length} OS · {parseFloat(b.total_hours||0).toFixed(2)}h</span></div>
+                        <div className="flex justify-between"><span className="text-muted">OS / horas{cob ? ' (informativo)' : ''}</span><span className="text-text">{selectedEntries.length} OS · {parseFloat(b.total_hours||0).toFixed(2)}h</span></div>
                         {cob?.tipo === 'diaria' && (
                           <>
-                            <div className="flex justify-between"><span className="text-gray-400">{cob.unidades} diária(s) × {fmt(cob.valor_unitario)}{liquido ? ' (líquido)' : ''}</span><span className="text-white">{fmt(cob.servico)}</span></div>
-                            <p className="text-gray-500">Datas: {cob.datas.map(fmtD).join(', ')}{cob.os > cob.unidades ? ` — ${cob.os} OS em ${cob.unidades} data(s), 1 diária por data` : ''}</p>
-                            {cob.datas_ja_faturadas.length > 0 && <p className="text-amber-400">Já cobradas em outra fatura (sem nova diária): {cob.datas_ja_faturadas.map(fmtD).join(', ')}</p>}
+                            <div className="flex justify-between"><span className="text-muted">{cob.unidades} diária(s) × {fmt(cob.valor_unitario)}{liquido ? ' (líquido)' : ''}</span><span className="text-text">{fmt(cob.servico)}</span></div>
+                            <p className="text-subtle">Datas: {cob.datas.map(fmtD).join(', ')}{cob.os > cob.unidades ? ` — ${cob.os} OS em ${cob.unidades} data(s), 1 diária por data` : ''}</p>
+                            {cob.datas_ja_faturadas.length > 0 && <p className="text-amber-700 dark:text-amber-400">Já cobradas em outra fatura (sem nova diária): {cob.datas_ja_faturadas.map(fmtD).join(', ')}</p>}
                           </>
                         )}
                         {cob?.tipo === 'projeto' && (
-                          <div className="flex justify-between"><span className="text-gray-400">Fixo mensal{liquido ? ' (líquido)' : ''} — OS só demonstrativo</span><span className="text-white">{fmt(cob.servico)}</span></div>
+                          <div className="flex justify-between"><span className="text-muted">Fixo mensal{liquido ? ' (líquido)' : ''} — OS só demonstrativo</span><span className="text-text">{fmt(cob.servico)}</span></div>
                         )}
                         {!cob && (
-                          <div className="flex justify-between"><span className="text-gray-400">Horas de serviço</span><span className="text-white">{fmt(bruto - (parseFloat(b.displacement_value)||0))}</span></div>
+                          <div className="flex justify-between"><span className="text-muted">Horas de serviço</span><span className="text-text">{fmt(bruto - (parseFloat(b.displacement_value)||0))}</span></div>
                         )}
                         {parseFloat(b.displacement_value) > 0.005 && (
-                          <div className="flex justify-between"><span className="text-gray-400">Deslocamento <span className="text-blue-300">(100% Victor)</span></span><span className="text-white">{fmt(b.displacement_value)}</span></div>
+                          <div className="flex justify-between"><span className="text-muted">Deslocamento <span className="text-blue-700 dark:text-blue-300">(100% Victor)</span></span><span className="text-text">{fmt(b.displacement_value)}</span></div>
                         )}
-                        <div className="flex justify-between"><span className="text-gray-400">{liquido ? 'Total líquido' : 'Total bruto'}</span><span className="text-white font-medium">{fmt(bruto)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted">{liquido ? 'Total líquido' : 'Total bruto'}</span><span className="text-text font-medium">{fmt(bruto)}</span></div>
                         {liquido ? (
                           <>
-                            <div className="flex justify-between"><span className="text-gray-400">Valor NF (bruto) = líquido ÷ (1 − {parseFloat(b.tax_percentage_used).toFixed(2).replace('.',',')}%)</span><span className="text-white font-medium">{fmt(b.invoice_value)}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-400">Diferença NF − líquido → Victor (imposto)</span><span className="text-orange-400">+{fmt(b.victor_tax_diff)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">Valor NF (bruto) = líquido ÷ (1 − {parseFloat(b.tax_percentage_used).toFixed(2).replace('.',',')}%)</span><span className="text-text font-medium">{fmt(b.invoice_value)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">Diferença NF − líquido → Victor (imposto)</span><span className="text-orange-700 dark:text-orange-400">+{fmt(b.victor_tax_diff)}</span></div>
                           </>
                         ) : (
                           <>
-                            <div className="flex justify-between"><span className="text-gray-400">Valor NF</span><span className="text-white">{fmt(b.invoice_value)}</span></div>
-                            <div className="flex justify-between"><span className="text-gray-400">(-) Imposto real ({parseFloat(b.tax_percentage_used||0).toFixed(2).replace('.',',')}%)</span><span className="text-red-400">-{fmt(b.tax_amount)}</span></div>
-                            {parseFloat(b.victor_tax_diff) > 0.005 && <div className="flex justify-between"><span className="text-gray-400">Diff NF → Victor</span><span className="text-orange-400">+{fmt(b.victor_tax_diff)}</span></div>}
+                            <div className="flex justify-between"><span className="text-muted">Valor NF</span><span className="text-text">{fmt(b.invoice_value)}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">(-) Imposto real ({parseFloat(b.tax_percentage_used||0).toFixed(2).replace('.',',')}%)</span><span className="text-red-700 dark:text-red-400">-{fmt(b.tax_amount)}</span></div>
+                            {parseFloat(b.victor_tax_diff) > 0.005 && <div className="flex justify-between"><span className="text-muted">Diff NF → Victor</span><span className="text-orange-700 dark:text-orange-400">+{fmt(b.victor_tax_diff)}</span></div>}
                           </>
                         )}
-                        <div className="border-t border-gray-700 pt-1 mt-1 space-y-1">
-                          {parseFloat(b.victor_service) > 0.005 && <div className="flex justify-between"><span className="text-gray-400">Victor fixo</span><span className="text-blue-300">+{fmt(b.victor_service)}</span></div>}
-                          <div className="flex justify-between"><span className="text-gray-400">Victor lucro{parseFloat(b.displacement_net) > 0.005 ? ' + deslocamento' : ''}</span><span className="text-blue-300">+{fmt(b.victor_profit)}</span></div>
-                          {parseFloat(b.victor_tax_diff) > 0.005 && <div className="flex justify-between"><span className="text-gray-400">Victor {liquido ? 'imposto (NF − líquido)' : 'diff NF'}</span><span className="text-blue-300">+{fmt(b.victor_tax_diff)}</span></div>}
-                          <div className="flex justify-between font-semibold"><span className="text-gray-300">Victor total</span><span className="text-blue-400">{fmt(b.victor_total)}</span></div>
+                        <div className="border-t border-border-strong pt-1 mt-1 space-y-1">
+                          {parseFloat(b.victor_service) > 0.005 && <div className="flex justify-between"><span className="text-muted">Victor fixo</span><span className="text-blue-700 dark:text-blue-300">+{fmt(b.victor_service)}</span></div>}
+                          <div className="flex justify-between"><span className="text-muted">Victor lucro{parseFloat(b.displacement_net) > 0.005 ? ' + deslocamento' : ''}</span><span className="text-blue-700 dark:text-blue-300">+{fmt(b.victor_profit)}</span></div>
+                          {parseFloat(b.victor_tax_diff) > 0.005 && <div className="flex justify-between"><span className="text-muted">Victor {liquido ? 'imposto (NF − líquido)' : 'diff NF'}</span><span className="text-blue-700 dark:text-blue-300">+{fmt(b.victor_tax_diff)}</span></div>}
+                          <div className="flex justify-between font-semibold"><span className="text-text-3">Victor total</span><span className="text-blue-700 dark:text-blue-400">{fmt(b.victor_total)}</span></div>
                         </div>
-                        <div className="flex justify-between font-semibold border-t border-gray-700 pt-1"><span className="text-gray-300">Fabrício total</span><span className="text-purple-400">{fmt(b.fabricio_total)}</span></div>
-                        <div className="flex justify-between border-t border-gray-600 pt-1.5"><span className="text-white font-semibold">TOTAL A FATURAR (NF)</span><span className="text-green-400 font-bold text-sm">{fmt(b.invoice_value)}</span></div>
+                        <div className="flex justify-between font-semibold border-t border-border-strong pt-1"><span className="text-text-3">Fabrício total</span><span className="text-purple-700 dark:text-purple-400">{fmt(b.fabricio_total)}</span></div>
+                        <div className="flex justify-between border-t border-border-stronger pt-1.5"><span className="text-text font-semibold">TOTAL A FATURAR (NF)</span><span className="text-green-700 dark:text-green-400 font-bold text-sm">{fmt(b.invoice_value)}</span></div>
                       </div>
                     )}
                   </>
                 )
               })()}
-              {timeEntries.length===0 && agendaForm.client_id && <p className="text-gray-500 text-sm text-center py-4">Nenhuma agenda encontrada para este cliente/período.</p>}
+              {timeEntries.length===0 && agendaForm.client_id && <p className="text-subtle text-sm text-center py-4">Nenhuma agenda encontrada para este cliente/período.</p>}
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Observações</label>
-                <textarea placeholder="Observações" value={agendaForm.notes} onChange={e=>setAgendaForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+                <label className="text-xs text-muted font-medium">Observações</label>
+                <textarea placeholder="Observações" value={agendaForm.notes} onChange={e=>setAgendaForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"/>
               </div>
             </div>
-            <div className="flex gap-3 mt-5 sticky bottom-0 -mx-6 -mb-6 px-6 pt-3 pb-6 bg-gray-900 border-t border-gray-800">
-              <button onClick={()=>{setShowAgendaModal(false);setTimeEntries([]);setSelectedEntries([]);setEditInvoice(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+            <div className="flex gap-3 mt-5 sticky bottom-0 -mx-6 -mb-6 px-6 pt-3 pb-6 bg-surface border-t border-border">
+              <button onClick={()=>{setShowAgendaModal(false);setTimeEntries([]);setSelectedEntries([]);setEditInvoice(null)}} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Cancelar</button>
               <button onClick={saveAgendaInvoice} disabled={selectedEntries.length===0} className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white rounded-lg text-sm font-medium">Gerar Fatura</button>
             </div>
           </div>

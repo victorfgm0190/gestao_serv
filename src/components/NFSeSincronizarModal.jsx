@@ -25,12 +25,12 @@ import { useState } from 'react'
 
 export function AvisoDeclaracao({ nfseNumber, status, confirmado, onConfirmar }) {
   return (
-    <div className="p-3 bg-red-900/20 border border-red-700/60 rounded text-red-200 text-sm space-y-2">
+    <div className="p-3 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-700/60 rounded text-red-700 dark:text-red-200 text-sm space-y-2">
       <p>
         ⚠️ Esta nota consta como <strong>{status}</strong> no sistema. Sincronizar vai
         marcá-la como cancelada <strong>sem consultar o fisco</strong>.
       </p>
-      <p className="text-xs text-red-300">
+      <p className="text-xs text-red-700 dark:text-red-300">
         O SEFIN não expõe o cancelamento na consulta por chave — a nota cancelada volta
         igual à válida (<code>cStat=100</code>). Se ela ainda valer na prefeitura, a fatura
         fica liberada e o mesmo serviço passa a ter <strong>duas notas</strong>. Para
@@ -42,7 +42,7 @@ export function AvisoDeclaracao({ nfseNumber, status, confirmado, onConfirmar })
           onChange={(e) => onConfirmar(e.target.checked)}
           className="mt-0.5"
         />
-        <span className="text-sm text-red-100">
+        <span className="text-sm text-red-700 dark:text-red-100">
           Confirmo que a NFS-e {nfseNumber ? `nº ${nfseNumber}` : ''} já foi cancelada no portal.
         </span>
       </label>
@@ -89,9 +89,9 @@ export default function NFSeSincronizarModal({ emission, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gray-900 rounded-xl p-6 max-w-lg w-full border border-gray-700 my-8">
-        <h2 className="text-xl font-bold text-white mb-1">🔄 Sincronizar cancelamento</h2>
-        <p className="text-xs text-gray-400 mb-4">
+      <div className="bg-surface shadow-sm dark:shadow-none rounded-xl p-6 max-w-lg w-full border border-border-strong my-8">
+        <h2 className="text-xl font-bold text-text mb-1">🔄 Sincronizar cancelamento</h2>
+        <p className="text-xs text-muted mb-4">
           {emission?.nfseNumber ? `Nota nº ${emission.nfseNumber}` : `Emissão ${emission?.id}`}
           {emission?.cliente ? ` · ${emission.cliente}` : ''}
         </p>
@@ -105,36 +105,36 @@ export default function NFSeSincronizarModal({ emission, onClose, onSuccess }) {
           />
 
           <label className="block">
-            <span className="text-sm font-semibold text-gray-300 mb-1 block">
+            <span className="text-sm font-semibold text-text-3 mb-1 block">
               Motivo do cancelamento no portal (opcional)
             </span>
             <input
               type="text" value={motivo} onChange={(e) => setMotivo(e.target.value)}
               placeholder="Ex.: valor divergente, cancelada pelo contador"
               maxLength="255"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-surface-2 border border-border-strong rounded text-text placeholder-subtle focus:border-blue-500 focus:outline-none"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-subtle mt-1">
               Fica no histórico da nota — é o que explica, meses depois, por que ela
               aparece cancelada sem evento do fisco.
             </p>
           </label>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-subtle">
             Só marca a nota como cancelada e libera a fatura. Para já emitir a substituta
-            na mesma passada, use <strong className="text-gray-400">🔄 Re-emitir</strong>.
+            na mesma passada, use <strong className="text-muted">🔄 Re-emitir</strong>.
           </p>
 
           {erro && (
-            <div className="p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-sm">
               ❌ {erro}
-              {detalhe && <p className="mt-1 text-xs text-red-200">{detalhe}</p>}
+              {detalhe && <p className="mt-1 text-xs text-red-700 dark:text-red-200">{detalhe}</p>}
             </div>
           )}
 
           <div className="flex gap-3">
             <button onClick={onClose} disabled={loading}
-              className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded transition-colors">
+              className="flex-1 px-4 py-2 bg-surface-3 hover:bg-surface-4 disabled:opacity-50 text-text rounded transition-colors">
               Manter como está
             </button>
             <button onClick={sincronizar} disabled={loading || !confirmado}

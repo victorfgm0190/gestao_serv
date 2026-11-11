@@ -86,34 +86,34 @@ export default function NFSeEmitirModal({ invoice, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-gray-900 rounded-xl p-6 max-w-lg w-full border border-gray-700 my-8">
-        <h2 className="text-xl font-bold text-white mb-1">📄 Emitir NFS-e</h2>
-        <p className="text-xs text-gray-400 mb-4">
+      <div className="bg-surface shadow-sm dark:shadow-none rounded-xl p-6 max-w-lg w-full border border-border-strong my-8">
+        <h2 className="text-xl font-bold text-text mb-1">📄 Emitir NFS-e</h2>
+        <p className="text-xs text-muted mb-4">
           {invoice?.client_name} · {invoice?.month}/{invoice?.year}
           {invoice?.invoice_number ? ` · NF ${invoice.invoice_number}` : ''}
         </p>
 
         {setup && !setup.pronto && (
-          <div className="mb-4 p-3 bg-amber-900/20 border border-amber-700 rounded text-amber-200 text-sm">
+          <div className="mb-4 p-3 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded text-amber-700 dark:text-amber-200 text-sm">
             ⚠️ {setup.mensagem}
-            <ul className="mt-2 space-y-0.5 list-disc list-inside text-xs text-amber-100">
+            <ul className="mt-2 space-y-0.5 list-disc list-inside text-xs text-amber-700 dark:text-amber-100">
               {setup.campos_faltantes?.map((c, i) => <li key={i}>{c}</li>)}
             </ul>
             <p className="mt-2 text-xs">
-              <Link to="/configuracao/nfse-emitente" className="underline hover:text-white">
+              <Link to="/configuracao/nfse-emitente" className="underline hover:text-text">
                 Configurar emitente
               </Link>
               {' · '}
-              <Link to="/clientes" className="underline hover:text-white">Clientes</Link>
+              <Link to="/clientes" className="underline hover:text-text">Clientes</Link>
             </p>
           </div>
         )}
 
         {erro && (
-          <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">
+          <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded text-red-700 dark:text-red-300 text-sm">
             ❌ {erro}
             {faltando?.length > 0 && (
-              <ul className="mt-2 space-y-0.5 list-disc list-inside text-xs text-red-200">
+              <ul className="mt-2 space-y-0.5 list-disc list-inside text-xs text-red-700 dark:text-red-200">
                 {faltando.map((f, i) => <li key={i}>{f.rotulo || f.campo || String(f)}</li>)}
               </ul>
             )}
@@ -122,16 +122,16 @@ export default function NFSeEmitirModal({ invoice, onClose, onSuccess }) {
 
         {previa ? (
           <div className="space-y-4">
-            <div className="p-3 bg-amber-900/20 border border-amber-700/50 rounded text-amber-200 text-sm">
+            <div className="p-3 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50 rounded text-amber-700 dark:text-amber-200 text-sm">
               ⚠️ Nada foi transmitido ainda. Confira e confirme para emitir de verdade.
             </div>
-            <div className="p-3 bg-gray-800 rounded text-sm text-gray-300 space-y-1">
+            <div className="p-3 bg-surface-2 rounded text-sm text-text-3 space-y-1">
               <p><strong>Cliente:</strong> {previa.resumo?.cliente}</p>
               <p><strong>Valor do serviço:</strong> {brl(previa.resumo?.valor_servico)}</p>
               <p><strong>Alíquota ISS:</strong> {previa.resumo?.aliquota_iss}%</p>
               <p><strong>Competência:</strong> {previa.resumo?.competencia}</p>
               <p><strong>Ambiente:</strong>{' '}
-                <span className={previa.ambiente === 'producao' ? 'text-red-300 font-semibold' : 'text-amber-300'}>
+                <span className={previa.ambiente === 'producao' ? 'text-red-700 dark:text-red-300 font-semibold' : 'text-amber-700 dark:text-amber-300'}>
                   {previa.ambiente === 'producao' ? 'PRODUÇÃO (nota real)' : 'homologação (sem valor fiscal)'}
                 </span>
               </p>
@@ -149,7 +149,7 @@ export default function NFSeEmitirModal({ invoice, onClose, onSuccess }) {
             />
             <div className="flex gap-3">
               <button onClick={() => setPrevia(null)} disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded transition-colors">
+                className="flex-1 px-4 py-2 bg-surface-3 hover:bg-surface-4 disabled:opacity-50 text-text rounded transition-colors">
                 ← Voltar
               </button>
               <button onClick={() => chamar(true)} disabled={loading}
@@ -161,27 +161,27 @@ export default function NFSeEmitirModal({ invoice, onClose, onSuccess }) {
         ) : (
           <div className="space-y-4">
             <label className="block">
-              <span className="text-sm font-semibold text-gray-300 mb-1 block">Descrição do serviço</span>
+              <span className="text-sm font-semibold text-text-3 mb-1 block">Descrição do serviço</span>
               <textarea
                 value={descricao} onChange={(e) => setDescricao(e.target.value)}
                 placeholder="Em branco usa a descrição da fatura"
                 rows="3" maxLength="2000"
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none resize-none"
+                className="w-full px-3 py-2 bg-surface-2 border border-border-strong rounded text-text placeholder-subtle focus:border-blue-500 focus:outline-none resize-none"
               />
-              <p className="text-xs text-gray-500 mt-1">{descricao.length}/2000</p>
+              <p className="text-xs text-subtle mt-1">{descricao.length}/2000</p>
             </label>
 
             <label className="block">
-              <span className="text-sm font-semibold text-gray-300 mb-1 block">Alíquota ISS (%)</span>
+              <span className="text-sm font-semibold text-text-3 mb-1 block">Alíquota ISS (%)</span>
               <input
                 type="number" step="0.01" min="0" max="100" value={aliquota}
                 onChange={(e) => setAliquota(e.target.value)}
                 placeholder="Em branco usa a alíquota cadastrada do emitente"
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-surface-2 border border-border-strong rounded text-text placeholder-subtle focus:border-blue-500 focus:outline-none"
               />
             </label>
 
-            <div className="p-3 bg-gray-800 rounded text-sm text-gray-300 space-y-1">
+            <div className="p-3 bg-surface-2 rounded text-sm text-text-3 space-y-1">
               <p><strong>Valor da NF:</strong> {brl(valorNF)}</p>
               {/* Só estima quando há alíquota digitada — "R$ 0,00" ao lado de
                   "ISS" se lê como isenção. */}
@@ -190,7 +190,7 @@ export default function NFSeEmitirModal({ invoice, onClose, onSuccess }) {
 
             <div className="flex gap-3">
               <button onClick={onClose} disabled={loading}
-                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white rounded transition-colors">
+                className="flex-1 px-4 py-2 bg-surface-3 hover:bg-surface-4 disabled:opacity-50 text-text rounded transition-colors">
                 Fechar
               </button>
               <button onClick={() => chamar(false)} disabled={loading}

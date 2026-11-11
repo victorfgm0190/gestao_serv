@@ -262,7 +262,7 @@ export default function Contracts() {
   const modoAgenda = !!regraSelecionada && faturaPelaAgenda(form)
   const diverge = !modoAgenda ? divergenciasDaRegra(form, regraSelecionada) : {}
   const avisoRegra = (campo) => diverge[campo]
-    ? <p className="text-amber-400 text-xs">Diferente da regra (regra: {diverge[campo]})</p>
+    ? <p className="text-amber-700 dark:text-amber-400 text-xs">Diferente da regra (regra: {diverge[campo]})</p>
     : null
 
   // Escolher a regra (no contrato novo ou trocando na edição) preenche o contrato com ela.
@@ -281,10 +281,10 @@ export default function Contracts() {
   const valuePlaceholder = form.billing_type === 'hora' ? 'Valor por hora (R$)' : form.billing_type === 'dia' ? 'Valor por dia (R$)' : 'Valor do contrato líquido (R$)'
   const victorPlaceholder = form.billing_type === 'hora' ? 'Valor fixo Victor por hora (R$)' : form.billing_type === 'dia' ? 'Valor fixo Victor por dia (R$)' : 'Valor fixo Victor (R$)'
   const BILLING_BADGE = {
-    mensal: { label: 'Mensal', cls: 'bg-gray-700 text-gray-300' },
-    hora: { label: 'Por hora', cls: 'bg-blue-500/20 text-blue-400' },
-    dia: { label: 'Por dia', cls: 'bg-green-500/20 text-green-400' },
-    por_projeto: { label: 'Por projeto', cls: 'bg-amber-500/20 text-amber-400' },
+    mensal: { label: 'Mensal', cls: 'bg-surface-3 text-text-3' },
+    hora: { label: 'Por hora', cls: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400' },
+    dia: { label: 'Por dia', cls: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400' },
+    por_projeto: { label: 'Por projeto', cls: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400' },
   }
   const DESLOC_LABEL = {
     nao_cobrado: 'Não cobrado ao cliente',
@@ -298,34 +298,34 @@ export default function Contracts() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white">Contratos</h2>
-          <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
+          <h2 className="text-2xl font-bold text-text">Contratos</h2>
+          <p className="text-muted text-sm mt-1">{activeCompany.name}</p>
         </div>
         <button onClick={openNew} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium">+ Novo contrato</button>
       </div>
 
       {/* Contratos ativos */}
-      <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-3">Contratos ativos</h3>
+      <h3 className="text-muted text-xs uppercase tracking-wider mb-3">Contratos ativos</h3>
       <div className="space-y-3 mb-8">
         {contracts.filter(c => c.is_active).map(c => (
-          <div key={c.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div key={c.id} className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <p className="text-white font-semibold">{c.name}</p>
+                  <p className="text-text font-semibold">{c.name}</p>
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${(BILLING_BADGE[c.billing_type] || BILLING_BADGE.mensal).cls}`}>{(BILLING_BADGE[c.billing_type] || BILLING_BADGE.mensal).label}</span>
                 </div>
-                <p className="text-indigo-400 text-sm">{c.client_name}</p>
-                <div className="flex gap-4 mt-2 text-xs text-gray-400">
-                  <span>Contrato: <span className="text-white">{fmt(c.contract_value)}</span></span>
+                <p className="text-indigo-700 dark:text-indigo-400 text-sm">{c.client_name}</p>
+                <div className="flex gap-4 mt-2 text-xs text-muted">
+                  <span>Contrato: <span className="text-text">{fmt(c.contract_value)}</span></span>
                   {c.billing_type === 'por_projeto'
-                    ? <span>Divisão: <span className="text-amber-400">{SPLIT_MODE_LABEL[c.projeto_split_mode] || SPLIT_MODE_LABEL.direct_split}</span></span>
-                    : <span>Victor fixo: <span className="text-blue-400">{fmt(c.victor_fixed)}</span></span>}
-                  <span>Restante: <span className="text-green-400">{c.remainder_victor_pct}% V / {c.remainder_fabricio_pct}% F</span></span>
-                  {c.has_tax && <span>Imposto: <span className="text-red-400">{c.tax_percentage}%</span></span>}
-                  {c.require_nf === false && <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">Sem NF — fora da apuração</span>}
-                  {c.invoice_client_name && <span className="px-1.5 py-0.5 rounded bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">NF para: {c.invoice_client_name}</span>}
-                  <span>Deslocamento: <span className="text-gray-300">{DESLOC_LABEL[c.deslocamento_tipo] || DESLOC_LABEL.nao_cobrado}{(c.deslocamento_tipo === 'hora' || c.deslocamento_tipo === 'hora_despesas') && parseFloat(c.deslocamento_valor_hora) > 0 ? ` (${fmt(c.deslocamento_valor_hora)}/h)` : ''}</span></span>
+                    ? <span>Divisão: <span className="text-amber-700 dark:text-amber-400">{SPLIT_MODE_LABEL[c.projeto_split_mode] || SPLIT_MODE_LABEL.direct_split}</span></span>
+                    : <span>Victor fixo: <span className="text-blue-700 dark:text-blue-400">{fmt(c.victor_fixed)}</span></span>}
+                  <span>Restante: <span className="text-green-700 dark:text-green-400">{c.remainder_victor_pct}% V / {c.remainder_fabricio_pct}% F</span></span>
+                  {c.has_tax && <span>Imposto: <span className="text-red-700 dark:text-red-400">{c.tax_percentage}%</span></span>}
+                  {c.require_nf === false && <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30">Sem NF — fora da apuração</span>}
+                  {c.invoice_client_name && <span className="px-1.5 py-0.5 rounded bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border border-yellow-300 dark:border-yellow-500/30">NF para: {c.invoice_client_name}</span>}
+                  <span>Deslocamento: <span className="text-text-3">{DESLOC_LABEL[c.deslocamento_tipo] || DESLOC_LABEL.nao_cobrado}{(c.deslocamento_tipo === 'hora' || c.deslocamento_tipo === 'hora_despesas') && parseFloat(c.deslocamento_valor_hora) > 0 ? ` (${fmt(c.deslocamento_valor_hora)}/h)` : ''}</span></span>
                 </div>
                 {parseFloat(c.tax_client_percent) > 0 && (() => {
                   const base = parseFloat(c.contract_value) || 0
@@ -333,70 +333,70 @@ export default function Contracts() {
                   if (c.billing_type === 'hora') {
                     const imposto = base * tax / 100
                     return (
-                      <div className="flex gap-4 mt-1 text-xs text-gray-400">
-                        <span>Valor hora bruto: <span className="text-white">{fmt(base)}</span></span>
-                        <span>Imposto estimado/hora: <span className="text-red-400">{fmt(imposto)}</span></span>
-                        <span>Valor hora líquido: <span className="text-green-400">{fmt(base - imposto)}</span></span>
+                      <div className="flex gap-4 mt-1 text-xs text-muted">
+                        <span>Valor hora bruto: <span className="text-text">{fmt(base)}</span></span>
+                        <span>Imposto estimado/hora: <span className="text-red-700 dark:text-red-400">{fmt(imposto)}</span></span>
+                        <span>Valor hora líquido: <span className="text-green-700 dark:text-green-400">{fmt(base - imposto)}</span></span>
                       </div>
                     )
                   }
                   const nf = base / (1 - tax / 100)
                   return (
-                    <div className="flex gap-4 mt-1 text-xs text-gray-400">
-                      <span>Base: <span className="text-white">{fmt(base)}</span></span>
-                      <span>NF estimada: <span className="text-white">{fmt(nf)}</span></span>
-                      <span>Imposto estimado: <span className="text-red-400">{fmt(nf - base)}</span></span>
+                    <div className="flex gap-4 mt-1 text-xs text-muted">
+                      <span>Base: <span className="text-text">{fmt(base)}</span></span>
+                      <span>NF estimada: <span className="text-text">{fmt(nf)}</span></span>
+                      <span>Imposto estimado: <span className="text-red-700 dark:text-red-400">{fmt(nf - base)}</span></span>
                     </div>
                   )
                 })()}
               </div>
               <div className="flex gap-2">
                 <button onClick={() => openMonth(c)} className="px-3 py-1 bg-green-700 hover:bg-green-600 text-white rounded-lg text-xs">+ Mês</button>
-                <button onClick={() => openEdit(c)} className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs">Editar</button>
-                <button onClick={() => deleteContract(c.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
+                <button onClick={() => openEdit(c)} className="px-3 py-1 bg-surface-3 hover:bg-surface-4 text-text rounded-lg text-xs">Editar</button>
+                <button onClick={() => deleteContract(c.id)} className="text-faint hover:text-red-700 dark:hover:text-red-400 text-xs">Excluir</button>
               </div>
             </div>
           </div>
         ))}
         {contracts.filter(c => c.is_active).length === 0 && (
-          <div className="text-center py-8 text-gray-600"><p>Nenhum contrato ativo.</p></div>
+          <div className="text-center py-8 text-faint"><p>Nenhum contrato ativo.</p></div>
         )}
       </div>
 
       {/* Lançamentos mensais */}
       <div className="flex items-center gap-4 mb-4">
-        <h3 className="text-gray-400 text-xs uppercase tracking-wider">Lançamentos mensais</h3>
-        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none"/>
+        <h3 className="text-muted text-xs uppercase tracking-wider">Lançamentos mensais</h3>
+        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="w-20 bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs focus:outline-none"/>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">Victor {filterYear}</p>
-          <p className="text-blue-400 text-xl font-bold">{fmt(totalVictor)}</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+          <p className="text-muted text-xs mb-1">Victor {filterYear}</p>
+          <p className="text-blue-700 dark:text-blue-400 text-xl font-bold">{fmt(totalVictor)}</p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">Fabrício {filterYear}</p>
-          <p className="text-purple-400 text-xl font-bold">{fmt(totalFab)}</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+          <p className="text-muted text-xs mb-1">Fabrício {filterYear}</p>
+          <p className="text-purple-700 dark:text-purple-400 text-xl font-bold">{fmt(totalFab)}</p>
         </div>
       </div>
 
       <div className="space-y-3">
         {contractMonths.map(m => (
-          <div key={m.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+          <div key={m.id} className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4 flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{m.client_name}</span>
-                <span className="text-gray-400 text-xs">{months[m.month - 1]}/{m.year}</span>
+                <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs rounded-full">{m.client_name}</span>
+                <span className="text-muted text-xs">{months[m.month - 1]}/{m.year}</span>
               </div>
-              <p className="text-white text-sm">{m.contract_name}</p>
+              <p className="text-text text-sm">{m.contract_name}</p>
               <div className="flex gap-4 mt-1 text-xs">
-                <span className="text-gray-500">NF: <span className="text-gray-300">{fmt(m.invoice_value)}</span></span>
-                <span className="text-gray-500">Líq: <span className="text-gray-300">{fmt(m.net_value)}</span></span>
-                <span className="text-gray-500">Victor: <span className="text-blue-400">{fmt(m.victor_share)}</span></span>
-                <span className="text-gray-500">Fab: <span className="text-purple-400">{fmt(m.fabricio_share)}</span></span>
+                <span className="text-subtle">NF: <span className="text-text-3">{fmt(m.invoice_value)}</span></span>
+                <span className="text-subtle">Líq: <span className="text-text-3">{fmt(m.net_value)}</span></span>
+                <span className="text-subtle">Victor: <span className="text-blue-700 dark:text-blue-400">{fmt(m.victor_share)}</span></span>
+                <span className="text-subtle">Fab: <span className="text-purple-700 dark:text-purple-400">{fmt(m.fabricio_share)}</span></span>
               </div>
             </div>
-            <button onClick={() => deleteMonth(m.id)} className="text-gray-600 hover:text-red-400 text-xs">Excluir</button>
+            <button onClick={() => deleteMonth(m.id)} className="text-faint hover:text-red-700 dark:hover:text-red-400 text-xs">Excluir</button>
           </div>
         ))}
       </div>
@@ -404,18 +404,18 @@ export default function Contracts() {
       {/* Modal contrato */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">{editContract ? 'Editar contrato' : 'Novo contrato'}</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-text mb-4">{editContract ? 'Editar contrato' : 'Novo contrato'}</h3>
             <div className="space-y-3">
               {!editContract && (
-                <select value={form.client_id} onChange={e=>{ const v = e.target.value; setForm(f=>({...f,client_id:v,financial_rule_id:''})); loadRulesForClient(v) }} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <select value={form.client_id} onChange={e=>{ const v = e.target.value; setForm(f=>({...f,client_id:v,financial_rule_id:''})); loadRulesForClient(v) }} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                   <option value="">Selecione o cliente</option>
                   {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               )}
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Regra Financeira</label>
-                <select value={form.financial_rule_id} onChange={e=>onSelectRule(e.target.value)} disabled={!form.client_id || rulesLoading || clientRules.length === 0} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
+                <label className="text-xs text-muted font-medium">Regra Financeira</label>
+                <select value={form.financial_rule_id} onChange={e=>onSelectRule(e.target.value)} disabled={!form.client_id || rulesLoading || clientRules.length === 0} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
                   <option value="">{rulesLoading ? 'Carregando regras...' : 'Selecione a regra financeira'}</option>
                   {clientRules.map(r => (
                     <option key={r.id} value={r.id}>
@@ -424,23 +424,23 @@ export default function Contracts() {
                   ))}
                 </select>
                 {form.client_id && !rulesLoading && clientRules.length === 0 && (
-                  <p className="text-amber-400 text-xs">Este cliente não possui regra financeira. Cadastre uma antes de criar o contrato.</p>
+                  <p className="text-amber-700 dark:text-amber-400 text-xs">Este cliente não possui regra financeira. Cadastre uma antes de criar o contrato.</p>
                 )}
               </div>
 
               {/* Tomador da NFS-e. Só o destinatário do documento fiscal muda: o
                   serviço continua sendo do cliente do contrato, e com ele o rateio
                   Victor/Fabrício, a regra financeira, o recebível e a apuração. */}
-              <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
-                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Tomador da NFS-e</p>
-                <p className="text-gray-300 text-sm">A nota fiscal será emitida para o cliente do contrato?</p>
+              <div className="bg-surface-2/50 rounded-xl p-3 space-y-2">
+                <p className="text-muted text-xs font-medium uppercase tracking-wider">Tomador da NFS-e</p>
+                <p className="text-text-3 text-sm">A nota fiscal será emitida para o cliente do contrato?</p>
                 <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+                  <label className="flex items-center gap-2 text-text-3 text-sm cursor-pointer">
                     <input type="radio" name="tomador_nfse" checked={!tomadorOutro}
                       onChange={()=>{ setTomadorOutro(false); setForm(f=>({...f, invoice_client_id: ''})) }} className="accent-blue-500"/>
                     Sim (usar o cliente do contrato)
                   </label>
-                  <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+                  <label className="flex items-center gap-2 text-text-3 text-sm cursor-pointer">
                     <input type="radio" name="tomador_nfse" checked={tomadorOutro}
                       onChange={()=>setTomadorOutro(true)} className="accent-blue-500"/>
                     Não (emitir para outro)
@@ -451,16 +451,16 @@ export default function Contracts() {
                   const alvo = outros.find(c => String(c.id) === String(form.invoice_client_id))
                   return (
                     <div className="flex flex-col gap-1">
-                      <select value={form.invoice_client_id} onChange={e=>setForm(f=>({...f, invoice_client_id: e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                      <select value={form.invoice_client_id} onChange={e=>setForm(f=>({...f, invoice_client_id: e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                         <option value="">Selecione o cliente para emissão da NFS-e</option>
                         {outros.map(c => (
                           <option key={c.id} value={c.id}>{c.name}{c.cpf_cnpj ? ` — ${c.cpf_cnpj}` : ' — sem CNPJ'}</option>
                         ))}
                       </select>
                       {alvo && !alvo.cpf_cnpj && (
-                        <p className="text-amber-400 text-xs">Este cliente está sem CNPJ e sem endereço fiscal — a emissão será recusada até o cadastro ser completado em Clientes.</p>
+                        <p className="text-amber-700 dark:text-amber-400 text-xs">Este cliente está sem CNPJ e sem endereço fiscal — a emissão será recusada até o cadastro ser completado em Clientes.</p>
                       )}
-                      <p className="text-gray-500 text-[11px]">
+                      <p className="text-subtle text-[11px]">
                         A nota sai no CNPJ deste cliente. O rateio Victor/Fabrício, o recebível e a apuração continuam no cliente do contrato.
                       </p>
                     </div>
@@ -468,14 +468,14 @@ export default function Contracts() {
                 })()}
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Nome do contrato</label>
-                <input placeholder="Nome do contrato (ex: Stelldeck Renovação Mensal)" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">Nome do contrato</label>
+                <input placeholder="Nome do contrato (ex: Stelldeck Renovação Mensal)" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">CNPJ (para emissão de NF)</label>
-                <input placeholder="Ex: 12.345.678/0001-90 ou alfanumérico" value={form.cnpj} onChange={e=>setForm(f=>({...f,cnpj:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                <label className="text-xs text-muted font-medium">CNPJ (para emissão de NF)</label>
+                <input placeholder="Ex: 12.345.678/0001-90 ou alfanumérico" value={form.cnpj} onChange={e=>setForm(f=>({...f,cnpj:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
               </div>
-              <select value={form.billing_type} onChange={e=>setForm(f=>({...f,billing_type:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+              <select value={form.billing_type} onChange={e=>setForm(f=>({...f,billing_type:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                 <option value="mensal">Mensal (valor fixo por mês)</option>
                 <option value="hora">Por hora</option>
                 <option value="dia">Por dia</option>
@@ -484,23 +484,23 @@ export default function Contracts() {
               </select>
               {avisoRegra('billing_type')}
 
-              <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
-                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Deslocamento</p>
-                <select value={form.deslocamento_tipo} onChange={e=>setForm(f=>({...f,deslocamento_tipo:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+              <div className="bg-surface-2/50 rounded-xl p-3 space-y-2">
+                <p className="text-muted text-xs font-medium uppercase tracking-wider">Deslocamento</p>
+                <select value={form.deslocamento_tipo} onChange={e=>setForm(f=>({...f,deslocamento_tipo:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                   <option value="nao_cobrado">Não cobrado ao cliente</option>
                   <option value="hora">Cobrado por hora</option>
                   <option value="hora_despesas">Cobrado por hora + despesas (pedágio/combustível/almoço)</option>
                 </select>
                 {form.deslocamento_tipo !== 'nao_cobrado' && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400 font-medium">Horas de deslocamento</label>
-                    <input placeholder="0" type="number" step="0.5" value={form.displacement_hours} onChange={e=>setForm(f=>({...f,displacement_hours:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                    <label className="text-xs text-muted font-medium">Horas de deslocamento</label>
+                    <input placeholder="0" type="number" step="0.5" value={form.displacement_hours} onChange={e=>setForm(f=>({...f,displacement_hours:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                   </div>
                 )}
                 {form.deslocamento_tipo !== 'nao_cobrado' && (
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400 font-medium">Valor hora deslocamento (R$)</label>
-                    <input placeholder="Vazio usa o valor/hora do contrato" type="number" value={form.deslocamento_valor_hora} onChange={e=>setForm(f=>({...f,deslocamento_valor_hora:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                    <label className="text-xs text-muted font-medium">Valor hora deslocamento (R$)</label>
+                    <input placeholder="Vazio usa o valor/hora do contrato" type="number" value={form.deslocamento_valor_hora} onChange={e=>setForm(f=>({...f,deslocamento_valor_hora:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                   </div>
                 )}
               </div>
@@ -511,33 +511,33 @@ export default function Contracts() {
                 const liquido = tipo !== 'hora' && regraSelecionada.is_net_value
                 const nfManual = nfOverride(regraSelecionada)
                 const linha = (rotulo, valor) => (
-                  <div className="flex justify-between text-sm"><span className="text-gray-400">{rotulo}</span><span className="text-white">{valor}</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-muted">{rotulo}</span><span className="text-text">{valor}</span></div>
                 )
                 return (
-                  <div className="bg-gray-800/50 rounded-xl p-3 space-y-1.5">
+                  <div className="bg-surface-2/50 rounded-xl p-3 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Valores da regra financeira</p>
-                      <Link to="/financial-rules" className="text-xs text-blue-400 hover:text-blue-300">Editar na regra financeira</Link>
+                      <p className="text-muted text-xs font-medium uppercase tracking-wider">Valores da regra financeira</p>
+                      <Link to="/financial-rules" className="text-xs text-blue-700 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">Editar na regra financeira</Link>
                     </div>
                     {linha(`Valor ${un}${liquido ? ' (líquido)' : ''}`, brl(unitario))}
                     {linha(`Victor fixo ${un}`, brl(victor_fixo))}
                     {linha('Split Victor / Fabrício', `${parseFloat(regraSelecionada.remainder_victor_pct)}% / ${parseFloat(regraSelecionada.remainder_fabricio_pct)}%`)}
                     {linha('Imposto', regraSelecionada.has_tax ? `${pct}%${liquido ? ' por fora' : ' (sai do bruto)'}` : 'sem imposto')}
                     {liquido && linha(`NF ${un}`, nfManual != null ? `${brl(nfManual)} (manual)` : brl(nfAutomatica(unitario, pct)))}
-                    <p className="text-gray-500 text-[11px] pt-1">Contrato {tipoDaRegra(regraSelecionada) === 'hora' ? 'por hora' : 'por dia'} é faturado pela Agenda, que calcula tudo pela regra. Aqui só o deslocamento, o tomador e a NF são do contrato.</p>
+                    <p className="text-subtle text-[11px] pt-1">Contrato {tipoDaRegra(regraSelecionada) === 'hora' ? 'por hora' : 'por dia'} é faturado pela Agenda, que calcula tudo pela regra. Aqui só o deslocamento, o tomador e a NF são do contrato.</p>
                   </div>
                 )
               })()}
               {!isProjeto && !modoAgenda && (
                 <>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400 font-medium">Valor do contrato líquido</label>
-                    <input placeholder={valuePlaceholder} type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                    <label className="text-xs text-muted font-medium">Valor do contrato líquido</label>
+                    <input placeholder={valuePlaceholder} type="number" value={form.contract_value} onChange={e=>setForm(f=>({...f,contract_value:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                     {avisoRegra('contract_value')}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs text-gray-400 font-medium">Valor fixo Victor</label>
-                    <input placeholder={victorPlaceholder} type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                    <label className="text-xs text-muted font-medium">Valor fixo Victor</label>
+                    <input placeholder={victorPlaceholder} type="number" value={form.victor_fixed} onChange={e=>setForm(f=>({...f,victor_fixed:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                     {avisoRegra('victor_fixed')}
                   </div>
                 </>
@@ -545,9 +545,9 @@ export default function Contracts() {
 
               {isProjeto && (
                 <>
-                  <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
-                    <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Divisão do projeto</p>
-                    <select value={form.projeto_split_mode} onChange={e=>setForm(f=>({...f,projeto_split_mode:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                  <div className="bg-surface-2/50 rounded-xl p-3 space-y-2">
+                    <p className="text-muted text-xs font-medium uppercase tracking-wider">Divisão do projeto</p>
+                    <select value={form.projeto_split_mode} onChange={e=>setForm(f=>({...f,projeto_split_mode:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                       <option value="direct_split">Split direto — divide o líquido por %V/%F</option>
                       <option value="percent_victor">% Victor primeiro, depois split do restante</option>
                       <option value="fixed_victor">Valor fixo Victor primeiro, depois split do restante</option>
@@ -555,37 +555,37 @@ export default function Contracts() {
                     </select>
                     {form.projeto_split_mode === 'percent_victor' && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-xs text-gray-400 font-medium">% Victor sobre o líquido (antes do split)</label>
-                        <input placeholder="Ex: 30" type="number" step="0.01" value={form.projeto_victor_pct} onChange={e=>setForm(f=>({...f,projeto_victor_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                        <label className="text-xs text-muted font-medium">% Victor sobre o líquido (antes do split)</label>
+                        <input placeholder="Ex: 30" type="number" step="0.01" value={form.projeto_victor_pct} onChange={e=>setForm(f=>({...f,projeto_victor_pct:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                       </div>
                     )}
                     {form.projeto_split_mode === 'fixed_victor' && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-xs text-gray-400 font-medium">Valor fixo Victor por parcela (R$)</label>
-                        <input placeholder="Ex: 2000.00" type="number" step="0.01" value={form.projeto_victor_fixed} onChange={e=>setForm(f=>({...f,projeto_victor_fixed:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                        <label className="text-xs text-muted font-medium">Valor fixo Victor por parcela (R$)</label>
+                        <input placeholder="Ex: 2000.00" type="number" step="0.01" value={form.projeto_victor_fixed} onChange={e=>setForm(f=>({...f,projeto_victor_fixed:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                       </div>
                     )}
                     {form.projeto_split_mode === 'expenses' && (
                       <div className="flex flex-col gap-1">
-                        <label className="text-xs text-gray-400 font-medium">Despesas por parcela — reembolso 100% Victor (R$)</label>
-                        <input placeholder="Ex: 500.00" type="number" step="0.01" value={form.projeto_expenses} onChange={e=>setForm(f=>({...f,projeto_expenses:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                        <label className="text-xs text-muted font-medium">Despesas por parcela — reembolso 100% Victor (R$)</label>
+                        <input placeholder="Ex: 500.00" type="number" step="0.01" value={form.projeto_expenses} onChange={e=>setForm(f=>({...f,projeto_expenses:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                       </div>
                     )}
-                    <p className="text-gray-500 text-xs">Imposto sempre primeiro. Depois sai a parte prioritária do Victor e só o restante é dividido por %V/%F.</p>
+                    <p className="text-subtle text-xs">Imposto sempre primeiro. Depois sai a parte prioritária do Victor e só o restante é dividido por %V/%F.</p>
                   </div>
 
-                  <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
+                  <div className="bg-surface-2/50 rounded-xl p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Parcelas</p>
+                      <p className="text-muted text-xs font-medium uppercase tracking-wider">Parcelas</p>
                       <button type="button" onClick={addInstallment} className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs">+ Adicionar parcela</button>
                     </div>
                     {installments.length === 0 ? (
-                      <p className="text-gray-500 text-xs py-2">Nenhuma parcela. Adicione ao menos uma para salvar o contrato.</p>
+                      <p className="text-subtle text-xs py-2">Nenhuma parcela. Adicione ao menos uma para salvar o contrato.</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs">
                           <thead>
-                            <tr className="text-gray-500 text-left">
+                            <tr className="text-subtle text-left">
                               <th className="pb-1 pr-2 font-medium w-8">Nº</th>
                               <th className="pb-1 pr-2 font-medium">Descrição</th>
                               <th className="pb-1 pr-2 font-medium w-24">Valor (R$)</th>
@@ -596,20 +596,20 @@ export default function Contracts() {
                           <tbody>
                             {installments.map((it, idx) => (
                               <tr key={it.id || it._key}>
-                                <td className="py-1 pr-2 text-gray-400">{idx + 1}</td>
+                                <td className="py-1 pr-2 text-muted">{idx + 1}</td>
                                 <td className="py-1 pr-2">
-                                  <input placeholder="Ex: Entrada" value={it.description || ''} disabled={!!it.invoice_id} onChange={e=>updateInstallment(idx,{description:e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-blue-500 disabled:opacity-50"/>
+                                  <input placeholder="Ex: Entrada" value={it.description || ''} disabled={!!it.invoice_id} onChange={e=>updateInstallment(idx,{description:e.target.value})} className="w-full bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs placeholder-faint focus:outline-none focus:border-blue-500 disabled:opacity-50"/>
                                 </td>
                                 <td className="py-1 pr-2">
-                                  <input placeholder="0.00" type="number" step="0.01" value={it.value ?? ''} disabled={!!it.invoice_id} onChange={e=>updateInstallment(idx,{value:e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-blue-500 disabled:opacity-50"/>
+                                  <input placeholder="0.00" type="number" step="0.01" value={it.value ?? ''} disabled={!!it.invoice_id} onChange={e=>updateInstallment(idx,{value:e.target.value})} className="w-full bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs placeholder-faint focus:outline-none focus:border-blue-500 disabled:opacity-50"/>
                                 </td>
                                 <td className="py-1 pr-2">
-                                  <input type="date" value={it.due_date ? String(it.due_date).slice(0,10) : ''} disabled={!!it.invoice_id} onChange={e=>updateInstallment(idx,{due_date:e.target.value})} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50"/>
+                                  <input type="date" value={it.due_date ? String(it.due_date).slice(0,10) : ''} disabled={!!it.invoice_id} onChange={e=>updateInstallment(idx,{due_date:e.target.value})} className="w-full bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs focus:outline-none focus:border-blue-500 disabled:opacity-50"/>
                                 </td>
                                 <td className="py-1 text-right">
                                   {it.invoice_id
-                                    ? <span className="text-amber-400" title="Parcela faturada">🔒</span>
-                                    : <button type="button" onClick={()=>removeInstallment(idx)} className="text-gray-600 hover:text-red-400" title="Excluir parcela">🗑</button>}
+                                    ? <span className="text-amber-700 dark:text-amber-400" title="Parcela faturada">🔒</span>
+                                    : <button type="button" onClick={()=>removeInstallment(idx)} className="text-faint hover:text-red-700 dark:hover:text-red-400" title="Excluir parcela">🗑</button>}
                                 </td>
                               </tr>
                             ))}
@@ -617,9 +617,9 @@ export default function Contracts() {
                         </table>
                       </div>
                     )}
-                    <div className="flex justify-between border-t border-gray-700 pt-2 text-xs">
-                      <span className="text-gray-400">Valor do contrato (soma das parcelas)</span>
-                      <span className="text-white font-semibold">{fmt(installmentsTotal)}</span>
+                    <div className="flex justify-between border-t border-border-strong pt-2 text-xs">
+                      <span className="text-muted">Valor do contrato (soma das parcelas)</span>
+                      <span className="text-text font-semibold">{fmt(installmentsTotal)}</span>
                     </div>
                   </div>
                 </>
@@ -627,70 +627,70 @@ export default function Contracts() {
               {!modoAgenda && <>
               <div className="flex gap-3">
                 <div className="flex flex-col gap-1 flex-1">
-                  <label className="text-xs text-gray-400 font-medium">% Victor</label>
-                  <input placeholder="% Victor restante" type="number" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <label className="text-xs text-muted font-medium">% Victor</label>
+                  <input placeholder="% Victor restante" type="number" value={form.remainder_victor_pct} onChange={e=>setForm(f=>({...f,remainder_victor_pct:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                 </div>
                 <div className="flex flex-col gap-1 flex-1">
-                  <label className="text-xs text-gray-400 font-medium">% Fabrício</label>
-                  <input placeholder="% Fabrício restante" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                  <label className="text-xs text-muted font-medium">% Fabrício</label>
+                  <input placeholder="% Fabrício restante" type="number" value={form.remainder_fabricio_pct} onChange={e=>setForm(f=>({...f,remainder_fabricio_pct:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                 </div>
               </div>
               {avisoRegra('split')}
               </>}
-              <div className="bg-gray-800/50 rounded-xl p-3">
-                <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+              <div className="bg-surface-2/50 rounded-xl p-3">
+                <label className="flex items-center gap-2 text-text-3 text-sm cursor-pointer">
                   <input type="checkbox" checked={form.require_nf} onChange={e=>setForm(f=>({...f,require_nf:e.target.checked}))} className="rounded"/>
                   Requer NF?
                 </label>
-                <p className="text-gray-500 text-[11px] mt-1">
+                <p className="text-subtle text-[11px] mt-1">
                   {form.require_nf
                     ? 'O faturamento deste contrato entra na apuração fiscal (DAS, INSS, Fator R e rateio por cliente).'
                     : 'Sem NF: fica FORA da apuração fiscal — não entra no DAS, no INSS, no Fator R nem no rateio. Continua faturando e aparecendo em A Receber.'}
                 </p>
               </div>
               {!modoAgenda && <>
-              <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
+              <label className="flex items-center gap-2 text-text-3 text-sm cursor-pointer">
                 <input type="checkbox" checked={form.has_tax} onChange={e=>setForm(f=>({...f,has_tax:e.target.checked}))} className="rounded"/>
                 Tem imposto sobre a nota?
               </label>
               {avisoRegra('imposto')}
-              {form.has_tax && <input placeholder="% imposto" type="number" value={form.tax_percentage} onChange={e=>setForm(f=>({...f,tax_percentage:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>}
+              {form.has_tax && <input placeholder="% imposto" type="number" value={form.tax_percentage} onChange={e=>setForm(f=>({...f,tax_percentage:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>}
               {form.has_tax && (() => {
                 const base = taxBase()
                 const nf = parseFloat(form.tax_client_nf)
                 const imposto = !isNaN(nf) ? nf - base : (parseFloat(form.tax_client_percent) > 0 && base > 0 && parseFloat(form.tax_client_percent) < 100 ? base / (1 - parseFloat(form.tax_client_percent) / 100) - base : 0)
                 return (
-                  <div className="bg-gray-800/50 rounded-xl p-3 space-y-2">
-                    <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Imposto cobrado do cliente</p>
+                  <div className="bg-surface-2/50 rounded-xl p-3 space-y-2">
+                    <p className="text-muted text-xs font-medium uppercase tracking-wider">Imposto cobrado do cliente</p>
                     <div className="flex gap-3">
                       <div className="flex flex-col gap-1 flex-1">
-                        <label className="text-xs text-gray-400 font-medium">% Imposto cobrado do cliente</label>
-                        <input placeholder="Ex: 9.20" type="number" step="0.01" value={form.tax_client_percent} onChange={e=>onTaxPercentChange(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                        <label className="text-xs text-muted font-medium">% Imposto cobrado do cliente</label>
+                        <input placeholder="Ex: 9.20" type="number" step="0.01" value={form.tax_client_percent} onChange={e=>onTaxPercentChange(e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                       </div>
                       <div className="flex flex-col gap-1 flex-1">
-                        <label className="text-xs text-gray-400 font-medium">Valor NF (bruto)</label>
-                        <input placeholder="Ex: 1762.12" type="number" step="0.01" value={form.tax_client_nf} onChange={e=>onTaxNfChange(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                        <label className="text-xs text-muted font-medium">Valor NF (bruto)</label>
+                        <input placeholder="Ex: 1762.12" type="number" step="0.01" value={form.tax_client_nf} onChange={e=>onTaxNfChange(e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
                       </div>
                     </div>
-                    <p className="text-gray-500 text-xs">Ex: 9,20% → NF = base / (1 − 0,092)</p>
+                    <p className="text-subtle text-xs">Ex: 9,20% → NF = base / (1 − 0,092)</p>
                     <div className="flex items-center gap-2 text-xs">
-                      <span className="text-gray-400">Imposto estimado:</span>
-                      <span className="text-red-400 font-medium">{fmt(imposto)}</span>
+                      <span className="text-muted">Imposto estimado:</span>
+                      <span className="text-red-700 dark:text-red-400 font-medium">{fmt(imposto)}</span>
                     </div>
                     {!isNaN(nf) && nf < base && (
-                      <p className="text-red-400 text-xs">Valor NF menor que o valor base — verifique o imposto</p>
+                      <p className="text-red-700 dark:text-red-400 text-xs">Valor NF menor que o valor base — verifique o imposto</p>
                     )}
                   </div>
                 )
               })()}
               </>}
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-gray-400 font-medium">Observações</label>
-                <textarea placeholder="Observações" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+                <label className="text-xs text-muted font-medium">Observações</label>
+                <textarea placeholder="Observações" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"/>
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>{setShowModal(false);setEditContract(null)}} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={()=>{setShowModal(false);setEditContract(null)}} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Cancelar</button>
               <button onClick={saveContract} disabled={!form.financial_rule_id || savingContract || (isProjeto && installments.length === 0)} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">{savingContract ? 'Salvando...' : 'Salvar'}</button>
             </div>
           </div>
@@ -700,21 +700,21 @@ export default function Contracts() {
       {/* Modal lançamento mensal */}
       {showMonthModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-lg font-bold text-white mb-1">Lançar mês</h3>
-            <p className="text-indigo-400 text-sm mb-4">{selectedContract?.name}</p>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-lg font-bold text-text mb-1">Lançar mês</h3>
+            <p className="text-indigo-700 dark:text-indigo-400 text-sm mb-4">{selectedContract?.name}</p>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <select value={monthForm.month} onChange={e=>setMonthForm(f=>({...f,month:parseInt(e.target.value)}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+                <select value={monthForm.month} onChange={e=>setMonthForm(f=>({...f,month:parseInt(e.target.value)}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                   {months.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
                 </select>
-                <input type="number" value={monthForm.year} onChange={e=>setMonthForm(f=>({...f,year:parseInt(e.target.value)}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                <input type="number" value={monthForm.year} onChange={e=>setMonthForm(f=>({...f,year:parseInt(e.target.value)}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
               </div>
-              <input placeholder="Valor da nota fiscal (R$)" type="number" value={monthForm.invoice_value} onChange={e=>setMonthForm(f=>({...f,invoice_value:e.target.value}))} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
-              <textarea placeholder="Observações" value={monthForm.notes} onChange={e=>setMonthForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
+              <input placeholder="Valor da nota fiscal (R$)" type="number" value={monthForm.invoice_value} onChange={e=>setMonthForm(f=>({...f,invoice_value:e.target.value}))} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
+              <textarea placeholder="Observações" value={monthForm.notes} onChange={e=>setMonthForm(f=>({...f,notes:e.target.value}))} rows={2} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"/>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={()=>setShowMonthModal(false)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+              <button onClick={()=>setShowMonthModal(false)} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Cancelar</button>
               <button onClick={saveMonth} className="flex-1 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-medium">Lançar</button>
             </div>
           </div>

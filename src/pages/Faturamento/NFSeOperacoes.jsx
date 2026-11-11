@@ -19,12 +19,12 @@ const ICONES = {
 }
 
 const BADGES = {
-  sucesso: ['bg-green-900/40 text-green-300 border-green-700', '✅ Sucesso'],
-  erro: ['bg-red-900/40 text-red-300 border-red-700', '❌ Erro'],
+  sucesso: ['bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700', '✅ Sucesso'],
+  erro: ['bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700', '❌ Erro'],
   // ⚠️ 'enviado' NÃO é "em andamento": é o pedido que saiu e cuja resposta
   // nunca chegou a ser gravada (a função morreu no meio). A nota pode existir
   // no fisco sem existir aqui — por isso âmbar, e não cinza.
-  enviado: ['bg-amber-900/40 text-amber-300 border-amber-700', '⚠️ Sem resposta'],
+  enviado: ['bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700', '⚠️ Sem resposta'],
 }
 
 const TIPOS = [
@@ -191,50 +191,50 @@ export default function NFSeOperacoes() {
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-4">
       <div className="flex items-center gap-3">
-        <h1 className="text-3xl font-bold text-white">🧾 Operações NFS-e</h1>
+        <h1 className="text-3xl font-bold text-text">🧾 Operações NFS-e</h1>
         <span
-          className="px-2 py-1 rounded text-xs font-medium text-white"
+          className="px-2 py-1 rounded text-xs font-medium text-text"
           style={{ backgroundColor: activeCompany.color }}
         >
           {activeCompany.name}
         </span>
       </div>
-      <p className="text-sm text-gray-400">
+      <p className="text-sm text-muted">
         Cada envio ao SEFIN e a resposta que voltou — inclusive as tentativas recusadas,
         que não deixam rastro na lista de notas.
       </p>
 
       {/* FILTROS */}
-      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-wrap gap-3 items-end">
+      <div className="bg-surface border border-border rounded-lg p-4 flex flex-wrap gap-3 items-end">
         <label className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-gray-500">Tipo</span>
+          <span className="text-xs uppercase tracking-wider text-subtle">Tipo</span>
           <select
             value={tipo} onChange={(e) => setTipo(e.target.value)}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:border-blue-500 focus:outline-none"
+            className="px-3 py-2 bg-surface-2 border border-border-strong rounded text-text text-sm focus:border-blue-500 focus:outline-none"
           >
             {TIPOS.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
           </select>
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-gray-500">Status</span>
+          <span className="text-xs uppercase tracking-wider text-subtle">Status</span>
           <select
             value={status} onChange={(e) => setStatus(e.target.value)}
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white text-sm focus:border-blue-500 focus:outline-none"
+            className="px-3 py-2 bg-surface-2 border border-border-strong rounded text-text text-sm focus:border-blue-500 focus:outline-none"
           >
             {STATUS.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
           </select>
         </label>
 
         <label className="flex flex-col gap-1 flex-1 min-w-[180px]">
-          <span className="text-xs uppercase tracking-wider text-gray-500">Fatura (id)</span>
+          <span className="text-xs uppercase tracking-wider text-subtle">Fatura (id)</span>
           <input
             type="number"
             value={invoiceDigitado}
             onChange={(e) => setInvoiceDigitado(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') setInvoiceFiltro(invoiceDigitado.trim()) }}
             placeholder="Em branco = todas"
-            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded text-white text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none"
+            className="px-3 py-2 bg-surface-2 border border-border-strong rounded text-text text-sm placeholder-subtle focus:border-blue-500 focus:outline-none"
           />
         </label>
 
@@ -247,7 +247,7 @@ export default function NFSeOperacoes() {
         {(tipo || status || invoiceFiltro) && (
           <button
             onClick={() => { setTipo(''); setStatus(''); setInvoiceDigitado(''); setInvoiceFiltro('') }}
-            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded transition-colors"
+            className="px-4 py-2 bg-surface-3 hover:bg-surface-4 text-text text-sm rounded transition-colors"
           >
             ✕ Limpar
           </button>
@@ -255,27 +255,27 @@ export default function NFSeOperacoes() {
       </div>
 
       {erro && (
-        <div className="p-3 rounded text-sm border bg-red-900/30 text-red-300 border-red-700">
+        <div className="p-3 rounded text-sm border bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700">
           ❌ {erro}
         </div>
       )}
 
       {aviso && (
-        <div className="p-3 rounded text-sm border bg-green-900/30 text-green-300 border-green-700 flex items-start gap-3">
+        <div className="p-3 rounded text-sm border bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700 flex items-start gap-3">
           <span className="flex-1">✅ {aviso}</span>
-          <button onClick={() => setAviso(null)} className="text-green-400 hover:text-green-200">✕</button>
+          <button onClick={() => setAviso(null)} className="text-green-700 dark:text-green-400 hover:text-green-700 dark:hover:text-green-200">✕</button>
         </div>
       )}
 
       {loading ? (
-        <p className="text-gray-400">Carregando…</p>
+        <p className="text-muted">Carregando…</p>
       ) : operacoes.length === 0 ? (
-        <div className="bg-gray-900 border border-gray-800 rounded-lg p-8 text-center space-y-2">
-          <p className="text-gray-400">
+        <div className="bg-surface border border-border rounded-lg p-8 text-center space-y-2">
+          <p className="text-muted">
             Nenhuma operação {tipo || status || invoiceFiltro ? 'com esses filtros' : `para a ${activeCompany.name}`}.
           </p>
           {!tipo && !status && !invoiceFiltro && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-subtle">
               A trilha começa na próxima emissão, cancelamento ou consulta ao portal.
             </p>
           )}
@@ -284,28 +284,28 @@ export default function NFSeOperacoes() {
         <div className="space-y-3">
           {operacoes.map((op) => {
             const [cor, rotulo] = BADGES[op.status] || [
-              'bg-gray-800 text-gray-400 border-gray-600', `❔ ${op.status || 'desconhecido'}`,
+              'bg-surface-2 text-muted border-border-stronger', `❔ ${op.status || 'desconhecido'}`,
             ]
             const aberto = expandido === op.id
             return (
-              <div key={op.id} className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+              <div key={op.id} className="bg-surface border border-border rounded-lg overflow-hidden">
                 <button
                   onClick={() => setExpandido(aberto ? null : op.id)}
-                  className="w-full px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-800/60 transition-colors text-left"
+                  className="w-full px-4 py-3 flex items-center justify-between gap-3 hover:bg-surface-2/60 transition-colors text-left"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-lg">{ICONES[op.tipo] || '•'}</span>
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-100">
+                      <p className="font-semibold text-text-1">
                         {op.rotulo}
                         {op.nfseNumber && (
-                          <span className="ml-2 font-mono text-sm text-blue-400">#{op.nfseNumber}</span>
+                          <span className="ml-2 font-mono text-sm text-blue-700 dark:text-blue-400">#{op.nfseNumber}</span>
                         )}
                         {op.ambiente === 2 && (
-                          <span className="ml-2 text-[10px] text-amber-400">homolog.</span>
+                          <span className="ml-2 text-[10px] text-amber-700 dark:text-amber-400">homolog.</span>
                         )}
                       </p>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-subtle truncate">
                         {dataHora(op.enviadoEm)}
                         {op.cliente ? ` · ${op.cliente}` : ''}
                         {op.invoiceNumber ? ` · fatura ${op.invoiceNumber}` : ''}
@@ -317,14 +317,14 @@ export default function NFSeOperacoes() {
                     <span className={`px-2 py-1 rounded text-xs font-semibold border ${cor}`}>
                       {rotulo}
                     </span>
-                    <span className={`text-gray-500 transition-transform ${aberto ? 'rotate-180' : ''}`}>▼</span>
+                    <span className={`text-subtle transition-transform ${aberto ? 'rotate-180' : ''}`}>▼</span>
                   </div>
                 </button>
 
                 {aberto && (
-                  <div className="px-4 py-4 border-t border-gray-800 bg-gray-950/60 space-y-4">
+                  <div className="px-4 py-4 border-t border-border bg-bg/60 space-y-4">
                     {op.status === 'enviado' && (
-                      <div className="p-3 bg-amber-900/20 border border-amber-700/50 rounded text-amber-200 text-sm">
+                      <div className="p-3 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50 rounded text-amber-700 dark:text-amber-200 text-sm">
                         ⚠️ O pedido saiu e a resposta nunca foi gravada — a função caiu entre
                         os dois. {op.dpsNumber ? `A DPS nº ${op.dpsNumber} já foi consumida no fisco. ` : ''}
                         A nota pode existir no SEFIN sem existir aqui; confira no portal antes
@@ -333,13 +333,13 @@ export default function NFSeOperacoes() {
                     )}
 
                     {op.erroMensagem && (
-                      <div className="p-3 bg-red-900/30 border border-red-700 rounded">
-                        <p className="text-sm font-semibold text-red-300">
+                      <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded">
+                        <p className="text-sm font-semibold text-red-700 dark:text-red-300">
                           Recusa do SEFIN{op.httpStatus ? ` (HTTP ${op.httpStatus})` : ''}
                         </p>
-                        <p className="text-xs text-red-200 mt-1 break-words">{op.erroMensagem}</p>
+                        <p className="text-xs text-red-700 dark:text-red-200 mt-1 break-words">{op.erroMensagem}</p>
                         {op.erroCodigo && (
-                          <p className="text-xs text-red-200 mt-1">Código: {op.erroCodigo}</p>
+                          <p className="text-xs text-red-700 dark:text-red-200 mt-1">Código: {op.erroCodigo}</p>
                         )}
                       </div>
                     )}
@@ -364,8 +364,8 @@ export default function NFSeOperacoes() {
 
                     {op.jsonResposta && Object.keys(op.jsonResposta).length > 0 && (
                       <div>
-                        <p className="text-sm font-semibold text-gray-300 mb-1">📦 Resposta (JSON)</p>
-                        <pre className="bg-gray-900 border border-gray-800 p-3 rounded text-xs text-gray-400 max-h-48 overflow-auto font-mono whitespace-pre-wrap break-all">
+                        <p className="text-sm font-semibold text-text-3 mb-1">📦 Resposta (JSON)</p>
+                        <pre className="bg-surface border border-border p-3 rounded text-xs text-muted max-h-48 overflow-auto font-mono whitespace-pre-wrap break-all">
                           {JSON.stringify(op.jsonResposta, null, 2)}
                         </pre>
                       </div>
@@ -379,7 +379,7 @@ export default function NFSeOperacoes() {
                       >
                         {baixando === `${op.id}:copia` ? '⏳ Montando…' : '📋 Copiar tudo para depurar'}
                       </button>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-subtle">
                         Copia os XMLs inteiros, não a prévia recortada.
                       </span>
                     </div>
@@ -389,8 +389,8 @@ export default function NFSeOperacoes() {
             )
           })}
 
-          <div className="px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg flex items-center justify-between flex-wrap gap-2">
-            <p className="text-xs text-gray-400">
+          <div className="px-4 py-3 bg-surface-2 border border-border-strong rounded-lg flex items-center justify-between flex-wrap gap-2">
+            <p className="text-xs text-muted">
               {total === 0
                 ? 'Nenhum registro'
                 : `Mostrando ${(page - 1) * limit + 1}–${Math.min(page * limit, total)} de ${total}`}
@@ -399,15 +399,15 @@ export default function NFSeOperacoes() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-xs rounded transition-colors"
+                className="px-3 py-1 bg-surface-3 hover:bg-surface-4 disabled:opacity-40 text-text text-xs rounded transition-colors"
               >
                 ← Anterior
               </button>
-              <span className="text-xs text-gray-400">Página {page} de {totalPages}</span>
+              <span className="text-xs text-muted">Página {page} de {totalPages}</span>
               <button
                 onClick={() => setPage((p) => p + 1)}
                 disabled={page >= totalPages}
-                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-40 text-white text-xs rounded transition-colors"
+                className="px-3 py-1 bg-surface-3 hover:bg-surface-4 disabled:opacity-40 text-text text-xs rounded transition-colors"
               >
                 Próxima →
               </button>
@@ -426,13 +426,13 @@ function XmlBloco({ titulo, legenda, dados, vazio, onBaixar, baixando }) {
   const tem = Boolean(dados?.tamanho)
   return (
     <div>
-      <p className="text-sm font-semibold text-gray-300">{titulo}</p>
-      <p className="text-xs text-gray-500 mb-2">{legenda}</p>
+      <p className="text-sm font-semibold text-text-3">{titulo}</p>
+      <p className="text-xs text-subtle mb-2">{legenda}</p>
       {!tem ? (
-        <p className="text-xs text-gray-600 italic">{vazio}</p>
+        <p className="text-xs text-faint italic">{vazio}</p>
       ) : (
         <>
-          <pre className="bg-gray-900 border border-gray-800 p-3 rounded text-xs text-gray-400 max-h-48 overflow-auto font-mono whitespace-pre-wrap break-all">
+          <pre className="bg-surface border border-border p-3 rounded text-xs text-muted max-h-48 overflow-auto font-mono whitespace-pre-wrap break-all">
             {dados.previa}
           </pre>
           <div className="flex items-center gap-3 mt-2">
@@ -443,7 +443,7 @@ function XmlBloco({ titulo, legenda, dados, vazio, onBaixar, baixando }) {
             >
               {baixando ? '⏳' : '⬇️'} Baixar XML completo
             </button>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-subtle">
               {kb(dados.tamanho)}
               {dados.truncado ? ' · prévia recortada acima' : ' · íntegro acima'}
             </span>

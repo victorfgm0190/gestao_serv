@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 
 const COMPANIES = [
-  { id: 1, name: 'Lumen', badge: 'bg-blue-500/20 text-blue-400' },
-  { id: 2, name: 'Imperium', badge: 'bg-orange-500/20 text-orange-400' },
+  { id: 1, name: 'Lumen', badge: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400' },
+  { id: 2, name: 'Imperium', badge: 'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400' },
 ]
 const ABERTAS = ['nova', 'pendente', 'em análise', 'em andamento']
 const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -96,12 +96,12 @@ export default function Dashboard() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white">Dashboard</h2>
-        <p className="text-gray-400 text-sm mt-1">{months[mesAtual - 1]} de {anoAtual}</p>
+        <h2 className="text-2xl font-bold text-text">Dashboard</h2>
+        <p className="text-muted text-sm mt-1">{months[mesAtual - 1]} de {anoAtual}</p>
       </div>
 
       {loading ? (
-        <div className="text-gray-500 text-sm">Carregando...</div>
+        <div className="text-subtle text-sm">Carregando...</div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {COMPANIES.map(co => {
@@ -114,45 +114,45 @@ export default function Dashboard() {
                 </div>
 
                 {!m ? (
-                  <div className="text-gray-600 text-sm">Sem dados.</div>
+                  <div className="text-faint text-sm">Sem dados.</div>
                 ) : (
                   <>
                     {/* Demandas */}
-                    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                      <p className="text-gray-400 text-xs uppercase tracking-wider mb-3">Demandas</p>
+                    <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+                      <p className="text-muted text-xs uppercase tracking-wider mb-3">Demandas</p>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-2xl font-bold text-yellow-400">{m.abertas}</p>
-                          <p className="text-gray-500 text-xs mt-1">Abertas</p>
+                          <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{m.abertas}</p>
+                          <p className="text-subtle text-xs mt-1">Abertas</p>
                         </div>
                         <div>
-                          <p className="text-2xl font-bold text-green-400">{m.resolvidasMes}</p>
-                          <p className="text-gray-500 text-xs mt-1">Resolvidas no mês</p>
+                          <p className="text-2xl font-bold text-green-700 dark:text-green-400">{m.resolvidasMes}</p>
+                          <p className="text-subtle text-xs mt-1">Resolvidas no mês</p>
                         </div>
                       </div>
                     </div>
 
                     {/* Financeiro do mês */}
-                    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                      <p className="text-gray-400 text-xs uppercase tracking-wider mb-3">Financeiro do mês</p>
+                    <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+                      <p className="text-muted text-xs uppercase tracking-wider mb-3">Financeiro do mês</p>
                       <div className="space-y-3">
-                        <FinanceBlock label="A Receber" color="text-green-400" prevLabel="Previsto" paidLabel="Recebido" v={m.rec} />
-                        <FinanceBlock label="Pagar Fabrício" color="text-purple-400" prevLabel="Previsto" paidLabel="Pago" v={m.fab} vAno={m.fabAno} />
-                        <FinanceBlock label="Pagar Victor" color="text-blue-400" prevLabel="Previsto" paidLabel="Pago" v={m.vic} vAno={m.vicAno} />
+                        <FinanceBlock label="A Receber" color="text-green-700 dark:text-green-400" prevLabel="Previsto" paidLabel="Recebido" v={m.rec} />
+                        <FinanceBlock label="Pagar Fabrício" color="text-purple-700 dark:text-purple-400" prevLabel="Previsto" paidLabel="Pago" v={m.fab} vAno={m.fabAno} />
+                        <FinanceBlock label="Pagar Victor" color="text-blue-700 dark:text-blue-400" prevLabel="Previsto" paidLabel="Pago" v={m.vic} vAno={m.vicAno} />
                       </div>
                     </div>
 
                     {/* Horas do mês */}
-                    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-                      <p className="text-gray-400 text-xs uppercase tracking-wider mb-3">Horas do mês</p>
+                    <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+                      <p className="text-muted text-xs uppercase tracking-wider mb-3">Horas do mês</p>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="text-2xl font-bold text-white">{decimalToHHMM(m.totalHoras)}</p>
-                          <p className="text-gray-500 text-xs mt-1">Total horas</p>
+                          <p className="text-2xl font-bold text-text">{decimalToHHMM(m.totalHoras)}</p>
+                          <p className="text-subtle text-xs mt-1">Total horas</p>
                         </div>
                         <div>
-                          <p className="text-2xl font-bold text-white">{fmt(m.totalBruto)}</p>
-                          <p className="text-gray-500 text-xs mt-1">Total bruto</p>
+                          <p className="text-2xl font-bold text-text">{fmt(m.totalBruto)}</p>
+                          <p className="text-subtle text-xs mt-1">Total bruto</p>
                         </div>
                       </div>
                     </div>
@@ -171,28 +171,28 @@ function FinanceBlock({ label, color, prevLabel, paidLabel, v, vAno }) {
   const cols = (val) => (
     <div className="grid grid-cols-3 gap-2 text-xs">
       <div>
-        <p className="text-gray-500">{prevLabel}</p>
-        <p className="text-white font-medium">{fmt(val.prev)}</p>
+        <p className="text-subtle">{prevLabel}</p>
+        <p className="text-text font-medium">{fmt(val.prev)}</p>
       </div>
       <div>
-        <p className="text-gray-500">{paidLabel}</p>
-        <p className="text-green-400 font-medium">{fmt(val.pago)}</p>
+        <p className="text-subtle">{paidLabel}</p>
+        <p className="text-green-700 dark:text-green-400 font-medium">{fmt(val.pago)}</p>
       </div>
       <div>
-        <p className="text-gray-500">Em aberto</p>
-        <p className="text-yellow-400 font-medium">{fmt(val.aberto)}</p>
+        <p className="text-subtle">Em aberto</p>
+        <p className="text-yellow-700 dark:text-yellow-400 font-medium">{fmt(val.aberto)}</p>
       </div>
     </div>
   )
   return (
-    <div className="bg-gray-800/50 rounded-lg p-3">
+    <div className="bg-surface-2/50 rounded-lg p-3">
       <p className={`text-sm font-medium mb-2 ${color}`}>{label}</p>
-      {vAno && <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-1">Mês</p>}
+      {vAno && <p className="text-subtle text-[10px] uppercase tracking-wider mb-1">Mês</p>}
       {cols(v)}
       {vAno && (
         <>
-          <div className="border-t border-gray-700 my-2"></div>
-          <p className="text-gray-500 text-[10px] uppercase tracking-wider mb-1">Ano</p>
+          <div className="border-t border-border-strong my-2"></div>
+          <p className="text-subtle text-[10px] uppercase tracking-wider mb-1">Ano</p>
           {cols(vAno)}
         </>
       )}

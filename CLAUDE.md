@@ -723,6 +723,22 @@ Rotas definidas em `src/main.jsx` dentro de `<Layout>` (sidebar). `App.jsx` é v
 | `/fiscal` | `FiscalObligations.jsx` | **Apuração fiscal.** Cards de DAS/INSS/Honorários (estimado × guia × pago), lançamento da guia oficial, múltiplos pagamentos com estorno, tabela de custo por cliente, painel do `calc_snapshot` (RBT12, Fator R, anexo, pró-labore) e abatimento nos payables do Victor. | fiscal-obligations, fiscal-payments |
 | `/billing` | `Billing.jsx` | Geração de fatura por Contrato ou por Agenda (horas). Seção "Impostos" editável (imposto real + imposto do cliente, NF bidirecional) e demonstrativo. Filtros pill mês/cliente. | invoices, contracts, clients, time-entries, financial-rules |
 
+### Tema claro/escuro (tokens de cor) — 2026-11-11
+
+Cores neutras são **tokens** (`tailwind.config.js` → CSS variables em `src/index.css`):
+`bg-bg`, `bg-surface`, `bg-surface-2..4`, `bg-sidebar`, `border-border(-strong|-stronger)`,
+`text-text`, `text-text-1..3`, `text-muted`, `text-subtle`, `text-faint`, `text-faintest`,
+`text-victor`, `text-fabricio` (+ `primary`, `success`, `danger`, `warning`). `:root` é o
+claro; `.dark` vale **exatamente** o cinza que a classe antiga usava (surface = gray-900,
+muted = gray-400…), conferido por diff de pixels em 24 telas.
+- **Não use `bg-gray-*`/`text-gray-*` em código novo** — some no tema claro.
+- Cor de destaque é **par**: `text-red-700 dark:text-red-400`, `bg-amber-50 dark:bg-amber-500/10`,
+  `border-blue-300 dark:border-blue-500/40`. Botão sólido (`bg-blue-600 text-white`) serve aos dois.
+- `text-white` só sobre fundo colorido sólido; sobre superfície é `text-text`.
+- Card/modal: `bg-surface shadow-sm dark:shadow-none` + `border border-border`.
+- Tema aplicado antes do React pelo script inline do `index.html` (`localStorage.theme`,
+  padrão `prefers-color-scheme`); botão no rodapé da sidebar (`src/lib/theme.js`).
+
 Componentes: `src/components/Layout.jsx` (sidebar + switcher de empresa).
 Hook: `src/hooks/useNotifications` (notificações; usado no Layout).
 
