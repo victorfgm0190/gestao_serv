@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { todayBR } from '../lib/dateUtils'
+import HorasCalendar from '../components/HorasCalendar'
 import { calcular } from '../../lib/time-entry-calc.js'
 import { tipoDaRegra, valoresDaRegra, chaveData, cotaDaDiaria, ROTULO_COBRANCA } from '../../lib/billing-type.js'
 
@@ -48,6 +49,15 @@ export default function TimeEntries() {
   const [contractsLoading, setContractsLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [erro, setErro] = useState('')
+  // Lista | Calendário, lembrado por navegador. localStorage pode lançar
+  // (aba privada, site data bloqueado) — sem ele a tela abre em Lista.
+  const [view, setView] = useState(() => {
+    try { return localStorage.getItem('horas_view') === 'calendario' ? 'calendario' : 'lista' } catch { return 'lista' }
+  })
+  function mudarView(v) {
+    setView(v)
+    try { localStorage.setItem('horas_view', v) } catch { /* sem persistência */ }
+  }
 
   useEffect(() => { fetchAll() }, [activeCompany, filterMonth, filterYear])
   useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth])
@@ -189,9 +199,12 @@ export default function TimeEntries() {
     finally { setContractsLoading(false) }
   }
 
-  function openNew() {
+  // `data` (YYYY-MM-DD) vem do clique num dia do calendário; o botão do
+  // cabeçalho passa um evento, que é ignorado.
+  function openNew(data) {
     setEditEntry(null)
-    setForm({ client_id: '', contract_id: '', entry_date: todayBR(), hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', despesas_deslocamento: '0', notes: '' })
+    const entry_date = typeof data === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data) ? data : todayBR()
+    setForm({ client_id: '', contract_id: '', entry_date, hora_inicial: '', intervalo_inicio: '', intervalo_fim: '', hora_final: '', description: '', hours_fuel: '0', despesas_deslocamento: '0', notes: '' })
     setClientContracts([])
     setPreview(null)
     setShowModal(true)
@@ -346,6 +359,61 @@ export default function TimeEntries() {
     acc.lucro += victorTotal - valorDesloc - victorServico
     return acc
   }, { servico: 0, desloc: 0, lucro: 0 })
+  // Card de um apontamento — usado pela lista e pelo painel do dia do calendário.
+  const renderEntry = (e) => (
+    <div key={e.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{e.client_name || 'Sem cliente'}</span>
+            <span className="text-gray-500 text-xs">{new Date(e.entry_date).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span>
+            <span className="text-gray-500 text-xs font-mono">{decimalToHHMM(e.hours)}</span>
+            {e.hora_inicial && e.hora_final && (
+              <span className="text-gray-600 text-xs font-mono">{e.hora_inicial}→{e.hora_final}{e.intervalo_inicio ? ` (int: ${e.intervalo_inicio}-${e.intervalo_fim})` : ''}</span>
+            )}
+            {parseFloat(e.horas_deslocamento) > 0 && (
+              <span className="text-yellow-600 text-xs">🚗 {e.horas_deslocamento}h desloc.</span>
+            )}
+            {parseFloat(e.despesas_deslocamento) > 0 && (
+              <span className="text-yellow-600 text-xs">💸 {fmt(e.despesas_deslocamento)} despesas</span>
+            )}
+          </div>
+          {e.contract_name && (
+            <p className="text-gray-500 text-xs mb-1">📄 {e.contract_name}</p>
+          )}
+          <p className="text-white text-sm">{e.description}</p>
+          {(() => {
+            // Por diária/projeto as horas são só demonstrativo: o valor segue a regra.
+            const rule = regraDaEntrada(e)
+            const tipo = rule ? tipoDaRegra(rule) : 'hora'
+            if (tipo === 'hora') return null
+            const n = osPorDia.get(`${e.contract_id}|${chaveData(e.entry_date)}`) || 1
+            const nota = tipo === 'projeto'
+              ? 'incluso no fixo mensal'
+              : parseFloat(e.gross_value) > 0
+                ? (n > 1 ? `1 diária na data, dividida entre ${n} OS` : '1 diária')
+                : 'diária da data já cobrada'
+            return (
+              <div className="flex items-center gap-2 mt-1 text-xs">
+                <span className={`px-2 py-0.5 rounded-full font-medium ${BADGE_COBRANCA[tipo]}`}>{ROTULO_COBRANCA[tipo]}</span>
+                <span className="text-gray-500">horas informativas · {nota}</span>
+              </div>
+            )
+          })()}
+          <div className="flex gap-4 mt-2 text-xs">
+            <span className="text-gray-500">{regraDaEntrada(e)?.is_net_value && tipoDaRegra(regraDaEntrada(e)) !== 'hora' ? 'NF' : 'Bruto'}: <span className="text-gray-300">{fmt(e.gross_value)}</span></span>
+            {parseFloat(e.tax_amount) > 0 && <span className="text-gray-500">Imposto: <span className="text-red-400">-{fmt(e.tax_amount)}</span></span>}
+            <span className="text-gray-500">Victor: <span className="text-blue-400">{fmt(e.victor_share)}</span></span>
+            <span className="text-gray-500">Fab: <span className="text-purple-400">{fmt(e.fabricio_share)}</span></span>
+          </div>
+        </div>
+        <div className="flex gap-3 shrink-0">
+          <button onClick={() => openEdit(e)} className="text-gray-600 hover:text-blue-400 text-sm transition-colors">Editar</button>
+          <button onClick={() => deleteEntry(e.id)} className="text-gray-600 hover:text-red-400 text-sm transition-colors">Excluir</button>
+        </div>
+      </div>
+    </div>
+  )
   const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
   return (
@@ -355,7 +423,12 @@ export default function TimeEntries() {
           <h2 className="text-2xl font-bold text-white">Apontamento de Horas</h2>
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap justify-end">
+          <div className="flex bg-gray-800 rounded-lg p-0.5">
+            {[['lista', 'Lista'], ['calendario', 'Calendário']].map(([v, rot]) => (
+              <button key={v} onClick={() => mudarView(v)} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === v ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'}`}>{rot}</button>
+            ))}
+          </div>
           {entries.length > 0 && (
             <button
               onClick={exportToExcel}
@@ -443,64 +516,20 @@ export default function TimeEntries() {
         </div>
       </div>
 
-      {loading ? <div className="text-gray-500 text-sm">Carregando...</div> : filteredEntries.length === 0 ? (
+      {loading && view === 'calendario' ? <div className="text-gray-500 text-sm">Carregando...</div> : view === 'calendario' ? (
+        <HorasCalendar
+          entries={filteredEntries}
+          year={filterYear}
+          month={filterMonth}
+          fmt={fmt}
+          renderEntry={renderEntry}
+          onNewOnDay={openNew}
+        />
+      ) : loading ? <div className="text-gray-500 text-sm">Carregando...</div> : filteredEntries.length === 0 ? (
         <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">⏱️</p><p>Nenhum lançamento neste período.</p></div>
       ) : (
         <div className="space-y-3">
-          {filteredEntries.map(e => (
-            <div key={e.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{e.client_name || 'Sem cliente'}</span>
-                    <span className="text-gray-500 text-xs">{new Date(e.entry_date).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span>
-                    <span className="text-gray-500 text-xs font-mono">{decimalToHHMM(e.hours)}</span>
-                    {e.hora_inicial && e.hora_final && (
-                      <span className="text-gray-600 text-xs font-mono">{e.hora_inicial}→{e.hora_final}{e.intervalo_inicio ? ` (int: ${e.intervalo_inicio}-${e.intervalo_fim})` : ''}</span>
-                    )}
-                    {parseFloat(e.horas_deslocamento) > 0 && (
-                      <span className="text-yellow-600 text-xs">🚗 {e.horas_deslocamento}h desloc.</span>
-                    )}
-                    {parseFloat(e.despesas_deslocamento) > 0 && (
-                      <span className="text-yellow-600 text-xs">💸 {fmt(e.despesas_deslocamento)} despesas</span>
-                    )}
-                  </div>
-                  {e.contract_name && (
-                    <p className="text-gray-500 text-xs mb-1">📄 {e.contract_name}</p>
-                  )}
-                  <p className="text-white text-sm">{e.description}</p>
-                  {(() => {
-                    // Por diária/projeto as horas são só demonstrativo: o valor segue a regra.
-                    const rule = regraDaEntrada(e)
-                    const tipo = rule ? tipoDaRegra(rule) : 'hora'
-                    if (tipo === 'hora') return null
-                    const n = osPorDia.get(`${e.contract_id}|${chaveData(e.entry_date)}`) || 1
-                    const nota = tipo === 'projeto'
-                      ? 'incluso no fixo mensal'
-                      : parseFloat(e.gross_value) > 0
-                        ? (n > 1 ? `1 diária na data, dividida entre ${n} OS` : '1 diária')
-                        : 'diária da data já cobrada'
-                    return (
-                      <div className="flex items-center gap-2 mt-1 text-xs">
-                        <span className={`px-2 py-0.5 rounded-full font-medium ${BADGE_COBRANCA[tipo]}`}>{ROTULO_COBRANCA[tipo]}</span>
-                        <span className="text-gray-500">horas informativas · {nota}</span>
-                      </div>
-                    )
-                  })()}
-                  <div className="flex gap-4 mt-2 text-xs">
-                    <span className="text-gray-500">{regraDaEntrada(e)?.is_net_value && tipoDaRegra(regraDaEntrada(e)) !== 'hora' ? 'NF' : 'Bruto'}: <span className="text-gray-300">{fmt(e.gross_value)}</span></span>
-                    {parseFloat(e.tax_amount) > 0 && <span className="text-gray-500">Imposto: <span className="text-red-400">-{fmt(e.tax_amount)}</span></span>}
-                    <span className="text-gray-500">Victor: <span className="text-blue-400">{fmt(e.victor_share)}</span></span>
-                    <span className="text-gray-500">Fab: <span className="text-purple-400">{fmt(e.fabricio_share)}</span></span>
-                  </div>
-                </div>
-                <div className="flex gap-3 shrink-0">
-                  <button onClick={() => openEdit(e)} className="text-gray-600 hover:text-blue-400 text-sm transition-colors">Editar</button>
-                  <button onClick={() => deleteEntry(e.id)} className="text-gray-600 hover:text-red-400 text-sm transition-colors">Excluir</button>
-                </div>
-              </div>
-            </div>
-          ))}
+          {filteredEntries.map(renderEntry)}
         </div>
       )}
 
