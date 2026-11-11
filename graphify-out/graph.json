@@ -1264,8 +1264,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_cancel",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "nfse-cancel.js"
     },
     {
@@ -1275,8 +1275,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "api_nfse_cancel_cancelaveis",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "cancelaveis"
     },
     {
@@ -1286,8 +1286,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "api_nfse_cancel_handler",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "handler()"
     },
     {
@@ -1319,8 +1319,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_consultar",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "nfse-consultar.js"
     },
     {
@@ -1330,8 +1330,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "api_nfse_consultar_handler",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "handler()"
     },
     {
@@ -1484,8 +1484,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "api_nfse_emit_handler",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "handler()"
     },
     {
@@ -1495,8 +1495,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings",
-      "community": 76,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 55,
+      "community_name": "dotenv",
       "norm_label": "nfse-emitter-settings.js"
     },
     {
@@ -1506,8 +1506,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_campos",
-      "community": 76,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 55,
+      "community_name": "dotenv",
       "norm_label": "campos"
     },
     {
@@ -1517,8 +1517,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_sodigitos",
-      "community": 76,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 55,
+      "community_name": "dotenv",
       "norm_label": "sodigitos()"
     },
     {
@@ -1528,8 +1528,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_texto",
-      "community": 76,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 55,
+      "community_name": "dotenv",
       "norm_label": "texto()"
     },
     {
@@ -1539,8 +1539,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_numero",
-      "community": 76,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 55,
+      "community_name": "dotenv",
       "norm_label": "numero()"
     },
     {
@@ -1550,8 +1550,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "api_nfse_emitter_settings_handler",
-      "community": 76,
-      "community_name": "nfse-emitter-settings.js",
+      "community": 55,
+      "community_name": "dotenv",
       "norm_label": "handler()"
     },
     {
@@ -1660,8 +1660,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "api_nfse_sincronizar_cancelamento",
-      "community": 70,
-      "community_name": "nfse-events.js",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "nfse-sincronizar-cancelamento.js"
     },
     {
@@ -1935,8 +1935,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "api_payables_victor_recalcvictorparent",
-      "community": 67,
-      "community_name": "Clientes.jsx",
+      "community": 61,
+      "community_name": "nfse-consultar.test.js",
       "norm_label": "recalcvictorparent()"
     },
     {
@@ -1946,8 +1946,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "api_payables_victor_estornarsessao",
-      "community": 67,
-      "community_name": "Clientes.jsx",
+      "community": 61,
+      "community_name": "nfse-consultar.test.js",
       "norm_label": "estornarsessao()"
     },
     {
@@ -4355,8 +4355,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_adn_client",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "nfse-adn-client.js"
     },
     {
@@ -4366,8 +4366,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_urls_sefin",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "urls_sefin"
     },
     {
@@ -4377,8 +4377,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_urls_adn",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "urls_adn"
     },
     {
@@ -4388,8 +4388,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_nfseadnclient",
-      "community": 77,
-      "community_name": "NFSeADNClient",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "nfseadnclient"
     },
     {
@@ -4399,8 +4399,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_nfseadnclient_constructor",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": ".constructor()"
     },
     {
@@ -4410,8 +4410,8 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_nfseadnclient_compactardps",
-      "community": 77,
-      "community_name": "NFSeADNClient",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": ".compactardps()"
     },
     {
@@ -4421,8 +4421,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_nfseadnclient_motivodoerro",
-      "community": 77,
-      "community_name": "NFSeADNClient",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": ".motivodoerro()"
     },
     {
@@ -4432,8 +4432,8 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_nfseadnclient_emitirnfse",
-      "community": 77,
-      "community_name": "NFSeADNClient",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": ".emitirnfse()"
     },
     {
@@ -4443,8 +4443,8 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_nfseadnclient_consultarnfse",
-      "community": 77,
-      "community_name": "NFSeADNClient",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": ".consultarnfse()"
     },
     {
@@ -4454,8 +4454,8 @@
       "source_location": "L212",
       "_origin": "ast",
       "id": "lib_nfse_adn_client_nfseadnclient_cancelarnfse",
-      "community": 77,
-      "community_name": "NFSeADNClient",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": ".cancelarnfse()"
     },
     {
@@ -4707,8 +4707,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager",
-      "community": 65,
-      "community_name": "nfse-emit.js",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "nfse-cert-manager.js"
     },
     {
@@ -4806,8 +4806,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test",
-      "community": 72,
-      "community_name": "payment-source-tracker.js",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "nfse-cert-manager.test.js"
     },
     {
@@ -4817,8 +4817,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_ok",
-      "community": 72,
-      "community_name": "payment-source-tracker.js",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "ok()"
     },
     {
@@ -4828,8 +4828,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_keys",
-      "community": 72,
-      "community_name": "payment-source-tracker.js",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "keys"
     },
     {
@@ -4839,8 +4839,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_cert",
-      "community": 72,
-      "community_name": "payment-source-tracker.js",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "cert"
     },
     {
@@ -4850,8 +4850,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_attrs",
-      "community": 72,
-      "community_name": "payment-source-tracker.js",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "attrs"
     },
     {
@@ -4861,8 +4861,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_p12der",
-      "community": 72,
-      "community_name": "payment-source-tracker.js",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "p12der"
     },
     {
@@ -4872,8 +4872,8 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_pfxbuffer",
-      "community": 72,
-      "community_name": "payment-source-tracker.js",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "pfxbuffer"
     },
     {
@@ -4883,8 +4883,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "lib_nfse_cert_manager_test_info",
-      "community": 72,
-      "community_name": "payment-source-tracker.js",
+      "community": 14,
+      "community_name": "cron-nfse-check.test.js",
       "norm_label": "info"
     },
     {
@@ -5422,8 +5422,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "lib_nfse_events_eventos",
-      "community": 70,
-      "community_name": "nfse-events.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "eventos"
     },
     {
@@ -5444,8 +5444,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "lib_nfse_events_registrarevento",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "registrarevento()"
     },
     {
@@ -5521,8 +5521,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "lib_nfse_operations_abriroperacao",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "abriroperacao()"
     },
     {
@@ -5532,8 +5532,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "lib_nfse_operations_fecharoperacao",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "fecharoperacao()"
     },
     {
@@ -5543,8 +5543,8 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "lib_nfse_operations_registraroperacaolocal",
-      "community": 70,
-      "community_name": "nfse-events.js",
+      "community": 5,
+      "community_name": "payables-victor.js",
       "norm_label": "registraroperacaolocal()"
     },
     {
@@ -5807,8 +5807,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_signer",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "nfse-signer.js"
     },
     {
@@ -5818,8 +5818,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "lib_nfse_signer_extrairchaves",
-      "community": 29,
-      "community_name": "react-dom",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "extrairchaves()"
     },
     {
@@ -5939,8 +5939,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "nfse-substituir.test.js"
     },
     {
@@ -5950,8 +5950,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_ok",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "ok()"
     },
     {
@@ -5961,8 +5961,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_sql",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "sql"
     },
     {
@@ -5972,8 +5972,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_token",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "token"
     },
     {
@@ -5983,8 +5983,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_chamar",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "chamar()"
     },
     {
@@ -5994,8 +5994,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_chave",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "chave"
     },
     {
@@ -6005,8 +6005,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_base",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 58,
+      "community_name": "react",
       "norm_label": "base()"
     },
     {
@@ -6016,8 +6016,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_comsubst",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "comsubst"
     },
     {
@@ -6027,8 +6027,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_curto",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "curto"
     },
     {
@@ -6038,8 +6038,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_chaveruim",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "chaveruim"
     },
     {
@@ -6049,8 +6049,8 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_status",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "status()"
     },
     {
@@ -6060,8 +6060,8 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "lib_nfse_substituir_test_json",
-      "community": 17,
-      "community_name": "payment-source-tracker.js",
+      "community": 76,
+      "community_name": "nfse-emitter-settings.js",
       "norm_label": "json()"
     },
     {
@@ -6291,8 +6291,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "lib_nfse_xml_cancellation_builder_motivos",
-      "community": 60,
-      "community_name": "react",
+      "community": 19,
+      "community_name": "email-ingest.js",
       "norm_label": "motivos"
     },
     {
@@ -6302,8 +6302,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "lib_nfse_xml_cancellation_builder_motivoporcodigo",
-      "community": 5,
-      "community_name": "payables-victor.js",
+      "community": 65,
+      "community_name": "nfse-emit.js",
       "norm_label": "motivoporcodigo()"
     },
     {
@@ -6577,8 +6577,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_payment_status",
-      "community": 61,
-      "community_name": "nfse-consultar.test.js",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "payment-status.js"
     },
     {
@@ -6599,8 +6599,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "lib_payment_status_remainingbalance",
-      "community": 61,
-      "community_name": "nfse-consultar.test.js",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "remainingbalance()"
     },
     {
@@ -6610,8 +6610,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "lib_taxcalc",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "taxcalc.js"
     },
     {
@@ -6621,8 +6621,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "lib_taxcalc_simples_iii",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "simples_iii"
     },
     {
@@ -6632,8 +6632,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "lib_taxcalc_simples_v",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "simples_v"
     },
     {
@@ -6643,8 +6643,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "lib_taxcalc_r2",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "r2()"
     },
     {
@@ -6654,8 +6654,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "lib_taxcalc_params_padrao",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "params_padrao"
     },
     {
@@ -6676,8 +6676,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "lib_taxcalc_prolaboredomes",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "prolaboredomes()"
     },
     {
@@ -6687,8 +6687,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "lib_taxcalc_faixafor",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "faixafor()"
     },
     {
@@ -6709,8 +6709,8 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "lib_taxcalc_calcinss",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "calcinss()"
     },
     {
@@ -6720,8 +6720,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "lib_taxcalc_aliquotaefetiva",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "aliquotaefetiva()"
     },
     {
@@ -6731,8 +6731,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "lib_taxcalc_calcularimpostos",
-      "community": 58,
-      "community_name": "react",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "calcularimpostos()"
     },
     {
@@ -6984,8 +6984,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "lib_victor_distribution_r2",
-      "community": 64,
-      "community_name": "MemoriaCalculo.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "r2()"
     },
     {
@@ -7325,8 +7325,8 @@
       "source_location": "L430",
       "_origin": "ast",
       "id": "lib_victor_rateio_agruparporpayable",
-      "community": 64,
-      "community_name": "MemoriaCalculo.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "agruparporpayable()"
     },
     {
@@ -7336,8 +7336,8 @@
       "source_location": "L468",
       "_origin": "ast",
       "id": "lib_victor_rateio_quitacoesporobrigacao",
-      "community": 64,
-      "community_name": "MemoriaCalculo.jsx",
+      "community": 67,
+      "community_name": "Clientes.jsx",
       "norm_label": "quitacoesporobrigacao()"
     },
     {
@@ -8172,8 +8172,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_copybutton",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 58,
+      "community_name": "react",
       "norm_label": "copybutton.jsx"
     },
     {
@@ -8183,9 +8183,130 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_copybutton_copybutton",
-      "community": 7,
-      "community_name": "Financial.jsx",
+      "community": 58,
+      "community_name": "react",
       "norm_label": "copybutton()"
+    },
+    {
+      "label": "HorasCalendar.jsx",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_components_horascalendar",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "horascalendar.jsx"
+    },
+    {
+      "label": "DIAS_SEMANA",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_dias_semana",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "dias_semana"
+    },
+    {
+      "label": "DIAS_EXTENSO",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_dias_extenso",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "dias_extenso"
+    },
+    {
+      "label": "PALETA",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_paleta",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "paleta"
+    },
+    {
+      "label": "corDoCliente()",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L29",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_cordocliente",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "cordocliente()"
+    },
+    {
+      "label": "hhmm()",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_hhmm",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "hhmm()"
+    },
+    {
+      "label": "p2()",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_p2",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "p2()"
+    },
+    {
+      "label": "chave()",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L42",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_chave",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "chave()"
+    },
+    {
+      "label": "rotuloDia()",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L45",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_rotulodia",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "rotulodia()"
+    },
+    {
+      "label": "useIsMobile()",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L51",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_useismobile",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "useismobile()"
+    },
+    {
+      "label": "HorasCalendar()",
+      "file_type": "code",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L63",
+      "_origin": "ast",
+      "id": "src_components_horascalendar_horascalendar",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
+      "norm_label": "horascalendar()"
     },
     {
       "label": "Layout.jsx",
@@ -8337,8 +8458,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_nfsecancelmodal_nfsecancelmodal",
-      "community": 60,
-      "community_name": "react",
+      "community": 34,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "nfsecancelmodal()"
     },
     {
@@ -8436,8 +8557,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "src_components_nfsesincronizarmodal_nfsesincronizarmodal",
-      "community": 34,
-      "community_name": "payment-source-tracker.js",
+      "community": 60,
+      "community_name": "react",
       "norm_label": "nfsesincronizarmodal()"
     },
     {
@@ -8557,8 +8678,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_lib_dateutils",
-      "community": 58,
-      "community_name": "react",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "dateutils.js"
     },
     {
@@ -8568,8 +8689,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_lib_dateutils_todaybr",
-      "community": 58,
-      "community_name": "react",
+      "community": 72,
+      "community_name": "payment-source-tracker.js",
       "norm_label": "todaybr()"
     },
     {
@@ -9140,8 +9261,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_demands",
-      "community": 78,
-      "community_name": "Demands.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "demands.jsx"
     },
     {
@@ -9151,8 +9272,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_demands_status_options",
-      "community": 78,
-      "community_name": "Demands.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "status_options"
     },
     {
@@ -9162,8 +9283,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "src_pages_demands_status_colors",
-      "community": 78,
-      "community_name": "Demands.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "status_colors"
     },
     {
@@ -9173,8 +9294,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_pages_demands_demands",
-      "community": 78,
-      "community_name": "Demands.jsx",
+      "community": 0,
+      "community_name": "main.jsx",
       "norm_label": "demands()"
     },
     {
@@ -9184,8 +9305,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_emailrules",
-      "community": 80,
-      "community_name": "EmailRules.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "emailrules.jsx"
     },
     {
@@ -9195,8 +9316,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "src_pages_emailrules_rule_types",
-      "community": 80,
-      "community_name": "EmailRules.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "rule_types"
     },
     {
@@ -9206,8 +9327,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_pages_emailrules_emailrules",
-      "community": 80,
-      "community_name": "EmailRules.jsx",
+      "community": 62,
+      "community_name": "Dashboard.jsx",
       "norm_label": "emailrules()"
     },
     {
@@ -10042,8 +10163,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_pages_settings",
-      "community": 79,
-      "community_name": "Settings.jsx",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "settings.jsx"
     },
     {
@@ -10053,8 +10174,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_pages_settings_regimes",
-      "community": 79,
-      "community_name": "Settings.jsx",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "regimes"
     },
     {
@@ -10064,8 +10185,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_pages_settings_empty",
-      "community": 79,
-      "community_name": "Settings.jsx",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "empty"
     },
     {
@@ -10075,8 +10196,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_pages_settings_settings",
-      "community": 79,
-      "community_name": "Settings.jsx",
+      "community": 4,
+      "community_name": "6. Regras de neg\u00f3cio financeiro",
       "norm_label": "settings()"
     },
     {
@@ -10094,7 +10215,7 @@
       "label": "BADGE_COBRANCA",
       "file_type": "code",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L7",
+      "source_location": "L8",
       "_origin": "ast",
       "id": "src_pages_timeentries_badge_cobranca",
       "community": 10,
@@ -10105,7 +10226,7 @@
       "label": "decimalToHHMM()",
       "file_type": "code",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L13",
+      "source_location": "L14",
       "_origin": "ast",
       "id": "src_pages_timeentries_decimaltohhmm",
       "community": 10,
@@ -10116,7 +10237,7 @@
       "label": "TimeEntries()",
       "file_type": "code",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L21",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "src_pages_timeentries_timeentries",
       "community": 10,
@@ -12611,6 +12732,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_copybutton",
+      "target": "ref_react",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
       "target": "ref_react",
       "confidence_score": 1.0
     },
@@ -24615,6 +24748,18 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "lib_billing_type",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/pages/Contracts.jsx",
       "source_location": "L4",
       "weight": 1.0,
@@ -24640,7 +24785,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -24676,7 +24821,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -24808,7 +24953,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -24821,7 +24966,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L332",
+      "source_location": "L345",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries_timeentries",
@@ -24904,7 +25049,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -25071,8 +25216,32 @@
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "lib_billing_type_chavedata",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L71",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar_horascalendar",
+      "target": "lib_billing_type_chavedata"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -25085,7 +25254,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L326",
+      "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries_timeentries",
@@ -25132,7 +25301,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -32253,7 +32422,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L4",
+      "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -32277,7 +32446,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L4",
+      "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -34581,6 +34750,260 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L42",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_chave",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_cordocliente",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_dias_extenso",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_dias_semana",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L36",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_hhmm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L63",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_horascalendar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L41",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_p2",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_paleta",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L45",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_rotulodia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_components_horascalendar_useismobile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_lib_dateutils",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar",
+      "target": "src_lib_dateutils_todaybr",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/TimeEntries.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_timeentries",
+      "target": "src_components_horascalendar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L142",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar_horascalendar",
+      "target": "src_components_horascalendar_cordocliente",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L111",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar_horascalendar",
+      "target": "src_components_horascalendar_hhmm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L42",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar_chave",
+      "target": "src_components_horascalendar_p2",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L48",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar_rotulodia",
+      "target": "src_components_horascalendar_p2",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L173",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar_horascalendar",
+      "target": "src_components_horascalendar_chave",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L109",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar_horascalendar",
+      "target": "src_components_horascalendar_rotulodia",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L65",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar_horascalendar",
+      "target": "src_components_horascalendar_useismobile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/components/HorasCalendar.jsx",
+      "source_location": "L68",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_components_horascalendar_horascalendar",
+      "target": "src_lib_dateutils_todaybr"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/pages/TimeEntries.jsx",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_pages_timeentries",
+      "target": "src_components_horascalendar_horascalendar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "src/components/Layout.jsx",
       "source_location": "L6",
       "weight": 1.0,
@@ -35532,7 +35955,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L34",
+      "source_location": "L35",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries_timeentries",
@@ -37956,7 +38379,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L7",
+      "source_location": "L8",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -37967,7 +38390,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -37978,7 +38401,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries",
@@ -37990,7 +38413,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/pages/TimeEntries.jsx",
-      "source_location": "L407",
+      "source_location": "L370",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_pages_timeentries_timeentries",
@@ -40210,5 +40633,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "e250d2100a31a8d1d1cd606d1fc644c84adc21da"
+  "built_at_commit": "d937bea75b9e532e3d74ddd03ab842c4bf17ac3d"
 }

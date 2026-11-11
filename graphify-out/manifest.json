@@ -170,8 +170,8 @@
     "semantic_hash": ""
   },
   "src/pages/TimeEntries.jsx": {
-    "mtime": 1792840060.1835575,
-    "ast_hash": "f88c1e44a01098e038ca5730c2f2d566",
+    "mtime": 1794374105.5764883,
+    "ast_hash": "6798849cd52b4763829d28462ffcc79d",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -852,6 +852,11 @@
   "lib/contract-rule.test.js": {
     "mtime": 1792856415.6985843,
     "ast_hash": "1414e8ec0ead7ca003b0d083e85ed8eb",
+    "semantic_hash": ""
+  },
+  "src/components/HorasCalendar.jsx": {
+    "mtime": 1794374122.0291696,
+    "ast_hash": "a135c5dcda6eda9ebb34a50490f86b25",
     "semantic_hash": ""
   }
 }
