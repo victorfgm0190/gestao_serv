@@ -1,7 +1,19 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Tema ANTES do React montar: sem isto a página pisca no tema errado. Escolha salva
+         em localStorage "theme" ('light'|'dark'); sem escolha, segue o sistema. -->
+    <script>
+      (function () {
+        var t = null
+        try { t = localStorage.getItem('theme') } catch (e) {}
+        if (t !== 'light' && t !== 'dark') {
+          t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+        }
+        if (t === 'dark') document.documentElement.classList.add('dark')
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>gestao_serv</title>

@@ -2,24 +2,94 @@
 @tailwind components;
 @tailwind utilities;
 
-/* O fundo escuro mora no documento inteiro, não só no container do Layout: se qualquer
-   coisa transbordar a viewport (sidebar mais alto que a tela, overscroll do navegador),
-   o que aparece por trás é escuro — nunca branco. Mesma cor do <main> (gray-950). */
+/* Tokens de cor (canais RGB). :root = tema claro; .dark = tema escuro, com os valores
+   EXATOS da paleta gray do Tailwind que as telas usavam antes dos tokens — o escuro não
+   pode mudar. Contraste do claro conferido para AA (≥ 4,5:1) sobre surface: text 17,9 ·
+   muted 7,6 · subtle 4,8 · primary 5,2 · victor 6,7 · fabricio 5,7 · danger 4,8 ·
+   success 5,0 · warning 5,0. `faintest` é só para desabilitado/decorativo. */
+:root {
+  --bg: 245 247 251;            /* #f5f7fb */
+  --surface: 255 255 255;
+  --surface-2: 238 241 246;     /* #eef1f6 */
+  --surface-3: 226 230 238;     /* #e2e6ee */
+  --surface-4: 213 219 229;
+  --sidebar: 255 255 255;
+  --border: 226 230 238;        /* #e2e6ee */
+  --border-strong: 203 210 221;
+  --border-stronger: 182 191 204;
+  --text: 15 23 42;             /* #0f172a */
+  --text-1: 15 23 42;
+  --text-2: 30 41 59;
+  --text-3: 51 65 85;
+  --muted: 71 85 105;           /* #475569 */
+  --subtle: 100 116 139;        /* #64748b — #94a3b8 dava 2,6:1 */
+  --faint: 100 116 139;
+  --faintest: 148 163 184;
+  --primary: 37 99 235;         /* #2563eb */
+  --primary-fg: 255 255 255;
+  --success: 21 128 61;         /* #15803d — #16a34a dava 3,3:1 */
+  --danger: 220 38 38;          /* #dc2626 */
+  --warning: 180 83 9;          /* #b45309 */
+  --victor: 29 78 216;          /* #1d4ed8 */
+  --fabricio: 124 58 237;       /* #7c3aed */
+  /* Listras da outra empresa no calendário (cor completa, já com a opacidade). */
+  --listrado-chip: rgba(100, 116, 139, 0.22);
+  --listrado-celula: rgba(100, 116, 139, 0.09);
+  --scroll-thumb: #cbd2dd;
+  --scroll-thumb-hover: #b6bfcc;
+}
+.dark {
+  --bg: 3 7 18;                 /* gray-950 */
+  --surface: 17 24 39;          /* gray-900 */
+  --surface-2: 31 41 55;        /* gray-800 */
+  --surface-3: 55 65 81;        /* gray-700 */
+  --surface-4: 75 85 99;        /* gray-600 */
+  --sidebar: 17 24 39;          /* gray-900 */
+  --border: 31 41 55;           /* gray-800 */
+  --border-strong: 55 65 81;    /* gray-700 */
+  --border-stronger: 75 85 99;  /* gray-600 */
+  --text: 255 255 255;          /* white */
+  --text-1: 243 244 246;        /* gray-100 */
+  --text-2: 229 231 235;        /* gray-200 */
+  --text-3: 209 213 219;        /* gray-300 */
+  --muted: 156 163 175;         /* gray-400 */
+  --subtle: 107 114 128;        /* gray-500 */
+  --faint: 75 85 99;            /* gray-600 */
+  --faintest: 55 65 81;         /* gray-700 */
+  --primary: 37 99 235;         /* blue-600 */
+  --primary-fg: 255 255 255;
+  --success: 74 222 128;        /* green-400 */
+  --danger: 248 113 113;        /* red-400 */
+  --warning: 251 191 36;        /* amber-400 */
+  --victor: 96 165 250;         /* blue-400 */
+  --fabricio: 192 132 252;      /* purple-400 */
+  --listrado-chip: rgba(156, 163, 175, 0.18);
+  --listrado-celula: rgba(156, 163, 175, 0.06);
+  --scroll-thumb: #374151;
+  --scroll-thumb-hover: #4b5563;
+}
+
+/* O fundo mora no documento inteiro, não só no container do Layout: se qualquer coisa
+   transbordar a viewport (sidebar mais alto que a tela, overscroll do navegador), o que
+   aparece por trás é o fundo do tema — nunca a cor errada. */
 html, body, #root {
   height: 100%;
   min-height: 100%;
 }
 html, body {
-  background-color: #030712;
+  background-color: rgb(var(--bg));
+  color-scheme: light;
+}
+html.dark, html.dark body {
   color-scheme: dark;
 }
 
 /* Scrollbar discreta para áreas com rolagem própria (lista de menus do sidebar). */
 .scrollbar-discreta {
   scrollbar-width: thin;
-  scrollbar-color: #374151 transparent;
+  scrollbar-color: var(--scroll-thumb) transparent;
 }
 .scrollbar-discreta::-webkit-scrollbar { width: 6px; }
 .scrollbar-discreta::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-discreta::-webkit-scrollbar-thumb { background-color: #374151; border-radius: 3px; }
-.scrollbar-discreta::-webkit-scrollbar-thumb:hover { background-color: #4b5563; }
+.scrollbar-discreta::-webkit-scrollbar-thumb { background-color: var(--scroll-thumb); border-radius: 3px; }
+.scrollbar-discreta::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-hover); }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { temaAtual, aplicarTema } from '../lib/theme'
 import { Outlet, NavLink } from 'react-router-dom'
 import useNotifications from '../hooks/useNotifications'
 import { getUser, isMaster, logout } from '../lib/session'
@@ -10,11 +11,17 @@ const companies = [
 
 const navClass = ({ isActive }) =>
   `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-    isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+    isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
   }`
 
 export default function Layout() {
   const [activeCompany, setActiveCompany] = useState(companies[0])
+  const [tema, setTema] = useState(temaAtual)
+  function alternarTema() {
+    const novo = tema === 'dark' ? 'light' : 'dark'
+    aplicarTema(novo)
+    setTema(novo)
+  }
   const user = getUser()
   const master = isMaster()
 
@@ -25,17 +32,17 @@ export default function Layout() {
     // menus, cada um por conta própria. Antes o <aside> não tinha rolagem e, com a lista
     // de menus maior que a tela, o rodapé (empresa + Sair) vazava para fora do container
     // e aparecia sobre o fundo branco do body.
-    <div className="flex h-screen overflow-hidden bg-gray-950 text-white">
+    <div className="flex h-screen overflow-hidden bg-bg text-text">
       {/* Sidebar */}
-      <aside className="w-64 shrink-0 h-screen sticky top-0 bg-gray-900 border-r border-gray-800 flex flex-col overflow-hidden">
+      <aside className="w-64 shrink-0 h-screen sticky top-0 bg-sidebar border-r border-border flex flex-col overflow-hidden">
         {/* Logo */}
-        <div className="p-6 border-b border-gray-800 shrink-0">
-          <h1 className="text-xl font-bold text-white">Gestão Serv</h1>
+        <div className="p-6 border-b border-border shrink-0">
+          <h1 className="text-xl font-bold text-text">Gestão Serv</h1>
         </div>
 
         {/* Company Switcher */}
-        <div className="p-4 border-b border-gray-800 shrink-0">
-          <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">Empresa</p>
+        <div className="p-4 border-b border-border shrink-0">
+          <p className="text-xs text-subtle uppercase tracking-wider mb-2">Empresa</p>
           <div className="flex gap-2">
             {companies.map(c => (
               <button
@@ -43,8 +50,8 @@ export default function Layout() {
                 onClick={() => setActiveCompany(c)}
                 className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                   activeCompany.id === c.id
-                    ? 'text-white shadow-lg'
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    ? 'text-white shadow-lg' /* fundo = cor da empresa (inline): branco nos dois temas */
+                    : 'bg-surface-2 text-muted hover:bg-surface-3'
                 }`}
                 style={activeCompany.id === c.id ? { backgroundColor: c.color } : {}}
               >
@@ -62,7 +69,7 @@ export default function Layout() {
             end
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
               }`
             }
           >
@@ -72,7 +79,7 @@ export default function Layout() {
             to="/demands"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
               }`
             }
           >
@@ -82,7 +89,7 @@ export default function Layout() {
             to="/email-rules"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
               }`
             }
           >
@@ -92,7 +99,7 @@ export default function Layout() {
             to="/clientes"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
               }`
             }
           >
@@ -102,7 +109,7 @@ export default function Layout() {
             to="/time-entries"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
               }`
             }
           >
@@ -112,7 +119,7 @@ export default function Layout() {
             to="/financial-rules"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
               }`
             }
           >
@@ -122,7 +129,7 @@ export default function Layout() {
             to="/contracts"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
               }`
             }
           >
@@ -132,7 +139,7 @@ export default function Layout() {
             to="/financial"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
               }`
             }
           >
@@ -142,7 +149,7 @@ export default function Layout() {
             to="/billing"
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                isActive ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                isActive ? 'bg-surface-3 text-text' : 'text-muted hover:bg-surface-2 hover:text-text'
               }`
             }
           >
@@ -175,24 +182,32 @@ export default function Layout() {
         </nav>
 
         {/* Usuário logado + empresa ativa */}
-        <div className="p-4 border-t border-gray-800 space-y-3 shrink-0 bg-gray-900">
+        <div className="p-4 border-t border-border space-y-3 shrink-0 bg-sidebar">
           <div className="flex items-center gap-2">
             <div
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: activeCompany.color }}
             />
-            <span className="text-xs text-gray-400">{activeCompany.name}</span>
+            <span className="text-xs text-muted">{activeCompany.name}</span>
           </div>
+          <button
+            onClick={alternarTema}
+            title={tema === 'dark' ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'}
+            className="w-full flex items-center gap-2 px-3 py-1.5 bg-surface-2 hover:bg-surface-3 text-muted hover:text-text rounded-lg text-xs transition-colors"
+          >
+            <span>{tema === 'dark' ? '☀️' : '🌙'}</span>
+            {tema === 'dark' ? 'Tema claro' : 'Tema escuro'}
+          </button>
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-sm text-white truncate">{user?.name || user?.username || 'Usuário'}</p>
-              {master && <p className="text-xs text-amber-400">administrador master</p>}
+              <p className="text-sm text-text truncate">{user?.name || user?.username || 'Usuário'}</p>
+              {master && <p className="text-xs text-amber-700 dark:text-amber-400">administrador master</p>}
             </div>
             <button
               onClick={logout}
               title="Sair"
               aria-label="Sair do sistema"
-              className="shrink-0 px-3 py-1.5 bg-gray-800 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-lg text-xs transition-colors"
+              className="shrink-0 px-3 py-1.5 bg-surface-2 hover:bg-red-100 dark:hover:bg-red-500/20 text-muted hover:text-red-700 dark:hover:text-red-400 rounded-lg text-xs transition-colors"
             >
               Sair
             </button>
@@ -201,7 +216,7 @@ export default function Layout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-gray-950">
+      <main className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-bg">
         <Outlet context={{ activeCompany, setActiveCompany, companies }} />
       </main>
     </div>
