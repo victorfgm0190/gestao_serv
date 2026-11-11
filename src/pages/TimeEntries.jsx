@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { todayBR } from '../lib/dateUtils'
 import HorasCalendar from '../components/HorasCalendar'
+import { sobrepoe, faixaHorario } from '../lib/horasConflito'
 import { calcular } from '../../lib/time-entry-calc.js'
 import { tipoDaRegra, valoresDaRegra, chaveData, cotaDaDiaria, ROTULO_COBRANCA } from '../../lib/billing-type.js'
 
@@ -20,7 +21,8 @@ function decimalToHHMM(decimal) {
 }
 
 export default function TimeEntries() {
-  const { activeCompany } = useOutletContext()
+  const { activeCompany, setActiveCompany, companies = [] } = useOutletContext()
+  const outraEmpresa = companies.find(c => c.id !== activeCompany.id) || null
   const [entries, setEntries] = useState([])
   const [clients, setClients] = useState([])
   const [rules, setRules] = useState([])
@@ -58,6 +60,28 @@ export default function TimeEntries() {
     setView(v)
     try { localStorage.setItem('horas_view', v) } catch { /* sem persistência */ }
   }
+  // Apontamentos da OUTRA empresa no mesmo mês — só leitura, só no calendário,
+  // para ver os dias já ocupados. Nunca entram em total, card ou Excel.
+  const [mostrarOutra, setMostrarOutra] = useState(() => {
+    try { return localStorage.getItem('horas_cal_outra_empresa') !== 'false' } catch { return true }
+  })
+  function mudarMostrarOutra(v) {
+    setMostrarOutra(v)
+    try { localStorage.setItem('horas_cal_outra_empresa', String(v)) } catch { /* sem persistência */ }
+  }
+  const [outraEntries, setOutraEntries] = useState([])
+  const outraId = outraEmpresa?.id
+  useEffect(() => {
+    setOutraEntries([])
+    if (view !== 'calendario' || !mostrarOutra || !outraId) return
+    let vivo = true
+    fetch(`/api/time-entries?company_id=${outraId}&month=${filterMonth}&year=${filterYear}`)
+      .then(r => r.ok ? r.json() : { entries: [] })
+      .then(d => { if (vivo) setOutraEntries(d.entries || []) })
+      .catch(e => console.error(e))
+    // Troca rápida de mês/empresa: a resposta antiga não pode sobrescrever a nova.
+    return () => { vivo = false }
+  }, [view, mostrarOutra, outraId, filterMonth, filterYear])
 
   useEffect(() => { fetchAll() }, [activeCompany, filterMonth, filterYear])
   useEffect(() => { setFilterClient('') }, [activeCompany, filterMonth])
@@ -417,9 +441,9 @@ export default function TimeEntries() {
   const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
+    <div className="p-8 min-w-0 max-w-full">
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div className="min-w-0">
           <h2 className="text-2xl font-bold text-white">Apontamento de Horas</h2>
           <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
         </div>
@@ -474,7 +498,7 @@ export default function TimeEntries() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-3 gap-4 mb-6 min-w-0">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
           <p className="text-gray-400 text-xs mb-1">Total horas</p>
           <p className="text-white text-xl font-bold">{decimalToHHMM(totalHoras)}</p>
@@ -524,6 +548,12 @@ export default function TimeEntries() {
           fmt={fmt}
           renderEntry={renderEntry}
           onNewOnDay={openNew}
+          outras={outraEntries}
+          ativa={activeCompany}
+          outra={outraEmpresa}
+          mostrarOutra={mostrarOutra}
+          onToggleOutra={mudarMostrarOutra}
+          onVerNaOutra={() => outraEmpresa && setActiveCompany?.(outraEmpresa)}
         />
       ) : loading ? <div className="text-gray-500 text-sm">Carregando...</div> : filteredEntries.length === 0 ? (
         <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">⏱️</p><p>Nenhum lançamento neste período.</p></div>
@@ -588,6 +618,17 @@ export default function TimeEntries() {
                 )}
               </div>
 
+              {(() => {
+                // Aviso, não trava: só compara com o que já está carregado (mês
+                // em tela, visão Calendário com a outra empresa ligada).
+                const conflitos = outraEntries.filter(o => chaveData(o.entry_date) === form.entry_date && sobrepoe(form, o))
+                if (!conflitos.length) return null
+                return (
+                  <p className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                    ⚠️ Você já tem horas na {outraEmpresa?.name} neste dia: {conflitos.map(o => `${faixaHorario(o)} (${o.client_name || 'Sem cliente'})`).join(', ')}
+                  </p>
+                )
+              })()}
               <textarea placeholder="Descrição da atividade" value={form.description} onChange={e=>updateForm('description',e.target.value)} rows={3} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
               <input placeholder="Horas de deslocamento (opcional)" type="number" step="0.5" value={form.hours_fuel} onChange={e=>updateForm('hours_fuel',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
               {contratoSelecionado(form)?.deslocamento_tipo === 'hora_despesas' && (

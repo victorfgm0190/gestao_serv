@@ -202,7 +202,7 @@ export default function Layout() {
 
       {/* Main content */}
       <main className="flex-1 min-w-0 min-h-0 overflow-y-auto bg-gray-950">
-        <Outlet context={{ activeCompany }} />
+        <Outlet context={{ activeCompany, setActiveCompany, companies }} />
       </main>
     </div>
   )

@@ -91,6 +91,11 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const { company_id, month, year } = req.query
+    // company_id é explícito (o calendário lê a OUTRA empresa para marcar dias
+    // ocupados), então só aceita as duas empresas que existem.
+    if (!['1', '2'].includes(String(company_id))) {
+      return res.status(400).json({ error: 'company_id inválido (use 1 ou 2)' })
+    }
     if (month && year) {
       const entries = await sql`
         SELECT te.*, c.name as client_name, ct.name as contract_name
