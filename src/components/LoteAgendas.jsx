@@ -49,7 +49,7 @@ function gerarPeriodo(de, ate, semana) {
   return out
 }
 
-const inputCls = 'w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500'
+const inputCls = 'w-full bg-surface-2 border border-border-strong rounded-lg px-2 py-1.5 text-text text-sm focus:outline-none focus:border-blue-500'
 
 export default function LoteAgendas({ activeCompany, outraEmpresa, clients, rules, diasIniciais, mesRef, onClose, onDone }) {
   const vindoDoCalendario = Array.isArray(diasIniciais) && diasIniciais.length > 0
@@ -207,13 +207,13 @@ export default function LoteAgendas({ activeCompany, outraEmpresa, clients, rule
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-4xl max-h-[92vh] overflow-y-auto">
+      <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-4xl max-h-[92vh] overflow-y-auto">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div>
-            <h3 className="text-lg font-bold text-white">Lançar em lote</h3>
-            <p className="text-gray-500 text-xs mt-1">Marca os dias com o mesmo horário. A descrição pode ficar vazia e ser completada depois, editando cada OS.</p>
+            <h3 className="text-lg font-bold text-text">Lançar em lote</h3>
+            <p className="text-subtle text-xs mt-1">Marca os dias com o mesmo horário. A descrição pode ficar vazia e ser completada depois, editando cada OS.</p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white text-sm">✕</button>
+          <button onClick={onClose} className="text-subtle hover:text-text text-sm">✕</button>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
@@ -230,65 +230,65 @@ export default function LoteAgendas({ activeCompany, outraEmpresa, clients, rule
               })}
             </select>
             {clientId && !loadingContracts && clientContracts.length === 0 && (
-              <p className="text-amber-400 text-xs">Este cliente não possui contrato ativo. Cadastre um contrato antes de lançar horas.</p>
+              <p className="text-amber-700 dark:text-amber-400 text-xs">Este cliente não possui contrato ativo. Cadastre um contrato antes de lançar horas.</p>
             )}
 
-            <div className="bg-gray-800 rounded-xl p-3 space-y-2">
-              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Horário padrão (todos os dias)</p>
+            <div className="bg-surface-2 rounded-xl p-3 space-y-2">
+              <p className="text-muted text-xs font-medium uppercase tracking-wider">Horário padrão (todos os dias)</p>
               <div className="grid grid-cols-4 gap-2">
                 {[['hora_inicial', 'Início'], ['intervalo_inicio', 'Int. início'], ['intervalo_fim', 'Int. fim'], ['hora_final', 'Final']].map(([campo, rot]) => (
                   <div key={campo} className="min-w-0">
-                    <label className="text-gray-500 text-[11px] block mb-0.5">{rot}</label>
+                    <label className="text-subtle text-[11px] block mb-0.5">{rot}</label>
                     <input type="time" value={padrao[campo]} onChange={e => setPadrao(p => ({ ...p, [campo]: e.target.value }))} className={`${inputCls} px-1`} />
                   </div>
                 ))}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-gray-500 text-[11px] block mb-0.5">Horas de deslocamento</label>
+                  <label className="text-subtle text-[11px] block mb-0.5">Horas de deslocamento</label>
                   <input type="number" step="0.5" value={padrao.hours_fuel} onChange={e => setPadrao(p => ({ ...p, hours_fuel: e.target.value }))} className={inputCls} />
                 </div>
                 <div>
-                  <label className="text-gray-500 text-[11px] block mb-0.5">Despesas (R$)</label>
+                  <label className="text-subtle text-[11px] block mb-0.5">Despesas (R$)</label>
                   <input type="number" step="0.01" value={padrao.despesas_deslocamento} onChange={e => setPadrao(p => ({ ...p, despesas_deslocamento: e.target.value }))} disabled={contrato?.deslocamento_tipo !== 'hora_despesas'} title={contrato?.deslocamento_tipo !== 'hora_despesas' ? 'O contrato não cobra despesas de deslocamento' : ''} className={`${inputCls} disabled:opacity-40`} />
                 </div>
               </div>
             </div>
-            <textarea placeholder="Descrição (opcional — pode completar depois)" value={description} onChange={e => setDescription(e.target.value)} rows={2} className={`${inputCls} resize-none placeholder-gray-500`} />
+            <textarea placeholder="Descrição (opcional — pode completar depois)" value={description} onChange={e => setDescription(e.target.value)} rows={2} className={`${inputCls} resize-none placeholder-subtle`} />
           </div>
 
           <div className="space-y-3">
             {vindoDoCalendario ? (
-              <p className="text-gray-400 text-xs bg-gray-800 rounded-lg px-3 py-2">{diasIniciais.length} dia(s) selecionado(s) no calendário. Remova na tabela com ✕.</p>
+              <p className="text-muted text-xs bg-surface-2 rounded-lg px-3 py-2">{diasIniciais.length} dia(s) selecionado(s) no calendário. Remova na tabela com ✕.</p>
             ) : (
               <>
-                <div className="bg-gray-800 rounded-xl p-3 space-y-2">
-                  <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Período</p>
+                <div className="bg-surface-2 rounded-xl p-3 space-y-2">
+                  <p className="text-muted text-xs font-medium uppercase tracking-wider">Período</p>
                   <div className="grid grid-cols-2 gap-2">
                     <input type="date" value={de} onChange={e => setDe(e.target.value)} className={inputCls} />
                     <input type="date" value={ate} onChange={e => setAte(e.target.value)} className={inputCls} />
                   </div>
                   <div className="flex gap-1 flex-wrap">
                     {SEMANA.map((s, i) => (
-                      <label key={s} className={`px-2 py-1 rounded-md text-xs cursor-pointer select-none ${semana[i] ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-400'}`}>
+                      <label key={s} className={`px-2 py-1 rounded-md text-xs cursor-pointer select-none ${semana[i] ? 'bg-blue-600 text-white' : 'bg-surface-3 text-muted'}`}>
                         <input type="checkbox" className="hidden" checked={semana[i]} onChange={() => setSemana(w => w.map((v, j) => (j === i ? !v : v)))} />{s}
                       </label>
                     ))}
                   </div>
                 </div>
-                <div className="bg-gray-800 rounded-xl p-3">
+                <div className="bg-surface-2 rounded-xl p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <button onClick={() => navegar(-1)} className="text-gray-400 hover:text-white text-xs px-2">‹</button>
-                    <span className="text-gray-300 text-xs font-medium">{p2(cal.m)}/{cal.y} — clique para marcar/desmarcar</span>
-                    <button onClick={() => navegar(1)} className="text-gray-400 hover:text-white text-xs px-2">›</button>
+                    <button onClick={() => navegar(-1)} className="text-muted hover:text-text text-xs px-2">‹</button>
+                    <span className="text-text-3 text-xs font-medium">{p2(cal.m)}/{cal.y} — clique para marcar/desmarcar</span>
+                    <button onClick={() => navegar(1)} className="text-muted hover:text-text text-xs px-2">›</button>
                   </div>
                   <div className="grid grid-cols-7 gap-1 text-center">
-                    {SEMANA.map(s => <span key={s} className="text-[10px] text-gray-500">{s}</span>)}
+                    {SEMANA.map(s => <span key={s} className="text-[10px] text-subtle">{s}</span>)}
                     {celulas.map((d, i) => {
                       if (d === null) return <span key={i} />
                       const k = chave(cal.y, cal.m, d)
                       const on = dias.includes(k)
-                      return <button key={i} onClick={() => alternarDia(k)} className={`text-xs rounded py-1 ${on ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-700'}`}>{d}</button>
+                      return <button key={i} onClick={() => alternarDia(k)} className={`text-xs rounded py-1 ${on ? 'bg-blue-600 text-white' : 'text-muted hover:bg-surface-3'}`}>{d}</button>
                     })}
                   </div>
                 </div>
@@ -300,17 +300,17 @@ export default function LoteAgendas({ activeCompany, outraEmpresa, clients, rule
         {/* Pré-visualização */}
         <div className="mt-5">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Pré-visualização</p>
-            {carregandoAvisos && <span className="text-gray-500 text-xs">verificando OS existentes e {outraEmpresa?.name}…</span>}
+            <p className="text-muted text-xs font-medium uppercase tracking-wider">Pré-visualização</p>
+            {carregandoAvisos && <span className="text-subtle text-xs">verificando OS existentes e {outraEmpresa?.name}…</span>}
           </div>
-          {!contractId && <p className="text-gray-500 text-xs mb-2">Escolha cliente e contrato para calcular os valores.</p>}
+          {!contractId && <p className="text-subtle text-xs mb-2">Escolha cliente e contrato para calcular os valores.</p>}
           {linhas.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-6">Nenhum dia selecionado.</p>
+            <p className="text-subtle text-sm text-center py-6">Nenhum dia selecionado.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-gray-500 text-left border-b border-gray-800">
+                  <tr className="text-subtle text-left border-b border-border">
                     <th className="py-1.5 pr-2 font-medium">Data</th>
                     <th className="py-1.5 pr-2 font-medium">Horário</th>
                     <th className="py-1.5 pr-2 font-medium text-right">Horas</th>
@@ -323,40 +323,40 @@ export default function LoteAgendas({ activeCompany, outraEmpresa, clients, rule
                 </thead>
                 <tbody>
                   {linhas.map(l => (
-                    <tr key={l.d} className={`border-b border-gray-800/60 align-top ${l.pulada ? 'opacity-50' : ''}`}>
-                      <td className="py-1.5 pr-2 text-white whitespace-nowrap">{rotulo(l.d)}</td>
+                    <tr key={l.d} className={`border-b border-border/60 align-top ${l.pulada ? 'opacity-50' : ''}`}>
+                      <td className="py-1.5 pr-2 text-text whitespace-nowrap">{rotulo(l.d)}</td>
                       <td className="py-1.5 pr-2">
                         {editando === l.d ? (
                           <div className="flex gap-1 flex-wrap">
                             {HORARIOS.map(h => (
-                              <input key={h} type="time" value={l.t[h]} onChange={e => mudarHorarioLinha(l.d, h, e.target.value)} className="bg-gray-800 border border-gray-700 rounded px-1 py-0.5 text-white text-xs w-[5.5rem]" />
+                              <input key={h} type="time" value={l.t[h]} onChange={e => mudarHorarioLinha(l.d, h, e.target.value)} className="bg-surface-2 border border-border-strong rounded px-1 py-0.5 text-text text-xs w-[5.5rem]" />
                             ))}
-                            <button onClick={() => setEditando(null)} className="text-blue-400 px-1">ok</button>
+                            <button onClick={() => setEditando(null)} className="text-blue-700 dark:text-blue-400 px-1">ok</button>
                           </div>
                         ) : (
-                          <button onClick={() => setEditando(l.d)} title="Ajustar o horário só deste dia" className={`font-mono hover:text-blue-400 ${l.customizada ? 'text-amber-300' : 'text-gray-300'}`}>
+                          <button onClick={() => setEditando(l.d)} title="Ajustar o horário só deste dia" className={`font-mono hover:text-blue-700 dark:hover:text-blue-400 ${l.customizada ? 'text-amber-700 dark:text-amber-300' : 'text-text-3'}`}>
                             {faixaHorario(l.t) || '--'}{l.t.intervalo_inicio && l.t.intervalo_fim ? ` (int ${l.t.intervalo_inicio}–${l.t.intervalo_fim})` : ''} ✎
                           </button>
                         )}
                       </td>
-                      <td className={`py-1.5 pr-2 text-right font-mono ${l.hours <= 0 ? 'text-red-400' : 'text-gray-300'}`}>{hhmm(l.hours)}</td>
-                      <td className="py-1.5 pr-2 text-right text-gray-300 whitespace-nowrap">{l.calc ? fmt(l.calc.gross_value) : '—'}</td>
-                      <td className="py-1.5 pr-2 text-right text-blue-400 whitespace-nowrap">{l.calc ? fmt(l.calc.victor_share) : '—'}</td>
-                      <td className="py-1.5 pr-2 text-right text-purple-400 whitespace-nowrap">{l.calc ? fmt(l.calc.fabricio_share) : '—'}</td>
+                      <td className={`py-1.5 pr-2 text-right font-mono ${l.hours <= 0 ? 'text-red-700 dark:text-red-400' : 'text-text-3'}`}>{hhmm(l.hours)}</td>
+                      <td className="py-1.5 pr-2 text-right text-text-3 whitespace-nowrap">{l.calc ? fmt(l.calc.gross_value) : '—'}</td>
+                      <td className="py-1.5 pr-2 text-right text-victor whitespace-nowrap">{l.calc ? fmt(l.calc.victor_share) : '—'}</td>
+                      <td className="py-1.5 pr-2 text-right text-fabricio whitespace-nowrap">{l.calc ? fmt(l.calc.fabricio_share) : '—'}</td>
                       <td className="py-1.5 pr-2">
-                        {l.duplicadas.length > 0 && <p className="text-amber-300">Já existe OS deste cliente neste dia</p>}
+                        {l.duplicadas.length > 0 && <p className="text-amber-700 dark:text-amber-300">Já existe OS deste cliente neste dia</p>}
                         {l.conflitos.length > 0 && (
-                          <p className="text-amber-300">Conflito de horário com {outraEmpresa?.name} ({l.conflitos.map(o => `${o.client_name || 'Sem cliente'}, ${faixaHorario(o)}`).join('; ')})</p>
+                          <p className="text-amber-700 dark:text-amber-300">Conflito de horário com {outraEmpresa?.name} ({l.conflitos.map(o => `${o.client_name || 'Sem cliente'}, ${faixaHorario(o)}`).join('; ')})</p>
                         )}
                         {(l.temAviso || pular[l.d] !== undefined) && (
-                          <label className="inline-flex items-center gap-1 text-gray-400 cursor-pointer">
+                          <label className="inline-flex items-center gap-1 text-muted cursor-pointer">
                             <input type="checkbox" checked={l.pulada} onChange={e => setPular(p => ({ ...p, [l.d]: e.target.checked }))} /> pular
                           </label>
                         )}
-                        {errosServidor[l.d] && <p className="text-red-400">{errosServidor[l.d]}</p>}
+                        {errosServidor[l.d] && <p className="text-red-700 dark:text-red-400">{errosServidor[l.d]}</p>}
                       </td>
                       <td className="py-1.5 text-right">
-                        <button onClick={() => removerDia(l.d)} title="Remover este dia" className="text-gray-500 hover:text-red-400 px-1">✕</button>
+                        <button onClick={() => removerDia(l.d)} title="Remover este dia" className="text-subtle hover:text-red-700 dark:hover:text-red-400 px-1">✕</button>
                       </td>
                     </tr>
                   ))}
@@ -366,16 +366,16 @@ export default function LoteAgendas({ activeCompany, outraEmpresa, clients, rule
           )}
         </div>
 
-        {aLancar.length > LIMITE && <p className="mt-3 text-red-400 text-xs">Limite de {LIMITE} agendas por lote ({aLancar.length} selecionadas).</p>}
-        {semHoras && <p className="mt-3 text-red-400 text-xs">Há dia com horário sem horas (final antes do início?). Corrija ou remova a linha.</p>}
-        {erro && <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erro}</p>}
+        {aLancar.length > LIMITE && <p className="mt-3 text-red-700 dark:text-red-400 text-xs">Limite de {LIMITE} agendas por lote ({aLancar.length} selecionadas).</p>}
+        {semHoras && <p className="mt-3 text-red-700 dark:text-red-400 text-xs">Há dia com horário sem horas (final antes do início?). Corrija ou remova a linha.</p>}
+        {erro && <p className="mt-3 text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erro}</p>}
 
-        <div className="flex items-center justify-between gap-3 mt-5 pt-3 border-t border-gray-800 flex-wrap">
-          <p className="text-gray-400 text-xs">
-            <span className="text-white font-medium">{aLancar.length}</span> dia(s){puladas > 0 && <> · {puladas} pulado(s)</>} · <span className="font-mono text-white">{hhmm(totHoras)}</span> · Bruto <span className="text-white">{fmt(totBruto)}</span>
+        <div className="flex items-center justify-between gap-3 mt-5 pt-3 border-t border-border flex-wrap">
+          <p className="text-muted text-xs">
+            <span className="text-text font-medium">{aLancar.length}</span> dia(s){puladas > 0 && <> · {puladas} pulado(s)</>} · <span className="font-mono text-text">{hhmm(totHoras)}</span> · Bruto <span className="text-text">{fmt(totBruto)}</span>
           </p>
           <div className="flex gap-2">
-            <button onClick={onClose} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm">Cancelar</button>
+            <button onClick={onClose} className="px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm">Cancelar</button>
             <button onClick={lancar} disabled={!podeLancar} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium">
               {enviando ? 'Lançando...' : `Lançar ${aLancar.length} agenda${aLancar.length === 1 ? '' : 's'}`}
             </button>

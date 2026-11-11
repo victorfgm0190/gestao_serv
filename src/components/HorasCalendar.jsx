@@ -22,14 +22,14 @@ const MAX_CHIPS = 3
 // Paleta fixa de 8 cores; o índice sai do client_id, então o mesmo cliente tem
 // a mesma cor em todo o calendário (e entre meses).
 const PALETA = [
-  'bg-blue-500/20 text-blue-300',
-  'bg-emerald-500/20 text-emerald-300',
-  'bg-amber-500/20 text-amber-300',
-  'bg-purple-500/20 text-purple-300',
-  'bg-pink-500/20 text-pink-300',
-  'bg-cyan-500/20 text-cyan-300',
-  'bg-orange-500/20 text-orange-300',
-  'bg-lime-500/20 text-lime-300',
+  'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300',
+  'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300',
+  'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300',
+  'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300',
+  'bg-pink-100 dark:bg-pink-500/20 text-pink-700 dark:text-pink-300',
+  'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300',
+  'bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300',
+  'bg-lime-100 dark:bg-lime-500/20 text-lime-700 dark:text-lime-300',
 ]
 
 function corDoCliente(clientId) {
@@ -40,9 +40,10 @@ function corDoCliente(clientId) {
 }
 
 // Outra empresa: listrado diagonal + borda tracejada + texto cinza.
-const CHIP_OUTRA = 'border border-dashed border-gray-600 text-gray-400'
-const LISTRADO_CHIP = { backgroundImage: 'repeating-linear-gradient(135deg, rgba(156,163,175,0.18) 0 4px, transparent 4px 8px)' }
-const LISTRADO_CELULA = { backgroundImage: 'repeating-linear-gradient(135deg, rgba(156,163,175,0.06) 0 6px, transparent 6px 12px)' }
+const CHIP_OUTRA = 'border border-dashed border-border-stronger text-muted'
+// Cor das listras por tema em src/index.css (--listrado-*): no escuro é o mesmo rgba de antes.
+const LISTRADO_CHIP = { backgroundImage: 'repeating-linear-gradient(135deg, var(--listrado-chip) 0 4px, transparent 4px 8px)' }
+const LISTRADO_CELULA = { backgroundImage: 'repeating-linear-gradient(135deg, var(--listrado-celula) 0 6px, transparent 6px 12px)' }
 
 function hhmm(decimal) {
   const min = Math.round((parseFloat(decimal) || 0) * 60)
@@ -163,15 +164,15 @@ export default function HorasCalendar({
   const toggle = (
     <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
       {outra ? (
-        <label className="inline-flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
+        <label className="inline-flex items-center gap-2 text-xs text-muted cursor-pointer select-none">
           <input type="checkbox" checked={!!mostrarOutra} onChange={(ev) => onToggleOutra(ev.target.checked)} className="accent-blue-500" />
           Mostrar {outra.name}
         </label>
       ) : <span />}
       {selecionando ? (
-        <span className="text-xs text-blue-300">Modo seleção: clique nos dias para marcar · Esc para sair</span>
+        <span className="text-xs text-blue-700 dark:text-blue-300">Modo seleção: clique nos dias para marcar · Esc para sair</span>
       ) : (
-        <button onClick={onIniciarSelecao} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs transition-colors">☑ Selecionar dias</button>
+        <button onClick={onIniciarSelecao} className="px-3 py-1 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-xs transition-colors">☑ Selecionar dias</button>
       )}
     </div>
   )
@@ -179,10 +180,10 @@ export default function HorasCalendar({
   const barraSelecao = selecionando && (
     <>
       <div className="h-16" />
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 bg-gray-900 border border-blue-500/50 shadow-xl rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap max-w-[calc(100vw-2rem)]">
-        <span className="text-sm text-white">{selecionados.length} dia{selecionados.length === 1 ? '' : 's'} selecionado{selecionados.length === 1 ? '' : 's'}</span>
-        <button onClick={onLimparSelecao} disabled={!selecionados.length} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-gray-300 rounded-lg text-xs">Limpar</button>
-        <button onClick={onCancelarSelecao} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Cancelar</button>
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 bg-surface border border-blue-300 dark:border-blue-500/50 shadow-xl rounded-xl px-4 py-2.5 flex items-center gap-3 flex-wrap max-w-[calc(100vw-2rem)]">
+        <span className="text-sm text-text">{selecionados.length} dia{selecionados.length === 1 ? '' : 's'} selecionado{selecionados.length === 1 ? '' : 's'}</span>
+        <button onClick={onLimparSelecao} disabled={!selecionados.length} className="px-3 py-1 bg-surface-2 hover:bg-surface-3 disabled:opacity-40 text-text-3 rounded-lg text-xs">Limpar</button>
+        <button onClick={onCancelarSelecao} className="px-3 py-1 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-xs">Cancelar</button>
         <button onClick={onLancarSelecionados} disabled={!selecionados.length} className="px-3 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-medium">Lançar nos {selecionados.length} dias</button>
       </div>
     </>
@@ -190,22 +191,22 @@ export default function HorasCalendar({
 
   const painel = diaAberto && !vazio && (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-40 p-4" onClick={() => setDiaAberto(null)}>
-      <div className="bg-gray-950 border border-gray-800 rounded-2xl p-5 w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(ev) => ev.stopPropagation()}>
+      <div className="bg-bg border border-border rounded-2xl p-5 w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(ev) => ev.stopPropagation()}>
         <div className="flex items-start justify-between gap-4 mb-4 flex-wrap">
           <div className="min-w-0">
-            <h3 className="text-lg font-bold text-white capitalize">{rotuloDia(diaAberto)}</h3>
-            <p className="text-gray-500 text-xs mt-1">
-              {doDia.length} apontamento{doDia.length === 1 ? '' : 's'} na {ativa?.name} · <span className="font-mono text-gray-300">{hhmm(totalHoras(doDia))}</span> · Bruto <span className="text-gray-300">{fmt(totalBruto(doDia))}</span>
+            <h3 className="text-lg font-bold text-text capitalize">{rotuloDia(diaAberto)}</h3>
+            <p className="text-subtle text-xs mt-1">
+              {doDia.length} apontamento{doDia.length === 1 ? '' : 's'} na {ativa?.name} · <span className="font-mono text-text-3">{hhmm(totalHoras(doDia))}</span> · Bruto <span className="text-text-3">{fmt(totalBruto(doDia))}</span>
             </p>
           </div>
           <div className="flex gap-2 shrink-0">
             <button onClick={() => onNewOnDay(diaAberto)} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition-colors">+ Lançar neste dia</button>
-            <button onClick={() => setDiaAberto(null)} className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs transition-colors">Fechar</button>
+            <button onClick={() => setDiaAberto(null)} className="px-3 py-1.5 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-xs transition-colors">Fechar</button>
           </div>
         </div>
 
         {conflitoNoDia(diaAberto) && (
-          <p className="mb-3 text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">⚠️ Conflito de horário com {outra?.name} neste dia.</p>
+          <p className="mb-3 text-amber-700 dark:text-amber-300 text-xs bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-3 py-2">⚠️ Conflito de horário com {outra?.name} neste dia.</p>
         )}
 
         {doDia.length > 0 && <div className="space-y-3">{doDia.map(renderEntry)}</div>}
@@ -213,20 +214,20 @@ export default function HorasCalendar({
         {doDiaOutra.length > 0 && (
           <div className="mt-5">
             <div className="flex items-center justify-between gap-3 mb-2">
-              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">{outra?.name} (somente leitura)</p>
-              <button onClick={verNaOutra} className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs transition-colors">Ver na {outra?.name} →</button>
+              <p className="text-muted text-xs font-medium uppercase tracking-wider">{outra?.name} (somente leitura)</p>
+              <button onClick={verNaOutra} className="px-3 py-1 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-xs transition-colors">Ver na {outra?.name} →</button>
             </div>
             <div className="space-y-2">
               {doDiaOutra.map(e => (
                 <div key={e.id} className={`rounded-xl p-3 ${CHIP_OUTRA}`} style={LISTRADO_CHIP}>
                   <div className="flex items-center gap-2 flex-wrap text-xs">
-                    <span className="text-gray-300 font-medium">{siglaOutra} · {e.client_name || 'Sem cliente'}</span>
+                    <span className="text-text-3 font-medium">{siglaOutra} · {e.client_name || 'Sem cliente'}</span>
                     <span className="font-mono">{hhmm(e.hours)}</span>
                     {faixaHorario(e) && (
-                      <span className="font-mono text-gray-500">{faixaHorario(e)}{e.intervalo_inicio ? ` (int: ${e.intervalo_inicio}-${e.intervalo_fim})` : ''}</span>
+                      <span className="font-mono text-subtle">{faixaHorario(e)}{e.intervalo_inicio ? ` (int: ${e.intervalo_inicio}-${e.intervalo_fim})` : ''}</span>
                     )}
                   </div>
-                  {e.description && <p className="text-gray-400 text-sm mt-1">{e.description}</p>}
+                  {e.description && <p className="text-muted text-sm mt-1">{e.description}</p>}
                 </div>
               ))}
             </div>
@@ -237,8 +238,8 @@ export default function HorasCalendar({
   )
 
   const legenda = mostrarOutra && outra && (
-    <div className="flex items-center gap-3 mt-3 text-[11px] text-gray-500 flex-wrap">
-      <span className="inline-flex items-center gap-1.5"><span className="inline-block w-6 h-3 rounded bg-blue-500/20" /> {ativa?.name}</span>
+    <div className="flex items-center gap-3 mt-3 text-[11px] text-subtle flex-wrap">
+      <span className="inline-flex items-center gap-1.5"><span className="inline-block w-6 h-3 rounded bg-blue-100 dark:bg-blue-500/20" /> {ativa?.name}</span>
       <span>·</span>
       <span className="inline-flex items-center gap-1.5"><span className={`inline-block w-6 h-3 rounded ${CHIP_OUTRA}`} style={LISTRADO_CHIP} /> {outra.name}</span>
     </div>
@@ -250,7 +251,7 @@ export default function HorasCalendar({
       <>
         {toggle}
         {dias.length === 0 ? (
-          <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">📅</p><p>Nenhum lançamento neste período.</p></div>
+          <div className="text-center py-16 text-faint"><p className="text-4xl mb-3">📅</p><p>Nenhum lançamento neste período.</p></div>
         ) : (
           <div className="space-y-3">
             {dias.map(k => {
@@ -260,18 +261,18 @@ export default function HorasCalendar({
                 <button
                   key={k}
                   onClick={() => (selecionando ? onAlternarSelecionado(k) : setDiaAberto(k))}
-                  className={`w-full min-w-0 text-left bg-gray-900 border rounded-xl p-3 ${marcados.has(k) ? 'border-blue-500 ring-2 ring-blue-500' : k === hoje ? 'border-blue-500' : 'border-gray-800'}`}
+                  className={`w-full min-w-0 text-left bg-surface shadow-sm dark:shadow-none border rounded-xl p-3 ${marcados.has(k) ? 'border-blue-500 ring-2 ring-blue-500' : k === hoje ? 'border-blue-500' : 'border-border'}`}
                   style={lista.length === 0 ? LISTRADO_CELULA : undefined}
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-white text-sm font-medium capitalize truncate">{marcados.has(k) && '✓ '}{conflitoNoDia(k) && '⚠️ '}{rotuloDia(k)}</span>
-                    {lista.length > 0 && <span className="text-gray-300 text-xs font-mono shrink-0">{hhmm(totalHoras(lista))}</span>}
+                    <span className="text-text text-sm font-medium capitalize truncate">{marcados.has(k) && '✓ '}{conflitoNoDia(k) && '⚠️ '}{rotuloDia(k)}</span>
+                    {lista.length > 0 && <span className="text-text-3 text-xs font-mono shrink-0">{hhmm(totalHoras(lista))}</span>}
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {lista.map(e => <Chip key={e.id} e={e} />)}
                     {listaOutra.map(e => <Chip key={`o${e.id}`} e={e} outra sigla={siglaOutra} />)}
                   </div>
-                  {lista.length > 0 && <p className="text-gray-500 text-[11px] mt-2">Bruto {fmt(totalBruto(lista))}</p>}
+                  {lista.length > 0 && <p className="text-subtle text-[11px] mt-2">Bruto {fmt(totalBruto(lista))}</p>}
                 </button>
               )
             })}
@@ -287,18 +288,18 @@ export default function HorasCalendar({
   return (
     <>
       {toggle}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden min-w-0">
-        <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-b border-gray-800">
+      <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl overflow-hidden min-w-0">
+        <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] border-b border-border">
           {DIAS_SEMANA.map((d, i) => (
-            <div key={d} className={`min-w-0 px-2 py-2 text-xs font-medium text-center ${i >= 5 ? 'text-gray-500 bg-gray-800/40' : 'text-gray-400'}`}>{d}</div>
+            <div key={d} className={`min-w-0 px-2 py-2 text-xs font-medium text-center ${i >= 5 ? 'text-subtle bg-surface-2 dark:bg-surface-2/40' : 'text-muted'}`}>{d}</div>
           ))}
         </div>
         <div className="grid grid-cols-[repeat(7,minmax(0,1fr))]">
           {celulas.map((d, i) => {
             const fimDeSemana = i % 7 >= 5
-            const borda = `border-gray-800 ${i % 7 !== 6 ? 'border-r' : ''} ${i < totalCelulas - 7 ? 'border-b' : ''}`
+            const borda = `border-border ${i % 7 !== 6 ? 'border-r' : ''} ${i < totalCelulas - 7 ? 'border-b' : ''}`
             if (d === null) {
-              return <div key={i} className={`min-w-0 min-h-[110px] ${borda} bg-gray-950/60 opacity-40`} />
+              return <div key={i} className={`min-w-0 min-h-[110px] ${borda} bg-surface-3/60 dark:bg-bg/60 opacity-50 dark:opacity-40`} />
             }
             const k = chave(y, m, d)
             const lista = porDia.get(k) || []
@@ -315,24 +316,24 @@ export default function HorasCalendar({
                 onClick={() => clicarDia(k)}
                 title={selecionando ? (marcado ? 'Desmarcar' : 'Marcar para o lote') : todos.length ? 'Ver apontamentos do dia' : 'Lançar horas neste dia'}
                 style={soOutra ? LISTRADO_CELULA : undefined}
-                className={`relative min-w-0 overflow-hidden min-h-[110px] p-1.5 text-left flex flex-col gap-1 transition-colors hover:bg-gray-800/60 ${borda} ${fimDeSemana ? 'bg-gray-800/30' : ''} ${marcado ? 'ring-2 ring-inset ring-blue-400 bg-blue-500/10' : ehHoje ? 'ring-2 ring-inset ring-blue-500' : ''}`}
+                className={`relative min-w-0 overflow-hidden min-h-[110px] p-1.5 text-left flex flex-col gap-1 transition-colors hover:bg-surface-2/60 ${borda} ${fimDeSemana ? 'bg-surface-2/70 dark:bg-surface-2/30' : ''} ${marcado ? 'ring-2 ring-inset ring-blue-400 bg-blue-50 dark:bg-blue-500/10' : ehHoje ? 'ring-2 ring-inset ring-blue-500' : ''}`}
               >
                 <div className="flex items-start justify-between gap-1 min-w-0">
-                  <span className={`text-xs font-medium ${ehHoje ? 'text-blue-400' : lista.length ? 'text-white' : 'text-gray-500'}`}>
-                    {marcado && <span className="text-blue-300 mr-1">✓</span>}{d}{conflito && <span className="ml-1" title={`Conflito de horário com ${outra?.name}`}>⚠️</span>}
+                  <span className={`text-xs font-medium ${ehHoje ? 'text-blue-700 dark:text-blue-400' : lista.length ? 'text-text' : 'text-subtle'}`}>
+                    {marcado && <span className="text-blue-700 dark:text-blue-300 mr-1">✓</span>}{d}{conflito && <span className="ml-1" title={`Conflito de horário com ${outra?.name}`}>⚠️</span>}
                   </span>
                   <div className="text-right leading-tight">
-                    {lista.length > 0 && <div className="text-[11px] font-mono text-gray-300">{hhmm(totalHoras(lista))}</div>}
-                    {listaOutra.length > 0 && <div className="text-[10px] font-mono text-gray-500">+ {siglaOutra} {hhmm(totalHoras(listaOutra))}</div>}
+                    {lista.length > 0 && <div className="text-[11px] font-mono text-text-3">{hhmm(totalHoras(lista))}</div>}
+                    {listaOutra.length > 0 && <div className="text-[10px] font-mono text-subtle">+ {siglaOutra} {hhmm(totalHoras(listaOutra))}</div>}
                   </div>
                 </div>
                 <div className="flex flex-col gap-0.5 min-w-0">
                   {todos.slice(0, MAX_CHIPS).map(({ e, outra: o }) => (
                     <Chip key={`${o ? 'o' : 'a'}${e.id}`} e={e} outra={o} sigla={siglaOutra} compacto />
                   ))}
-                  {todos.length > MAX_CHIPS && <span className="text-[10px] text-gray-400 px-1">+{todos.length - MAX_CHIPS}</span>}
+                  {todos.length > MAX_CHIPS && <span className="text-[10px] text-muted px-1">+{todos.length - MAX_CHIPS}</span>}
                 </div>
-                {lista.length > 0 && <span className="mt-auto text-[10px] text-gray-500 truncate">{fmt(totalBruto(lista))}</span>}
+                {lista.length > 0 && <span className="mt-auto text-[10px] text-subtle truncate">{fmt(totalBruto(lista))}</span>}
               </button>
             )
           })}

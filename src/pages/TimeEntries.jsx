@@ -10,9 +10,9 @@ import { calcular } from '../../lib/time-entry-calc.js'
 import { tipoDaRegra, valoresDaRegra, chaveData, cotaDaDiaria, ROTULO_COBRANCA } from '../../lib/billing-type.js'
 
 const BADGE_COBRANCA = {
-  hora: 'bg-blue-500/20 text-blue-400',
-  diaria: 'bg-emerald-500/20 text-emerald-400',
-  projeto: 'bg-amber-500/20 text-amber-400',
+  hora: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400',
+  diaria: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400',
+  projeto: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400',
 }
 
 function decimalToHHMM(decimal) {
@@ -426,29 +426,29 @@ export default function TimeEntries() {
   }, { servico: 0, desloc: 0, lucro: 0 })
   // Card de um apontamento — usado pela lista e pelo painel do dia do calendário.
   const renderEntry = (e) => (
-    <div key={e.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+    <div key={e.id} className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-xs rounded-full">{e.client_name || 'Sem cliente'}</span>
-            <span className="text-gray-500 text-xs">{new Date(e.entry_date).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span>
-            <span className="text-gray-500 text-xs font-mono">{decimalToHHMM(e.hours)}</span>
+            <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 text-xs rounded-full">{e.client_name || 'Sem cliente'}</span>
+            <span className="text-subtle text-xs">{new Date(e.entry_date).toLocaleDateString('pt-BR', {timeZone:'UTC'})}</span>
+            <span className="text-subtle text-xs font-mono">{decimalToHHMM(e.hours)}</span>
             {e.hora_inicial && e.hora_final && (
-              <span className="text-gray-600 text-xs font-mono">{e.hora_inicial}→{e.hora_final}{e.intervalo_inicio ? ` (int: ${e.intervalo_inicio}-${e.intervalo_fim})` : ''}</span>
+              <span className="text-faint text-xs font-mono">{e.hora_inicial}→{e.hora_final}{e.intervalo_inicio ? ` (int: ${e.intervalo_inicio}-${e.intervalo_fim})` : ''}</span>
             )}
             {parseFloat(e.horas_deslocamento) > 0 && (
-              <span className="text-yellow-600 text-xs">🚗 {e.horas_deslocamento}h desloc.</span>
+              <span className="text-yellow-700 dark:text-yellow-600 text-xs">🚗 {e.horas_deslocamento}h desloc.</span>
             )}
             {parseFloat(e.despesas_deslocamento) > 0 && (
-              <span className="text-yellow-600 text-xs">💸 {fmt(e.despesas_deslocamento)} despesas</span>
+              <span className="text-yellow-700 dark:text-yellow-600 text-xs">💸 {fmt(e.despesas_deslocamento)} despesas</span>
             )}
           </div>
           {e.contract_name && (
-            <p className="text-gray-500 text-xs mb-1">📄 {e.contract_name}</p>
+            <p className="text-subtle text-xs mb-1">📄 {e.contract_name}</p>
           )}
           {semDescricao(e)
-        ? <p className="text-amber-300/80 text-xs" title="Sem descrição">📝 Sem descrição — edite para completar</p>
-        : <p className="text-white text-sm">{e.description}</p>}
+        ? <p className="text-amber-700 dark:text-amber-300/80 text-xs" title="Sem descrição">📝 Sem descrição — edite para completar</p>
+        : <p className="text-text text-sm">{e.description}</p>}
           {(() => {
             // Por diária/projeto as horas são só demonstrativo: o valor segue a regra.
             const rule = regraDaEntrada(e)
@@ -463,20 +463,20 @@ export default function TimeEntries() {
             return (
               <div className="flex items-center gap-2 mt-1 text-xs">
                 <span className={`px-2 py-0.5 rounded-full font-medium ${BADGE_COBRANCA[tipo]}`}>{ROTULO_COBRANCA[tipo]}</span>
-                <span className="text-gray-500">horas informativas · {nota}</span>
+                <span className="text-subtle">horas informativas · {nota}</span>
               </div>
             )
           })()}
           <div className="flex gap-4 mt-2 text-xs">
-            <span className="text-gray-500">{regraDaEntrada(e)?.is_net_value && tipoDaRegra(regraDaEntrada(e)) !== 'hora' ? 'NF' : 'Bruto'}: <span className="text-gray-300">{fmt(e.gross_value)}</span></span>
-            {parseFloat(e.tax_amount) > 0 && <span className="text-gray-500">Imposto: <span className="text-red-400">-{fmt(e.tax_amount)}</span></span>}
-            <span className="text-gray-500">Victor: <span className="text-blue-400">{fmt(e.victor_share)}</span></span>
-            <span className="text-gray-500">Fab: <span className="text-purple-400">{fmt(e.fabricio_share)}</span></span>
+            <span className="text-subtle">{regraDaEntrada(e)?.is_net_value && tipoDaRegra(regraDaEntrada(e)) !== 'hora' ? 'NF' : 'Bruto'}: <span className="text-text-3">{fmt(e.gross_value)}</span></span>
+            {parseFloat(e.tax_amount) > 0 && <span className="text-subtle">Imposto: <span className="text-red-700 dark:text-red-400">-{fmt(e.tax_amount)}</span></span>}
+            <span className="text-subtle">Victor: <span className="text-victor">{fmt(e.victor_share)}</span></span>
+            <span className="text-subtle">Fab: <span className="text-fabricio">{fmt(e.fabricio_share)}</span></span>
           </div>
         </div>
         <div className="flex gap-3 shrink-0">
-          <button onClick={() => openEdit(e)} className="text-gray-600 hover:text-blue-400 text-sm transition-colors">Editar</button>
-          <button onClick={() => deleteEntry(e.id)} className="text-gray-600 hover:text-red-400 text-sm transition-colors">Excluir</button>
+          <button onClick={() => openEdit(e)} className="text-faint hover:text-blue-700 dark:hover:text-blue-400 text-sm transition-colors">Editar</button>
+          <button onClick={() => deleteEntry(e.id)} className="text-faint hover:text-red-700 dark:hover:text-red-400 text-sm transition-colors">Excluir</button>
         </div>
       </div>
     </div>
@@ -487,13 +487,13 @@ export default function TimeEntries() {
     <div className="p-8 min-w-0 max-w-full">
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div className="min-w-0">
-          <h2 className="text-2xl font-bold text-white">Apontamento de Horas</h2>
-          <p className="text-gray-400 text-sm mt-1">{activeCompany.name}</p>
+          <h2 className="text-2xl font-bold text-text">Apontamento de Horas</h2>
+          <p className="text-muted text-sm mt-1">{activeCompany.name}</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
-          <div className="flex bg-gray-800 rounded-lg p-0.5">
+          <div className="flex bg-surface-2 rounded-lg p-0.5">
             {[['lista', 'Lista'], ['calendario', 'Calendário']].map(([v, rot]) => (
-              <button key={v} onClick={() => mudarView(v)} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === v ? 'bg-gray-600 text-white' : 'text-gray-400 hover:text-white'}`}>{rot}</button>
+              <button key={v} onClick={() => mudarView(v)} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${view === v ? 'bg-surface-4 text-text' : 'text-muted hover:text-text'}`}>{rot}</button>
             ))}
           </div>
           {entries.length > 0 && (
@@ -504,7 +504,7 @@ export default function TimeEntries() {
               📥 Exportar Excel
             </button>
           )}
-          <button onClick={() => setLoteDias([])} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-lg text-sm font-medium transition-colors">
+          <button onClick={() => setLoteDias([])} className="px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-2 rounded-lg text-sm font-medium transition-colors">
             🗓️ Lançar em lote
           </button>
           <button onClick={openNew} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors">
@@ -515,9 +515,9 @@ export default function TimeEntries() {
 
       <div className="flex gap-2 mb-6 flex-wrap items-center">
         {months.map((m, i) => (
-          <button key={i} onClick={() => setFilterMonth(i+1)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === i+1 ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}`}>{m}</button>
+          <button key={i} onClick={() => setFilterMonth(i+1)} className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${filterMonth === i+1 ? 'bg-blue-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'}`}>{m}</button>
         ))}
-        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-white text-xs focus:outline-none"/>
+        <input type="number" value={filterYear} onChange={e=>setFilterYear(e.target.value)} className="ml-2 w-20 bg-surface-2 border border-border-strong rounded-lg px-2 py-1 text-text text-xs focus:outline-none"/>
       </div>
 
       {clientsWithEntries.length > 0 && (
@@ -525,7 +525,7 @@ export default function TimeEntries() {
           <button
             onClick={() => setFilterClient('')}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              filterClient === '' ? 'bg-gray-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              filterClient === '' ? 'bg-surface-4 text-text' : 'bg-surface-2 text-muted hover:bg-surface-3'
             }`}
           >
             Todos os clientes
@@ -535,7 +535,7 @@ export default function TimeEntries() {
               key={c.id}
               onClick={() => setFilterClient(String(c.id))}
               className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                filterClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                filterClient === String(c.id) ? 'bg-indigo-600 text-white' : 'bg-surface-2 text-muted hover:bg-surface-3'
               }`}
             >
               {c.name}
@@ -545,7 +545,7 @@ export default function TimeEntries() {
             onClick={() => setFiltroSemDesc(v => !v)}
             title="OS lançadas sem descrição, para completar depois"
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              filtroSemDesc ? 'bg-amber-600 text-white' : 'bg-gray-800 text-amber-300/80 hover:bg-gray-700'
+              filtroSemDesc ? 'bg-amber-600 text-white' : 'bg-surface-2 text-amber-700 dark:text-amber-300/80 hover:bg-surface-3'
             }`}
           >
             📝 Sem descrição{qtdSemDesc ? ` (${qtdSemDesc})` : ''}
@@ -554,48 +554,48 @@ export default function TimeEntries() {
       )}
 
       <div className="grid grid-cols-3 gap-4 mb-6 min-w-0">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-1">Total horas</p>
-          <p className="text-white text-xl font-bold">{decimalToHHMM(totalHoras)}</p>
-          <p className="text-gray-500 text-xs mt-1">Bruto: <span className="text-gray-300">{fmt(totalBruto)}</span></p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+          <p className="text-muted text-xs mb-1">Total horas</p>
+          <p className="text-text text-xl font-bold">{decimalToHHMM(totalHoras)}</p>
+          <p className="text-subtle text-xs mt-1">Bruto: <span className="text-text-3">{fmt(totalBruto)}</span></p>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-2">Victor</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+          <p className="text-muted text-xs mb-2">Victor</p>
           <div className="space-y-1 text-xs">
-            <div className="flex justify-between text-gray-500">
+            <div className="flex justify-between text-subtle">
               <span>Serviço</span>
-              <span className="text-blue-300">{fmt(breakdown.servico)}</span>
+              <span className="text-blue-700 dark:text-blue-300">{fmt(breakdown.servico)}</span>
             </div>
-            <div className="flex justify-between text-gray-500">
+            <div className="flex justify-between text-subtle">
               <span>Deslocamento</span>
-              <span className="text-blue-300">{fmt(breakdown.desloc)}</span>
+              <span className="text-blue-700 dark:text-blue-300">{fmt(breakdown.desloc)}</span>
             </div>
-            <div className="flex justify-between text-gray-500">
+            <div className="flex justify-between text-subtle">
               <span>Lucro</span>
-              <span className="text-blue-300">{fmt(breakdown.lucro)}</span>
+              <span className="text-blue-700 dark:text-blue-300">{fmt(breakdown.lucro)}</span>
             </div>
           </div>
-          <div className="flex justify-between mt-2 pt-2 border-t border-gray-700">
-            <span className="text-gray-300 text-sm font-medium">TOTAL</span>
-            <span className="text-blue-400 text-lg font-bold">{fmt(totalVictor)}</span>
+          <div className="flex justify-between mt-2 pt-2 border-t border-border-strong">
+            <span className="text-text-3 text-sm font-medium">TOTAL</span>
+            <span className="text-victor text-lg font-bold">{fmt(totalVictor)}</span>
           </div>
         </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-xs mb-2">Fabrício</p>
+        <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
+          <p className="text-muted text-xs mb-2">Fabrício</p>
           <div className="space-y-1 text-xs">
-            <div className="flex justify-between text-gray-500">
+            <div className="flex justify-between text-subtle">
               <span>Lucro</span>
-              <span className="text-purple-300">{fmt(totalFab)}</span>
+              <span className="text-purple-700 dark:text-purple-300">{fmt(totalFab)}</span>
             </div>
           </div>
-          <div className="flex justify-between mt-2 pt-2 border-t border-gray-700">
-            <span className="text-gray-300 text-sm font-medium">TOTAL</span>
-            <span className="text-purple-400 text-lg font-bold">{fmt(totalFab)}</span>
+          <div className="flex justify-between mt-2 pt-2 border-t border-border-strong">
+            <span className="text-text-3 text-sm font-medium">TOTAL</span>
+            <span className="text-fabricio text-lg font-bold">{fmt(totalFab)}</span>
           </div>
         </div>
       </div>
 
-      {loading && view === 'calendario' ? <div className="text-gray-500 text-sm">Carregando...</div> : view === 'calendario' ? (
+      {loading && view === 'calendario' ? <div className="text-subtle text-sm">Carregando...</div> : view === 'calendario' ? (
         <HorasCalendar
           entries={filteredEntries}
           year={filterYear}
@@ -617,8 +617,8 @@ export default function TimeEntries() {
           onCancelarSelecao={sairDaSelecao}
           onLancarSelecionados={() => selecionados.length && setLoteDias([...selecionados].sort())}
         />
-      ) : loading ? <div className="text-gray-500 text-sm">Carregando...</div> : filteredEntries.length === 0 ? (
-        <div className="text-center py-16 text-gray-600"><p className="text-4xl mb-3">⏱️</p><p>Nenhum lançamento neste período.</p></div>
+      ) : loading ? <div className="text-subtle text-sm">Carregando...</div> : filteredEntries.length === 0 ? (
+        <div className="text-center py-16 text-faint"><p className="text-4xl mb-3">⏱️</p><p>Nenhum lançamento neste período.</p></div>
       ) : (
         <div className="space-y-3">
           {filteredEntries.map(renderEntry)}
@@ -627,15 +627,15 @@ export default function TimeEntries() {
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4">{editEntry ? 'Editar lançamento' : 'Lançar horas'}</h3>
+          <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-text mb-4">{editEntry ? 'Editar lançamento' : 'Lançar horas'}</h3>
             <div className="space-y-3">
-              <select value={form.client_id} onChange={e=>{ const v = e.target.value; const nf = {...form, client_id: v, contract_id: ''}; setForm(nf); calcPreview(nf); loadContractsForClient(v) }} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500">
+              <select value={form.client_id} onChange={e=>{ const v = e.target.value; const nf = {...form, client_id: v, contract_id: ''}; setForm(nf); calcPreview(nf); loadContractsForClient(v) }} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500">
                 <option value="">Selecione o cliente</option>
                 {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
               <div className="flex flex-col gap-1">
-                <select value={form.contract_id} onChange={e=>onContractChange(e.target.value)} disabled={!form.client_id || contractsLoading || clientContracts.length === 0} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
+                <select value={form.contract_id} onChange={e=>onContractChange(e.target.value)} disabled={!form.client_id || contractsLoading || clientContracts.length === 0} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500 disabled:opacity-50">
                   <option value="">{contractsLoading ? 'Carregando contratos...' : 'Selecione o contrato'}</option>
                   {clientContracts.map(ct => (
                     <option key={ct.id} value={ct.id}>
@@ -644,38 +644,38 @@ export default function TimeEntries() {
                   ))}
                 </select>
                 {form.client_id && !contractsLoading && clientContracts.length === 0 && (
-                  <p className="text-amber-400 text-xs">Este cliente não possui contrato ativo. Cadastre um contrato antes de lançar horas.</p>
+                  <p className="text-amber-700 dark:text-amber-400 text-xs">Este cliente não possui contrato ativo. Cadastre um contrato antes de lançar horas.</p>
                 )}
               </div>
-              <input type="date" value={form.entry_date} onChange={e=>updateForm('entry_date',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+              <input type="date" value={form.entry_date} onChange={e=>updateForm('entry_date',e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
 
               {/* Horários */}
-              <div className="bg-gray-800 rounded-xl p-4 space-y-3">
-                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">Horários</p>
+              <div className="bg-surface-2 rounded-xl p-4 space-y-3">
+                <p className="text-muted text-xs font-medium uppercase tracking-wider">Horários</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-gray-500 text-xs mb-1 block">Hora inicial</label>
-                    <input type="time" value={form.hora_inicial} onChange={e=>updateForm('hora_inicial',e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                    <label className="text-subtle text-xs mb-1 block">Hora inicial</label>
+                    <input type="time" value={form.hora_inicial} onChange={e=>updateForm('hora_inicial',e.target.value)} className="w-full bg-surface-3 border border-border-stronger rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                   </div>
                   <div>
-                    <label className="text-gray-500 text-xs mb-1 block">Hora final</label>
-                    <input type="time" value={form.hora_final} onChange={e=>updateForm('hora_final',e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                    <label className="text-subtle text-xs mb-1 block">Hora final</label>
+                    <input type="time" value={form.hora_final} onChange={e=>updateForm('hora_final',e.target.value)} className="w-full bg-surface-3 border border-border-stronger rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-gray-500 text-xs mb-1 block">Intervalo início</label>
-                    <input type="time" value={form.intervalo_inicio} onChange={e=>updateForm('intervalo_inicio',e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                    <label className="text-subtle text-xs mb-1 block">Intervalo início</label>
+                    <input type="time" value={form.intervalo_inicio} onChange={e=>updateForm('intervalo_inicio',e.target.value)} className="w-full bg-surface-3 border border-border-stronger rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                   </div>
                   <div>
-                    <label className="text-gray-500 text-xs mb-1 block">Intervalo fim</label>
-                    <input type="time" value={form.intervalo_fim} onChange={e=>updateForm('intervalo_fim',e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"/>
+                    <label className="text-subtle text-xs mb-1 block">Intervalo fim</label>
+                    <input type="time" value={form.intervalo_fim} onChange={e=>updateForm('intervalo_fim',e.target.value)} className="w-full bg-surface-3 border border-border-stronger rounded-lg px-3 py-2 text-text text-sm focus:outline-none focus:border-blue-500"/>
                   </div>
                 </div>
                 {preview && (
                   <div className="text-center pt-1">
-                    <span className="text-white font-bold text-lg">{decimalToHHMM(preview.hours)}</span>
-                    <span className="text-gray-500 text-xs ml-2">total calculado</span>
+                    <span className="text-text font-bold text-lg">{decimalToHHMM(preview.hours)}</span>
+                    <span className="text-subtle text-xs ml-2">total calculado</span>
                   </div>
                 )}
               </div>
@@ -686,45 +686,45 @@ export default function TimeEntries() {
                 const conflitos = modalOutras.filter(o => chaveData(o.entry_date) === form.entry_date && sobrepoe(form, o))
                 if (!conflitos.length) return null
                 return (
-                  <p className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                  <p className="text-amber-700 dark:text-amber-300 text-xs bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 rounded-lg px-3 py-2">
                     ⚠️ Você já tem horas na {outraEmpresa?.name} neste dia: {conflitos.map(o => `${faixaHorario(o)} (${o.client_name || 'Sem cliente'})`).join(', ')}
                   </p>
                 )
               })()}
-              <textarea placeholder="Descrição da atividade" value={form.description} onChange={e=>updateForm('description',e.target.value)} rows={3} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 resize-none"/>
-              <input placeholder="Horas de deslocamento (opcional)" type="number" step="0.5" value={form.hours_fuel} onChange={e=>updateForm('hours_fuel',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <textarea placeholder="Descrição da atividade" value={form.description} onChange={e=>updateForm('description',e.target.value)} rows={3} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500 resize-none"/>
+              <input placeholder="Horas de deslocamento (opcional)" type="number" step="0.5" value={form.hours_fuel} onChange={e=>updateForm('hours_fuel',e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
               {contratoSelecionado(form)?.deslocamento_tipo === 'hora_despesas' && (
-                <input placeholder="Despesas de deslocamento (R$) — pedágio + combustível + almoço" type="number" step="0.01" value={form.despesas_deslocamento} onChange={e=>updateForm('despesas_deslocamento',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+                <input placeholder="Despesas de deslocamento (R$) — pedágio + combustível + almoço" type="number" step="0.01" value={form.despesas_deslocamento} onChange={e=>updateForm('despesas_deslocamento',e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
               )}
-              <input placeholder="Observações" value={form.notes} onChange={e=>updateForm('notes',e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500"/>
+              <input placeholder="Observações" value={form.notes} onChange={e=>updateForm('notes',e.target.value)} className="w-full bg-surface-2 border border-border-strong rounded-lg px-3 py-2 text-text text-sm placeholder-subtle focus:outline-none focus:border-blue-500"/>
 
               {preview && (
-                <div className="bg-gray-800 rounded-xl p-4 space-y-2 text-sm">
-                  <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">Preview do cálculo</p>
+                <div className="bg-surface-2 rounded-xl p-4 space-y-2 text-sm">
+                  <p className="text-muted text-xs font-medium uppercase tracking-wider mb-2">Preview do cálculo</p>
                   {preview.tipo === 'diaria' && (
-                    <p className="text-emerald-400 text-xs">
+                    <p className="text-emerald-700 dark:text-emerald-400 text-xs">
                       Por diária: horas só informativas. {preview.osNoDia > 1
                         ? `Já há ${preview.osNoDia - 1} OS neste contrato nesta data — a diária (${fmt(preview.unitario)}) é dividida entre as ${preview.osNoDia}.`
                         : `1 diária = ${fmt(preview.unitario)}${preview.liquido ? ' líquido' : ''}.`}
                     </p>
                   )}
-                  {preview.tipo === 'projeto' && <p className="text-amber-400 text-xs">Por projeto: OS só demonstrativa — o valor está no fixo mensal da fatura.</p>}
-                  <div className="flex justify-between"><span className="text-gray-400">{preview.liquido ? 'NF (líquido + imposto por fora)' : 'Bruto'}</span><span className="text-white">R$ {preview.gross}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">{preview.liquido ? 'Imposto (por fora, → Victor)' : 'Imposto'}</span><span className="text-red-400">{preview.liquido ? '' : '-'}R$ {preview.tax}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-400">Líquido</span><span className="text-white">R$ {preview.net}</span></div>
-                  {parseFloat(preview.desloc) > 0 && <div className="flex justify-between"><span className="text-gray-400">{preview.cobrado ? 'Deslocamento cobrado' : 'Deslocamento (Victor)'}{parseFloat(preview.despesas) > 0 ? ' + despesas' : ''}</span><span className="text-yellow-400">R$ {preview.desloc}</span></div>}
-                  <div className="border-t border-gray-700 pt-2 mt-2">
-                    <div className="flex justify-between"><span className="text-gray-400">Victor</span><span className="text-blue-400 font-medium">R$ {preview.victor}</span></div>
-                    <div className="flex justify-between mt-1"><span className="text-gray-400">Fabrício</span><span className="text-purple-400 font-medium">R$ {preview.fabricio}</span></div>
+                  {preview.tipo === 'projeto' && <p className="text-amber-700 dark:text-amber-400 text-xs">Por projeto: OS só demonstrativa — o valor está no fixo mensal da fatura.</p>}
+                  <div className="flex justify-between"><span className="text-muted">{preview.liquido ? 'NF (líquido + imposto por fora)' : 'Bruto'}</span><span className="text-text">R$ {preview.gross}</span></div>
+                  <div className="flex justify-between"><span className="text-muted">{preview.liquido ? 'Imposto (por fora, → Victor)' : 'Imposto'}</span><span className="text-red-700 dark:text-red-400">{preview.liquido ? '' : '-'}R$ {preview.tax}</span></div>
+                  <div className="flex justify-between"><span className="text-muted">Líquido</span><span className="text-text">R$ {preview.net}</span></div>
+                  {parseFloat(preview.desloc) > 0 && <div className="flex justify-between"><span className="text-muted">{preview.cobrado ? 'Deslocamento cobrado' : 'Deslocamento (Victor)'}{parseFloat(preview.despesas) > 0 ? ' + despesas' : ''}</span><span className="text-yellow-700 dark:text-yellow-400">R$ {preview.desloc}</span></div>}
+                  <div className="border-t border-border-strong pt-2 mt-2">
+                    <div className="flex justify-between"><span className="text-muted">Victor</span><span className="text-victor font-medium">R$ {preview.victor}</span></div>
+                    <div className="flex justify-between mt-1"><span className="text-muted">Fabrício</span><span className="text-fabricio font-medium">R$ {preview.fabricio}</span></div>
                   </div>
                 </div>
               )}
             </div>
             {erro && (
-              <p className="mt-3 text-red-400 text-xs bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{erro}</p>
+              <p className="mt-3 text-red-700 dark:text-red-400 text-xs bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-lg px-3 py-2">{erro}</p>
             )}
             <div className="flex gap-3 mt-5">
-              <button onClick={closeModal} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-sm transition-colors">Cancelar</button>
+              <button onClick={closeModal} className="flex-1 py-2 bg-surface-2 hover:bg-surface-3 text-text-3 rounded-lg text-sm transition-colors">Cancelar</button>
               <button onClick={save} disabled={saving || !form.client_id || !form.contract_id} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors">{saving ? 'Salvando...' : 'Salvar'}</button>
             </div>
           </div>
