@@ -391,6 +391,14 @@ export default function TimeEntries() {
   const totalFab = filteredEntries.reduce((s, e) => s + (parseFloat(e.fabricio_share) || 0), 0)
   const totalHoras = filteredEntries.reduce((s, e) => s + (parseFloat(e.hours) || 0), 0)
   const totalBruto = filteredEntries.reduce((s, e) => s + (parseFloat(e.gross_value) || 0), 0)
+  // Imposto e líquido vêm GRAVADOS no apontamento (lib/time-entry-calc.js) — não
+  // recalcular aqui. Lançamento antigo sem net_value cai em bruto − imposto.
+  const totalImposto = filteredEntries.reduce((s, e) => s + (parseFloat(e.tax_amount) || 0), 0)
+  const totalLiquido = filteredEntries.reduce((s, e) => {
+    const net = parseFloat(e.net_value)
+    if (e.net_value != null && e.net_value !== '' && !Number.isNaN(net)) return s + net
+    return s + (parseFloat(e.gross_value) || 0) - (parseFloat(e.tax_amount) || 0)
+  }, 0)
   // Demonstrativo: separa a parte de Victor em serviço (fixo/hora), deslocamento e
   // lucro (restante do victor_share). O fixo/hora sai da regra do CONTRATO do
   // lançamento — pela regra do cliente, uma linha do Bokada por hora era decomposta
@@ -558,6 +566,10 @@ export default function TimeEntries() {
           <p className="text-muted text-xs mb-1">Total horas</p>
           <p className="text-text text-xl font-bold">{decimalToHHMM(totalHoras)}</p>
           <p className="text-subtle text-xs mt-1">Bruto: <span className="text-text-3">{fmt(totalBruto)}</span></p>
+          {totalImposto > 0 && (
+            <p className="text-subtle text-xs">Imposto: <span className="text-red-700 dark:text-red-400">-{fmt(totalImposto)}</span></p>
+          )}
+          <p className="text-subtle text-xs">Líquido: <span className="text-text font-semibold">{fmt(totalLiquido)}</span></p>
         </div>
         <div className="bg-surface shadow-sm dark:shadow-none border border-border rounded-xl p-4">
           <p className="text-muted text-xs mb-2">Victor</p>
