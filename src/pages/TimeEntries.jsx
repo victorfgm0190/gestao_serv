@@ -105,6 +105,19 @@ export default function TimeEntries() {
     const t = setTimeout(() => setToast(''), 4000)
     return () => clearTimeout(t)
   }, [toast])
+  // Arrastar no calendário: toast de rodapé com "Desfazer" (6 s) e toast de erro.
+  const [desfazer, setDesfazer] = useState(null) // { msg, acao }
+  const [erroToast, setErroToast] = useState('')
+  useEffect(() => {
+    if (!desfazer) return
+    const t = setTimeout(() => setDesfazer(null), 6000)
+    return () => clearTimeout(t)
+  }, [desfazer])
+  useEffect(() => {
+    if (!erroToast) return
+    const t = setTimeout(() => setErroToast(''), 6000)
+    return () => clearTimeout(t)
+  }, [erroToast])
   function sairDaSelecao() { setSelecionando(false); setSelecionados([]) }
   useEffect(() => {
     if (!selecionando || loteDias) return
@@ -135,6 +148,72 @@ export default function TimeEntries() {
     setPreview(null)
     setErro('')
   }, [activeCompany])
+
+  // Recarrega só os apontamentos, sem o "Carregando..." que desmontaria o
+  // calendário. Usado depois do arrastar: a diária reparte a cota entre as OS
+  // da data, então o valor final das irmãs só o backend sabe.
+  async function recarregarApontamentos() {
+    try {
+      const r = await fetch(`/api/time-entries?company_id=${activeCompany.id}&month=${filterMonth}&year=${filterYear}`)
+      if (r.ok) setEntries((await r.json()).entries || [])
+    } catch (e) { console.error(e) }
+  }
+
+  const ddmm = (k) => `${k.slice(8, 10)}/${k.slice(5, 7)}`
+
+  async function chamarApi(url, method, body) {
+    const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const j = await r.json().catch(() => ({}))
+    if (!r.ok) throw new Error(j.error || `Erro ${r.status}`)
+    return j
+  }
+
+  // Mover (padrão) ou copiar (Ctrl) um apontamento para o dia `destino`
+  // ('YYYY-MM-DD', montado como string pela grade — sem passar por UTC).
+  // Otimista: a tela muda na hora e volta ao snapshot se a API recusar.
+  async function moverApontamento(e, destino, copiar) {
+    const origem = chaveData(e.entry_date)
+    if (origem === destino) return
+    const snapshot = entries
+    const nome = e.client_name || 'Apontamento'
+    setDesfazer(null)
+    if (copiar) {
+      setEntries(prev => [...prev, { ...e, id: `tmp-${Date.now()}`, entry_date: destino, faturado: false }])
+    } else {
+      setEntries(prev => prev.map(x => (x.id === e.id ? { ...x, entry_date: destino } : x)))
+    }
+    try {
+      const body = { id: e.id, date: destino, company_id: activeCompany.id }
+      const j = copiar
+        ? await chamarApi('/api/time-entries?action=copy', 'POST', body)
+        : await chamarApi('/api/time-entries?action=move-date', 'PUT', body)
+      invalidarApontamentos(activeCompany.id)
+      await recarregarApontamentos()
+      const novoId = j.entry?.id
+      setDesfazer({
+        msg: `${nome} ${copiar ? 'copiado' : 'movido'} de ${ddmm(origem)} para ${ddmm(destino)}`,
+        acao: copiar
+          ? () => chamarApi('/api/time-entries', 'DELETE', { id: novoId })
+          : () => chamarApi('/api/time-entries?action=move-date', 'PUT', { id: e.id, date: origem, company_id: activeCompany.id }),
+      })
+    } catch (err) {
+      setEntries(snapshot)
+      setErroToast(`Não foi possível ${copiar ? 'copiar' : 'mover'}: ${err.message}`)
+    }
+  }
+
+  async function desfazerArraste() {
+    const d = desfazer
+    if (!d) return
+    setDesfazer(null)
+    try {
+      await d.acao()
+      invalidarApontamentos(activeCompany.id)
+      await recarregarApontamentos()
+    } catch (err) {
+      setErroToast(`Não foi possível desfazer: ${err.message}`)
+    }
+  }
 
   async function fetchAll() {
     setLoading(true)
@@ -628,6 +707,7 @@ export default function TimeEntries() {
           onLimparSelecao={() => setSelecionados([])}
           onCancelarSelecao={sairDaSelecao}
           onLancarSelecionados={() => selecionados.length && setLoteDias([...selecionados].sort())}
+          onMoverApontamento={moverApontamento}
         />
       ) : loading ? <div className="text-subtle text-sm">Carregando...</div> : filteredEntries.length === 0 ? (
         <div className="text-center py-16 text-faint"><p className="text-4xl mb-3">⏱️</p><p>Nenhum lançamento neste período.</p></div>
@@ -759,6 +839,19 @@ export default function TimeEntries() {
 
       {toast && (
         <div className="fixed top-4 right-4 z-[60] bg-emerald-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg">{toast}</div>
+      )}
+      {(desfazer || erroToast) && (
+        <div className="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 items-end max-w-[calc(100vw-2rem)]">
+          {erroToast && (
+            <div className="bg-red-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg">{erroToast}</div>
+          )}
+          {desfazer && (
+            <div className="bg-surface border border-border text-text text-sm px-4 py-2 rounded-lg shadow-lg flex items-center gap-3">
+              <span>{desfazer.msg}</span>
+              <button onClick={desfazerArraste} className="text-blue-700 dark:text-blue-400 font-medium hover:underline">Desfazer</button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )

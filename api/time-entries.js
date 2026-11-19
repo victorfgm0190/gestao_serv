@@ -3,6 +3,7 @@ import { requireAuth } from '../lib/auth.js'
 import { contratoComRegra } from '../lib/financial-rule.js'
 import { tipoDaRegra, cotasDeDiaria, chaveData } from '../lib/billing-type.js'
 import { calcular } from '../lib/time-entry-calc.js'
+import { dataISO } from '../lib/nfse-xml-builder.js'
 
 // Reexportado: recalc-time-entries e testes importam daqui.
 export { calcular }
@@ -204,6 +205,70 @@ async function lancarEmLote(sql, req, res) {
   return res.status(201).json({ ids, errors: [], created: ids.length })
 }
 
+// Carrega o apontamento que o calendário quer arrastar e aplica as duas travas.
+// → { entry } | { status, error }
+//
+// ⚠️ "Faturado" é `invoices.time_entry_ids` contendo o id — não há coluna
+// invoice_id em time_entries. É o mesmo predicado de recalcularDia: os valores
+// de uma OS faturada estão congelados com a fatura, e mudar a data dela faria
+// a nota descrever um dia em que o serviço não consta mais.
+async function apontamentoArrastavel(sql, id, company_id) {
+  const [entry] = await sql`
+    SELECT te.*,
+           EXISTS (SELECT 1 FROM invoices i WHERE te.id = ANY(i.time_entry_ids)) AS faturado
+    FROM time_entries te WHERE te.id = ${id}`
+  if (!entry) return { status: 404, error: 'Apontamento não encontrado.' }
+  if (String(entry.company_id) !== String(company_id)) {
+    return { status: 409, error: 'Apontamento de outra empresa — só visualização.' }
+  }
+  if (entry.faturado) {
+    return { status: 409, error: 'Apontamento faturado — estorne a fatura para mover.' }
+  }
+  return { entry }
+}
+
+// PUT ?action=move-date { id, date, company_id } — MOVER: só a data muda.
+// Horários, cliente, contrato, descrição e deslocamento ficam como estão.
+// Diária: a cota é por data, então os dois dias (origem e destino) são recalculados.
+async function moverData(sql, req, res) {
+  const { id, date, company_id } = req.body || {}
+  if (!id || !date || !DATA_RE.test(String(date).slice(0, 10))) return res.status(400).json({ error: 'Informe id e date (AAAA-MM-DD).' })
+  const r = await apontamentoArrastavel(sql, id, company_id)
+  if (r.error) return res.status(r.status).json({ error: r.error })
+  const destino = dataISO(String(date))
+  const origem = chaveData(r.entry.entry_date)
+  if (origem === destino) return res.status(200).json({ entry: r.entry, unchanged: true })
+
+  await sql`UPDATE time_entries SET entry_date = ${destino}::date WHERE id = ${id}`
+  await recalcularDia(sql, r.entry.contract_id, destino)
+  await recalcularDia(sql, r.entry.contract_id, origem)
+  const [entry] = await sql`SELECT * FROM time_entries WHERE id = ${id}`
+  return res.status(200).json({ entry, from: origem, to: destino })
+}
+
+// POST ?action=copy { id, date, company_id } — COPIAR: novo apontamento idêntico
+// na data de destino. Passa por prepararLancamento, o mesmo caminho do POST
+// individual — a cópia é calculada como se tivesse sido digitada.
+async function copiarApontamento(sql, req, res) {
+  const { id, date, company_id } = req.body || {}
+  if (!id || !date || !DATA_RE.test(String(date).slice(0, 10))) return res.status(400).json({ error: 'Informe id e date (AAAA-MM-DD).' })
+  const r = await apontamentoArrastavel(sql, id, company_id)
+  if (r.error) return res.status(r.status).json({ error: r.error })
+  const e = r.entry
+  const prep = await prepararLancamento(sql, {
+    client_id: e.client_id, contract_id: e.contract_id, entry_date: dataISO(String(date)),
+    description: e.description, notes: e.notes,
+    hora_inicial: e.hora_inicial, intervalo_inicio: e.intervalo_inicio,
+    intervalo_fim: e.intervalo_fim, hora_final: e.hora_final,
+    hours_fuel: e.horas_deslocamento, despesas_deslocamento: e.despesas_deslocamento,
+  }, e.company_id)
+  if (prep.error) return res.status(prep.status || 422).json({ error: prep.error })
+  const [inserido] = await inserirLancamento(sql, prep)
+  await recalcularDia(sql, prep.contrato.id, prep.entry_date)
+  const [entry] = await sql`SELECT * FROM time_entries WHERE id = ${inserido.id}`
+  return res.status(201).json({ entry })
+}
+
 export default async function handler(req, res) {
   if (!requireAuth(req, res)) return
   const sql = neon(process.env.DATABASE_URL)
@@ -217,7 +282,8 @@ export default async function handler(req, res) {
     }
     if (month && year) {
       const entries = await sql`
-        SELECT te.*, c.name as client_name, ct.name as contract_name
+        SELECT te.*, c.name as client_name, ct.name as contract_name,
+               EXISTS (SELECT 1 FROM invoices i WHERE te.id = ANY(i.time_entry_ids)) AS faturado
         FROM time_entries te
         LEFT JOIN clients c ON c.id = te.client_id
         LEFT JOIN contracts ct ON ct.id = te.contract_id
@@ -229,7 +295,8 @@ export default async function handler(req, res) {
       return res.status(200).json({ entries })
     }
     const entries = await sql`
-      SELECT te.*, c.name as client_name, ct.name as contract_name
+      SELECT te.*, c.name as client_name, ct.name as contract_name,
+             EXISTS (SELECT 1 FROM invoices i WHERE te.id = ANY(i.time_entry_ids)) AS faturado
       FROM time_entries te
       LEFT JOIN clients c ON c.id = te.client_id
       LEFT JOIN contracts ct ON ct.id = te.contract_id
@@ -238,6 +305,9 @@ export default async function handler(req, res) {
     `
     return res.status(200).json({ entries })
   }
+
+  if (req.method === 'POST' && req.query?.action === 'copy') return copiarApontamento(sql, req, res)
+  if (req.method === 'PUT' && req.query?.action === 'move-date') return moverData(sql, req, res)
 
   if (req.method === 'POST') {
     if (req.query?.action === 'batch' || Array.isArray(req.body?.batch)) {

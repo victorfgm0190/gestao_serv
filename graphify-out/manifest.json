@@ -90,8 +90,8 @@
     "semantic_hash": ""
   },
   "api/time-entries.js": {
-    "mtime": 1792840109.237522,
-    "ast_hash": "04684027801a45e6131d7f3d9cb71138",
+    "mtime": 1795095730.206631,
+    "ast_hash": "135ae279f39b366b322231477911c493",
     "semantic_hash": ""
   },
   "package.json": {
@@ -110,13 +110,13 @@
     "semantic_hash": "fb684a11d3f34c82afda938055ca0dfc"
   },
   "src/components/CopyButton.jsx": {
-    "mtime": 1783009425.045457,
-    "ast_hash": "d070709419d1c5e263b53059b20974e1",
-    "semantic_hash": "d070709419d1c5e263b53059b20974e1"
+    "mtime": 1794378333.8288016,
+    "ast_hash": "328bd678a146c0d5b04177e8b2448ccc",
+    "semantic_hash": ""
   },
   "src/components/Layout.jsx": {
-    "mtime": 1792768867.1405518,
-    "ast_hash": "0e5ebd437233783895a69ebb926c79f9",
+    "mtime": 1794378348.8561578,
+    "ast_hash": "15713990b05ec732d364e3f2a70caa69",
     "semantic_hash": ""
   },
   "src/hooks/useNotifications.js": {
@@ -130,54 +130,54 @@
     "semantic_hash": ""
   },
   "src/pages/Billing.jsx": {
-    "mtime": 1792856314.854402,
-    "ast_hash": "22fe2b79006983840a1b312a37785380",
+    "mtime": 1794378333.845914,
+    "ast_hash": "8da4ebcbcf9845240d005d55a5202a1f",
     "semantic_hash": ""
   },
   "src/pages/Clientes.jsx": {
-    "mtime": 1787099577.584972,
-    "ast_hash": "86d6fe9bef0424772a0ac4a2360d0d3b",
+    "mtime": 1794378333.855019,
+    "ast_hash": "3bf8bd189468e12aaa5d8c4071d65a0c",
     "semantic_hash": ""
   },
   "src/pages/Contracts.jsx": {
-    "mtime": 1792856353.5835922,
-    "ast_hash": "c1bf6e59044204be631ad2409751a95e",
+    "mtime": 1794378333.8611605,
+    "ast_hash": "38113a17d403b9a3372bff18284ad445",
     "semantic_hash": ""
   },
   "src/pages/Dashboard.jsx": {
-    "mtime": 1785254886.396078,
-    "ast_hash": "915a405588d6312312d9487f4dd7be30",
+    "mtime": 1794378333.8611605,
+    "ast_hash": "8b56824775ae56cd33176ac3ab3f0fc5",
     "semantic_hash": ""
   },
   "src/pages/Demands.jsx": {
-    "mtime": 1784511678.4020061,
-    "ast_hash": "bde3508ea3bab42f9b9ab5566c33a996",
+    "mtime": 1794378333.8611605,
+    "ast_hash": "fd77e948148dcb10a1526c78dc324068",
     "semantic_hash": ""
   },
   "src/pages/EmailRules.jsx": {
-    "mtime": 1784511703.1681485,
-    "ast_hash": "91b596a2cfacd4bfaedaf8e42c914c5f",
+    "mtime": 1794378333.8611605,
+    "ast_hash": "6e0fe8fb671af9ff489af1311d54794f",
     "semantic_hash": ""
   },
   "src/pages/Financial.jsx": {
-    "mtime": 1786844775.086196,
-    "ast_hash": "3cf3851c789372798eadfdf1ea4c20bc",
+    "mtime": 1794378037.8922138,
+    "ast_hash": "be0457bc9d595e8a55d1ab60f5dc3967",
     "semantic_hash": ""
   },
   "src/pages/FinancialRules.jsx": {
-    "mtime": 1792840183.6414332,
-    "ast_hash": "d5ee3477ed965ae1940372ff7ca86208",
+    "mtime": 1794378333.8748038,
+    "ast_hash": "21f584029c8f1a93e3d9e20fd4e93816",
     "semantic_hash": ""
   },
   "src/pages/TimeEntries.jsx": {
-    "mtime": 1794374105.5764883,
-    "ast_hash": "6798849cd52b4763829d28462ffcc79d",
+    "mtime": 1795095774.878623,
+    "ast_hash": "841f859b2a195f9d16cfd04cde912890",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
-    "mtime": 1782237643.9748507,
-    "ast_hash": "e8b7914a07137f80d6c7b39a91a10e79",
-    "semantic_hash": "e8b7914a07137f80d6c7b39a91a10e79"
+    "mtime": 1794377129.4531217,
+    "ast_hash": "ea9c44c4de44bdfe9434a56f324b2482",
+    "semantic_hash": ""
   },
   "vercel.json": {
     "mtime": 1787063154.663895,
@@ -250,8 +250,8 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1792856441.9291172,
-    "ast_hash": "3833fa6e2b412c39eb7a701cf86f64bc",
+    "mtime": 1795095827.3291698,
+    "ast_hash": "cc011b78be80573604da2ab835bd852b",
     "semantic_hash": ""
   },
   "README.md": {
@@ -260,8 +260,8 @@
     "semantic_hash": ""
   },
   "index.html": {
-    "mtime": 1782237650.731508,
-    "ast_hash": "b66caf30c88b83c2b9f674952c4fd7eb",
+    "mtime": 1794377129.8546002,
+    "ast_hash": "421e47aa7140640d83b23f60daff2e0f",
     "semantic_hash": ""
   },
   "public/favicon.svg": {
@@ -330,13 +330,13 @@
     "semantic_hash": ""
   },
   "src/pages/Login.jsx": {
-    "mtime": 1784510331.8999546,
-    "ast_hash": "0b352eac4a39601ac952c29777a178a2",
+    "mtime": 1794378333.877879,
+    "ast_hash": "c22c9322e4cb83ffbecf89f51ae45196",
     "semantic_hash": ""
   },
   "src/pages/Users.jsx": {
-    "mtime": 1784510367.5063531,
-    "ast_hash": "833d94c0cff8d02a34627fbca0b133d9",
+    "mtime": 1794378333.877879,
+    "ast_hash": "720d22ae23dcc5ea3b8de6aee0db23f6",
     "semantic_hash": ""
   },
   "lib/payment-status.js": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   "src/pages/Settings.jsx": {
-    "mtime": 1784995528.9023657,
-    "ast_hash": "c8bca2273d0f45c20b8500784e94d507",
+    "mtime": 1794378333.877879,
+    "ast_hash": "05045b1f20c0d3785839bfd1983d2635",
     "semantic_hash": ""
   },
   "api/fiscal-obligations.js": {
@@ -390,8 +390,8 @@
     "semantic_hash": ""
   },
   "src/pages/FiscalObligations.jsx": {
-    "mtime": 1786753995.5497575,
-    "ast_hash": "d8266e1d251277235cd575ac2679ad82",
+    "mtime": 1794378333.877879,
+    "ast_hash": "424ce00ac1b17c7eca3654f6e728885e",
     "semantic_hash": ""
   },
   "api/admin.js": {
@@ -410,8 +410,8 @@
     "semantic_hash": ""
   },
   "src/components/MemoriaCalculo.jsx": {
-    "mtime": 1785169806.8419802,
-    "ast_hash": "d8df502029e46f25887654e290be2081",
+    "mtime": 1794378333.83594,
+    "ast_hash": "0de82a7886d074931d7a78ec2a52c4a3",
     "semantic_hash": ""
   },
   "src/lib/fiscalLabels.js": {
@@ -545,8 +545,8 @@
     "semantic_hash": ""
   },
   "src/pages/Configuracao/NFSeSettings.jsx": {
-    "mtime": 1787063144.3662603,
-    "ast_hash": "2530c8bf7426367768313e11db663926",
+    "mtime": 1794378333.8590703,
+    "ast_hash": "d821a490db94cbd12bd62471e9e021e1",
     "semantic_hash": ""
   },
   "api/nfse-emit.js": {
@@ -610,8 +610,8 @@
     "semantic_hash": ""
   },
   "src/pages/Faturamento/NFSeEmitidas.jsx": {
-    "mtime": 1788310876.3648818,
-    "ast_hash": "a85788b6b1e1c6bb61f07781537606e6",
+    "mtime": 1794378333.8611605,
+    "ast_hash": "fb54229a568cc2f8e848e7c743f4ddf5",
     "semantic_hash": ""
   },
   "api/nfse-cancel.js": {
@@ -650,18 +650,18 @@
     "semantic_hash": ""
   },
   "src/components/NFSeCancelModal.jsx": {
-    "mtime": 1787153878.3660376,
-    "ast_hash": "cfaea2d25623493c35cce58ef03ef2c7",
+    "mtime": 1794378333.8433075,
+    "ast_hash": "964f48ab53a2d6db52afc3c55230ff02",
     "semantic_hash": ""
   },
   "src/components/NFSeEmitirModal.jsx": {
-    "mtime": 1787153971.0443676,
-    "ast_hash": "f5bc5dcf5881a4f765eae6de4e468043",
+    "mtime": 1794378333.844954,
+    "ast_hash": "09f5be276f47b5f09347049647492e47",
     "semantic_hash": ""
   },
   "src/components/NFSeTimeline.jsx": {
-    "mtime": 1787150706.2115815,
-    "ast_hash": "d63fff75df3c04b00d0c3e8392cc7b2b",
+    "mtime": 1794378333.845914,
+    "ast_hash": "c35554fb5eedcc3211d834e24d46dbbc",
     "semantic_hash": ""
   },
   "api/nfse-emitter-settings.js": {
@@ -685,8 +685,8 @@
     "semantic_hash": ""
   },
   "src/pages/Configuracao/NFSeEmitterSettings.jsx": {
-    "mtime": 1787099610.0275042,
-    "ast_hash": "1b1c34c90a4df11afa5fc9e774feb844",
+    "mtime": 1794378333.8570302,
+    "ast_hash": "921e4e512669584f3a69941ea26bd163",
     "semantic_hash": ""
   },
   "api/consultar-cnpj.js": {
@@ -745,8 +745,8 @@
     "semantic_hash": ""
   },
   "src/components/NFSeAcoesModal.jsx": {
-    "mtime": 1787153878.3660376,
-    "ast_hash": "34c773c966950c24700b95ac0ee39b5c",
+    "mtime": 1794378333.83594,
+    "ast_hash": "0e10d2128630c08ca2f8ae40568f7e88",
     "semantic_hash": ""
   },
   "api/nfse-sincronizar-cancelamento.js": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   "src/components/NFSeReemitirModal.jsx": {
-    "mtime": 1787157013.032477,
-    "ast_hash": "b999241791e8188aefb1d75f8f7da9ee",
+    "mtime": 1794378333.845914,
+    "ast_hash": "1872ee92a17b5552c19a597c76447580",
     "semantic_hash": ""
   },
   "api/nfse-operations.js": {
@@ -785,18 +785,18 @@
     "semantic_hash": ""
   },
   "src/pages/Faturamento/NFSeOperacoes.jsx": {
-    "mtime": 1787152737.5209436,
-    "ast_hash": "197e6474cd6bf240bf54525a3b9e5766",
+    "mtime": 1794378333.8611605,
+    "ast_hash": "c84ae83e943fb94002e976bd32f4edf5",
     "semantic_hash": ""
   },
   "src/components/XmlPrevia.jsx": {
-    "mtime": 1787153878.3660376,
-    "ast_hash": "b5ab52e01adf40c4e7757075970b9afd",
+    "mtime": 1794378333.845914,
+    "ast_hash": "38d8e893b0d5dbe411eb02e0d7204a1b",
     "semantic_hash": ""
   },
   "src/components/NFSeSincronizarModal.jsx": {
-    "mtime": 1787156978.4141102,
-    "ast_hash": "677637b522efe9111679db199ebf0feb",
+    "mtime": 1794378333.845914,
+    "ast_hash": "aad3cc0ea2b0b4bf2a1006a66468c242",
     "semantic_hash": ""
   },
   "api/nfse-download-oficial.js": {
@@ -855,8 +855,38 @@
     "semantic_hash": ""
   },
   "src/components/HorasCalendar.jsx": {
-    "mtime": 1794374122.0291696,
-    "ast_hash": "a135c5dcda6eda9ebb34a50490f86b25",
+    "mtime": 1795095753.1511016,
+    "ast_hash": "eb416e1008b464248335f269e7653300",
+    "semantic_hash": ""
+  },
+  "lib/lote-agendas.test.js": {
+    "mtime": 1794375454.7757087,
+    "ast_hash": "92b9bd9efb8b35bfd6817d84bf8223a3",
+    "semantic_hash": ""
+  },
+  "src/components/LoteAgendas.jsx": {
+    "mtime": 1794377812.1655474,
+    "ast_hash": "08d85a354d21c904bd14fed68e462e1b",
+    "semantic_hash": ""
+  },
+  "src/lib/apontamentosCache.js": {
+    "mtime": 1794375226.3689685,
+    "ast_hash": "7b8e77e74d7d6f9c9b70bab1af37063d",
+    "semantic_hash": ""
+  },
+  "src/lib/horasConflito.js": {
+    "mtime": 1794374783.8909826,
+    "ast_hash": "aed3c94cf6226f8f7aac0e6613b29148",
+    "semantic_hash": ""
+  },
+  "src/lib/semDescricao.js": {
+    "mtime": 1794375343.2530835,
+    "ast_hash": "6bce67e3db9e6d2f264d97443414cebe",
+    "semantic_hash": ""
+  },
+  "src/lib/theme.js": {
+    "mtime": 1794377137.2363992,
+    "ast_hash": "0a2014e8d6ceffa7978278d9e0f976ff",
     "semantic_hash": ""
   }
 }

@@ -90,7 +90,9 @@ function useIsMobile() {
 
 const MarcaSemDescricao = () => <span title="Sem descrição" aria-label="Sem descrição" className="mr-0.5">📝</span>
 
-function Chip({ e, outra, sigla, compacto }) {
+// Arraste (HTML5 nativo, só desktop): `drag` vem preenchido apenas para chips
+// da empresa ativa. Faturado mostra cadeado e não arrasta.
+function Chip({ e, outra, sigla, compacto, drag }) {
   const tamanho = compacto ? 'text-[10px] leading-tight px-1.5 py-0.5' : 'text-[11px] px-2 py-0.5'
   if (outra) {
     return (
@@ -99,9 +101,17 @@ function Chip({ e, outra, sigla, compacto }) {
       </span>
     )
   }
+  const travado = !!e.faturado
+  const arrastavel = !!drag && !travado
   return (
-    <span className={`block min-w-0 truncate rounded ${tamanho} ${corDoCliente(e.client_id)}`}>
-      {semDescricao(e) && <MarcaSemDescricao />}{e.client_name || 'Sem cliente'} <span className="font-mono">{hhmm(e.hours)}</span>
+    <span
+      draggable={arrastavel || undefined}
+      onDragStart={arrastavel ? (ev) => drag.onStart(ev, e) : undefined}
+      onDragEnd={arrastavel ? drag.onEnd : undefined}
+      title={travado ? 'Apontamento faturado — estorne a fatura para mover' : arrastavel ? 'Arraste para mover · Ctrl+arraste para copiar' : undefined}
+      className={`block min-w-0 truncate rounded ${tamanho} ${corDoCliente(e.client_id)} ${arrastavel ? 'cursor-grab active:cursor-grabbing' : ''} ${drag?.arrastando === e.id ? 'opacity-40' : ''}`}
+    >
+      {travado && <span className="mr-0.5" aria-label="Faturado">🔒</span>}{semDescricao(e) && <MarcaSemDescricao />}{e.client_name || 'Sem cliente'} <span className="font-mono">{hhmm(e.hours)}</span>
     </span>
   )
 }
@@ -112,8 +122,14 @@ export default function HorasCalendar({
   // Modo "Selecionar dias" (lote). O estado mora na página: o modal do lote o lê.
   selecionando = false, selecionados = [], onIniciarSelecao, onAlternarSelecionado,
   onLimparSelecao, onCancelarSelecao, onLancarSelecionados,
+  // Arrastar e soltar: (entry, chaveDestino, copiar) → a página faz o otimista + API.
+  onMoverApontamento,
 }) {
   const [diaAberto, setDiaAberto] = useState(null)
+  // Apontamento sendo arrastado e a célula sob o cursor. O id não viaja só no
+  // dataTransfer porque dragover não pode lê-lo (só no drop).
+  const [arrastado, setArrastado] = useState(null)
+  const [alvo, setAlvo] = useState(null)
   const isMobile = useIsMobile()
   const y = Number(year)
   const m = Number(month)
@@ -159,6 +175,43 @@ export default function HorasCalendar({
     const d = i - offset + 1
     return d >= 1 && d <= diasNoMes ? d : null
   })
+
+  const podeArrastar = !!onMoverApontamento && !selecionando
+  const drag = podeArrastar ? {
+    arrastando: arrastado?.id ?? null,
+    onStart(ev, e) {
+      ev.stopPropagation()
+      ev.dataTransfer.effectAllowed = 'copyMove'
+      ev.dataTransfer.setData('text/plain', String(e.id))
+      setArrastado(e)
+    },
+    onEnd() { setArrastado(null); setAlvo(null) },
+  } : null
+
+  // Só dias do mês exibido aceitam soltar — as células vazias da grade nem
+  // registram os handlers. Ctrl (ou ⌘) = copiar.
+  function dropProps(k) {
+    if (!podeArrastar || !arrastado) return {}
+    return {
+      onDragOver(ev) {
+        ev.preventDefault()
+        ev.dataTransfer.dropEffect = ev.ctrlKey || ev.metaKey ? 'copy' : 'move'
+        if (alvo !== k) setAlvo(k)
+      },
+      onDragLeave(ev) {
+        if (!ev.currentTarget.contains(ev.relatedTarget)) setAlvo(a => (a === k ? null : a))
+      },
+      onDrop(ev) {
+        ev.preventDefault()
+        const e = arrastado
+        const copiar = ev.ctrlKey || ev.metaKey
+        setAlvo(null)
+        setArrastado(null)
+        if (!e || chaveData(e.entry_date) === k) return
+        onMoverApontamento(e, k, copiar)
+      },
+    }
+  }
 
   const marcados = new Set(selecionados)
   const toggle = (
@@ -311,12 +364,18 @@ export default function HorasCalendar({
             const conflito = conflitoNoDia(k)
             const marcado = marcados.has(k)
             return (
-              <button
+              // div com role=button, não <button>: o Firefox não deixa arrastar
+              // elementos de dentro de um <button>.
+              <div
                 key={i}
+                role="button"
+                tabIndex={0}
                 onClick={() => clicarDia(k)}
+                onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); clicarDia(k) } }}
+                {...dropProps(k)}
                 title={selecionando ? (marcado ? 'Desmarcar' : 'Marcar para o lote') : todos.length ? 'Ver apontamentos do dia' : 'Lançar horas neste dia'}
                 style={soOutra ? LISTRADO_CELULA : undefined}
-                className={`relative min-w-0 overflow-hidden min-h-[110px] p-1.5 text-left flex flex-col gap-1 transition-colors hover:bg-surface-2/60 ${borda} ${fimDeSemana ? 'bg-surface-2/70 dark:bg-surface-2/30' : ''} ${marcado ? 'ring-2 ring-inset ring-blue-400 bg-blue-50 dark:bg-blue-500/10' : ehHoje ? 'ring-2 ring-inset ring-blue-500' : ''}`}
+                className={`relative min-w-0 overflow-hidden min-h-[110px] p-1.5 text-left flex flex-col gap-1 cursor-pointer transition-colors hover:bg-surface-2/60 ${borda} ${fimDeSemana ? 'bg-surface-2/70 dark:bg-surface-2/30' : ''} ${alvo === k ? 'outline-2 outline-dashed outline-blue-500 -outline-offset-2 bg-blue-50 dark:bg-blue-500/10' : marcado ? 'ring-2 ring-inset ring-blue-400 bg-blue-50 dark:bg-blue-500/10' : ehHoje ? 'ring-2 ring-inset ring-blue-500' : ''}`}
               >
                 <div className="flex items-start justify-between gap-1 min-w-0">
                   <span className={`text-xs font-medium ${ehHoje ? 'text-blue-700 dark:text-blue-400' : lista.length ? 'text-text' : 'text-subtle'}`}>
@@ -329,12 +388,12 @@ export default function HorasCalendar({
                 </div>
                 <div className="flex flex-col gap-0.5 min-w-0">
                   {todos.slice(0, MAX_CHIPS).map(({ e, outra: o }) => (
-                    <Chip key={`${o ? 'o' : 'a'}${e.id}`} e={e} outra={o} sigla={siglaOutra} compacto />
+                    <Chip key={`${o ? 'o' : 'a'}${e.id}`} e={e} outra={o} sigla={siglaOutra} compacto drag={o ? null : drag} />
                   ))}
                   {todos.length > MAX_CHIPS && <span className="text-[10px] text-muted px-1">+{todos.length - MAX_CHIPS}</span>}
                 </div>
                 {lista.length > 0 && <span className="mt-auto text-[10px] text-subtle truncate">{fmt(totalBruto(lista))}</span>}
-              </button>
+              </div>
             )
           })}
         </div>
